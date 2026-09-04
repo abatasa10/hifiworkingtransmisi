@@ -1,5 +1,5 @@
 /**
- * ROTS PLN TRANSMISI - Import & Export Module
+ * ROTS PLN OPERASI SISTEM - Import & Export Module
  * Validasi ketat import Excel/CSV, kalkulasi otomatis, unduh template,
  * dan export XLSX & PDF resmi.
  */
@@ -322,7 +322,7 @@ export class ImportExportService {
     const overwrite = document.getElementById('checkOverwriteExisting')?.checked || false;
     store.importRecords(rawRecordsToSave, overwrite);
 
-    alert(`Berhasil mengimpor ${rawRecordsToSave.length} data ke dalam sistem ROTS PLN Transmisi!`);
+    alert(`Berhasil mengimpor ${rawRecordsToSave.length} data ke dalam sistem ROTS PLN Operasi Sistem!`);
 
     // Sembunyikan preview
     const container = document.getElementById('importPreviewContainer');
@@ -365,7 +365,7 @@ export class ImportExportService {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template_ROTS_PLN');
-    XLSX.writeFile(wb, 'ROTS_PLN_Transmisi_Template.xlsx');
+    XLSX.writeFile(wb, 'ROTS_PLN_Operasi_Sistem_Template.xlsx');
   }
 
   exportToExcel() {

@@ -1,7 +1,7 @@
 {
   "name": "rots-pln-transmisi",
   "version": "1.0.0",
-  "description": "ROTS - Rencana Operasi Tahunan Semester PLN Transmisi",
+  "description": "ROTS - Rencana Operasi Tahunan Semester PLN Operasi Sistem",
   "type": "module",
   "scripts": {
     "start": "npx serve ."

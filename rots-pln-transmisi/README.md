@@ -1,8 +1,8 @@
-# ROTS – Rencana Operasi Tahunan Semester | PLN Transmisi
+# ROTS – Rencana Operasi Tahunan Semester | Operasi Sistem
 
-Dashboard monitoring dan evaluasi rencana operasi sistem tenaga listrik semesteran untuk PLN Transmisi.
+Dashboard monitoring dan evaluasi rencana operasi sistem tenaga listrik semesteran untuk PLN Operasi Sistem.
 
-![ROTS PLN Transmisi Dashboard](https://raw.githubusercontent.com/placeholder/rots-pln-transmisi/main/assets/preview.png)
+![ROTS PLN Operasi Sistem Dashboard](https://raw.githubusercontent.com/placeholder/rots-pln-transmisi/main/assets/preview.png)
 
 ## ⚡ Fitur Utama
 1. **Executive Operations Cockpit**:
@@ -51,4 +51,4 @@ python3 -m http.server 3030
 Buka browser pada: `http://localhost:3030`
 
 ---
-© 2026 PT PLN (Persero) Transmisi. All rights reserved.
+© 2026 PT PLN (Persero) Operasi Sistem. All rights reserved.

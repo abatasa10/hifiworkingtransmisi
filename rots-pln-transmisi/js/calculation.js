@@ -1,6 +1,6 @@
 /**
- * ROTS PLN TRANSMISI - Core Calculation Module
- * Memastikan business logic dan traceability perhitungan 100% akurat sesuai standar PLN Transmisi.
+ * ROTS PLN OPERASI SISTEM - Core Calculation Module
+ * Memastikan business logic dan traceability perhitungan 100% akurat sesuai standar PLN Operasi Sistem.
  */
 
 export const CalculationService = {

@@ -1,6 +1,6 @@
-# HiFi Working Transmisi – PLN Transmisi Hub
+# HiFi Working Transmisi – PLN Operasi Sistem Hub
 
-Repositori terpusat untuk portofolio desain, prototipe, dan aplikasi HiFi PLN Transmisi.
+Repositori terpusat untuk portofolio desain, prototipe, dan aplikasi HiFi PLN Operasi Sistem.
 
 ## 📁 Daftar Proyek
 1. **[ROTS – Rencana Operasi Tahunan Semester](./rots-pln-transmisi/)**
@@ -17,4 +17,4 @@ Repositori ini telah diatur untuk berjalan di **GitHub Pages**:
 - **Aplikasi ROTS Langsung**: `https://abatasa10.github.io/hifiworkingtransmisi/rots-pln-transmisi/`
 
 ---
-© 2026 PT PLN (Persero) Transmisi. All rights reserved.
+© 2026 PT PLN (Persero) Operasi Sistem. All rights reserved.
