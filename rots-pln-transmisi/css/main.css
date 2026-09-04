@@ -1,0 +1,574 @@
+/* ==========================================================================
+   ROTS PLN TRANSMISI - Design System & Main Styles
+   Enterprise, Clean, Modern, Professional, Inspired by PLN Transmisi
+   ========================================================================== */
+
+:root {
+  /* PLN Brand Colors */
+  --pln-navy-darker: #061527;
+  --pln-navy-dark: #0A2540;
+  --pln-navy: #0F3256;
+  --pln-navy-light: #1A4773;
+  --pln-navy-surface: #132F4C;
+  
+  --pln-blue-primary: #00A3E0;
+  --pln-blue-hover: #0284C7;
+  --pln-blue-light: #E0F2FE;
+  --pln-blue-dark: #0369A1;
+
+  --pln-yellow: #FFD100;
+  --pln-yellow-hover: #E6BC00;
+  --pln-red: #EE2726;
+
+  /* Status Colors (Consistent across app) */
+  --status-normal: #10B981;
+  --status-normal-bg: #ECFDF5;
+  --status-normal-border: #A7F3D0;
+  --status-normal-text: #065F46;
+
+  --status-siaga: #F59E0B;
+  --status-siaga-bg: #FFFBEB;
+  --status-siaga-border: #FDE68A;
+  --status-siaga-text: #92400E;
+
+  --status-defisit: #EF4444;
+  --status-defisit-bg: #FEF2F2;
+  --status-defisit-border: #FECACA;
+  --status-defisit-text: #991B1B;
+
+  /* KPI Accent Colors */
+  --kpi-blue: #0284C7;
+  --kpi-amber: #F59E0B;
+  --kpi-red: #EF4444;
+  --kpi-green: #10B981;
+  --kpi-purple: #8B5CF6;
+  --kpi-teal: #0D9488;
+
+  /* Neutrals & Surfaces */
+  --bg-app: #F4F6F9;
+  --bg-card: #FFFFFF;
+  --bg-card-alt: #F8FAFC;
+  --border-card: #E2E8F0;
+  --border-light: #EDF2F7;
+  --border-hover: #CBD5E1;
+
+  --text-main: #1E293B;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --text-white: #FFFFFF;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 10px 15px -3px rgba(10, 37, 64, 0.08), 0 4px 6px -4px rgba(10, 37, 64, 0.04);
+  --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 25px 50px -12px rgba(10, 37, 64, 0.25);
+
+  /* Layout */
+  --sidebar-width: 250px;
+  --header-height: 70px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* App Container */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+/* ==========================================================================
+   SIDEBAR NAVIGATION (Deep Enterprise Navy)
+   ========================================================================== */
+.app-sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: linear-gradient(180deg, var(--pln-navy-darker) 0%, var(--pln-navy-dark) 40%, #07192C 100%);
+  color: #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-header {
+  padding: 20px 20px 16px 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.sidebar-brand img {
+  height: 42px;
+  width: auto;
+}
+
+.sidebar-menu-wrapper {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.sidebar-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-item {
+  position: relative;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  color: #94A3B8;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.sidebar-link i,
+.sidebar-link svg {
+  width: 18px;
+  height: 18px;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #FFFFFF;
+}
+
+.sidebar-link:hover i {
+  opacity: 1;
+  color: var(--pln-blue-primary);
+}
+
+.sidebar-item.active .sidebar-link {
+  background: #0070BA;
+  background: linear-gradient(90deg, #0284C7 0%, #00A3E0 100%);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.sidebar-item.active .sidebar-link i {
+  color: #FFFFFF;
+  opacity: 1;
+}
+
+/* Sidebar Footer (PLN Info & Transmission Artwork) */
+.sidebar-footer {
+  padding: 16px 16px 20px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-tower-bg {
+  position: absolute;
+  right: -5px;
+  bottom: 0px;
+  width: 120px;
+  height: auto;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.about-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.about-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #38BDF8;
+  margin-bottom: 4px;
+}
+
+.about-desc {
+  font-size: 11px;
+  color: #94A3B8;
+  line-height: 1.4;
+}
+
+.sidebar-copyright {
+  font-size: 11px;
+  color: #64748B;
+  text-align: left;
+}
+
+/* ==========================================================================
+   MAIN CONTENT AREA
+   ========================================================================== */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+/* Top App Header */
+.app-header {
+  height: auto;
+  min-height: 52px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-card);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.header-title-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-app-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--pln-navy-dark);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-app-name .badge-version {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--pln-blue-light);
+  color: var(--pln-blue-dark);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.header-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border-card);
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.header-btn:hover {
+  background: var(--bg-card-alt);
+  color: var(--text-main);
+  border-color: var(--border-hover);
+}
+
+.header-btn.btn-primary {
+  background: var(--pln-blue-primary);
+  border-color: var(--pln-blue-primary);
+  color: #FFFFFF;
+}
+
+.header-btn.btn-primary:hover {
+  background: var(--pln-blue-hover);
+  border-color: var(--pln-blue-hover);
+}
+
+.notification-badge-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.notification-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--pln-red);
+  color: #FFFFFF;
+  font-size: 9.5px;
+  font-weight: 700;
+  width: 15px;
+  height: 15px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+}
+
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.user-profile-badge:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-alt);
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: #E2E8F0;
+  color: var(--pln-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* ==========================================================================
+   FILTER BAR
+   ========================================================================== */
+.filter-bar {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-card);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.filter-select,
+.filter-input {
+  appearance: none;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 5px 28px 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition-fast);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+}
+
+.filter-select:hover,
+.filter-input:hover {
+  border-color: var(--border-hover);
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  border-color: var(--pln-blue-primary);
+  box-shadow: 0 0 0 2px rgba(0, 163, 224, 0.15);
+}
+
+.date-range-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.date-range-badge i {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Quick Threshold Badge (Editable from header) */
+.threshold-quick-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.threshold-quick-badge:hover {
+  background: #E0F2FE;
+  border-color: #7DD3FC;
+  transform: translateY(-1px);
+}
+
+.threshold-info-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.threshold-title {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #0369A1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.threshold-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0284C7;
+}
+
+.threshold-edit-icon {
+  color: #0284C7;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   PAGE CONTAINER
+   ========================================================================== */
+.view-container {
+  padding: 14px 20px 24px 20px;
+  flex: 1;
+}
+
+.view-section {
+  display: none;
+}
+
+.view-section.active {
+  display: block;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

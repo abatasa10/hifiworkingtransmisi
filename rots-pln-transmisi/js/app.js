@@ -1,0 +1,650 @@
+/**
+ * ROTS PLN TRANSMISI - Main Application Controller
+ * Menghubungkan seluruh modul tampilan, store data, router navigasi, filter global, dan modal.
+ */
+
+import { CalculationService } from './calculation.js';
+import { store } from './store.js';
+import { chartService } from './charts.js';
+import { dailyView } from './dailyView.js';
+import { outageView } from './outageView.js';
+import { parameterView } from './parameterView.js';
+import { importExportService } from './importExport.js';
+
+class RotsApp {
+  constructor() {
+    this.store = store;
+    this.chartService = chartService;
+    this.dailyView = dailyView;
+    this.outageView = outageView;
+    this.parameterView = parameterView;
+    this.importExport = importExportService;
+  }
+
+  init() {
+    this.bindGlobalNavigation();
+    this.bindFilterBar();
+    this.bindModals();
+
+    this.dailyView.init();
+    this.outageView.init();
+    this.parameterView.init();
+    this.importExport.init();
+
+    // Subscribe to store updates
+    this.store.subscribe((event) => {
+      this.handleStoreEvent(event);
+    });
+
+    // Initial render
+    this.renderDashboard();
+    this.updateThresholdBadges();
+  }
+
+  handleStoreEvent(event) {
+    if (event.type === 'PARAMETER_UPDATED' || event.type === 'FILTERS_CHANGED' || event.type === 'STORE_RESET') {
+      this.renderDashboard();
+      this.dailyView.render();
+      this.outageView.render();
+      this.parameterView.render();
+      this.updateThresholdBadges();
+    } else if (event.type === 'SELECTED_DATE_CHANGED') {
+      this.updateDaySpecificWidgets();
+    } else if (event.type === 'VIEW_CHANGED') {
+      this.switchView(event.payload);
+    } else if (event.type === 'SYSTEMS_UPDATED') {
+      this.populateSystemSelect();
+      this.parameterView.renderSystems();
+    }
+  }
+
+  bindGlobalNavigation() {
+    const navLinks = document.querySelectorAll('.sidebar-link[data-view]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const viewId = link.getAttribute('data-view');
+        this.store.setCurrentView(viewId);
+      });
+    });
+
+    // Donut chart "Lihat Detail Harian ->" link
+    const linkDetailHarian = document.getElementById('linkLihatDetailHarian');
+    if (linkDetailHarian) {
+      linkDetailHarian.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.store.setCurrentView('kondisi-harian');
+      });
+    }
+  }
+
+  switchView(viewId) {
+    // Update active nav in sidebar
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      const link = item.querySelector('.sidebar-link');
+      if (link && link.getAttribute('data-view') === viewId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Update visible view container
+    document.querySelectorAll('.view-section').forEach(sec => {
+      sec.classList.remove('active');
+    });
+
+    const targetSec = document.getElementById(`view-${viewId}`);
+    if (targetSec) {
+      targetSec.classList.add('active');
+    }
+
+    // Refresh charts if entering dashboard or outage view
+    if (viewId === 'dashboard') {
+      this.renderDashboard();
+    } else if (viewId === 'rencana-outage') {
+      this.outageView.render();
+    } else if (viewId === 'kondisi-harian') {
+      this.dailyView.render();
+    }
+  }
+
+  bindFilterBar() {
+    this.populateSystemSelect();
+
+    const selectSystem = document.getElementById('filterSystemSelect');
+    if (selectSystem) {
+      selectSystem.addEventListener('change', (e) => {
+        this.store.setFilters({ sistem: e.target.value });
+      });
+    }
+
+    const selectSemester = document.getElementById('filterSemesterSelect');
+    if (selectSemester) {
+      selectSemester.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'Semester II 2026') {
+          this.store.setFilters({
+            semester: val,
+            dateStart: '2026-07-01',
+            dateEnd: '2026-12-31'
+          });
+          document.getElementById('displayDateRange').textContent = '01 Jul 2026 - 31 Des 2026';
+        }
+      });
+    }
+
+    // Tombol Layar Penuh Seluruh Aplikasi (Topbar)
+    const btnAppFs = document.getElementById('btnAppWindowFullscreen');
+    if (btnAppFs) {
+      btnAppFs.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          btnAppFs.innerHTML = '<i class="fa fa-compress-arrows-alt"></i> <span>Keluar Penuh</span>';
+        } else {
+          document.exitFullscreen().catch(() => {});
+          btnAppFs.innerHTML = '<i class="fa fa-expand-arrows-alt"></i> <span>Layar Penuh</span>';
+        }
+      });
+    }
+
+    // Quick edit threshold button
+    const quickThresholdBtn = document.getElementById('quickEditThresholdBadge');
+    if (quickThresholdBtn) {
+      quickThresholdBtn.addEventListener('click', () => {
+        this.openQuickThresholdModal();
+      });
+    }
+
+    // Tombol Expand Neraca Daya ROTS
+    const btnExpandNeraca = document.getElementById('btnExpandNeracaDaya');
+    if (btnExpandNeraca) {
+      btnExpandNeraca.addEventListener('click', () => {
+        this.openFullscreenChartModal('neraca');
+      });
+    }
+
+    // Tombol Expand Trend Cadangan Daya
+    const btnExpandTrend = document.getElementById('btnExpandTrend');
+    if (btnExpandTrend) {
+      btnExpandTrend.addEventListener('click', () => {
+        this.openFullscreenChartModal('cadangan');
+      });
+    }
+
+    // Switcher Tab di Fullscreen Modal (Neraca Daya vs Trend Cadangan)
+    const btnFsTabNeraca = document.getElementById('btnFsTabNeraca');
+    const btnFsTabCadangan = document.getElementById('btnFsTabCadangan');
+
+    if (btnFsTabNeraca && btnFsTabCadangan) {
+      btnFsTabNeraca.addEventListener('click', () => {
+        btnFsTabNeraca.classList.add('active');
+        btnFsTabCadangan.classList.remove('active');
+        document.getElementById('fsContainerNeraca').style.display = 'block';
+        document.getElementById('fsContainerCadangan').style.display = 'none';
+        this.activeFullscreenChartType = 'neraca';
+        this.renderFullscreenContent();
+      });
+
+      btnFsTabCadangan.addEventListener('click', () => {
+        btnFsTabCadangan.classList.add('active');
+        btnFsTabNeraca.classList.remove('active');
+        document.getElementById('fsContainerCadangan').style.display = 'block';
+        document.getElementById('fsContainerNeraca').style.display = 'none';
+        this.activeFullscreenChartType = 'cadangan';
+        this.renderFullscreenContent();
+      });
+    }
+
+    // Navigasi Bulan di Fullscreen Modal
+    const selectFsMonth = document.getElementById('selectFsMonth');
+    const btnFsPrev = document.getElementById('btnFsPrevMonth');
+    const btnFsNext = document.getElementById('btnFsNextMonth');
+
+    if (selectFsMonth) {
+      selectFsMonth.addEventListener('change', () => {
+        this.renderFullscreenContent();
+      });
+    }
+
+    if (btnFsPrev && selectFsMonth) {
+      btnFsPrev.addEventListener('click', () => {
+        if (selectFsMonth.selectedIndex > 0) {
+          selectFsMonth.selectedIndex--;
+          this.renderFullscreenContent();
+        }
+      });
+    }
+
+    if (btnFsNext && selectFsMonth) {
+      btnFsNext.addEventListener('click', () => {
+        if (selectFsMonth.selectedIndex < selectFsMonth.options.length - 1) {
+          selectFsMonth.selectedIndex++;
+          this.renderFullscreenContent();
+        }
+      });
+    }
+
+    // Download PNG dari Fullscreen Modal
+    const btnDownloadImg = document.getElementById('btnDownloadTrendImage');
+    if (btnDownloadImg) {
+      btnDownloadImg.addEventListener('click', () => {
+        const sys = this.store.filters.sistem;
+        const activeCanvas = this.activeFullscreenChartType === 'neraca' 
+          ? 'neracaDayaCanvasFullscreen' 
+          : 'trendCadanganCanvasFullscreen';
+        const prefix = this.activeFullscreenChartType === 'neraca' ? 'Neraca_Daya' : 'Trend_CAD';
+        this.chartService.exportChartImage(activeCanvas, `ROTS_${prefix}_${sys}_LayarPenuh.png`);
+      });
+    }
+
+    // Keyboard shortcut Esc to close any active modal
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      }
+    });
+  }
+
+  populateSystemSelect() {
+    const select = document.getElementById('filterSystemSelect');
+    if (!select) return;
+
+    const curVal = this.store.filters.sistem;
+    select.innerHTML = this.store.systems
+      .filter(s => s.active)
+      .map(s => `<option value="${s.code}" ${s.code === curVal ? 'selected' : ''}>${s.code}</option>`)
+      .join('');
+  }
+
+  updateThresholdBadges() {
+    const val = this.store.params.minReserveThreshold;
+    const formatted = CalculationService.formatNumber(val, 0) + ' MW';
+
+    const headerBadge = document.getElementById('headerThresholdVal');
+    if (headerBadge) headerBadge.textContent = formatted;
+
+    const quickDisplay = document.getElementById('quickThresholdDisplay');
+    if (quickDisplay) quickDisplay.textContent = formatted;
+  }
+
+  bindModals() {
+    // Close modal on click overlay or close button
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+
+    document.querySelectorAll('.modal-close-btn, .modal-close-btn-action').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal-overlay');
+        if (modal) modal.classList.remove('active');
+      });
+    });
+
+    // Form Quick Edit Threshold in modal
+    const formQuickParam = document.getElementById('formQuickThreshold');
+    if (formQuickParam) {
+      formQuickParam.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newVal = document.getElementById('inputQuickThreshold').value;
+        const note = document.getElementById('inputQuickThresholdNote').value || 'Penyesuaian cepat ambang batas operasi';
+        this.store.updateMinReserveThreshold(newVal, 'Administrator ROTS (Quick Edit)', note);
+        document.getElementById('quickThresholdModal').classList.remove('active');
+      });
+    }
+
+    // Help / Bantuan button
+    const btnHelp = document.getElementById('btnHelpModal');
+    if (btnHelp) {
+      btnHelp.addEventListener('click', () => {
+        const modal = document.getElementById('helpFormulaModal');
+        if (modal) modal.classList.add('active');
+      });
+    }
+  }
+
+  openQuickThresholdModal() {
+    const modal = document.getElementById('quickThresholdModal');
+    const input = document.getElementById('inputQuickThreshold');
+    if (modal && input) {
+      input.value = this.store.params.minReserveThreshold;
+      modal.classList.add('active');
+    }
+  }
+
+  openFullscreenChartModal(type = 'neraca') {
+    const modal = document.getElementById('fullscreenTrendModal');
+    if (!modal) return;
+
+    this.activeFullscreenChartType = type;
+    modal.classList.add('active');
+
+    const btnNeraca = document.getElementById('btnFsTabNeraca');
+    const btnCadangan = document.getElementById('btnFsTabCadangan');
+    const containerNeraca = document.getElementById('fsContainerNeraca');
+    const containerCadangan = document.getElementById('fsContainerCadangan');
+
+    if (type === 'neraca') {
+      if (btnNeraca) btnNeraca.classList.add('active');
+      if (btnCadangan) btnCadangan.classList.remove('active');
+      if (containerNeraca) containerNeraca.style.display = 'block';
+      if (containerCadangan) containerCadangan.style.display = 'none';
+    } else {
+      if (btnCadangan) btnCadangan.classList.add('active');
+      if (btnNeraca) btnNeraca.classList.remove('active');
+      if (containerCadangan) containerCadangan.style.display = 'block';
+      if (containerNeraca) containerNeraca.style.display = 'none';
+    }
+
+    this.renderFullscreenContent();
+  }
+
+  renderFullscreenContent() {
+    let records = this.store.getFilteredRecords();
+    const threshold = this.store.params.minReserveThreshold;
+    if (!records.length) return;
+
+    // Filter by selected month in dropdown
+    const selectFsMonth = document.getElementById('selectFsMonth');
+    const selectedMonth = selectFsMonth ? selectFsMonth.value : 'ALL';
+
+    if (selectedMonth && selectedMonth !== 'ALL') {
+      records = records.filter(r => r.tanggal.startsWith(selectedMonth));
+    }
+
+    // Update system badge
+    const sysBadge = document.getElementById('fullscreenModalSystemBadge');
+    if (sysBadge) sysBadge.textContent = this.store.filters.sistem;
+
+    // Hitung statistik untuk floating bar
+    let cadSum = 0;
+    let cadMin = Infinity;
+    let bpMax = -Infinity;
+    let siagaCount = 0;
+    let defisitCount = 0;
+
+    records.forEach(r => {
+      cadSum += r.cad;
+      if (r.cad < cadMin) cadMin = r.cad;
+      if (r.bp > bpMax) bpMax = r.bp;
+      if (r.statusKey === 'SIAGA') siagaCount++;
+      else if (r.statusKey === 'DEFISIT') defisitCount++;
+    });
+
+    const cadAvg = cadSum / records.length;
+
+    const elAvg = document.getElementById('fsStatCadAvg');
+    const elMax = document.getElementById('fsStatCadMax');
+    const elMin = document.getElementById('fsStatCadMin');
+    const elCrit = document.getElementById('fsStatCriticalDays');
+
+    if (elAvg) elAvg.textContent = `${CalculationService.formatNumber(cadAvg, 0)} MW`;
+    if (elMax) elMax.textContent = `${CalculationService.formatNumber(bpMax, 0)} MW`;
+    if (elMin) elMin.textContent = `${CalculationService.formatNumber(cadMin, 0)} MW`;
+    if (elCrit) elCrit.textContent = `${siagaCount} Siaga / ${defisitCount} Defisit`;
+
+    if (this.activeFullscreenChartType === 'neraca') {
+      this.chartService.renderNeracaDayaChart('neracaDayaCanvasFullscreen', records);
+    } else {
+      this.chartService.renderFullscreenTrendChart('trendCadanganCanvasFullscreen', records, threshold);
+    }
+  }
+
+  renderDashboard() {
+    const selectedRecord = this.store.getSelectedRecord();
+    const filteredRecords = this.store.getFilteredRecords();
+    const threshold = this.store.params.minReserveThreshold;
+
+    if (!selectedRecord || !filteredRecords.length) return;
+
+    // 1. Render 6 KPI Cards (Berdasarkan data hari terpilih / seed 01 Juli 2026)
+    this.updateKpiCards(selectedRecord);
+
+    // 2. Status Hero Widget (Status Sistem Saat Ini + Gauge)
+    this.updateStatusHero(selectedRecord, threshold);
+
+    // 3. Ringkasan Periode Card
+    this.updatePeriodSummaryCard(filteredRecords);
+
+    // 4. Neraca Daya ROTS (Excel Summary & Stacked Area Chart)
+    this.updateNeracaDayaWidget(filteredRecords);
+
+    // 5. Trend Cadangan Daya Chart
+    this.chartService.renderTrendChart('trendCadanganCanvas', filteredRecords, threshold);
+
+    // 6. DMP vs BP Monthly Bar Chart
+    const monthlySummary = this.store.getMonthlySummary(filteredRecords);
+    this.chartService.renderDmpBpChart('dmpBpBarCanvas', monthlySummary);
+
+    // 6. Ringkasan Status Donut Chart
+    const statusCounts = {
+      normal: monthlySummary.summaryRow.normal,
+      siaga: monthlySummary.summaryRow.siaga,
+      defisit: monthlySummary.summaryRow.defisit
+    };
+    this.chartService.renderStatusDonut('statusDonutCanvas', statusCounts);
+
+    // 7. Donut legend numbers
+    const totalDays = statusCounts.normal + statusCounts.siaga + statusCounts.defisit;
+    document.getElementById('donutCountNormal').textContent = `${statusCounts.normal} hari (${((statusCounts.normal/totalDays)*100).toFixed(1)}%)`;
+    document.getElementById('donutCountSiaga').textContent = `${statusCounts.siaga} hari (${((statusCounts.siaga/totalDays)*100).toFixed(1)}%)`;
+    document.getElementById('donutCountDefisit').textContent = `${statusCounts.defisit} hari (${((statusCounts.defisit/totalDays)*100).toFixed(1)}%)`;
+
+    // 8. Ringkasan Bulanan Table di Dashboard
+    this.renderDashboardMonthlyTable(monthlySummary);
+
+    // 9. Komponen Outage Widget
+    this.updateOutageWidget(selectedRecord);
+  }
+
+  updateDaySpecificWidgets() {
+    const selected = this.store.getSelectedRecord();
+    const threshold = this.store.params.minReserveThreshold;
+    if (!selected) return;
+
+    this.updateKpiCards(selected);
+    this.updateStatusHero(selected, threshold);
+    this.updateOutageWidget(selected);
+  }
+
+  updateKpiCards(rec) {
+    const elDmn = document.getElementById('kpiValDmn');
+    const elPlanned = document.getElementById('kpiValPlanned');
+    const elUnplanned = document.getElementById('kpiValUnplanned');
+    const elDmp = document.getElementById('kpiValDmp');
+    const elBp = document.getElementById('kpiValBp');
+    const elCad = document.getElementById('kpiValCad');
+
+    if (elDmn) elDmn.textContent = CalculationService.formatNumber(rec.dmn);
+    if (elPlanned) elPlanned.textContent = CalculationService.formatNumber(rec.plannedOutage);
+    if (elUnplanned) elUnplanned.textContent = CalculationService.formatNumber(rec.unplannedOutage);
+    if (elDmp) elDmp.textContent = CalculationService.formatNumber(rec.dmp);
+    if (elBp) elBp.textContent = CalculationService.formatNumber(rec.bp);
+    if (elCad) elCad.textContent = CalculationService.formatNumber(rec.cad);
+  }
+
+  updateStatusHero(rec, threshold) {
+    const elDate = document.getElementById('statusHeroDate');
+    const elStatusText = document.getElementById('statusHeroText');
+    const elCondition = document.getElementById('statusHeroCondition');
+    const elGaugeCad = document.getElementById('gaugeCurrentCadVal');
+    const elLegendThresh1 = document.getElementById('legendThresholdNormal');
+    const elLegendThresh2 = document.getElementById('legendThresholdSiaga');
+
+    if (elDate) elDate.textContent = `Data per ${CalculationService.formatDateIndo(rec.tanggal)}`;
+    if (elStatusText) {
+      elStatusText.textContent = rec.statusLabel;
+      elStatusText.className = `status-main-text status-text-${rec.statusKey.toLowerCase()}`;
+    }
+
+    if (elCondition) {
+      let condText = '';
+      if (rec.statusKey === 'NORMAL') {
+        condText = `CAD ≥ ${CalculationService.formatNumber(threshold)} MW`;
+        elCondition.className = 'status-condition-pill pill-normal';
+      } else if (rec.statusKey === 'SIAGA') {
+        condText = `CAD < ${CalculationService.formatNumber(threshold)} MW`;
+        elCondition.className = 'status-condition-pill pill-siaga';
+      } else {
+        condText = 'CAD < 0 MW';
+        elCondition.className = 'status-condition-pill pill-defisit';
+      }
+      elCondition.textContent = condText;
+    }
+
+    if (elGaugeCad) {
+      elGaugeCad.textContent = `${CalculationService.formatNumber(rec.cad)} MW`;
+    }
+
+    if (elLegendThresh1) elLegendThresh1.textContent = `CAD ≥ ${CalculationService.formatNumber(threshold, 0)} MW`;
+    if (elLegendThresh2) elLegendThresh2.textContent = `0 ≤ CAD < ${CalculationService.formatNumber(threshold, 0)} MW`;
+
+    // Render Semi-circular Gauge hanya jika elemen sedang terlihat
+    const gaugeCanvas = document.getElementById('statusGaugeCanvas');
+    if (gaugeCanvas && gaugeCanvas.offsetParent !== null) {
+      this.chartService.renderGauge('statusGaugeCanvas', rec.cad, threshold);
+    }
+  }
+
+  updateNeracaDayaWidget(records) {
+    const summary = this.store.getPeriodSummary(records);
+    const sys = this.store.filters.sistem;
+
+    const elTitle = document.getElementById('nerdaChartTitle');
+    if (elTitle) elTitle.textContent = `Neraca Daya ROTS Sistem ${sys}`;
+
+    const elDmn = document.getElementById('nerdaDmnVal');
+    const elFoder = document.getElementById('nerdaFoderVal');
+    const elDmpAvg = document.getElementById('nerdaDmpAvgVal');
+    const elBpMax = document.getElementById('nerdaBpMaxVal');
+    const elBpMaxDate = document.getElementById('nerdaBpMaxDate');
+    const elCadAvg = document.getElementById('nerdaCadAvgVal');
+    const elCadMin = document.getElementById('nerdaCadMinVal');
+    const elCadMinDate = document.getElementById('nerdaCadMinDate');
+
+    // Format tanggal modern untuk pill badge e.g. "2026-10-27" -> "27 Okt '26"
+    const formatModernBadgeDate = (dateStr) => {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length < 3) return dateStr;
+      const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const mIdx = parseInt(parts[1], 10);
+      return `${parseInt(parts[2], 10)} ${monthNames[mIdx] || parts[1]} '${parts[0].substring(2)}`;
+    };
+
+    if (elDmn) elDmn.textContent = CalculationService.formatNumber(summary.dmn, 0);
+    if (elFoder) elFoder.textContent = `${(summary.foder * 100).toFixed(2).replace('.', ',')}%`;
+    if (elDmpAvg) elDmpAvg.textContent = CalculationService.formatNumber(summary.dmpAvg, 0);
+    if (elBpMax) elBpMax.textContent = CalculationService.formatNumber(summary.bpMax, 0);
+    if (elBpMaxDate) elBpMaxDate.textContent = formatModernBadgeDate(summary.bpMaxDate);
+    if (elCadAvg) elCadAvg.textContent = CalculationService.formatNumber(summary.cadAvg, 0);
+    if (elCadMin) elCadMin.textContent = CalculationService.formatNumber(summary.cadMin, 0);
+    if (elCadMinDate) elCadMinDate.textContent = formatModernBadgeDate(summary.cadMinDate);
+
+    // Render Neraca Daya Chart
+    this.chartService.renderNeracaDayaChart('neracaDayaCanvas', records);
+  }
+
+  updatePeriodSummaryCard(records) {
+    const summary = this.store.getPeriodSummary(records);
+
+    const elDmpAvg = document.getElementById('periodDmpAvg');
+    const elBpMax = document.getElementById('periodBpMax');
+    const elCadAvg = document.getElementById('periodCadAvg');
+    const elCadMin = document.getElementById('periodCadMin');
+
+    if (elDmpAvg) elDmpAvg.textContent = `${CalculationService.formatNumber(summary.dmpAvg)} MW`;
+    if (elBpMax) elBpMax.textContent = `${CalculationService.formatNumber(summary.bpMax)} MW`;
+    if (elCadAvg) elCadAvg.textContent = `${CalculationService.formatNumber(summary.cadAvg)} MW`;
+    if (elCadMin) {
+      elCadMin.textContent = `${CalculationService.formatNumber(summary.cadMin)} MW`;
+      if (summary.cadMin < 0) {
+        elCadMin.className = 'metric-value val-defisit';
+      } else {
+        elCadMin.className = 'metric-value';
+      }
+    }
+  }
+
+  renderDashboardMonthlyTable(monthlySummary) {
+    const tbody = document.getElementById('dashboardMonthlyTableBody');
+    const tfoot = document.getElementById('dashboardMonthlyTableFoot');
+    const fullTbody = document.getElementById('fullMonthlyTableBody');
+    if (!tbody || !tfoot) return;
+
+    const rowsHtml = monthlySummary.rows.map(m => {
+      const cadMinClass = m.cadMin < 0 ? 'text-danger' : '';
+      return `
+        <tr>
+          <td style="font-weight: 600;">${m.monthLabel}</td>
+          <td class="text-right">${CalculationService.formatNumber(m.dmpAvg)}</td>
+          <td class="text-right">${CalculationService.formatNumber(m.bpMax)}</td>
+          <td class="text-right">${CalculationService.formatNumber(m.cadAvg)}</td>
+          <td class="text-right ${cadMinClass}">${CalculationService.formatNumber(m.cadMin)}</td>
+          <td class="text-center" style="color: #059669; font-weight: 700;">${m.normal}</td>
+          <td class="text-center" style="color: #D97706; font-weight: 700;">${m.siaga}</td>
+          <td class="text-center" style="color: #DC2626; font-weight: 700;">${m.defisit}</td>
+          <td class="text-center" style="font-weight: 700;">${m.totalDays}</td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.innerHTML = rowsHtml;
+    if (fullTbody) fullTbody.innerHTML = rowsHtml;
+
+    const s = monthlySummary.summaryRow;
+    const summaryCadMinClass = s.cadMin < 0 ? 'text-danger' : '';
+    tfoot.innerHTML = `
+      <tr>
+        <td>TOTAL / RATA-RATA</td>
+        <td class="text-right">${CalculationService.formatNumber(s.dmpAvg)}</td>
+        <td class="text-right">${CalculationService.formatNumber(s.bpMax)}</td>
+        <td class="text-right">${CalculationService.formatNumber(s.cadAvg)}</td>
+        <td class="text-right ${summaryCadMinClass}">${CalculationService.formatNumber(s.cadMin)}</td>
+        <td class="text-center" style="color: #059669; font-weight: 800;">${s.normal}</td>
+        <td class="text-center" style="color: #D97706; font-weight: 800;">${s.siaga}</td>
+        <td class="text-center" style="color: #DC2626; font-weight: 800;">${s.defisit}</td>
+        <td class="text-center" style="font-weight: 800;">${s.totalDays}</td>
+      </tr>
+    `;
+  }
+
+  updateOutageWidget(rec) {
+    const elSubtitle = document.getElementById('outageWidgetDate');
+    if (elSubtitle) elSubtitle.textContent = `(${CalculationService.formatDateIndo(rec.tanggal)})`;
+
+    // Planned Outage items
+    const elPo = document.getElementById('outagePoVal');
+    const elMo = document.getElementById('outageMoVal');
+    const elTotalPlanned = document.getElementById('outageTotalPlannedVal');
+
+    if (elPo) elPo.textContent = CalculationService.formatNumber(rec.po);
+    if (elMo) elMo.textContent = CalculationService.formatNumber(rec.mo);
+    if (elTotalPlanned) elTotalPlanned.textContent = CalculationService.formatNumber(rec.plannedOutage);
+
+    // Unplanned Outage items
+    const elFo = document.getElementById('outageFoVal');
+    const elFoEp = document.getElementById('outageFoEpVal');
+    const elDerKit = document.getElementById('outageDerKitVal');
+    const elDerTrans = document.getElementById('outageDerTransVal');
+    const elVarmus = document.getElementById('outageVarmusVal');
+    const elTotalUnplanned = document.getElementById('outageTotalUnplannedVal');
+
+    if (elFo) elFo.textContent = CalculationService.formatNumber(rec.fo);
+    if (elFoEp) elFoEp.textContent = CalculationService.formatNumber(rec.foEp);
+    if (elDerKit) elDerKit.textContent = CalculationService.formatNumber(rec.derKit);
+    if (elDerTrans) elDerTrans.textContent = CalculationService.formatNumber(rec.derTrans);
+    if (elVarmus) elVarmus.textContent = CalculationService.formatNumber(rec.varmus);
+    if (elTotalUnplanned) elTotalUnplanned.textContent = CalculationService.formatNumber(rec.unplannedOutage);
+  }
+}
+
+// Bootstrap application on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  window.ROTS_APP = new RotsApp();
+  window.ROTS_APP.init();
+});

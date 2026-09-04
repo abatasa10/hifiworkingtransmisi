@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROTS – Rencana Operasi Tahunan Semester | PLN Transmisi</title>
+  <meta name="description" content="Sistem Informasi dan Monitoring Cadangan Daya Operasi Sistem Tenaga Listrik PLN Transmisi">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- SheetJS (xlsx) for Excel Import & Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- ======================================================================
+         SIDEBAR NAVIGATION
+         ====================================================================== -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="sidebar-brand">
+          <img src="assets/pln-logo.svg" alt="PLN Transmisi Logo">
+        </a>
+      </div>
+
+      <div class="sidebar-menu-wrapper">
+        <ul class="sidebar-nav">
+          <li class="sidebar-item active">
+            <a class="sidebar-link" data-view="dashboard" id="menuDashboard">
+              <i class="fa fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="kondisi-harian" id="menuKondisiHarian">
+              <i class="fa fa-calendar-alt"></i>
+              <span>Kondisi Harian</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="rencana-outage" id="menuRencanaOutage">
+              <i class="fa fa-wrench"></i>
+              <span>Rencana Outage</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="ringkasan-bulanan" id="menuRingkasanBulanan">
+              <i class="fa fa-calendar-check"></i>
+              <span>Ringkasan Bulanan</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="detail-pembangkit" id="menuDetailPembangkit">
+              <i class="fa fa-bolt"></i>
+              <span>Detail Pembangkit</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="parameter" id="menuParameter">
+              <i class="fa fa-sliders-h"></i>
+              <span>Parameter</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="master-data" id="menuMasterData">
+              <i class="fa fa-database"></i>
+              <span>Master Data</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="import-data" id="menuImportData">
+              <i class="fa fa-file-import"></i>
+              <span>Import Data</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="laporan" id="menuLaporan">
+              <i class="fa fa-file-alt"></i>
+              <span>Laporan</span>
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" data-view="pengaturan" id="menuPengaturan">
+              <i class="fa fa-cog"></i>
+              <span>Pengaturan</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <img src="assets/transmission-tower.svg" class="sidebar-tower-bg" alt="Transmission Tower">
+        <div class="about-card">
+          <div class="about-title">Tentang ROTS</div>
+          <div class="about-desc">
+            ROTS adalah sistem informasi untuk monitoring cadangan daya sistem transmisi PLN berdasarkan rencana operasi tahunan semester.
+          </div>
+        </div>
+        <div class="sidebar-copyright">
+          &copy; 2026 PLN Transmisi<br>All rights reserved.
+        </div>
+      </div>
+    </aside>
+
+    <!-- ======================================================================
+         MAIN CONTENT AREA
+         ====================================================================== -->
+    <main class="app-main">
+      
+      <!-- Top Application Header -->
+      <header class="app-header">
+        <div class="header-title-area">
+          <div class="header-app-name">
+            ROTS
+            <span class="badge-version">v2.4 PLN</span>
+          </div>
+          <div class="header-subtitle">
+            Rencana Operasi Tahunan Semester (Reserve Outlook Transmission System)
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="header-btn" id="btnAppWindowFullscreen" title="Layar Penuh Seluruh Aplikasi">
+            <i class="fa fa-expand-arrows-alt"></i>
+            <span>Layar Penuh</span>
+          </button>
+
+          <button class="header-btn" id="btnHelpModal" title="Panduan Formula Perhitungan">
+            <i class="fa fa-question-circle"></i>
+            <span>Bantuan</span>
+          </button>
+          
+          <button class="header-btn btn-primary" id="btnGlobalExport" title="Ekspor Data ke Excel">
+            <i class="fa fa-download"></i>
+            <span>Export</span>
+          </button>
+
+          <div class="notification-badge-btn" title="Pemberitahuan Sistem">
+            <i class="fa fa-bell"></i>
+            <span class="notification-count">3</span>
+          </div>
+
+          <div class="user-profile-badge" title="Profil Administrator">
+            <div class="user-avatar">AD</div>
+            <span class="user-name">Admin</span>
+            <i class="fa fa-chevron-down" style="font-size: 10px; color: var(--text-muted);"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Global Filter Bar -->
+      <section class="filter-bar">
+        <div class="filter-group">
+          <!-- Filter Sistem -->
+          <div class="filter-control">
+            <label class="filter-label" for="filterSystemSelect">Sistem</label>
+            <select class="filter-select" id="filterSystemSelect">
+              <option value="Jamali">Jamali</option>
+              <option value="Sumatera">Sumatera</option>
+              <option value="Interkoneksi">Interkoneksi</option>
+              <option value="Khatulistiwa">Khatulistiwa</option>
+              <option value="Sulbagsel">Sulbagsel</option>
+              <option value="Sulutgo">Sulutgo</option>
+            </select>
+          </div>
+
+          <!-- Filter Periode (Semester) -->
+          <div class="filter-control">
+            <label class="filter-label" for="filterSemesterSelect">Periode (Semester)</label>
+            <select class="filter-select" id="filterSemesterSelect">
+              <option value="Semester II 2026">Semester II 2026</option>
+              <option value="Semester I 2026">Semester I 2026</option>
+            </select>
+          </div>
+
+          <!-- Periode Tanggal Badge -->
+          <div class="filter-control">
+            <label class="filter-label">Periode Tanggal</label>
+            <div class="date-range-badge">
+              <i class="fa fa-calendar-alt"></i>
+              <span id="displayDateRange">01 Jul 2026 - 31 Des 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batas Cadangan Minimum (Editable Admin Badge) -->
+        <div class="threshold-quick-badge" id="quickEditThresholdBadge" title="Klik untuk mengubah Batas Cadangan Minimum">
+          <div class="threshold-info-group">
+            <span class="threshold-title">Batas Cadangan Minimum</span>
+            <span class="threshold-val" id="headerThresholdVal">2.000 MW</span>
+          </div>
+          <i class="fa fa-pencil-alt threshold-edit-icon"></i>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW: DASHBOARD (Halaman Utama)
+           ==================================================================== -->
+      <div class="view-container">
+        <section class="view-section active" id="view-dashboard">
+          
+          <!-- ROW 1: EXECUTIVE COCKPIT (STATUS SISTEM + 6 KPI HARIAN) -->
+          <div class="dashboard-top-cockpit">
+            
+            <!-- STATUS SISTEM SAAT INI WIDGET -->
+            <div class="status-hero-card">
+              
+              <!-- Left: Big Status & Condition -->
+              <div class="status-left-panel">
+                <span class="legend-title">STATUS SISTEM SAAT INI</span>
+                <span class="status-subtitle-date" id="statusHeroDate">Data per 01 Juli 2026</span>
+                <div class="status-main-text status-text-siaga" id="statusHeroText">SIAGA</div>
+                <div class="status-condition-pill pill-siaga" id="statusHeroCondition">
+                  CAD &lt; 2.000 MW
+                </div>
+              </div>
+
+              <!-- Center: Semi-circular Radial Gauge -->
+              <div class="status-gauge-container">
+                <canvas id="statusGaugeCanvas" class="gauge-canvas"></canvas>
+                <div class="gauge-value-display">
+                  <span class="gauge-cad-number" id="gaugeCurrentCadVal">1.943,27 MW</span>
+                  <span class="gauge-cad-label">CAD Saat Ini</span>
+                </div>
+              </div>
+
+              <!-- Right: Status Reference Thresholds Box -->
+              <div class="status-legend-box">
+                <div class="legend-title">Keterangan Status</div>
+                
+                <div class="legend-row">
+                  <div class="legend-indicator">
+                    <span class="legend-dot dot-normal"></span>
+                    <span>NORMAL</span>
+                  </div>
+                  <span class="legend-formula" id="legendThresholdNormal">CAD &ge; 2.000 MW</span>
+                </div>
+
+                <div class="legend-row">
+                  <div class="legend-indicator">
+                    <span class="legend-dot dot-siaga"></span>
+                    <span>SIAGA</span>
+                  </div>
+                  <span class="legend-formula" id="legendThresholdSiaga">0 &le; CAD &lt; 2.000 MW</span>
+                </div>
+
+                <div class="legend-row">
+                  <div class="legend-indicator">
+                    <span class="legend-dot dot-defisit"></span>
+                    <span>DEFISIT</span>
+                  </div>
+                  <span class="legend-formula">CAD &lt; 0 MW</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 6 KPI CARDS (3x2 Grid: Generation & Outages / Demand & Reserve) -->
+            <div class="dashboard-kpi-grid">
+              
+              <!-- 1. DMN -->
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">DMN</span>
+                    <span class="kpi-desc">Daya Mampu Netto</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-blue">
+                    <i class="fa fa-wave-square"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValDmn">49.040,62</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+              <!-- 2. Planned Outage -->
+              <div class="kpi-card kpi-po">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">Planned Outage</span>
+                    <span class="kpi-desc">PO + MO</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-amber">
+                    <i class="fa fa-wrench"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValPlanned">4.770,08</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+              <!-- 3. Unplanned Outage -->
+              <div class="kpi-card kpi-uo">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">Unplanned Outage</span>
+                    <span class="kpi-desc" title="FO + Derating">FO + Derating</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-red">
+                    <i class="fa fa-exclamation-triangle"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValUnplanned">8.377,06</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+              <!-- 4. DMP -->
+              <div class="kpi-card kpi-dmp">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">DMP</span>
+                    <span class="kpi-desc">Daya Mampu Pasok</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-green">
+                    <i class="fa fa-industry"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValDmp">35.893,48</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+              <!-- 5. BP -->
+              <div class="kpi-card kpi-bp">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">BP</span>
+                    <span class="kpi-desc">Beban Puncak</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-purple">
+                    <i class="fa fa-chart-line"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValBp">33.950,21</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+              <!-- 6. CAD -->
+              <div class="kpi-card kpi-cad">
+                <div class="kpi-top">
+                  <div class="kpi-labels">
+                    <span class="kpi-title">CAD</span>
+                    <span class="kpi-desc">Cadangan Daya</span>
+                  </div>
+                  <div class="kpi-icon-badge kpi-icon-teal">
+                    <i class="fa fa-battery-half"></i>
+                  </div>
+                </div>
+                <div class="kpi-value-row">
+                  <span class="kpi-value" id="kpiValCad">1.943,27</span>
+                  <span class="kpi-unit">MW</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Hidden period summary elements for JS compatibility -->
+            <div style="display:none;" aria-hidden="true">
+              <span id="periodDmpAvg"></span>
+              <span id="periodBpMax"></span>
+              <span id="periodCadAvg"></span>
+              <span id="periodCadMin"></span>
+            </div>
+
+          </div>
+
+          <!-- NERACA DAYA ROTS (MODERN EXECUTIVE ANALYTICS & STACKED AREA CHART) -->
+          <div class="card nerda-card-modern">
+            <!-- Modern Executive Summary Metric Strip -->
+            <div class="nerda-modern-metrics-bar">
+              
+              <!-- DMN (Daya Mampu Netto) -->
+              <div class="modern-metric-pill metric-pill-primary">
+                <span class="pill-chip chip-primary">Netto</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-bolt"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">DMN Sistem</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num" id="nerdaDmnVal">49.041</span>
+                    <span class="metric-pill-unit">MW</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FODER -->
+              <div class="modern-metric-pill metric-pill-purple">
+                <span class="pill-chip chip-purple">Target</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-percentage"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">Asumsi FODER</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num" id="nerdaFoderVal">15,69%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DMP Rata-rata -->
+              <div class="modern-metric-pill metric-pill-cyan">
+                <span class="pill-chip chip-cyan">Pasokan</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-wave-square"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">DMP Rata-rata</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num" id="nerdaDmpAvgVal">36.649</span>
+                    <span class="metric-pill-unit">MW</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Beban Puncak Max -->
+              <div class="modern-metric-pill metric-pill-danger">
+                <span class="pill-chip chip-danger" id="nerdaBpMaxDate">27 Okt '26</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-fire"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">BP Maksimum</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num" id="nerdaBpMaxVal">35.998</span>
+                    <span class="metric-pill-unit">MW</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cadangan Rata-rata -->
+              <div class="modern-metric-pill metric-pill-success">
+                <span class="pill-chip chip-success">Normal</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-shield-alt"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">CAD Rata-rata</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num" id="nerdaCadAvgVal">2.790</span>
+                    <span class="metric-pill-unit">MW</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cadangan Terendah (Kritis) -->
+              <div class="modern-metric-pill metric-pill-warning">
+                <span class="pill-chip chip-warning" id="nerdaCadMinDate">18 Agu '26</span>
+                <div class="metric-pill-icon">
+                  <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <div class="metric-pill-content">
+                  <div class="metric-pill-title">CAD Terendah</div>
+                  <div class="metric-pill-val-row">
+                    <span class="metric-pill-num text-warning" id="nerdaCadMinVal">1.024</span>
+                    <span class="metric-pill-unit">MW</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Chart Header & Canvas -->
+            <div class="card-header nerda-header-modern">
+              <div class="card-title">
+                <div class="title-glow-dot"></div>
+                <span id="nerdaChartTitle">Neraca Daya ROTS Sistem Jamali</span>
+                <span class="modern-title-badge">Semester II 2026</span>
+              </div>
+              <div class="nerda-header-actions">
+                <div class="nerda-mini-legend">
+                  <span class="legend-chip"><span class="legend-dot dot-dmp"></span> DMP</span>
+                  <span class="legend-chip"><span class="legend-dot dot-po"></span> Planned</span>
+                  <span class="legend-chip"><span class="legend-dot dot-uo"></span> Unplanned</span>
+                  <span class="legend-chip"><span class="legend-line line-dmn"></span> DMN</span>
+                  <span class="legend-chip"><span class="legend-line line-bp"></span> BP</span>
+                </div>
+                <button class="card-action-btn" id="btnExpandNeracaDaya" title="Perbesar Layar Penuh (Fullscreen)">
+                  <i class="fa fa-expand"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding-top: 6px; padding-bottom: 8px;">
+              <div class="chart-wrapper" style="height: 230px;">
+                <canvas id="neracaDayaCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 2: CHARTS (TREND CADANGAN, DMP vs BP, RINGKASAN STATUS) -->
+          <div class="dashboard-charts-grid">
+            
+            <!-- Trend Cadangan Daya -->
+            <div class="card chart-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa fa-chart-line" style="color: var(--pln-blue-primary);"></i>
+                  Trend Cadangan Daya
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="card-subtitle">CAD vs Batas Threshold</span>
+                  <button class="card-action-btn" id="btnExpandTrend" title="Perbesar Layar Penuh (Fullscreen)">
+                    <i class="fa fa-expand"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-wrapper">
+                  <canvas id="trendCadanganCanvas"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- DMP vs BP (Rata-rata Bulanan) -->
+            <div class="card chart-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa fa-chart-bar" style="color: #10B981;"></i>
+                  DMP vs BP (Rata-rata Bulanan)
+                </div>
+                <div class="card-subtitle">MW per Bulan</div>
+              </div>
+              <div class="card-body">
+                <div class="chart-wrapper">
+                  <canvas id="dmpBpBarCanvas"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ringkasan Status Donut -->
+            <div class="card chart-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa fa-chart-pie" style="color: #F59E0B;"></i>
+                  Ringkasan Status
+                </div>
+                <div class="card-subtitle">Distribusi Hari</div>
+              </div>
+              <div class="card-body">
+                <div class="chart-wrapper" style="height: 140px;">
+                  <canvas id="statusDonutCanvas"></canvas>
+                  <div class="chart-center-overlay" id="donutCenterOverlay">
+                    <div class="center-val">184</div>
+                    <div class="center-label">Total Hari</div>
+                  </div>
+                </div>
+
+                <div class="donut-legend-list">
+                  <div class="donut-legend-item">
+                    <div class="legend-indicator">
+                      <span class="legend-dot dot-normal"></span>
+                      <span>Normal</span>
+                    </div>
+                    <span style="font-weight: 700; color: #059669;" id="donutCountNormal">120 hari (65,2%)</span>
+                  </div>
+                  <div class="donut-legend-item">
+                    <div class="legend-indicator">
+                      <span class="legend-dot dot-siaga"></span>
+                      <span>Siaga</span>
+                    </div>
+                    <span style="font-weight: 700; color: #D97706;" id="donutCountSiaga">45 hari (24,5%)</span>
+                  </div>
+                  <div class="donut-legend-item">
+                    <div class="legend-indicator">
+                      <span class="legend-dot dot-defisit"></span>
+                      <span>Defisit</span>
+                    </div>
+                    <span style="font-weight: 700; color: #DC2626;" id="donutCountDefisit">19 hari (10,3%)</span>
+                  </div>
+                </div>
+
+                <div style="text-align: center;">
+                  <a href="javascript:void(0)" class="donut-link-more" id="linkLihatDetailHarian">
+                    Lihat Detail Harian <i class="fa fa-arrow-right"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ROW 3: RINGKASAN BULANAN TABLE & KOMPONEN OUTAGE WIDGET -->
+          <div class="dashboard-bottom-grid">
+            
+            <!-- RINGKASAN BULANAN TABLE -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa fa-table" style="color: var(--pln-navy-dark);"></i>
+                  Ringkasan Bulanan
+                </div>
+                <div class="card-subtitle">Semester II 2026</div>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div class="table-responsive" style="border: none;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Bulan</th>
+                        <th class="text-right">DMP Average (MW)</th>
+                        <th class="text-right">BP Max (MW)</th>
+                        <th class="text-right">CAD Average (MW)</th>
+                        <th class="text-right">CAD Min (MW)</th>
+                        <th class="text-center">Normal</th>
+                        <th class="text-center">Siaga</th>
+                        <th class="text-center">Defisit</th>
+                        <th class="text-center">Total Hari</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashboardMonthlyTableBody">
+                      <!-- Populated dynamically via JS -->
+                    </tbody>
+                    <tfoot id="dashboardMonthlyTableFoot">
+                      <!-- Total / Rata-rata row -->
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- KOMPONEN OUTAGE WIDGET -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa fa-exclamation-circle" style="color: #D97706;"></i>
+                  Komponen Outage <span class="card-subtitle" id="outageWidgetDate">(01 Jul 2026)</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="outage-breakdown-grid">
+                  
+                  <!-- Planned Outage -->
+                  <div class="outage-box">
+                    <div class="outage-box-title planned-title">
+                      <span>Planned Outage (MW)</span>
+                      <i class="fa fa-wrench"></i>
+                    </div>
+                    <div class="outage-list">
+                      <div class="outage-list-item">
+                        <span class="outage-name">PO (Planned Outage)</span>
+                        <span class="outage-val" id="outagePoVal">4.490,55</span>
+                      </div>
+                      <div class="outage-list-item">
+                        <span class="outage-name">MO (Maintenance Outage)</span>
+                        <span class="outage-val" id="outageMoVal">279,53</span>
+                      </div>
+                    </div>
+                    <div class="outage-total-row planned-total">
+                      <span>Total Planned Outage</span>
+                      <span id="outageTotalPlannedVal">4.770,08</span>
+                    </div>
+                  </div>
+
+                  <!-- Unplanned Outage -->
+                  <div class="outage-box">
+                    <div class="outage-box-title unplanned-title">
+                      <span>Unplanned Outage (MW)</span>
+                      <i class="fa fa-bolt"></i>
+                    </div>
+                    <div class="outage-list">
+                      <div class="outage-list-item">
+                        <span class="outage-name">FO</span>
+                        <span class="outage-val" id="outageFoVal">1.481,44</span>
+                      </div>
+                      <div class="outage-list-item">
+                        <span class="outage-name">FO EP</span>
+                        <span class="outage-val" id="outageFoEpVal">4.020,28</span>
+                      </div>
+                      <div class="outage-list-item">
+                        <span class="outage-name">DER KIT</span>
+                        <span class="outage-val" id="outageDerKitVal">1.481,44</span>
+                      </div>
+                      <div class="outage-list-item">
+                        <span class="outage-name">DER TRANS</span>
+                        <span class="outage-val" id="outageDerTransVal">0,00</span>
+                      </div>
+                      <div class="outage-list-item">
+                        <span class="outage-name">VARMUS</span>
+                        <span class="outage-val" id="outageVarmusVal">1.393,89</span>
+                      </div>
+                    </div>
+                    <div class="outage-total-row unplanned-total">
+                      <span>Total Unplanned Outage</span>
+                      <span id="outageTotalUnplannedVal">8.377,06</span>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="outage-footnote">
+                  * Angka dalam MW (Mega Watt). Klik tanggal mana pun di halaman Kondisi Harian untuk melihat rincian historis.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ==================================================================
+             VIEW: KONDISI HARIAN
+             ================================================================== -->
+        <section class="view-section" id="view-kondisi-harian">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-calendar-alt" style="color: var(--pln-blue-primary);"></i>
+                Tabel Kondisi Harian Sistem Pembangkitan & Operasi
+              </div>
+              <div class="header-actions">
+                <button class="header-btn btn-primary" id="btnExportDailyTable">
+                  <i class="fa fa-file-excel"></i>
+                  <span>Export Excel</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <!-- Toolbar Filter & Search -->
+              <div class="table-toolbar">
+                <div class="table-search-input">
+                  <i class="fa fa-search" style="color: var(--text-muted);"></i>
+                  <input type="text" id="dailyTableSearch" placeholder="Cari tanggal, sistem, atau status...">
+                </div>
+
+                <div class="filter-group">
+                  <div class="filter-control">
+                    <select class="filter-select" id="dailyStatusFilter">
+                      <option value="ALL">Semua Status</option>
+                      <option value="NORMAL">NORMAL</option>
+                      <option value="SIAGA">SIAGA</option>
+                      <option value="DEFISIT">DEFISIT</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-control">
+                    <select class="filter-select" id="dailyPageSize">
+                      <option value="15">15 per halaman</option>
+                      <option value="25" selected>25 per halaman</option>
+                      <option value="50">50 per halaman</option>
+                      <option value="100">100 per halaman</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 16 Columns Daily Table -->
+              <div class="table-responsive">
+                <table class="data-table" id="dailyTable">
+                  <thead>
+                    <tr>
+                      <th class="sortable" data-sort="tanggal">Tanggal <i class="fa fa-sort"></i></th>
+                      <th>Sistem</th>
+                      <th class="text-right sortable" data-sort="dmn">DMN (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="po">PO (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="mo">MO (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="plannedOutage" style="color: #D97706;">Planned Outage <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="fo">FO (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="foEp">FO EP <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="derKit">DER KIT <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="derTrans">DER TRANS <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="varmus">VARMUS <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="unplannedOutage" style="color: #DC2626;">Unplanned Outage <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="dmp" style="color: #059669;">DMP (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="bp" style="color: #7C3AED;">BP (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-right sortable" data-sort="cad" style="color: #0D9488;">CAD (MW) <i class="fa fa-sort"></i></th>
+                      <th class="text-center sortable" data-sort="statusKey">Status <i class="fa fa-sort"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody id="dailyTableBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              <div class="table-pagination">
+                <div id="dailyPaginationInfo">Menampilkan 1 - 25 dari 184 data</div>
+                <div class="pagination-controls" id="dailyPaginationControls"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: RENCANA OUTAGE
+             ================================================================== -->
+        <section class="view-section" id="view-rencana-outage">
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-tools" style="color: #D97706;"></i>
+                Analisis & Dekomposisi Komponen Outage
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="header-btn outage-tab-btn active" data-tab="planned">Planned Outage (PO + MO)</button>
+                <button class="header-btn outage-tab-btn" data-tab="unplanned">Unplanned Outage</button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <!-- Tab Planned Outage Content -->
+              <div id="outageTabPlannedContent">
+                <div class="dashboard-kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata Planned Outage</span>
+                    <span class="kpi-value" id="metricAvgPlanned" style="color: #D97706;">0,00 MW</span>
+                    <span class="kpi-desc">Total Rencana Pemeliharaan</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata PO</span>
+                    <span class="kpi-value" id="metricAvgPO">0,00 MW</span>
+                    <span class="kpi-desc">Planned Outage Terjadwal</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata MO</span>
+                    <span class="kpi-value" id="metricAvgMO">0,00 MW</span>
+                    <span class="kpi-desc">Maintenance Outage Rutin</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Unplanned Outage Content -->
+              <div id="outageTabUnplannedContent" style="display: none;">
+                <div class="dashboard-kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata Unplanned</span>
+                    <span class="kpi-value" id="metricAvgUnplanned" style="color: #DC2626;">0,00 MW</span>
+                    <span class="kpi-desc">Total Gangguan & Derating</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata FO</span>
+                    <span class="kpi-value" id="metricAvgFO">0,00 MW</span>
+                    <span class="kpi-desc">Forced Outage Gangguan</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata FO EP</span>
+                    <span class="kpi-value" id="metricAvgFOEP">0,00 MW</span>
+                    <span class="kpi-desc">FO Extension Period</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata DER KIT</span>
+                    <span class="kpi-value" id="metricAvgDERKIT">0,00 MW</span>
+                    <span class="kpi-desc">Derating Pembangkit</span>
+                  </div>
+                  <div class="kpi-card">
+                    <span class="kpi-title">Rata-rata VARMUS</span>
+                    <span class="kpi-value" id="metricAvgVARMUS">0,00 MW</span>
+                    <span class="kpi-desc">Variasi Musiman Hidrologi/Suhu</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Outage Trend Stacked Chart -->
+              <div style="height: 280px; position: relative;">
+                <canvas id="outageTrendCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Outage Table -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Ringkasan Rata-rata Outage Bulanan (MW)</div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Bulan</th>
+                      <th class="text-right">PO</th>
+                      <th class="text-right">MO</th>
+                      <th class="text-right" style="color: #D97706;">Total Planned</th>
+                      <th class="text-right">FO</th>
+                      <th class="text-right">FO EP</th>
+                      <th class="text-right">DER</th>
+                      <th class="text-right">VARMUS</th>
+                      <th class="text-right" style="color: #DC2626;">Total Unplanned</th>
+                      <th class="text-center">Jumlah Hari</th>
+                    </tr>
+                  </thead>
+                  <tbody id="outageMonthlyTableBody"></tbody>
+                  <tfoot id="outageMonthlyTableFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: RINGKASAN BULANAN
+             ================================================================== -->
+        <section class="view-section" id="view-ringkasan-bulanan">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-calendar-check" style="color: var(--pln-blue-primary);"></i>
+                Tabel Evaluasi & Ringkasan Operasi Bulanan
+              </div>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+                Tabel agregasi performa ketersediaan daya pembangkitan, beban puncak, dan status kecukupan cadangan daya per bulan untuk periode semester yang aktif.
+              </p>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Bulan</th>
+                      <th class="text-right">DMP Average (MW)</th>
+                      <th class="text-right">BP Max (MW)</th>
+                      <th class="text-right">CAD Average (MW)</th>
+                      <th class="text-right">CAD Min (MW)</th>
+                      <th class="text-center">Normal (Hari)</th>
+                      <th class="text-center">Siaga (Hari)</th>
+                      <th class="text-center">Defisit (Hari)</th>
+                      <th class="text-center">Total Hari</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fullMonthlyTableBody">
+                    <!-- Cloned dynamically from monthly summary -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: DETAIL PEMBANGKIT
+             ================================================================== -->
+        <section class="view-section" id="view-detail-pembangkit">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-industry" style="color: #0284C7;"></i>
+                Monitoring Detail Unit Pembangkit & Transmisi
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="background: #F0F9FF; border: 1px solid #BAE6FD; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: #0369A1; font-weight: 700; margin-bottom: 6px;">
+                  <i class="fa fa-info-circle"></i> Catatan Integrasi Pembangkit
+                </h4>
+                <p style="font-size: 12.5px; color: #0C4A6E; line-height: 1.5;">
+                  Nilai DMN (49.040,62 MW) merefleksikan seluruh kapasitas terpasang netto pembangkit besar (PLTU, PLTGU, PLTA, PLTP) pada sistem interkoneksi Jamali. Pengurangan DMP dihitung secara agregat melalui parameter outage (PO, MO, FO, FO EP, DER KIT, DER TRANS, VARMUS).
+                </p>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Jenis Pembangkit</th>
+                      <th class="text-right">Kapasitas DMN (MW)</th>
+                      <th class="text-right">Rata-rata Outage (MW)</th>
+                      <th class="text-right">Kontribusi Beban Puncak</th>
+                      <th class="text-center">Status Operasi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>PLTU Batubara</strong> (Base Load)</td>
+                      <td class="text-right">28.450,00</td>
+                      <td class="text-right" style="color: #D97706;">5.840,20</td>
+                      <td class="text-right">62,5%</td>
+                      <td class="text-center"><span class="badge-status badge-normal">NORMAL</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>PLTGU Gas & Uap</strong> (Follower)</td>
+                      <td class="text-right">12.600,00</td>
+                      <td class="text-right" style="color: #D97706;">4.120,50</td>
+                      <td class="text-right">24,8%</td>
+                      <td class="text-center"><span class="badge-status badge-siaga">SIAGA</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>PLTA Hidro</strong> (Peak Load & Musiman)</td>
+                      <td class="text-right">4.890,62</td>
+                      <td class="text-right" style="color: #DC2626;">2.150,00</td>
+                      <td class="text-right">9,2%</td>
+                      <td class="text-center"><span class="badge-status badge-siaga">VARMUS</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>PLTP Panas Bumi</strong></td>
+                      <td class="text-right">2.100,00</td>
+                      <td class="text-right" style="color: #D97706;">230,00</td>
+                      <td class="text-right">3,5%</td>
+                      <td class="text-center"><span class="badge-status badge-normal">NORMAL</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: PARAMETER (Pengaturan Administrator)
+             ================================================================== -->
+        <section class="view-section" id="view-parameter">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-sliders-h" style="color: #0284C7;"></i>
+                Konfigurasi Batas Cadangan Minimum (Parameter Administrator)
+              </div>
+            </div>
+            <div class="card-body">
+              <form id="formUpdateThreshold" style="max-width: 600px;">
+                <div style="margin-bottom: 16px;">
+                  <label class="filter-label" style="display: block; margin-bottom: 6px;">
+                    Nilai Batas Cadangan Minimum (MW)
+                  </label>
+                  <input type="number" step="1" min="0" class="filter-input" id="inputThresholdVal" style="width: 100%; font-size: 16px; font-weight: 700;" required>
+                  <small style="color: var(--text-muted); display: block; margin-top: 4px;">
+                    Digunakan untuk menentukan status <strong>NORMAL</strong> (CAD &ge; Batas) dan <strong>SIAGA</strong> (0 &le; CAD &lt; Batas).
+                  </small>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <label class="filter-label" style="display: block; margin-bottom: 6px;">
+                    Nama Petugas / Administrator
+                  </label>
+                  <input type="text" class="filter-input" id="inputThresholdUser" value="Administrator ROTS Pusat" style="width: 100%;" required>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                  <label class="filter-label" style="display: block; margin-bottom: 6px;">
+                    Alasan Perubahan Parameter (Audit Trail Note)
+                  </label>
+                  <textarea class="filter-input" id="inputThresholdNote" rows="2" style="width: 100%; resize: vertical;" placeholder="Contoh: Penyesuaian margin cadangan operasi menghadapi musim puncak beban..."></textarea>
+                </div>
+
+                <button type="submit" class="header-btn btn-primary" style="padding: 10px 20px;">
+                  <i class="fa fa-save"></i> Simpan Perubahan Parameter & Update Status
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Audit Trail Table -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-history" style="color: var(--text-muted);"></i>
+                Audit Trail Log (Riwayat Perubahan Parameter)
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Waktu Perubahan</th>
+                      <th>User / Administrator</th>
+                      <th>Aksi</th>
+                      <th class="text-right">Nilai Lama</th>
+                      <th class="text-right">Nilai Baru</th>
+                      <th>Catatan / Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditLogTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: MASTER DATA
+             ================================================================== -->
+        <section class="view-section" id="view-master-data">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-database" style="color: var(--pln-blue-primary);"></i>
+                Master Data Sistem Tenaga Listrik
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Kode Sistem</th>
+                      <th>Nama Sistem Tenaga Listrik</th>
+                      <th>Wilayah Operasi</th>
+                      <th class="text-center">Status</th>
+                      <th class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="masterSystemsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Tambah Sistem Baru -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Tambah Sistem Tenaga Listrik Baru</div>
+            </div>
+            <div class="card-body">
+              <form id="formAddSystem" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 14px; align-items: end;">
+                <div>
+                  <label class="filter-label">Kode Sistem</label>
+                  <input type="text" class="filter-input" id="inputSysCode" placeholder="Misal: Bali-Nusa" style="width: 100%;" required>
+                </div>
+                <div>
+                  <label class="filter-label">Nama Lengkap Sistem</label>
+                  <input type="text" class="filter-input" id="inputSysName" placeholder="Sistem Kelistrikan Bali dan Nusa Tenggara" style="width: 100%;" required>
+                </div>
+                <div>
+                  <label class="filter-label">Wilayah</label>
+                  <input type="text" class="filter-input" id="inputSysRegion" placeholder="Nusa Tenggara" style="width: 100%;">
+                </div>
+                <div>
+                  <button type="submit" class="header-btn btn-primary" style="height: 38px;">
+                    <i class="fa fa-plus"></i> Tambah Sistem
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: IMPORT DATA
+             ================================================================== -->
+        <section class="view-section" id="view-import-data">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-file-import" style="color: var(--pln-blue-primary);"></i>
+                Import Data Operasi ROTS Excel / CSV
+              </div>
+              <button class="header-btn" id="btnDownloadExcelTemplate">
+                <i class="fa fa-download"></i> Unduh Template Excel Resmi
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="dropzone-container" id="excelDropzone">
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+                <i class="fa fa-cloud-upload-alt dropzone-icon"></i>
+                <div class="dropzone-title">Tarik & Letakkan File Excel ROTS di Sini</div>
+                <div class="dropzone-sub">Mendukung format .xlsx, .xls, dan .csv dengan kolom standar PLN Transmisi</div>
+              </div>
+
+              <!-- Aturan Validasi -->
+              <div style="margin-top: 20px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Kriteria Validasi Sistem:</strong>
+                <ul style="margin-left: 20px; margin-top: 6px;">
+                  <li>Kolom wajib: <code>Sistem</code>, <code>Tanggal</code>, <code>DMN</code>, <code>PO</code>, <code>MO</code>, <code>FO</code>, <code>FO EP</code>, <code>DER KIT</code>, <code>DER TRANS</code>, <code>VARMUS</code>, <code>BP</code>.</li>
+                  <li>Nilai MW harus numerik dan tidak boleh negatif.</li>
+                  <li>Tidak diperkenankan adanya duplikasi pasangan Sistem + Tanggal.</li>
+                  <li>Sistem akan otomatis menghitung <strong>Planned Outage</strong>, <strong>Unplanned Outage</strong>, <strong>DMP</strong>, <strong>CAD</strong>, dan <strong>Status</strong> sesuai formula standar.</li>
+                </ul>
+              </div>
+
+              <!-- Preview Validasi Import -->
+              <div id="importPreviewContainer" style="display: none; margin-top: 24px;">
+                <div class="validation-summary-bar" id="importValidationSummary"></div>
+
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Status Validasi</th>
+                        <th>Sistem</th>
+                        <th>Tanggal</th>
+                        <th class="text-right">DMN</th>
+                        <th class="text-right">Planned</th>
+                        <th class="text-right">Unplanned</th>
+                        <th class="text-right">DMP</th>
+                        <th class="text-right">BP</th>
+                        <th class="text-right">CAD</th>
+                      </tr>
+                    </thead>
+                    <tbody id="importPreviewTbody"></tbody>
+                  </table>
+                </div>
+
+                <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between;">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="checkOverwriteExisting">
+                    Timpa jika data pada tanggal yang sama sudah ada di sistem
+                  </label>
+                  <button class="header-btn btn-primary" id="btnCommitImport" style="padding: 10px 24px;">
+                    Simpan Data ke Sistem ROTS
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: LAPORAN & EKSPOR
+             ================================================================== -->
+        <section class="view-section" id="view-laporan">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-file-pdf" style="color: #EF4444;"></i>
+                Pusat Unduh Laporan & Ekspor ROTS
+              </div>
+            </div>
+            <div class="card-body">
+              <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 13.5px;">
+                Cetak atau unduh berkas laporan komprehensif rencana operasi tahunan semester berdasarkan sistem dan rentang waktu yang sedang dipilih.
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card" style="padding: 24px; border: 1px solid var(--border-card);">
+                  <i class="fa fa-file-excel" style="font-size: 32px; color: #10B981; margin-bottom: 12px;"></i>
+                  <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Laporan Lengkap Excel (.xlsx)</h3>
+                  <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+                    Berisi sheet kondisi harian 184 hari dengan seluruh kolom masukan dan hasil kalkulasi, serta sheet ringkasan bulanan dan evaluasi total semester.
+                  </p>
+                  <button class="header-btn btn-primary" id="btnExportExcelPage">
+                    <i class="fa fa-download"></i> Unduh Berkas Excel (.xlsx)
+                  </button>
+                </div>
+
+                <div class="card" style="padding: 24px; border: 1px solid var(--border-card);">
+                  <i class="fa fa-file-pdf" style="font-size: 32px; color: #EF4444; margin-bottom: 12px;"></i>
+                  <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Cetak Dokumen / Laporan PDF Resmi</h3>
+                  <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+                    Mencetak atau menyimpan sebagai PDF berformat resmi PLN Transmisi lengkap dengan kop dokumen, ringkasan KPI, grafik visual, dan tabel bulanan.
+                  </p>
+                  <button class="header-btn" id="btnExportPdf" style="background: #FEF2F2; color: #DC2626; border-color: #FECACA;">
+                    <i class="fa fa-print"></i> Cetak / Simpan PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: PENGATURAN
+             ================================================================== -->
+        <section class="view-section" id="view-pengaturan">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa fa-cog" style="color: var(--pln-navy-dark);"></i>
+                Pengaturan Sistem ROTS
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="max-width: 650px;">
+                <div style="margin-bottom: 24px;">
+                  <h4 style="font-weight: 700; margin-bottom: 6px;">Informasi Sistem</h4>
+                  <p style="font-size: 13px; color: var(--text-muted);">
+                    Aplikasi: <strong>ROTS PLN Transmisi (Reserve Outlook Transmission System)</strong><br>
+                    Versi: <strong>2.4 Enterprise Production</strong><br>
+                    Unit: <strong>PT PLN (Persero) Transmisi</strong>
+                  </p>
+                </div>
+
+                <div style="margin-bottom: 24px; border-top: 1px solid var(--border-card); padding-top: 20px;">
+                  <h4 style="font-weight: 700; margin-bottom: 6px; color: #DC2626;">Pemulihan Data (Reset Database)</h4>
+                  <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                    Kembalikan seluruh data harian, parameter ambang batas cadangan, dan master data ke dataset seed resmi Semester II 2026.
+                  </p>
+                  <button class="header-btn" id="btnResetData" style="background: #FEF2F2; color: #DC2626; border-color: #FECACA;">
+                    <i class="fa fa-trash-alt"></i> Reset ke Nilai Default
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========================================================================
+       MODAL: FULLSCREEN CHART & NAVIGASI LAYAR PENUH
+       ======================================================================== -->
+  <div class="modal-overlay" id="fullscreenTrendModal">
+    <div class="modal-content modal-fullscreen">
+      <div class="modal-header" style="padding: 12px 24px;">
+        <!-- Left: Switcher Tab antara Neraca Daya vs Trend Cadangan -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="fs-tab-switcher">
+            <button class="fs-tab-btn active" id="btnFsTabNeraca" data-chart="neraca">
+              <i class="fa fa-chart-area"></i> Neraca Daya ROTS
+            </button>
+            <button class="fs-tab-btn" id="btnFsTabCadangan" data-chart="cadangan">
+              <i class="fa fa-chart-line"></i> Trend Cadangan Daya
+            </button>
+          </div>
+          <span class="badge-status badge-normal" id="fullscreenModalSystemBadge">Jamali</span>
+        </div>
+
+        <!-- Center & Right: Navigasi Bulan & Tools -->
+        <div class="fullscreen-chart-toolbar">
+          <!-- Month Navigator Stepper -->
+          <div class="fs-month-nav">
+            <button class="btn-page" id="btnFsPrevMonth" title="Bulan Sebelumnya">
+              <i class="fa fa-chevron-left"></i>
+            </button>
+            <select class="filter-select" id="selectFsMonth" style="padding: 5px 28px 5px 10px; font-size: 12px; height: 32px;">
+              <option value="ALL">Semua (Semester II 2026)</option>
+              <option value="2026-07">Juli 2026</option>
+              <option value="2026-08">Agustus 2026</option>
+              <option value="2026-09">September 2026</option>
+              <option value="2026-10">Oktober 2026</option>
+              <option value="2026-11">November 2026</option>
+              <option value="2026-12">Desember 2026</option>
+            </select>
+            <button class="btn-page" id="btnFsNextMonth" title="Bulan Berikutnya">
+              <i class="fa fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <button class="header-btn" id="btnDownloadTrendImage" title="Unduh Gambar PNG Grafik">
+            <i class="fa fa-image"></i> Unduh PNG
+          </button>
+
+          <button class="modal-close-btn" title="Tutup Layar Penuh (Esc)">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body" style="padding: 16px 24px; display: flex; flex-direction: column; flex: 1;">
+        <!-- Floating Statistics Bar -->
+        <div class="fullscreen-stats-bar">
+          <div class="fstat-item">
+            <span class="fstat-label">CAD Rata-Rata</span>
+            <span class="fstat-value" id="fsStatCadAvg">2.790 MW</span>
+          </div>
+          <div class="fstat-item">
+            <span class="fstat-label">BP Maksimum (Peak)</span>
+            <span class="fstat-value text-warning" id="fsStatCadMax">35.998 MW</span>
+          </div>
+          <div class="fstat-item">
+            <span class="fstat-label">Cadangan Minimum (Min)</span>
+            <span class="fstat-value text-danger" id="fsStatCadMin">1.024 MW</span>
+          </div>
+          <div class="fstat-item">
+            <span class="fstat-label">Kondisi Kritis (Siaga / Defisit)</span>
+            <span class="fstat-value text-warning" id="fsStatCriticalDays">45 Siaga / 0 Defisit</span>
+          </div>
+        </div>
+
+        <!-- Canvas Container: Neraca Daya View -->
+        <div id="fsContainerNeraca" style="flex: 1; min-height: 420px; position: relative;">
+          <canvas id="neracaDayaCanvasFullscreen"></canvas>
+        </div>
+
+        <!-- Canvas Container: Trend Cadangan View -->
+        <div id="fsContainerCadangan" style="flex: 1; min-height: 420px; position: relative; display: none;">
+          <canvas id="trendCadanganCanvasFullscreen"></canvas>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 10px 24px; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--text-muted);">
+          <i class="fa fa-info-circle"></i> Gunakan navigasi panah &amp; dropdown bulan di bagian atas untuk berpindah periode. Tekan tombol <strong>Esc</strong> untuk keluar.
+        </span>
+        <button class="header-btn modal-close-btn-action">Tutup Layar Penuh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: DETAIL SATU HARI & FORMULA TRACE
+       ======================================================================== -->
+  <div class="modal-overlay" id="dayDetailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="dayDetailModalTitle">Detail Operasi Harian & Formula</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="dayDetailModalBody">
+        <!-- Dynamic Formula Content -->
+      </div>
+      <div class="modal-footer">
+        <button class="header-btn modal-close-btn-action">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: QUICK EDIT BATAS CADANGAN MINIMUM
+       ======================================================================== -->
+  <div class="modal-overlay" id="quickThresholdModal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title">Ubah Batas Cadangan Minimum</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formQuickThreshold">
+        <div class="modal-body">
+          <div style="margin-bottom: 16px;">
+            <label class="filter-label" style="margin-bottom: 6px; display: block;">Nilai Batas Cadangan Minimum (MW)</label>
+            <input type="number" step="1" id="inputQuickThreshold" class="filter-input" style="width: 100%; font-size: 18px; font-weight: 800;" required>
+            <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+              Default: 2.000 MW. Status SIAGA berlaku jika 0 &le; CAD &lt; Batas.
+            </small>
+          </div>
+          <div>
+            <label class="filter-label" style="margin-bottom: 6px; display: block;">Catatan Perubahan (Audit Trail)</label>
+            <input type="text" id="inputQuickThresholdNote" class="filter-input" style="width: 100%;" placeholder="Penyesuaian cepat via topbar">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="header-btn modal-close-btn">Batal</button>
+          <button type="submit" class="header-btn btn-primary">Simpan Parameter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: BANTUAN & PANDUAN FORMULA
+       ======================================================================== -->
+  <div class="modal-overlay" id="helpFormulaModal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title">Panduan Formula & Business Logic ROTS PLN Transmisi</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="line-height: 1.6; font-size: 13px;">
+        <h4 style="color: #0284C7; margin-bottom: 8px;">1. Planned Outage (MW)</h4>
+        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #F59E0B; font-family: monospace;">
+          Planned Outage = PO + MO
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 14px;">
+          Gabungan dari Planned Outage terencana dan Maintenance Outage pemeliharaan berkala.
+        </p>
+
+        <h4 style="color: #0284C7; margin-bottom: 8px;">2. Unplanned Outage (MW)</h4>
+        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #EF4444; font-family: monospace;">
+          Unplanned Outage = FO + FO EP + DER KIT + DER TRANS + VARMUS
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 14px;">
+          Gabungan dari Forced Outage (gangguan seketika), Perpanjangan FO, Derating Pembangkit, Derating Transmisi, dan Variasi Musiman (suhu/debit air).
+        </p>
+
+        <h4 style="color: #0284C7; margin-bottom: 8px;">3. DMP – Daya Mampu Pembangkitan (MW)</h4>
+        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #10B981; font-family: monospace;">
+          DMP = DMN − Planned Outage − Unplanned Outage
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 14px;">
+          Sisa kapasitas pembangkitan netto yang siap menyalurkan daya setelah dikurangi seluruh outage.
+        </p>
+
+        <h4 style="color: #0284C7; margin-bottom: 8px;">4. CAD – Cadangan Daya (MW)</h4>
+        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #7C3AED; font-family: monospace;">
+          CAD = DMP − BP
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 14px;">
+          Selisih antara kemampuan pembangkitan (DMP) dengan Beban Puncak (BP) harian.
+        </p>
+
+        <h4 style="color: #0284C7; margin-bottom: 8px;">5. Kriteria Status Operasi Sistem</h4>
+        <ul style="margin-left: 20px;">
+          <li><strong style="color: #10B981;">NORMAL</strong>: CAD &ge; Batas Cadangan Minimum (Default 2.000 MW)</li>
+          <li><strong style="color: #F59E0B;">SIAGA</strong>: 0 &le; CAD &lt; Batas Cadangan Minimum</li>
+          <li><strong style="color: #EF4444;">DEFISIT</strong>: CAD &lt; 0 MW</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="header-btn modal-close-btn">Mengerti</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Bootstrap -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
