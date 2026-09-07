@@ -756,3 +756,49 @@ body {
   color: #0369A1;
 }
 
+/* ============================================================
+   PERIOD TYPE BADGE (ROT / ROTS / ROB / ROM)
+   ============================================================ */
+.period-type-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 6px;
+  border: 1.5px solid currentColor;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ROT – Biru */
+.period-badge-ROT {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
+}
+
+/* ROTS – Ungu (default) */
+.period-badge-ROTS {
+  background: #F5F3FF;
+  color: #7C3AED;
+  border-color: #DDD6FE;
+}
+
+/* ROB – Hijau */
+.period-badge-ROB {
+  background: #F0FDF4;
+  color: #059669;
+  border-color: #A7F3D0;
+}
+
+/* ROM – Amber */
+.period-badge-ROM {
+  background: #FFFBEB;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+

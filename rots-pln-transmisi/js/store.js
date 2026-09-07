@@ -27,7 +27,26 @@ class Store {
         this.params = { minReserveThreshold: 2000 };
       }
     } else {
-      this.params = { minReserveThreshold: 2000 };
+      this.params = {
+        minReserveThreshold: 2000,
+        periodParams: {
+          ROT:  { dmnAdjust: 0,    foderAdj: 0,     cadMin: 2000 },
+          ROTS: { dmnAdjust: 0,    foderAdj: 0,     cadMin: 2000 },
+          ROB:  { dmnAdjust: -200, foderAdj: 0.005, cadMin: 1800 },
+          ROM:  { dmnAdjust: -350, foderAdj: 0.008, cadMin: 1500 }
+        }
+      };
+      this.saveParams();
+    }
+
+    // Pastikan periodParams selalu ada (migrasi dari versi lama)
+    if (!this.params.periodParams) {
+      this.params.periodParams = {
+        ROT:  { dmnAdjust: 0,    foderAdj: 0,     cadMin: 2000 },
+        ROTS: { dmnAdjust: 0,    foderAdj: 0,     cadMin: 2000 },
+        ROB:  { dmnAdjust: -200, foderAdj: 0.005, cadMin: 1800 },
+        ROM:  { dmnAdjust: -350, foderAdj: 0.008, cadMin: 1500 }
+      };
       this.saveParams();
     }
 
@@ -94,6 +113,11 @@ class Store {
     // 5. Active Navigation & Filter State
     this.currentView = 'dashboard';
     this.viewMode = 'rencana'; // 'rencana' | 'realisasi' | 'komparasi'
+    // Jenis & nilai periode aktif
+    this.planningPeriod = {
+      type: 'ROTS',   // 'ROT' | 'ROTS' | 'ROB' | 'ROM'
+      value: 'ROTS_2026_S2'  // key generik untuk nilai yang dipilih
+    };
     this.filters = {
       sistem: 'Jamali',
       semester: 'Semester II 2026',
@@ -211,6 +235,199 @@ class Store {
       this.viewMode = mode;
       this.notify({ type: 'VIEW_MODE_CHANGED', payload: mode });
     }
+  }
+
+  // ============================================================
+  // MULTI-PERIODE: ROT / ROTS / ROB / ROM
+  // ============================================================
+
+  /**
+   * Set jenis periode dan pilihan periode aktif.
+   * @param {string} type - 'ROT' | 'ROTS' | 'ROB' | 'ROM'
+   * @param {string} value - key periode, mis: '2026', 'ROTS_2026_S2', 'ROB_2026_07', 'ROM_2026_W27'
+   */
+  setPlanningPeriod(type, value) {
+    const validTypes = ['ROT', 'ROTS', 'ROB', 'ROM'];
+    if (!validTypes.includes(type)) return;
+    this.planningPeriod = { type, value };
+
+    // Hitung date range otomatis berdasarkan type + value
+    const range = this.getActiveDateRange(type, value);
+    const cadMin = this.getPeriodConfig(type).cadMin;
+
+    this.filters = {
+      ...this.filters,
+      dateStart: range.dateStart,
+      dateEnd: range.dateEnd,
+      selectedDate: range.dateStart
+    };
+    // Update threshold sesuai cadMin periode aktif (tidak audit, hanya runtime)
+    this.params.minReserveThreshold = cadMin;
+
+    this.notify({ type: 'PLANNING_PERIOD_CHANGED', payload: { periodType: type, periodValue: value, range, cadMin } });
+    this.notify({ type: 'FILTERS_CHANGED', payload: this.filters });
+  }
+
+  /** Dapatkan konfigurasi parameter untuk jenis periode */
+  getPeriodConfig(type) {
+    const defaults = { dmnAdjust: 0, foderAdj: 0, cadMin: 2000 };
+    return { ...defaults, ...(this.params.periodParams[type] || {}) };
+  }
+
+  /** Update parameter salah satu periode dan simpan */
+  updatePeriodParam(type, key, value, user = 'Administrator ROTS') {
+    const validTypes = ['ROT', 'ROTS', 'ROB', 'ROM'];
+    if (!validTypes.includes(type)) return false;
+    const numVal = parseFloat(value);
+    if (isNaN(numVal)) return false;
+
+    const oldVal = this.params.periodParams[type][key];
+    this.params.periodParams[type][key] = numVal;
+    this.saveParams();
+
+    // Update threshold runtime jika ini periode aktif
+    if (this.planningPeriod.type === type && key === 'cadMin') {
+      this.params.minReserveThreshold = numVal;
+    }
+
+    this.auditLogs.unshift({
+      id: 'audit-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      user,
+      action: 'UPDATE PARAMETER PERIODE',
+      paramName: `${type} – ${key}`,
+      oldValue: String(oldVal),
+      newValue: String(numVal),
+      note: `Penyesuaian parameter ${key} untuk jenis periode ${type}`
+    });
+    this.saveAudit();
+    this.notify({ type: 'PARAMETER_UPDATED', payload: { type, key, value: numVal } });
+    return true;
+  }
+
+  /**
+   * Hitung dateStart & dateEnd berdasarkan jenis + nilai periode
+   * Format value:
+   *   ROT  → '2026'
+   *   ROTS → 'ROTS_2026_S1' | 'ROTS_2026_S2'
+   *   ROB  → 'ROB_2026_07'  (bulan 07)
+   *   ROM  → 'ROM_2026_W27' (nomor ISO week)
+   */
+  getActiveDateRange(type, value) {
+    const MONTH_NAMES = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let dateStart, dateEnd, label;
+
+    if (type === 'ROT') {
+      const year = parseInt(value) || 2026;
+      dateStart = `${year}-01-01`;
+      dateEnd   = `${year}-12-31`;
+      label = `ROT ${year} – Tahunan`;
+
+    } else if (type === 'ROTS') {
+      // value: 'ROTS_2026_S1' or 'ROTS_2026_S2'
+      const parts = value.split('_');
+      const year = parseInt(parts[1]) || 2026;
+      const sem  = parts[2] || 'S2';
+      if (sem === 'S1') {
+        dateStart = `${year}-01-01`; dateEnd = `${year}-06-30`;
+        label = `ROTS Semester I ${year}`;
+      } else {
+        dateStart = `${year}-07-01`; dateEnd = `${year}-12-31`;
+        label = `ROTS Semester II ${year}`;
+      }
+
+    } else if (type === 'ROB') {
+      // value: 'ROB_2026_07'
+      const parts = value.split('_');
+      const year  = parseInt(parts[1]) || 2026;
+      const month = parseInt(parts[2]) || 7;
+      const lastDay = new Date(year, month, 0).getDate();
+      dateStart = `${year}-${String(month).padStart(2,'0')}-01`;
+      dateEnd   = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+      label = `ROB ${MONTH_NAMES[month]} ${year}`;
+
+    } else if (type === 'ROM') {
+      // value: 'ROM_2026_W27' — Minggu ke-27 ISO
+      const parts = value.split('_');
+      const year  = parseInt(parts[1]) || 2026;
+      const week  = parseInt(parts[2].replace('W','')) || 27;
+      // Hitung Senin dari ISO week number
+      const jan4  = new Date(year, 0, 4);
+      const startOfWeek1 = new Date(jan4);
+      startOfWeek1.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1);
+      const monday = new Date(startOfWeek1);
+      monday.setDate(startOfWeek1.getDate() + (week - 1) * 7);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      dateStart = fmt(monday);
+      dateEnd   = fmt(sunday);
+      label = `ROM Minggu ${week} (${monday.getDate()} – ${sunday.getDate()} ${MONTH_NAMES[monday.getMonth()+1]} ${year})`;
+
+    } else {
+      dateStart = '2026-07-01'; dateEnd = '2026-12-31';
+      label = 'Semester II 2026';
+    }
+    return { dateStart, dateEnd, label };
+  }
+
+  /**
+   * Daftar opsi periode yang tersedia berdasarkan type
+   * Return: [{ value, label }, ...]
+   */
+  getAvailablePeriodValues(type) {
+    const MONTH_NAMES_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                               'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const MONTH_NAMES_FULL  = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                               'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    if (type === 'ROT') {
+      return [{ value: '2026', label: '2026' }, { value: '2027', label: '2027' }];
+
+    } else if (type === 'ROTS') {
+      return [
+        { value: 'ROTS_2026_S2', label: 'Semester II 2026 (Jul–Des)' },
+        { value: 'ROTS_2026_S1', label: 'Semester I 2026 (Jan–Jun)' },
+        { value: 'ROTS_2027_S1', label: 'Semester I 2027 (Jan–Jun)' },
+      ];
+
+    } else if (type === 'ROB') {
+      // Semua bulan di tahun 2026
+      return [7,8,9,10,11,12].map(m => ({
+        value: `ROB_2026_${String(m).padStart(2,'0')}`,
+        label: `${MONTH_NAMES_FULL[m]} 2026`
+      }));
+
+    } else if (type === 'ROM') {
+      // Minggu-minggu dalam Semester II 2026 (Jul–Des)
+      const options = [];
+      const MONTH_NAMES = MONTH_NAMES_SHORT;
+      // Iterasi 1 Jul – 31 Des 2026, ambil setiap Senin
+      let d = new Date(2026, 6, 1); // 1 Jul 2026
+      const end = new Date(2026, 11, 31);
+      while (d <= end) {
+        // Cari Senin dari tanggal ini
+        const dayOfWeek = d.getDay() || 7; // 1=Mon, 7=Sun
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - dayOfWeek + 1);
+        // ISO week number
+        const temp = new Date(monday);
+        temp.setDate(temp.getDate() + 4 - (temp.getDay() || 7));
+        const yearStart = new Date(temp.getFullYear(), 0, 1);
+        const weekNo = Math.ceil(((temp - yearStart) / 86400000 + 1) / 7);
+        const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+        const fmtDay = (dt) => `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()+1]}`;
+        options.push({
+          value: `ROM_2026_W${weekNo}`,
+          label: `Minggu ${weekNo}: ${fmtDay(monday)}–${fmtDay(sunday)}`
+        });
+        // Maju 7 hari
+        d = new Date(monday); d.setDate(monday.getDate() + 7);
+      }
+      // Hapus duplikat
+      return options.filter((o, i, a) => a.findIndex(x => x.value === o.value) === i);
+    }
+    return [];
   }
 
   // Set / Update Realisasi Harian
@@ -370,7 +587,9 @@ class Store {
   // Data processing queries
   getProcessedRecords() {
     const threshold = this.params.minReserveThreshold;
-    return this.records.map(rec => CalculationService.processRecord(rec, threshold));
+    // Ambil periodAdjust dari jenis periode aktif
+    const periodAdjust = this.getPeriodConfig(this.planningPeriod.type);
+    return this.records.map(rec => CalculationService.processRecord(rec, threshold, periodAdjust));
   }
 
   getFilteredRecords() {

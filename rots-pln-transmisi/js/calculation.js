@@ -85,9 +85,16 @@ export const CalculationService = {
 
   /**
    * Proses satu record raw menjadi record lengkap dengan calculated fields dan jejak formula
+   * @param {Object} raw - Record data mentah dari store
+   * @param {number} minReserveThreshold - Batas Cadangan Minimum (MW)
+   * @param {Object} periodAdjust - Penyesuaian nilai per jenis periode { dmnAdjust, foderAdj }
    */
-  processRecord(raw, minReserveThreshold = 2000) {
-    const dmn = parseFloat(raw.dmn) || 0;
+  processRecord(raw, minReserveThreshold = 2000, periodAdjust = {}) {
+    const dmnBase = parseFloat(raw.dmn) || 0;
+    // Terapkan koreksi DMN dari periode aktif (ROB/ROM lebih konservatif)
+    const dmnAdj = parseFloat(periodAdjust.dmnAdjust) || 0;
+    const dmn = dmnBase + dmnAdj;
+
     const po = parseFloat(raw.po) || 0;
     const mo = parseFloat(raw.mo) || 0;
     const fo = parseFloat(raw.fo) || 0;
@@ -102,6 +109,7 @@ export const CalculationService = {
     const dmp = this.calculateDMP(dmn, plannedOutage, unplannedOutage);
     const cad = this.calculateCAD(dmp, bp);
     const status = this.determineStatus(cad, minReserveThreshold);
+
 
     return {
       id: raw.id || `${raw.sistem}_${raw.tanggal}`,

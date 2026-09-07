@@ -72,6 +72,7 @@ export class ParameterView {
 
   render() {
     this.renderParameters();
+    this.renderPeriodParams();
     this.renderAuditLogs();
     this.renderSystems();
   }
@@ -83,6 +84,100 @@ export class ParameterView {
 
     if (inputVal) inputVal.value = curVal;
     if (badgeVal) badgeVal.textContent = `${CalculationService.formatNumber(curVal)} MW`;
+  }
+
+  renderPeriodParams() {
+    const tbody = document.getElementById('periodParamsTableBody');
+    if (!tbody) return;
+
+    const PERIOD_META = {
+      ROT:  { label: 'ROT – Tahunan',           color: '#2563EB', badgeClass: 'period-badge-ROT'  },
+      ROTS: { label: 'ROTS – Semester',          color: '#7C3AED', badgeClass: 'period-badge-ROTS' },
+      ROB:  { label: 'ROB – Bulanan',            color: '#059669', badgeClass: 'period-badge-ROB'  },
+      ROM:  { label: 'ROM – Mingguan',           color: '#D97706', badgeClass: 'period-badge-ROM'  },
+    };
+
+    const periodParams = store.params.periodParams;
+    const activePeriod = store.planningPeriod.type;
+
+    tbody.innerHTML = Object.entries(PERIOD_META).map(([type, meta]) => {
+      const cfg = periodParams[type] || { dmnAdjust: 0, foderAdj: 0, cadMin: 2000 };
+      const isActive = type === activePeriod;
+      const rowBg = isActive ? '#F0F9FF' : '';
+
+      return `
+        <tr style="background: ${rowBg};" data-period-type="${type}">
+          <td>
+            <span class="period-type-badge ${meta.badgeClass}" style="font-size: 11px;">${type}</span>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">${meta.label}</div>
+            ${isActive ? '<span style="font-size: 9.5px; color: #0284C7; font-weight: 700;">● Aktif</span>' : ''}
+          </td>
+          <td class="text-right">
+            <input type="number" class="period-param-input" data-type="${type}" data-key="dmnAdjust"
+              value="${cfg.dmnAdjust}" step="50"
+              style="width: 90px; text-align: right; font-family: monospace; font-weight: 600;
+                     padding: 4px 6px; border: 1px solid #E2E8F0; border-radius: 4px; font-size: 12.5px;">
+            <span style="font-size: 11px; color: #64748B;"> MW</span>
+          </td>
+          <td class="text-right">
+            <input type="number" class="period-param-input" data-type="${type}" data-key="foderAdj"
+              value="${(cfg.foderAdj * 100).toFixed(2)}" step="0.01" min="0" max="10"
+              style="width: 70px; text-align: right; font-family: monospace; font-weight: 600;
+                     padding: 4px 6px; border: 1px solid #E2E8F0; border-radius: 4px; font-size: 12.5px;">
+            <span style="font-size: 11px; color: #64748B;"> %</span>
+          </td>
+          <td class="text-right">
+            <input type="number" class="period-param-input" data-type="${type}" data-key="cadMin"
+              value="${cfg.cadMin}" step="100" min="0"
+              style="width: 90px; text-align: right; font-family: monospace; font-weight: 600;
+                     padding: 4px 6px; border: 1px solid #E2E8F0; border-radius: 4px; font-size: 12.5px;">
+            <span style="font-size: 11px; color: #64748B;"> MW</span>
+          </td>
+          <td class="text-center">
+            <button class="btn-page btn-save-period-param" data-type="${type}"
+              style="font-size: 11px; padding: 3px 10px; background: #7C3AED; color: #fff; border-color: #7C3AED;">
+              <i class="fa fa-save"></i> Simpan
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Bind save button per row
+    tbody.querySelectorAll('.btn-save-period-param').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        const row  = tbody.querySelector(`tr[data-period-type="${type}"]`);
+        if (!row) return;
+
+        const inputs = row.querySelectorAll('.period-param-input');
+        let allOk = true;
+        inputs.forEach(inp => {
+          const key = inp.getAttribute('data-key');
+          let val = parseFloat(inp.value);
+          if (isNaN(val)) { allOk = false; return; }
+          // foderAdj disimpan sebagai desimal (0.005), input sebagai %
+          if (key === 'foderAdj') val = val / 100;
+          const ok = store.updatePeriodParam(type, key, val, 'Administrator ROTS');
+          if (!ok) allOk = false;
+        });
+
+        if (allOk) {
+          btn.textContent = '✓ Tersimpan';
+          btn.style.background = '#10B981';
+          btn.style.borderColor = '#10B981';
+          setTimeout(() => {
+            btn.innerHTML = '<i class="fa fa-save"></i> Simpan';
+            btn.style.background = '#7C3AED';
+            btn.style.borderColor = '#7C3AED';
+          }, 1800);
+          this.renderPeriodParams(); // re-render untuk update "Aktif" badge
+          this.renderAuditLogs();
+        } else {
+          alert('Mohon periksa nilai yang dimasukkan!');
+        }
+      });
+    });
   }
 
   renderAuditLogs() {

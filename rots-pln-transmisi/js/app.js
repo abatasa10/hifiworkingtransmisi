@@ -50,8 +50,24 @@ class RotsApp {
       event.type === 'VIEW_MODE_CHANGED' ||
       event.type === 'REALISASI_UPDATED' ||
       event.type === 'REALISASI_DELETED' ||
-      event.type === 'REALISASI_IMPORTED'
+      event.type === 'REALISASI_IMPORTED' ||
+      event.type === 'PLANNING_PERIOD_CHANGED'
     ) {
+      // Update badge tanggal jika ada perubahan periode
+      if (event.type === 'PLANNING_PERIOD_CHANGED' || event.type === 'FILTERS_CHANGED') {
+        const { dateStart, dateEnd } = this.store.filters;
+        const rangeBadge = document.getElementById('displayDateRange');
+        if (rangeBadge && dateStart && dateEnd) {
+          const fmt = (d) => {
+            const p = d.split('-');
+            const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            return `${parseInt(p[2])} ${months[parseInt(p[1])]} ${p[0]}`;
+          };
+          rangeBadge.textContent = `${fmt(dateStart)} - ${fmt(dateEnd)}`;
+        }
+        // Sync threshold badge (cadMin bisa berubah per periode)
+        this.updateThresholdBadges();
+      }
       this.renderDashboard();
       this.dailyView.render();
       this.outageView.render();
@@ -163,20 +179,59 @@ class RotsApp {
       });
     }
 
-    const selectSemester = document.getElementById('filterSemesterSelect');
-    if (selectSemester) {
-      selectSemester.addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (val === 'Semester II 2026') {
-          this.store.setFilters({
-            semester: val,
-            dateStart: '2026-07-01',
-            dateEnd: '2026-12-31'
-          });
-          document.getElementById('displayDateRange').textContent = '01 Jul 2026 - 31 Des 2026';
+    // ── Dropdown Jenis Periode (ROT / ROTS / ROB / ROM) ──────────
+    const selectPeriodType = document.getElementById('filterPeriodTypeSelect');
+    const selectPeriodValue = document.getElementById('filterPeriodValueSelect');
+
+    // Helper: isi dropdown nilai periode berdasarkan jenis
+    const populatePeriodValues = (type) => {
+      if (!selectPeriodValue) return;
+      const options = this.store.getAvailablePeriodValues(type);
+      selectPeriodValue.innerHTML = options
+        .map(o => `<option value="${o.value}">${o.label}</option>`)
+        .join('');
+    };
+
+    // Helper: update badge + title
+    const updatePeriodBadge = (type) => {
+      const badge = document.getElementById('activePeriodTypeBadge');
+      if (badge) {
+        badge.textContent = type;
+        badge.className = `period-type-badge period-badge-${type}`;
+      }
+      const titleEl = document.getElementById('pageTitleText');
+      const titleMap = {
+        ROT:  'ROT \u2013 Rencana Operasi Tahunan',
+        ROTS: 'ROTS \u2013 Rencana Operasi Tahunan Semester',
+        ROB:  'ROB \u2013 Rencana Operasi Bulanan',
+        ROM:  'ROM \u2013 Rencana Operasi Mingguan'
+      };
+      if (titleEl) titleEl.textContent = titleMap[type] || 'ROTS';
+    };
+
+    if (selectPeriodType) {
+      selectPeriodType.addEventListener('change', (e) => {
+        const type = e.target.value;
+        populatePeriodValues(type);
+        // Pilih value pertama secara default
+        const firstValue = this.store.getAvailablePeriodValues(type)[0]?.value;
+        if (firstValue) {
+          this.store.setPlanningPeriod(type, firstValue);
         }
+        updatePeriodBadge(type);
       });
     }
+
+    if (selectPeriodValue) {
+      selectPeriodValue.addEventListener('change', (e) => {
+        const type = selectPeriodType ? selectPeriodType.value : this.store.planningPeriod.type;
+        this.store.setPlanningPeriod(type, e.target.value);
+      });
+    }
+
+    // Inisialisasi awal: isi dropdown nilai sesuai ROTS
+    populatePeriodValues('ROTS');
+    updatePeriodBadge('ROTS');
 
     // Tombol Layar Penuh Seluruh Aplikasi (Topbar)
     const btnAppFs = document.getElementById('btnAppWindowFullscreen');
