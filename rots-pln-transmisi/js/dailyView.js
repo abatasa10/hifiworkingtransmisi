@@ -126,6 +126,36 @@ export class DailyView {
       });
     }
 
+    // Navigasi Tingkat Rencana di atas Tabel Kondisi Harian (ROT / ROTS / ROB / ROM)
+    const horizonNavBtns = document.querySelectorAll('#kondisiHorizonPillsList .horizon-nav-btn');
+    horizonNavBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        if (!type) return;
+        const opts = store.getAvailablePeriodValues(type);
+        const firstVal = opts[0]?.value;
+        store.setPlanningPeriod(type, firstVal);
+      });
+    });
+
+    // Dropdown subperiod di panel Kondisi Harian
+    const subSelect = document.getElementById('kondisiSubperiodSelect');
+    if (subSelect) {
+      subSelect.addEventListener('change', (e) => {
+        const pType = store.planningPeriod.type || 'ROTS';
+        store.setPlanningPeriod(pType, e.target.value);
+      });
+    }
+
+    // Tombol Buka Katalog Periode Rencana
+    const btnCatalog = document.getElementById('btnOpenCatalogModal');
+    if (btnCatalog) {
+      btnCatalog.addEventListener('click', () => {
+        const modal = document.getElementById('modalCatalogPeriods');
+        if (modal) modal.classList.add('active');
+      });
+    }
+
     // Table Header Sorting
     const thElements = document.querySelectorAll('#dailyTable th.sortable');
     thElements.forEach(th => {
@@ -187,10 +217,51 @@ export class DailyView {
 
   render() {
     const pType = store.planningPeriod.type || 'ROTS';
+    const pValue = store.planningPeriod.value;
+    const range = store.getActiveDateRange(pType, pValue);
+
+    // Update Horizon Navigation active state
+    const horizonNavBtns = document.querySelectorAll('#kondisiHorizonPillsList .horizon-nav-btn');
+    horizonNavBtns.forEach(b => {
+      if (b.getAttribute('data-type') === pType) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    // Populate subperiod chips & select dropdown
+    const chipsContainer = document.getElementById('kondisiSubperiodChipsList');
+    const subperiodSelect = document.getElementById('kondisiSubperiodSelect');
+    const options = store.getAvailablePeriodValues(pType);
+
+    if (chipsContainer) {
+      chipsContainer.innerHTML = options.map(opt => {
+        const isAct = opt.value === pValue;
+        return `<button type="button" class="subperiod-chip ${isAct ? 'active' : ''}" data-val="${opt.value}" title="${opt.label}">${opt.shortLabel || opt.label}</button>`;
+      }).join('');
+
+      chipsContainer.querySelectorAll('.subperiod-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const val = chip.getAttribute('data-val');
+          store.setPlanningPeriod(pType, val);
+        });
+      });
+    }
+
+    if (subperiodSelect) {
+      subperiodSelect.innerHTML = options.map(opt => {
+        const sel = opt.value === pValue ? 'selected' : '';
+        return `<option value="${opt.value}" ${sel}>${opt.label}</option>`;
+      }).join('');
+    }
+
     const lblPlan = document.getElementById('btnInputRencanaLabel');
     if (lblPlan) lblPlan.textContent = `Input Rencana (${pType})`;
+
     const thHeader = document.getElementById('thHeaderDataRencana');
-    if (thHeader) thHeader.textContent = `📋 DATA RENCANA (${pType})`;
+    if (thHeader) thHeader.textContent = `📋 DATA RENCANA (${pType} \u2013 ${range.label || pType})`;
+
     this.renderTable();
   }
 

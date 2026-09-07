@@ -121,9 +121,9 @@
         <div class="filter-group">
           <!-- View Mode Switcher (Rencana / Realisasi / Komparasi) -->
           <div class="view-mode-toggle" id="viewModeToggleGroup">
-            <button type="button" class="view-mode-pill active" data-mode="rencana" id="pillModeRencana" title="Mode Perencanaan ROTS">
+            <button type="button" class="view-mode-pill active" data-mode="rencana" id="pillModeRencana" title="Mode Perencanaan">
               <i class="fa fa-calendar-check"></i>
-              <span>Rencana (ROTS)</span>
+              <span id="pillModeRencanaLabel">Rencana (ROTS)</span>
             </button>
             <button type="button" class="view-mode-pill" data-mode="realisasi" id="pillModeRealisasi" title="Mode Realisasi Aktual">
               <i class="fa fa-bolt"></i>
@@ -148,16 +148,33 @@
             </select>
           </div>
 
-          <!-- Filter Periode (Semester) -->
-          <div class="filter-control">
-            <label class="filter-label" for="filterPeriodTypeSelect">Jenis:</label>
-            <select class="filter-select" id="filterPeriodTypeSelect">
-              <option value="ROT">ROT – Tahunan</option>
-              <option value="ROTS" selected>ROTS – Semester</option>
-              <option value="ROB">ROB – Bulanan</option>
-              <option value="ROM">ROM – Mingguan</option>
-            </select>
+          <!-- Filter Tingkat Rencana (Pills List: ROT / ROTS / ROB / ROM) -->
+          <div class="horizon-pill-group" id="globalHorizonPillGroup" title="Pilih Tingkat Dokumen Rencana">
+            <button type="button" class="horizon-pill" data-type="ROT" title="Rencana Operasi Tahunan">
+              <span class="hp-code">ROT</span>
+              <span class="hp-desc">Tahunan</span>
+            </button>
+            <button type="button" class="horizon-pill active" data-type="ROTS" title="Rencana Operasi Tahunan Semester">
+              <span class="hp-code">ROTS</span>
+              <span class="hp-desc">Semester</span>
+            </button>
+            <button type="button" class="horizon-pill" data-type="ROB" title="Rencana Operasi Bulanan">
+              <span class="hp-code">ROB</span>
+              <span class="hp-desc">Bulanan</span>
+            </button>
+            <button type="button" class="horizon-pill" data-type="ROM" title="Rencana Operasi Mingguan">
+              <span class="hp-code">ROM</span>
+              <span class="hp-desc">Mingguan</span>
+            </button>
           </div>
+
+          <!-- Fallback select untuk backward compatibility -->
+          <select class="filter-select" id="filterPeriodTypeSelect" style="display: none;">
+            <option value="ROT">ROT – Tahunan</option>
+            <option value="ROTS" selected>ROTS – Semester</option>
+            <option value="ROB">ROB – Bulanan</option>
+            <option value="ROM">ROM – Mingguan</option>
+          </select>
 
           <!-- Filter Nilai Periode (dinamis berdasarkan jenis) -->
           <div class="filter-control">
@@ -671,6 +688,59 @@
              VIEW: KONDISI HARIAN
              ================================================================== -->
         <section class="view-section" id="view-kondisi-harian">
+          <!-- ── Panel Navigasi & Seleksi Periode Rencana (ROT / ROTS / ROB / ROM) ── -->
+          <div class="kondisi-period-nav-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <!-- List Tingkat Rencana (ROT, ROTS, ROB, ROM) -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fa fa-sitemap" style="color: #1E40AF;"></i> Tingkat Rencana:
+                  </span>
+                  <div class="horizon-pills-list" id="kondisiHorizonPillsList">
+                    <button type="button" class="horizon-nav-btn" data-type="ROT" title="Rencana Operasi Tahunan (1 Tahun)">
+                      <span class="hnb-badge">ROT</span>
+                      <span class="hnb-label">Tahunan</span>
+                    </button>
+                    <button type="button" class="horizon-nav-btn active" data-type="ROTS" title="Rencana Operasi Tahunan Semester (6 Bulan)">
+                      <span class="hnb-badge">ROTS</span>
+                      <span class="hnb-label">Semester</span>
+                    </button>
+                    <button type="button" class="horizon-nav-btn" data-type="ROB" title="Rencana Operasi Bulanan (1 Bulan)">
+                      <span class="hnb-badge">ROB</span>
+                      <span class="hnb-label">Bulanan</span>
+                    </button>
+                    <button type="button" class="horizon-nav-btn" data-type="ROM" title="Rencana Operasi Mingguan (7 Hari)">
+                      <span class="hnb-badge">ROM</span>
+                      <span class="hnb-label">Mingguan</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pemilih Periode Dinamis (Sub-period Chips & Dropdown) -->
+                <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid #E2E8F0; padding-left: 14px; flex-wrap: wrap;">
+                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #047857; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fa fa-calendar-check"></i> Pilih Periode:
+                  </span>
+                  <div class="subperiod-chips-list" id="kondisiSubperiodChipsList">
+                    <!-- Populated dynamically -->
+                  </div>
+                  <select id="kondisiSubperiodSelect" class="filter-select" style="font-size: 12px; height: 32px; padding: 4px 8px; font-weight: 600; color: #1E293B;">
+                    <!-- Options -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Tombol Buka Katalog Dokumen Rencana -->
+              <div>
+                <button type="button" class="header-btn" id="btnOpenCatalogModal" style="background: #F8FAFC; color: #334155; border-color: #CBD5E1; font-weight: 600; font-size: 12px;">
+                  <i class="fa fa-th-list" style="color: #1E40AF;"></i>
+                  <span>Katalog Periode Rencana</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
               <div class="card-title">
@@ -1962,11 +2032,146 @@
     </div>
   </div>
 
+  <!-- ====================================================================
+       MODAL: KATALOG & DAFTAR DOKUMEN RENCANA (ROT / ROTS / ROB / ROM)
+       ==================================================================== -->
+  <div class="modal-overlay" id="modalCatalogPeriods">
+    <div class="modal-card" style="max-width: 860px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-layer-group" style="color: #1E40AF;"></i>
+          <span>Katalog & Daftar Tingkat Rencana Operasi Sistem</span>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseCatalogModal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <div style="font-size: 13px; color: #475569; margin-bottom: 14px; line-height: 1.5;">
+          Sistem Operasi PLN Transmisi mengelola 4 hierarki perencanaan operasi dengan horizon waktu, batas cadangan minimum, dan granularitas yang berbeda:
+        </div>
+
+        <div class="modal-catalog-grid">
+          <!-- 1. ROT -->
+          <div class="catalog-card" id="catalogCardROT">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="period-type-badge period-badge-ROT">ROT – Tahunan</span>
+                <span style="font-size: 11px; font-weight: 700; color: #047857;" id="statusBadgeROT"><i class="fa fa-check-circle"></i> Tersedia</span>
+              </div>
+              <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #1E293B;">Rencana Operasi Tahunan</h4>
+              <p style="font-size: 12px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                Perencanaan makro sistem tenaga listrik jangka panjang selama 1 tahun penuh. Menjadi acuan jadwal overhaul pembangkit besar.
+              </p>
+              <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; font-size: 11.5px; color: #334155; margin-bottom: 12px;">
+                <div><strong>Horizon:</strong> 1 Tahun (365 Hari)</div>
+                <div><strong>Batas Cadangan Min:</strong> 2.000 MW</div>
+                <div><strong>Tersedia:</strong> Tahun 2026, 2027</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="header-btn btn-catalog-select" data-type="ROT" data-value="2026" style="flex: 1; background: #1E40AF; color: #FFF; font-size: 11.5px;">
+                <i class="fa fa-check"></i> Pilih ROT 2026
+              </button>
+              <button type="button" class="header-btn btn-catalog-input" data-type="ROT" style="background: #EFF6FF; color: #1D4ED8; font-size: 11.5px;" title="Input / Edit Data ROT">
+                <i class="fa fa-edit"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. ROTS -->
+          <div class="catalog-card" id="catalogCardROTS">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="period-type-badge period-badge-ROTS">ROTS – Semester</span>
+                <span style="font-size: 11px; font-weight: 700; color: #047857;" id="statusBadgeROTS"><i class="fa fa-check-circle"></i> Aktif (Baseline)</span>
+              </div>
+              <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #1E293B;">Rencana Operasi Tahunan Semester</h4>
+              <p style="font-size: 12px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                Rencana acuan resmi evaluasi semesteran PLN Operasi Sistem dengan parameter neraca daya baseline sesuai berkas Nerda ROTS Jamali.
+              </p>
+              <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; font-size: 11.5px; color: #334155; margin-bottom: 12px;">
+                <div><strong>Horizon:</strong> 6 Bulan (Semesteran)</div>
+                <div><strong>Batas Cadangan Min:</strong> 2.000 MW</div>
+                <div><strong>Tersedia:</strong> Semester II 2026 (Jul-Des), Semester I</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="header-btn btn-catalog-select" data-type="ROTS" data-value="ROTS_2026_S2" style="flex: 1; background: #1E40AF; color: #FFF; font-size: 11.5px;">
+                <i class="fa fa-check"></i> Pilih Semester II 2026
+              </button>
+              <button type="button" class="header-btn btn-catalog-input" data-type="ROTS" style="background: #EFF6FF; color: #1D4ED8; font-size: 11.5px;" title="Input / Edit Data ROTS">
+                <i class="fa fa-edit"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. ROB -->
+          <div class="catalog-card" id="catalogCardROB">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="period-type-badge period-badge-ROB">ROB – Bulanan</span>
+                <span style="font-size: 11px; font-weight: 700; color: #047857;" id="statusBadgeROB"><i class="fa fa-check-circle"></i> 12 Bulan Tersedia</span>
+              </div>
+              <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #1E293B;">Rencana Operasi Bulanan</h4>
+              <p style="font-size: 12px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                Penyesuaian rencana bulanan (reforecast) mempertimbangkan pola cuaca, ketersediaan pasokan gas/batubara, dan realisasi bulan lalu.
+              </p>
+              <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; font-size: 11.5px; color: #334155; margin-bottom: 12px;">
+                <div><strong>Horizon:</strong> 1 Bulan (28 - 31 Hari)</div>
+                <div><strong>Batas Cadangan Min:</strong> 1.800 MW</div>
+                <div><strong>Pilihan:</strong> Januari s/d Desember 2026</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="header-btn btn-catalog-select" data-type="ROB" data-value="ROB_2026_07" style="flex: 1; background: #059669; color: #FFF; font-size: 11.5px;">
+                <i class="fa fa-check"></i> Pilih ROB Juli 2026
+              </button>
+              <button type="button" class="header-btn btn-catalog-input" data-type="ROB" style="background: #ECFDF5; color: #047857; font-size: 11.5px;" title="Input / Edit Data ROB">
+                <i class="fa fa-edit"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. ROM -->
+          <div class="catalog-card" id="catalogCardROM">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="period-type-badge period-badge-ROM">ROM – Mingguan</span>
+                <span style="font-size: 11px; font-weight: 700; color: #047857;" id="statusBadgeROM"><i class="fa fa-check-circle"></i> Mingguan Operasional</span>
+              </div>
+              <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #1E293B;">Rencana Operasi Mingguan</h4>
+              <p style="font-size: 12px; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                Jadwal operasional mingguan spesifik untuk dispatch harian, pemeliharaan jangka pendek (MO), dan alokasi daya cadangan putar.
+              </p>
+              <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; font-size: 11.5px; color: #334155; margin-bottom: 12px;">
+                <div><strong>Horizon:</strong> 7 Hari (Senin – Minggu)</div>
+                <div><strong>Batas Cadangan Min:</strong> 1.500 MW</div>
+                <div><strong>Pilihan:</strong> Minggu 27 s/d Minggu 52</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="header-btn btn-catalog-select" data-type="ROM" data-value="ROM_2026_W27" style="flex: 1; background: #D97706; color: #FFF; font-size: 11.5px;">
+                <i class="fa fa-check"></i> Pilih ROM Minggu 27
+              </button>
+              <button type="button" class="header-btn btn-catalog-input" data-type="ROM" style="background: #FFFBEB; color: #B45309; font-size: 11.5px;" title="Input / Edit Data ROM">
+                <i class="fa fa-edit"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" class="header-btn" id="btnCloseCatalogModalFooter">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=5"></script>
+  <script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>
 

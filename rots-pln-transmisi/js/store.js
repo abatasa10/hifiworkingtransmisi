@@ -85,6 +85,7 @@ class Store {
       this.records = seed.records;
       this.saveRecords();
     }
+    this.ensureFullYearRecords();
 
     // 4. Inisialisasi Audit Trail
     const savedAudit = localStorage.getItem(STORAGE_KEY_AUDIT);
@@ -372,9 +373,47 @@ class Store {
     return { dateStart, dateEnd, label };
   }
 
+  ensureFullYearRecords() {
+    if (!this.records) return;
+    const hasJan = this.records.some(r => r.tanggal && r.tanggal.startsWith('2026-01'));
+    if (hasJan) return;
+
+    // Tambahkan data Jan - Jun 2026 jika belum ada
+    const newRecs = [];
+    const d = new Date(2026, 0, 1);
+    const end = new Date(2026, 5, 30);
+    while (d <= end) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const tgl = `${y}-${m}-${day}`;
+      const dayNum = Math.floor((d - new Date(2026, 0, 1)) / 86400000);
+      const sinWave = Math.sin(dayNum / 8);
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+
+      newRecs.push({
+        id: `Jamali_${tgl}`,
+        sistem: 'Jamali',
+        tanggal: tgl,
+        dmn: 49040.624,
+        po: Math.round((4100 + sinWave * 450) * 100) / 100,
+        mo: Math.round((240 + (dayNum % 6) * 15) * 100) / 100,
+        fo: Math.round((1440 + (dayNum % 4) * 20) * 100) / 100,
+        foEp: Math.round((3960 + sinWave * 180) * 100) / 100,
+        derKit: Math.round((1440 + (dayNum % 3) * 25) * 100) / 100,
+        derTrans: 0.0,
+        varmus: Math.round((1370 + sinWave * 40) * 100) / 100,
+        bp: isWeekend ? Math.round(30600 + sinWave * 300) : Math.round(33750 + sinWave * 500)
+      });
+      d.setDate(d.getDate() + 1);
+    }
+    this.records = [...newRecs, ...this.records].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    this.saveRecords();
+  }
+
   /**
    * Daftar opsi periode yang tersedia berdasarkan type
-   * Return: [{ value, label }, ...]
+   * Return: [{ value, label, shortLabel }, ...]
    */
   getAvailablePeriodValues(type) {
     const MONTH_NAMES_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -382,35 +421,35 @@ class Store {
     const MONTH_NAMES_FULL  = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     if (type === 'ROT') {
-      return [{ value: '2026', label: '2026' }, { value: '2027', label: '2027' }];
+      return [
+        { value: '2026', label: 'Tahun 2026 (Tahunan)', shortLabel: '2026' },
+        { value: '2027', label: 'Tahun 2027 (Tahunan)', shortLabel: '2027' }
+      ];
 
     } else if (type === 'ROTS') {
       return [
-        { value: 'ROTS_2026_S2', label: 'Semester II 2026 (Jul–Des)' },
-        { value: 'ROTS_2026_S1', label: 'Semester I 2026 (Jan–Jun)' },
-        { value: 'ROTS_2027_S1', label: 'Semester I 2027 (Jan–Jun)' },
+        { value: 'ROTS_2026_S2', label: 'Semester II 2026 (Jul–Des)', shortLabel: 'Semester II (Jul-Des)' },
+        { value: 'ROTS_2026_S1', label: 'Semester I 2026 (Jan–Jun)', shortLabel: 'Semester I (Jan-Jun)' }
       ];
 
     } else if (type === 'ROB') {
-      // Semua bulan di tahun 2026
-      return [7,8,9,10,11,12].map(m => ({
+      // 12 bulan tahun 2026
+      return [1,2,3,4,5,6,7,8,9,10,11,12].map(m => ({
         value: `ROB_2026_${String(m).padStart(2,'0')}`,
-        label: `${MONTH_NAMES_FULL[m]} 2026`
+        label: `${MONTH_NAMES_FULL[m]} 2026`,
+        shortLabel: `${MONTH_NAMES_SHORT[m]}`
       }));
 
     } else if (type === 'ROM') {
-      // Minggu-minggu dalam Semester II 2026 (Jul–Des)
       const options = [];
       const MONTH_NAMES = MONTH_NAMES_SHORT;
-      // Iterasi 1 Jul – 31 Des 2026, ambil setiap Senin
-      let d = new Date(2026, 6, 1); // 1 Jul 2026
+      // Minggu 27 s/d 52 (Semester II) dan minggu lainnya
+      let d = new Date(2026, 5, 29); // Senin 29 Jun 2026 (W27)
       const end = new Date(2026, 11, 31);
       while (d <= end) {
-        // Cari Senin dari tanggal ini
-        const dayOfWeek = d.getDay() || 7; // 1=Mon, 7=Sun
+        const dayOfWeek = d.getDay() || 7;
         const monday = new Date(d);
         monday.setDate(d.getDate() - dayOfWeek + 1);
-        // ISO week number
         const temp = new Date(monday);
         temp.setDate(temp.getDate() + 4 - (temp.getDay() || 7));
         const yearStart = new Date(temp.getFullYear(), 0, 1);
@@ -419,12 +458,11 @@ class Store {
         const fmtDay = (dt) => `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()+1]}`;
         options.push({
           value: `ROM_2026_W${weekNo}`,
-          label: `Minggu ${weekNo}: ${fmtDay(monday)}–${fmtDay(sunday)}`
+          label: `Minggu ${weekNo}: ${fmtDay(monday)}–${fmtDay(sunday)}`,
+          shortLabel: `W${weekNo}`
         });
-        // Maju 7 hari
         d = new Date(monday); d.setDate(monday.getDate() + 7);
       }
-      // Hapus duplikat
       return options.filter((o, i, a) => a.findIndex(x => x.value === o.value) === i);
     }
     return [];

@@ -29,6 +29,7 @@ class RotsApp {
     this.bindQuickUploadRealisasiModal();
     this.bindInputRencanaModal();
     this.bindUploadRencanaModal();
+    this.bindCatalogModal();
 
     this.dailyView.init();
     this.outageView.init();
@@ -217,7 +218,7 @@ class RotsApp {
         .join('');
     };
 
-    // Helper: update badge + title
+    // Helper: update badge + title + horizon pills + view mode label
     const updatePeriodBadge = (type) => {
       const badge = document.getElementById('activePeriodTypeBadge');
       if (badge) {
@@ -232,13 +233,42 @@ class RotsApp {
         ROM:  'ROM \u2013 Rencana Operasi Mingguan'
       };
       if (titleEl) titleEl.textContent = titleMap[type] || 'ROTS';
+
+      // Update label tombol Mode Rencana (agar dinamis: Rencana (ROB), Rencana (ROT), dll)
+      const pillModeLabel = document.getElementById('pillModeRencanaLabel');
+      if (pillModeLabel) pillModeLabel.textContent = `Rencana (${type})`;
+
+      // Update pills di top global filter bar
+      const globalPills = document.querySelectorAll('#globalHorizonPillGroup .horizon-pill');
+      globalPills.forEach(p => {
+        if (p.getAttribute('data-type') === type) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
     };
+
+    // Event listener untuk Pill Tingkat Rencana di Global Filter Bar (ROT / ROTS / ROB / ROM)
+    const globalPills = document.querySelectorAll('#globalHorizonPillGroup .horizon-pill');
+    globalPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const type = pill.getAttribute('data-type');
+        if (!type) return;
+        if (selectPeriodType) selectPeriodType.value = type;
+        populatePeriodValues(type);
+        const firstValue = this.store.getAvailablePeriodValues(type)[0]?.value;
+        if (firstValue) {
+          this.store.setPlanningPeriod(type, firstValue);
+        }
+        updatePeriodBadge(type);
+      });
+    });
 
     if (selectPeriodType) {
       selectPeriodType.addEventListener('change', (e) => {
         const type = e.target.value;
         populatePeriodValues(type);
-        // Pilih value pertama secara default
         const firstValue = this.store.getAvailablePeriodValues(type)[0]?.value;
         if (firstValue) {
           this.store.setPlanningPeriod(type, firstValue);
@@ -1595,6 +1625,50 @@ class RotsApp {
         window.showToast(`🎉 Berhasil mengimpor ${count} data rencana ${activeDoc} ke dalam sistem!`);
       });
     }
+  }
+
+  bindCatalogModal() {
+    const modal = document.getElementById('modalCatalogPeriods');
+    const btnClose = document.getElementById('btnCloseCatalogModal');
+    const btnCloseFooter = document.getElementById('btnCloseCatalogModalFooter');
+
+    const closeModal = () => {
+      if (modal) modal.classList.remove('active');
+    };
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCloseFooter) btnCloseFooter.addEventListener('click', closeModal);
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    // Tombol Pilih Periode dalam Katalog
+    const selectBtns = document.querySelectorAll('.btn-catalog-select');
+    selectBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        const val = btn.getAttribute('data-value');
+        if (type && val) {
+          this.store.setPlanningPeriod(type, val);
+          closeModal();
+          window.showToast && window.showToast(`Periode aktif diubah ke ${type}`, 'success');
+        }
+      });
+    });
+
+    // Tombol Input Rencana dari Katalog
+    const inputBtns = document.querySelectorAll('.btn-catalog-input');
+    inputBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        closeModal();
+        if (window.ROTS_OPEN_INPUT_RENCANA) {
+          window.ROTS_OPEN_INPUT_RENCANA(null, type);
+        }
+      });
+    });
   }
 
 }
