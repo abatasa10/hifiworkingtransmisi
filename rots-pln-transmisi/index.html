@@ -680,7 +680,11 @@
               <div class="header-actions">
                 <button type="button" class="header-btn" id="btnOpenInputRealisasi" style="background: #10B981; color: #FFFFFF; border-color: #10B981; font-weight: 600;">
                   <i class="fa fa-pencil-alt"></i>
-                  <span>Input Realisasi Harian</span>
+                  <span>Input Realisasi</span>
+                </button>
+                <button type="button" class="header-btn" id="btnUploadRealisasiQuick" style="background: #F0FDF4; color: #047857; border-color: #A7F3D0; font-weight: 600;">
+                  <i class="fa fa-file-upload"></i>
+                  <span>Upload Excel</span>
                 </button>
                 <button class="header-btn btn-primary" id="btnExportDailyTable">
                   <i class="fa fa-file-excel"></i>
@@ -707,6 +711,15 @@
                     </select>
                   </div>
 
+                  <!-- Filter Realisasi -->
+                  <div class="filter-control">
+                    <select class="filter-select" id="dailyRealisasiFilter">
+                      <option value="ALL">Semua Realisasi</option>
+                      <option value="ADA">Ada Data Real</option>
+                      <option value="BELUM">Belum Ada Real</option>
+                    </select>
+                  </div>
+
                   <div class="filter-control">
                     <select class="filter-select" id="dailyPageSize">
                       <option value="15">15 per halaman</option>
@@ -722,6 +735,12 @@
               <div class="table-responsive">
                 <table class="data-table" id="dailyTable">
                   <thead>
+                    <!-- Baris 1: Grup Header -->
+                    <tr>
+                      <th colspan="16" style="background: #F8FAFC; border-bottom: none; font-size: 10.5px; color: #64748B; font-weight: 600; padding: 4px 12px;">📋 DATA RENCANA (ROTS)</th>
+                      <th colspan="6" style="background: #ECFDF5; border-bottom: none; border-left: 2px solid #A7F3D0; font-size: 10.5px; color: #047857; font-weight: 700; padding: 4px 12px; text-align: center;">⚡ REALISASI AKTUAL</th>
+                    </tr>
+                    <!-- Baris 2: Kolom Detail -->
                     <tr>
                       <th class="sortable" data-sort="tanggal">Tanggal <i class="fa fa-sort"></i></th>
                       <th>Sistem</th>
@@ -739,6 +758,13 @@
                       <th class="text-right sortable" data-sort="bp" style="color: #7C3AED;">BP (MW) <i class="fa fa-sort"></i></th>
                       <th class="text-right sortable" data-sort="cad" style="color: #0D9488;">CAD (MW) <i class="fa fa-sort"></i></th>
                       <th class="text-center sortable" data-sort="statusKey">Status <i class="fa fa-sort"></i></th>
+                      <!-- Kolom Realisasi Aktual -->
+                      <th class="text-right" style="background:#ECFDF5; color:#047857; border-left:2px solid #A7F3D0;">BP Real (MW)</th>
+                      <th class="text-right" style="background:#ECFDF5; color:#0284C7;">DMP Real</th>
+                      <th class="text-right" style="background:#ECFDF5; color:#0D9488;">CAD Real</th>
+                      <th class="text-right" style="background:#ECFDF5; color:#D97706;">Δ BP</th>
+                      <th class="text-center" style="background:#ECFDF5; color:#047857;">Status Real</th>
+                      <th class="text-center" style="background:#ECFDF5; border-right:2px solid #A7F3D0;">Aksi</th>
                     </tr>
                   </thead>
                   <tbody id="dailyTableBody">
@@ -1524,9 +1550,14 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
             <!-- BP Realisasi -->
             <div class="form-group">
-              <label style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">
-                Beban Puncak (BP) Realisasi <span style="color:#EF4444;">*</span>
-              </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label style="font-size: 12.5px; font-weight: 600; color: #1E293B;">
+                  Beban Puncak (BP) Realisasi <span style="color:#EF4444;">*</span>
+                </label>
+                <button type="button" id="btnFillPlanBp" style="background: none; border: none; color: #2563EB; font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline;" title="Salin nilai beban puncak rencana ke input ini">
+                  <i class="fa fa-magic"></i> Gunakan Nilai Rencana
+                </button>
+              </div>
               <div style="position: relative;">
                 <input type="number" step="0.01" id="inputRealBp" required class="filter-select" style="width: 100%; padding: 8px 36px 8px 12px; font-size: 14px; font-weight: 600;" placeholder="Contoh: 34120.50">
                 <span style="position: absolute; right: 12px; top: 9px; font-size: 12px; color: #64748B; font-weight: 600;">MW</span>
@@ -1617,7 +1648,85 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       MODAL: UPLOAD FILE EXCEL REALISASI AKTUAL (KONDISI HARIAN)
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalUploadRealisasi">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-file-excel" style="color: #10B981;"></i>
+          <span>Upload File Realisasi Harian (Excel / CSV)</span>
+        </div>
+        <button class="modal-close-btn" id="btnCloseModalUploadRealisasi">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Keterangan & Download Template -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+          <div>
+            <div style="font-weight: 700; font-size: 13px; color: #166534; margin-bottom: 2px;">
+              <i class="fa fa-info-circle"></i> Format Berkas Realisasi Excel
+            </div>
+            <div style="font-size: 11.5px; color: #15803D;">
+              Kolom wajib: <code>Tanggal</code> (YYYY-MM-DD), <code>BP_Realisasi</code>. Kolom opsional: <code>PO</code>, <code>MO</code>, <code>FO</code>, <code>Derating</code>.
+            </div>
+          </div>
+          <button type="button" class="header-btn" id="btnDownloadTemplateRealisasiModal" style="background: #FFFFFF; color: #166534; border-color: #86EFAC; font-weight: 600; font-size: 11.5px; white-space: nowrap;">
+            <i class="fa fa-download"></i> Unduh Template
+          </button>
+        </div>
+
+        <!-- Dropzone Box -->
+        <div id="quickUploadDropzone" style="border: 2px dashed #93C5FD; border-radius: 10px; background: #F8FAFC; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s;" title="Klik atau seret file ke sini">
+          <input type="file" id="quickUploadFileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+          <i class="fa fa-cloud-upload-alt" style="font-size: 40px; color: #3B82F6; margin-bottom: 10px;"></i>
+          <div style="font-weight: 700; font-size: 14px; color: #1E293B;" id="quickDropzoneTitle">Pilih atau Tarik File Excel Realisasi ke Sini</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Mendukung format .xlsx, .xls, dan .csv</div>
+        </div>
+
+        <!-- Hasil Staging / Validasi File -->
+        <div id="quickUploadStagingArea" style="display: none; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: #1E293B;" id="quickStagingSummary">
+              <!-- e.g. 31 data valid siap disimpan -->
+            </div>
+            <span id="quickStagingBadge" class="badge-status badge-normal" style="font-size: 11px;">Valid</span>
+          </div>
+
+          <!-- Preview 5 baris pertama -->
+          <div style="max-height: 180px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 6px;">
+            <table class="data-table" style="font-size: 11.5px; margin: 0;">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th class="text-right">BP Real (MW)</th>
+                  <th class="text-right">DMN (MW)</th>
+                  <th class="text-right">PO (MW)</th>
+                  <th class="text-right">FO (MW)</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody id="quickStagingTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="header-btn" id="btnCancelModalUploadRealisasi">Batal</button>
+        <button type="button" class="header-btn btn-primary" id="btnCommitQuickUpload" disabled style="background: #10B981; border-color: #10B981;">
+          <i class="fa fa-check"></i> Terapkan & Simpan Realisasi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer"></div>
+
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=3"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
+

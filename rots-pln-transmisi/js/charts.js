@@ -299,21 +299,21 @@ export class ChartService {
       if (canvas.offsetParent === null) return;
 
       const rect = canvas.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
+      if (!rect || rect.width <= 30 || rect.height <= 20) return;
 
       const width = rect.width;
       const height = rect.height;
       const centerX = width / 2;
       const centerY = height - 8;
       const radius = Math.min(centerX - 14, height - 14);
-      if (radius <= 5) return;
+      if (isNaN(radius) || radius <= 10) return;
       const lineWidth = Math.max(10, Math.min(15, Math.round(radius * 0.22)));
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
 
     ctx.clearRect(0, 0, width, height);
 

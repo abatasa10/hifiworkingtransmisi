@@ -3,13 +3,13 @@
  * Menghubungkan seluruh modul tampilan, store data, router navigasi, filter global, dan modal.
  */
 
-import { CalculationService } from './calculation.js';
-import { store } from './store.js';
-import { chartService } from './charts.js';
-import { dailyView } from './dailyView.js';
-import { outageView } from './outageView.js';
-import { parameterView } from './parameterView.js';
-import { importExportService } from './importExport.js';
+import { CalculationService } from './calculation.js?v=5';
+import { store } from './store.js?v=5';
+import { chartService } from './charts.js?v=5';
+import { dailyView } from './dailyView.js?v=5';
+import { outageView } from './outageView.js?v=5';
+import { parameterView } from './parameterView.js?v=5';
+import { importExportService } from './importExport.js?v=5';
 
 class RotsApp {
   constructor() {
@@ -26,6 +26,7 @@ class RotsApp {
     this.bindFilterBar();
     this.bindModals();
     this.bindRealisasiModal();
+    this.bindQuickUploadRealisasiModal();
 
     this.dailyView.init();
     this.outageView.init();
@@ -89,7 +90,10 @@ class RotsApp {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const viewId = link.getAttribute('data-view');
-        this.store.setCurrentView(viewId);
+        if (viewId) {
+          window.location.hash = viewId;
+          this.store.setCurrentView(viewId);
+        }
       });
     });
 
@@ -98,12 +102,29 @@ class RotsApp {
     if (linkDetailHarian) {
       linkDetailHarian.addEventListener('click', (e) => {
         e.preventDefault();
+        window.location.hash = 'kondisi-harian';
         this.store.setCurrentView('kondisi-harian');
       });
     }
+
+    // URL Hash Routing Support (#kondisi-harian, #dashboard, etc.)
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '').trim();
+      if (hash && document.getElementById(`view-${hash}`)) {
+        this.store.setCurrentView(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    // Jalankan saat pertama kali halaman dimuat jika ada hash
+    setTimeout(handleHash, 50);
   }
 
   switchView(viewId) {
+    // Sync URL hash
+    if (window.location.hash.replace('#', '') !== viewId) {
+      window.location.hash = viewId;
+    }
+
     // Update active nav in top navbar and sidebar
     document.querySelectorAll('[data-view]').forEach(link => {
       if (link.getAttribute('data-view') === viewId) {
@@ -903,6 +924,20 @@ class RotsApp {
       });
     }
 
+    // Tombol Gunakan Nilai Rencana (Auto-Fill BP)
+    const btnFillPlan = document.getElementById('btnFillPlanBp');
+    if (btnFillPlan) {
+      btnFillPlan.addEventListener('click', () => {
+        const curDate = datePicker.value;
+        const rec = this.store.getFilteredRecords().find(r => r.tanggal === curDate);
+        if (rec) {
+          inputBp.value = rec.bp;
+          updateLivePreview(rec);
+          window.showToast(`Nilai BP Rencana (${CalculationService.formatNumber(rec.bp)} MW) disalin ke form.`, 'info');
+        }
+      });
+    }
+
     [inputBp, inputDmn, inputPo, inputMo, inputFo, inputDerating].forEach(inp => {
       if (inp) {
         inp.addEventListener('input', () => {
@@ -934,6 +969,17 @@ class RotsApp {
 
         this.store.setRealisasi(dateStr, data);
         closeModal();
+        window.showToast(`✅ Data Realisasi ${CalculationService.formatDateIndo(dateStr)} berhasil disimpan!`);
+
+        // Highlight baris di tabel kondisi harian
+        setTimeout(() => {
+          const row = document.querySelector(`#dailyTableBody tr[data-date="${dateStr}"]`);
+          if (row) {
+            row.classList.add('row-recently-updated');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => row.classList.remove('row-recently-updated'), 3500);
+          }
+        }, 100);
       });
     }
 
@@ -943,14 +989,222 @@ class RotsApp {
         if (confirm(`Hapus data realisasi tanggal ${CalculationService.formatDateIndo(dateStr)}?`)) {
           this.store.deleteRealisasi(dateStr);
           closeModal();
+          window.showToast(`🗑️ Data realisasi tanggal ${CalculationService.formatDateIndo(dateStr)} telah dihapus.`, 'info');
         }
       });
     }
   }
+
+  // ==========================================================================
+  // MODAL: UPLOAD FILE EXCEL REALISASI AKTUAL (KONDISI HARIAN)
+  // ==========================================================================
+  bindQuickUploadRealisasiModal() {
+    const modal = document.getElementById('modalUploadRealisasi');
+    const btnClose = document.getElementById('btnCloseModalUploadRealisasi');
+    const btnCancel = document.getElementById('btnCancelModalUploadRealisasi');
+    const btnDownloadTpl = document.getElementById('btnDownloadTemplateRealisasiModal');
+    const dropzone = document.getElementById('quickUploadDropzone');
+    const fileInput = document.getElementById('quickUploadFileInput');
+    const stagingArea = document.getElementById('quickUploadStagingArea');
+    const stagingSummary = document.getElementById('quickStagingSummary');
+    const stagingBadge = document.getElementById('quickStagingBadge');
+    const stagingTbody = document.getElementById('quickStagingTableBody');
+    const btnCommit = document.getElementById('btnCommitQuickUpload');
+
+    let stagedRows = [];
+
+    const closeModal = () => {
+      if (modal) modal.classList.remove('active');
+      stagedRows = [];
+      if (fileInput) fileInput.value = '';
+      if (stagingArea) stagingArea.style.display = 'none';
+      if (btnCommit) btnCommit.disabled = true;
+    };
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    // Download template realisasi
+    if (btnDownloadTpl) {
+      btnDownloadTpl.addEventListener('click', () => {
+        const records = this.store.getFilteredRecords();
+        const tplData = records.slice(0, 31).map((r, i) => ({
+          'Tanggal': r.tanggal,
+          'BP_Realisasi': Math.round((r.bp + (i % 2 === 0 ? 150.25 : -95.50)) * 100) / 100,
+          'DMN_Realisasi': r.dmn,
+          'PO_Realisasi': r.po,
+          'MO_Realisasi': r.mo,
+          'FO_Realisasi': r.fo,
+          'Derating_Realisasi': r.derKit,
+          'Catatan': `Realisasi harian ${CalculationService.formatDateIndo(r.tanggal)}`
+        }));
+        const ws = XLSX.utils.json_to_sheet(tplData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Template_Realisasi');
+        XLSX.writeFile(wb, 'Template_Realisasi_Operasi_PLN.xlsx');
+        window.showToast('📥 Berkas Template Realisasi berhasil diunduh.', 'info');
+      });
+    }
+
+    // Dropzone interaction
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#2563EB';
+        dropzone.style.background = '#EFF6FF';
+      });
+
+      ['dragleave', 'dragend'].forEach(evt => {
+        dropzone.addEventListener(evt, () => {
+          dropzone.style.borderColor = '#93C5FD';
+          dropzone.style.background = '#F8FAFC';
+        });
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#93C5FD';
+        dropzone.style.background = '#F8FAFC';
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          processFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          processFile(e.target.files[0]);
+        }
+      });
+    }
+
+    const processFile = (file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+
+          if (!rawRows || !rawRows.length) {
+            alert('Berkas Excel kosong atau lembar kerja tidak terbaca.');
+            return;
+          }
+
+          // Header normalization
+          const normalize = (row, candidates) => {
+            for (const c of candidates) {
+              const key = Object.keys(row).find(k => k.trim().toLowerCase() === c.toLowerCase());
+              if (key && row[key] !== '') return row[key];
+            }
+            return null;
+          };
+
+          const validRows = [];
+          rawRows.forEach(r => {
+            const tglRaw = normalize(r, ['Tanggal', 'Date', 'Tgl', 'Waktu']);
+            const bpRaw = normalize(r, ['BP_Realisasi', 'BP', 'Beban Puncak', 'Beban_Puncak']);
+            const dmnRaw = normalize(r, ['DMN_Realisasi', 'DMN']);
+            const poRaw = normalize(r, ['PO_Realisasi', 'PO']);
+            const moRaw = normalize(r, ['MO_Realisasi', 'MO']);
+            const foRaw = normalize(r, ['FO_Realisasi', 'FO']);
+            const derRaw = normalize(r, ['Derating_Realisasi', 'Derating', 'DER KIT']);
+            const notesRaw = normalize(r, ['Catatan', 'Notes', 'Keterangan']);
+
+            if (!tglRaw) return;
+            let formattedDate = String(tglRaw).trim();
+            if (typeof tglRaw === 'number') {
+              const jsDate = new Date(Math.round((tglRaw - 25569) * 86400 * 1000));
+              formattedDate = jsDate.toISOString().split('T')[0];
+            }
+
+            const bp = parseFloat(bpRaw);
+            if (isNaN(bp) || bp <= 0) return;
+
+            validRows.push({
+              tanggal: formattedDate,
+              bp,
+              dmn: parseFloat(dmnRaw) || 0,
+              po: parseFloat(poRaw) || 0,
+              mo: parseFloat(moRaw) || 0,
+              fo: parseFloat(foRaw) || 0,
+              derKit: parseFloat(derRaw) || 0,
+              notes: String(notesRaw || 'Upload Excel Realisasi').trim()
+            });
+          });
+
+          if (!validRows.length) {
+            alert('Tidak ditemukan data baris yang valid. Pastikan kolom Tanggal dan BP_Realisasi terisi angka valid.');
+            return;
+          }
+
+          stagedRows = validRows;
+          if (stagingSummary) stagingSummary.textContent = `${validRows.length} baris data realisasi valid ditemukan`;
+          if (stagingBadge) {
+            stagingBadge.className = 'badge-status badge-normal';
+            stagingBadge.textContent = `${validRows.length} Siap Diimpor`;
+          }
+
+          if (stagingTbody) {
+            stagingTbody.innerHTML = validRows.slice(0, 5).map(r => `
+              <tr>
+                <td><strong>${r.tanggal}</strong></td>
+                <td class="text-right" style="color: #059669; font-weight: 700;">${CalculationService.formatNumber(r.bp)}</td>
+                <td class="text-right">${r.dmn > 0 ? CalculationService.formatNumber(r.dmn) : '-'}</td>
+                <td class="text-right">${r.po > 0 ? CalculationService.formatNumber(r.po) : '-'}</td>
+                <td class="text-right">${r.fo > 0 ? CalculationService.formatNumber(r.fo) : '-'}</td>
+                <td style="color: #64748B; font-size: 11px;">${r.notes}</td>
+              </tr>
+            `).join('');
+          }
+
+          if (stagingArea) stagingArea.style.display = 'block';
+          if (btnCommit) {
+            btnCommit.disabled = false;
+            btnCommit.innerHTML = `<i class="fa fa-check"></i> Simpan & Terapkan ${validRows.length} Data Realisasi`;
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Terjadi kesalahan saat memproses file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    if (btnCommit) {
+      btnCommit.addEventListener('click', () => {
+        if (!stagedRows.length) return;
+        const count = this.store.importRealisasiRecords(stagedRows);
+        closeModal();
+        window.showToast(`🎉 Berhasil mengimpor ${count} data realisasi aktual ke sistem!`);
+      });
+    }
+  }
 }
+
+// Global Toast Notification Helper
+window.showToast = function(message, type = 'success') {
+  const container = document.getElementById('toastContainer') || document.body;
+  const toast = document.createElement('div');
+  toast.className = `rots-toast rots-toast-${type}`;
+  let icon = 'fa-check-circle';
+  if (type === 'info') icon = 'fa-info-circle';
+  if (type === 'warning') icon = 'fa-exclamation-triangle';
+  if (type === 'error') icon = 'fa-times-circle';
+  toast.innerHTML = `<i class="fa ${icon}"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 350);
+  }, 4000);
+};
 
 // Bootstrap application on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   window.ROTS_APP = new RotsApp();
   window.ROTS_APP.init();
 });
+

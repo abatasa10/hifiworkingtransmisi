@@ -15,6 +15,7 @@ export class DailyView {
     this.sortDirection = 'asc';
     this.searchQuery = '';
     this.statusFilter = 'ALL';
+    this.realisasiFilter = 'ALL'; // 'ALL' | 'ADA' | 'BELUM'
   }
 
   init() {
@@ -43,6 +44,16 @@ export class DailyView {
       });
     }
 
+    // Realisasi filter dropdown
+    const realFilter = document.getElementById('dailyRealisasiFilter');
+    if (realFilter) {
+      realFilter.addEventListener('change', (e) => {
+        this.realisasiFilter = e.target.value; // 'ALL' | 'ADA' | 'BELUM'
+        this.currentPage = 1;
+        this.renderTable();
+      });
+    }
+
     // Page size dropdown
     const pageSizeSelect = document.getElementById('dailyPageSize');
     if (pageSizeSelect) {
@@ -59,6 +70,37 @@ export class DailyView {
       btnExportDaily.addEventListener('click', () => {
         if (window.ROTS_APP && window.ROTS_APP.importExport) {
           window.ROTS_APP.importExport.exportToExcel();
+        }
+      });
+    }
+
+    // Tombol Input Realisasi Harian (buka modal form)
+    const btnInputReal = document.getElementById('btnOpenInputRealisasi');
+    if (btnInputReal) {
+      btnInputReal.addEventListener('click', () => {
+        const dateStr = store.filters.selectedDate || store.getFilteredRecords()[0]?.tanggal || '2026-07-01';
+        if (window.ROTS_OPEN_REALISASI) {
+          window.ROTS_OPEN_REALISASI(dateStr);
+        } else if (window.ROTS_APP && window.ROTS_APP.openRealisasiModal) {
+          window.ROTS_APP.openRealisasiModal(dateStr);
+        }
+      });
+    }
+
+    // Tombol Upload/Import Realisasi (buka modal upload cepat)
+    const btnUpload = document.getElementById('btnUploadRealisasiQuick');
+    if (btnUpload) {
+      btnUpload.addEventListener('click', () => {
+        const modalUpload = document.getElementById('modalUploadRealisasi');
+        if (modalUpload) {
+          modalUpload.classList.add('active');
+        } else {
+          // Fallback ke halaman Import Data tab Realisasi
+          store.setCurrentView('import-data');
+          setTimeout(() => {
+            const tabReal = document.getElementById('tabImportRealisasi');
+            if (tabReal) tabReal.click();
+          }, 120);
         }
       });
     }
@@ -112,6 +154,13 @@ export class DailyView {
       return this.sortDirection === 'asc' ? (valA - valB) : (valB - valA);
     });
 
+    // Filter by realisasi
+    if (this.realisasiFilter === 'ADA') {
+      records = records.filter(r => !!r.realisasi);
+    } else if (this.realisasiFilter === 'BELUM') {
+      records = records.filter(r => !r.realisasi);
+    }
+
     return records;
   }
 
@@ -149,13 +198,36 @@ export class DailyView {
       const isSelected = r.tanggal === store.filters.selectedDate;
       const cadClass = r.cad < 0 ? 'text-danger' : (r.cad < store.params.minReserveThreshold ? 'text-warning' : 'text-success');
 
+      // ── Kolom Realisasi ──────────────────────────────────────────
+      const real = r.realisasi;
+      const hasReal = !!real;
+      const realBg = 'background: rgba(16,185,129,0.06);';
+      const realBpCell   = hasReal ? `<span style="font-weight:700;color:#047857">${CalculationService.formatNumber(real.bp)}</span>` : `<span style="color:#CBD5E1;font-style:italic">–</span>`;
+      const realDmpCell  = hasReal ? `<span style="font-weight:700;color:#0284C7">${CalculationService.formatNumber(real.dmp)}</span>` : `<span style="color:#CBD5E1;font-style:italic">–</span>`;
+      const realCadCell  = hasReal ? `<span style="font-weight:700;color:${real.cad<0?'#DC2626':(real.cad<store.params.minReserveThreshold?'#D97706':'#059669')}">${CalculationService.formatNumber(real.cad)}</span>` : `<span style="color:#CBD5E1;font-style:italic">–</span>`;
+      let deltaBpCell = `<span style="color:#CBD5E1;font-style:italic">–</span>`;
+      if (hasReal) {
+        const delta = real.deltaBP;
+        const sign  = delta > 0 ? '+' : '';
+        const col   = delta > 0 ? '#D97706' : (delta < 0 ? '#059669' : '#64748B');
+        deltaBpCell = `<span style="font-weight:700;color:${col}">${sign}${CalculationService.formatNumber(delta, 0)}</span>`;
+      }
+      const realStatusCell = hasReal
+        ? `<span class="badge-status ${real.statusBadge}" style="font-size:10px;padding:2px 6px;">${real.statusLabel}</span>`
+        : `<span style="color:#CBD5E1;font-size:10px;">Belum</span>`;
+
+      // ── Tombol aksi inline ────────────────────────────────────────
+      const btnEdit = `<button class="btn-inline-real btn-edit-real" data-date="${r.tanggal}" title="${hasReal?'Ubah':'Input'} Realisasi" style="cursor:pointer;border:1px solid ${hasReal?'#10B981':'#94A3B8'};background:${hasReal?'#ECFDF5':'#F8FAFC'};color:${hasReal?'#047857':'#64748B'};border-radius:4px;padding:2px 7px;font-size:10.5px;font-weight:600;">
+        <i class="fa ${hasReal?'fa-pencil-alt':'fa-plus'}"></i> ${hasReal?'Ubah':'+ Input'}
+      </button>`;
+
       return `
-        <tr class="${isSelected ? 'active-row' : ''}" data-date="${r.tanggal}" title="Klik untuk melihat rincian perhitungan formula">
+        <tr class="${isSelected ? 'active-row' : ''}" data-date="${r.tanggal}" title="Klik baris untuk detail formula">
           <td style="font-weight: 600;">
             <a href="javascript:void(0)" class="daily-row-link" style="color: var(--pln-navy-dark); text-decoration: none; border-bottom: 1px dotted var(--pln-blue-primary);">
               ${CalculationService.formatDateIndo(r.tanggal)}
             </a>
-            ${r.realisasi ? `<span class="badge-realisasi-tag" style="margin-left: 6px;" title="Realisasi BP: ${CalculationService.formatNumber(r.realisasi.bp)} MW"><i class="fa fa-bolt"></i> Real</span>` : ''}
+            ${hasReal ? `<span class="badge-realisasi-tag" style="margin-left: 4px;" title="Realisasi tersimpan"><i class="fa fa-bolt"></i> Real</span>` : ''}
           </td>
           <td><span class="badge-system">${r.sistem}</span></td>
           <td class="text-right">${CalculationService.formatNumber(r.dmn)}</td>
@@ -177,6 +249,13 @@ export class DailyView {
               ${r.statusLabel}
             </span>
           </td>
+          <!-- ── Kolom REALISASI AKTUAL ─────────────────────── -->
+          <td class="text-right" style="${realBg} border-left: 2px solid #A7F3D0;">${realBpCell}</td>
+          <td class="text-right" style="${realBg}">${realDmpCell}</td>
+          <td class="text-right" style="${realBg}">${realCadCell}</td>
+          <td class="text-right" style="${realBg}">${deltaBpCell}</td>
+          <td class="text-center" style="${realBg}">${realStatusCell}</td>
+          <td class="text-center" style="${realBg} border-right: 2px solid #A7F3D0;" onclick="event.stopPropagation()">${btnEdit}</td>
         </tr>
       `;
     }).join('');
@@ -188,6 +267,22 @@ export class DailyView {
         if (dateStr) {
           this.openDetailModal(dateStr);
           store.setSelectedDate(dateStr);
+        }
+      });
+    });
+
+    // Listener tombol inline "Ubah / + Input" realisasi per baris
+    tbody.querySelectorAll('.btn-edit-real').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // jangan trigger row click
+        const dateStr = btn.getAttribute('data-date');
+        if (!dateStr) return;
+        store.setSelectedDate(dateStr);
+        // Buka modal input realisasi
+        if (window.ROTS_OPEN_REALISASI) {
+          window.ROTS_OPEN_REALISASI(dateStr);
+        } else if (window.ROTS_APP && window.ROTS_APP.openRealisasiModal) {
+          window.ROTS_APP.openRealisasiModal(dateStr);
         }
       });
     });
