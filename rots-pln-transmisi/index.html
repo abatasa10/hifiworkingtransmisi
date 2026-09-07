@@ -690,53 +690,48 @@
         <section class="view-section" id="view-kondisi-harian">
           <!-- ── Panel Navigasi & Seleksi Periode Rencana (ROT / ROTS / ROB / ROM) ── -->
           <div class="kondisi-period-nav-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                <!-- List Tingkat Rencana (ROT, ROTS, ROB, ROM) -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa fa-sitemap" style="color: #1E40AF;"></i> Tingkat Rencana:
-                  </span>
-                  <div class="horizon-pills-list" id="kondisiHorizonPillsList">
-                    <button type="button" class="horizon-nav-btn" data-type="ROT" title="Rencana Operasi Tahunan (1 Tahun)">
-                      <span class="hnb-badge">ROT</span>
-                      <span class="hnb-label">Tahunan</span>
-                    </button>
-                    <button type="button" class="horizon-nav-btn active" data-type="ROTS" title="Rencana Operasi Tahunan Semester (6 Bulan)">
-                      <span class="hnb-badge">ROTS</span>
-                      <span class="hnb-label">Semester</span>
-                    </button>
-                    <button type="button" class="horizon-nav-btn" data-type="ROB" title="Rencana Operasi Bulanan (1 Bulan)">
-                      <span class="hnb-badge">ROB</span>
-                      <span class="hnb-label">Bulanan</span>
-                    </button>
-                    <button type="button" class="horizon-nav-btn" data-type="ROM" title="Rencana Operasi Mingguan (7 Hari)">
-                      <span class="hnb-badge">ROM</span>
-                      <span class="hnb-label">Mingguan</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Pemilih Periode Dinamis (Sub-period Chips & Dropdown) -->
-                <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid #E2E8F0; padding-left: 14px; flex-wrap: wrap;">
-                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #047857; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa fa-calendar-check"></i> Pilih Periode:
-                  </span>
-                  <div class="subperiod-chips-list" id="kondisiSubperiodChipsList">
-                    <!-- Populated dynamically -->
-                  </div>
-                  <select id="kondisiSubperiodSelect" class="filter-select" style="font-size: 12px; height: 32px; padding: 4px 8px; font-weight: 600; color: #1E293B;">
-                    <!-- Options -->
-                  </select>
+            <!-- Baris 1: Tingkat Rencana + Katalog -->
+            <div class="kp-nav-top-row">
+              <div class="kp-nav-left">
+                <span class="kp-section-label">
+                  <i class="fa fa-sitemap" style="color: #1E40AF;"></i> Tingkat Rencana:
+                </span>
+                <div class="horizon-pills-list" id="kondisiHorizonPillsList">
+                  <button type="button" class="horizon-nav-btn" data-type="ROT" title="Rencana Operasi Tahunan (1 Tahun)">
+                    <span class="hnb-badge">ROT</span>
+                    <span class="hnb-label">Tahunan</span>
+                  </button>
+                  <button type="button" class="horizon-nav-btn active" data-type="ROTS" title="Rencana Operasi Tahunan Semester (6 Bulan)">
+                    <span class="hnb-badge">ROTS</span>
+                    <span class="hnb-label">Semester</span>
+                  </button>
+                  <button type="button" class="horizon-nav-btn" data-type="ROB" title="Rencana Operasi Bulanan (1 Bulan)">
+                    <span class="hnb-badge">ROB</span>
+                    <span class="hnb-label">Bulanan</span>
+                  </button>
+                  <button type="button" class="horizon-nav-btn" data-type="ROM" title="Rencana Operasi Mingguan (7 Hari)">
+                    <span class="hnb-badge">ROM</span>
+                    <span class="hnb-label">Mingguan</span>
+                  </button>
                 </div>
               </div>
 
-              <!-- Tombol Buka Katalog Dokumen Rencana -->
-              <div>
-                <button type="button" class="header-btn" id="btnOpenCatalogModal" style="background: #F8FAFC; color: #334155; border-color: #CBD5E1; font-weight: 600; font-size: 12px;">
-                  <i class="fa fa-th-list" style="color: #1E40AF;"></i>
+              <div class="kp-nav-right">
+                <button type="button" class="header-btn" id="btnOpenCatalogModal" style="background: #F8FAFC; color: #1E40AF; border-color: #BFDBFE; font-weight: 600; font-size: 12px; padding: 7px 14px;">
+                  <i class="fa fa-th-list"></i>
                   <span>Katalog Periode Rencana</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- Baris 2: Sub-Period Quick Chips Bar -->
+            <div class="kp-nav-subrow">
+              <div class="kp-subrow-label">
+                <i class="fa fa-calendar-alt" style="color: #059669;"></i>
+                <span>Pilih Periode <strong id="lblActiveHorizonName">ROTS</strong>:</span>
+              </div>
+              <div class="subperiod-chips-list" id="kondisiSubperiodChipsList">
+                <!-- Populated dynamically -->
               </div>
             </div>
           </div>
@@ -2171,7 +2166,7 @@
   <div id="toastContainer"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=6"></script>
+  <script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>
 

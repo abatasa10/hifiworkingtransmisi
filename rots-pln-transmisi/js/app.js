@@ -74,10 +74,17 @@ class RotsApp {
         // Sync threshold badge (cadMin bisa berubah per periode)
         this.updateThresholdBadges();
       }
-      this.renderDashboard();
-      this.dailyView.render();
-      this.outageView.render();
-      this.parameterView.render();
+      // Hanya re-render view yang sedang aktif agar respons instan tanpa lag
+      const current = this.store.currentView || 'dashboard';
+      if (current === 'dashboard') {
+        this.renderDashboard();
+      } else if (current === 'kondisi-harian') {
+        this.dailyView.render();
+      } else if (current === 'rencana-outage') {
+        this.outageView.render();
+      } else if (current === 'parameter') {
+        this.parameterView.render();
+      }
       this.updateThresholdBadges();
     } else if (event.type === 'SELECTED_DATE_CHANGED') {
       this.updateDaySpecificWidgets();
@@ -180,6 +187,8 @@ class RotsApp {
       this.outageView.render();
     } else if (viewId === 'kondisi-harian') {
       this.dailyView.render();
+    } else if (viewId === 'parameter') {
+      this.parameterView.render();
     }
   }
 
@@ -249,10 +258,12 @@ class RotsApp {
       });
     };
 
-    // Event listener untuk Pill Tingkat Rencana di Global Filter Bar (ROT / ROTS / ROB / ROM)
-    const globalPills = document.querySelectorAll('#globalHorizonPillGroup .horizon-pill');
-    globalPills.forEach(pill => {
-      pill.addEventListener('click', () => {
+    // Event delegation untuk Pill Tingkat Rencana di Global Filter Bar (ROT / ROTS / ROB / ROM)
+    const globalPillsGroup = document.getElementById('globalHorizonPillGroup');
+    if (globalPillsGroup) {
+      globalPillsGroup.addEventListener('click', (e) => {
+        const pill = e.target.closest('.horizon-pill');
+        if (!pill) return;
         const type = pill.getAttribute('data-type');
         if (!type) return;
         if (selectPeriodType) selectPeriodType.value = type;
@@ -263,7 +274,7 @@ class RotsApp {
         }
         updatePeriodBadge(type);
       });
-    });
+    }
 
     if (selectPeriodType) {
       selectPeriodType.addEventListener('change', (e) => {

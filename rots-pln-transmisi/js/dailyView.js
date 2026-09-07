@@ -126,24 +126,30 @@ export class DailyView {
       });
     }
 
-    // Navigasi Tingkat Rencana di atas Tabel Kondisi Harian (ROT / ROTS / ROB / ROM)
-    const horizonNavBtns = document.querySelectorAll('#kondisiHorizonPillsList .horizon-nav-btn');
-    horizonNavBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+    // Event delegation untuk navigasi horizon di tabel (ROT / ROTS / ROB / ROM)
+    const horizonList = document.getElementById('kondisiHorizonPillsList');
+    if (horizonList) {
+      horizonList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.horizon-nav-btn');
+        if (!btn) return;
         const type = btn.getAttribute('data-type');
         if (!type) return;
         const opts = store.getAvailablePeriodValues(type);
         const firstVal = opts[0]?.value;
         store.setPlanningPeriod(type, firstVal);
       });
-    });
+    }
 
-    // Dropdown subperiod di panel Kondisi Harian
-    const subSelect = document.getElementById('kondisiSubperiodSelect');
-    if (subSelect) {
-      subSelect.addEventListener('change', (e) => {
-        const pType = store.planningPeriod.type || 'ROTS';
-        store.setPlanningPeriod(pType, e.target.value);
+    // Event delegation untuk subperiod chips (Jan, Feb, W27, dll)
+    const chipsContainer = document.getElementById('kondisiSubperiodChipsList');
+    if (chipsContainer) {
+      chipsContainer.addEventListener('click', (e) => {
+        const chip = e.target.closest('.subperiod-chip');
+        if (!chip) return;
+        const val = chip.getAttribute('data-val');
+        if (val) {
+          store.setPlanningPeriod(store.planningPeriod.type || 'ROTS', val);
+        }
       });
     }
 
@@ -230,29 +236,18 @@ export class DailyView {
       }
     });
 
-    // Populate subperiod chips & select dropdown
+    // Update label horizon aktif
+    const lblActive = document.getElementById('lblActiveHorizonName');
+    if (lblActive) lblActive.textContent = pType;
+
+    // Populate subperiod chips
     const chipsContainer = document.getElementById('kondisiSubperiodChipsList');
-    const subperiodSelect = document.getElementById('kondisiSubperiodSelect');
     const options = store.getAvailablePeriodValues(pType);
 
     if (chipsContainer) {
       chipsContainer.innerHTML = options.map(opt => {
         const isAct = opt.value === pValue;
-        return `<button type="button" class="subperiod-chip ${isAct ? 'active' : ''}" data-val="${opt.value}" title="${opt.label}">${opt.shortLabel || opt.label}</button>`;
-      }).join('');
-
-      chipsContainer.querySelectorAll('.subperiod-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          const val = chip.getAttribute('data-val');
-          store.setPlanningPeriod(pType, val);
-        });
-      });
-    }
-
-    if (subperiodSelect) {
-      subperiodSelect.innerHTML = options.map(opt => {
-        const sel = opt.value === pValue ? 'selected' : '';
-        return `<option value="${opt.value}" ${sel}>${opt.label}</option>`;
+        return `<button type="button" class="subperiod-chip ${isAct ? 'active' : ''}" data-val="${opt.value}" title="${opt.label}">${isAct ? '✓ ' : ''}${opt.shortLabel || opt.label}</button>`;
       }).join('');
     }
 
