@@ -117,6 +117,22 @@
       <!-- Global Filter Bar (MANTAPS Style Rounded Pill Filters) -->
       <section class="filter-bar">
         <div class="filter-group">
+          <!-- View Mode Switcher (Rencana / Realisasi / Komparasi) -->
+          <div class="view-mode-toggle" id="viewModeToggleGroup">
+            <button type="button" class="view-mode-pill active" data-mode="rencana" id="pillModeRencana" title="Mode Perencanaan ROTS">
+              <i class="fa fa-calendar-check"></i>
+              <span>Rencana (ROTS)</span>
+            </button>
+            <button type="button" class="view-mode-pill" data-mode="realisasi" id="pillModeRealisasi" title="Mode Realisasi Aktual">
+              <i class="fa fa-bolt"></i>
+              <span>Realisasi</span>
+            </button>
+            <button type="button" class="view-mode-pill" data-mode="komparasi" id="pillModeKomparasi" title="Mode Komparasi Rencana vs Realisasi">
+              <i class="fa fa-balance-scale"></i>
+              <span>Komparasi</span>
+            </button>
+          </div>
+
           <!-- Filter Sistem -->
           <div class="filter-control">
             <label class="filter-label" for="filterSystemSelect">Sistem:</label>
@@ -166,6 +182,45 @@
             
             <!-- Left Main Column -->
             <div class="mantaps-main-column">
+
+              <!-- Comparison KPI Cards (Visible when viewMode === 'komparasi') -->
+              <div class="comparison-kpi-grid" id="comparisonKpiGrid" style="display: none;">
+                <div class="comp-kpi-card amber">
+                  <div class="comp-kpi-header">
+                    <span class="comp-kpi-title">Δ Rata-Rata Beban Puncak (BP)</span>
+                    <span class="comp-badge comp-badge-amber" id="compBadgeDeltaBp">+0,42%</span>
+                  </div>
+                  <span class="comp-kpi-val" id="compValDeltaBp">+142,50 MW</span>
+                  <span class="comp-kpi-sub">Realisasi vs Rencana</span>
+                </div>
+
+                <div class="comp-kpi-card blue">
+                  <div class="comp-kpi-header">
+                    <span class="comp-kpi-title">Δ Outage Pembangkit</span>
+                    <span class="comp-badge comp-badge-blue" id="compBadgeDeltaOutage">PO + MO + FO</span>
+                  </div>
+                  <span class="comp-kpi-val" id="compValDeltaOutage">-115,20 MW</span>
+                  <span class="comp-kpi-sub">Deviasi Outage Riil</span>
+                </div>
+
+                <div class="comp-kpi-card green">
+                  <div class="comp-kpi-header">
+                    <span class="comp-kpi-title">Δ Cadangan Daya (CAD)</span>
+                    <span class="comp-badge comp-badge-green" id="compBadgeDeltaCad">+257,70 MW</span>
+                  </div>
+                  <span class="comp-kpi-val" id="compValDeltaCad">+257,70 MW</span>
+                  <span class="comp-kpi-sub">Kapasitas Cadangan Riil</span>
+                </div>
+
+                <div class="comp-kpi-card purple">
+                  <div class="comp-kpi-header">
+                    <span class="comp-kpi-title">Akurasi Perencanaan BP</span>
+                    <span class="comp-badge comp-badge-green" id="compBadgeAccuracy">Tinggi</span>
+                  </div>
+                  <span class="comp-kpi-val" id="compValAccuracy">98,6%</span>
+                  <span class="comp-kpi-sub" id="compSubDaysRealized">46 dari 184 Hari Terealisasi</span>
+                </div>
+              </div>
               
               <!-- 6 KPI CARDS (Clean Horizontal Grid) -->
               <div class="dashboard-kpi-grid">
@@ -610,6 +665,10 @@
                 Tabel Kondisi Harian Sistem Pembangkitan & Operasi
               </div>
               <div class="header-actions">
+                <button type="button" class="header-btn" id="btnOpenInputRealisasi" style="background: #10B981; color: #FFFFFF; border-color: #10B981; font-weight: 600;">
+                  <i class="fa fa-pencil-alt"></i>
+                  <span>Input Realisasi Harian</span>
+                </button>
                 <button class="header-btn btn-primary" id="btnExportDailyTable">
                   <i class="fa fa-file-excel"></i>
                   <span>Export Excel</span>
@@ -1035,22 +1094,35 @@
             <div class="card-header">
               <div class="card-title">
                 <i class="fa fa-file-import" style="color: var(--pln-blue-primary);"></i>
-                Import Data Operasi ROTS Excel / CSV
+                <span id="importViewTitle">Import Data Operasi ROTS Excel / CSV</span>
               </div>
               <button class="header-btn" id="btnDownloadExcelTemplate">
-                <i class="fa fa-download"></i> Unduh Template Excel Resmi
+                <i class="fa fa-download"></i> <span id="btnDownloadTemplateText">Unduh Template Excel Resmi</span>
               </button>
             </div>
             <div class="card-body">
+              
+              <!-- Tab Pilihan Import: Rencana vs Realisasi -->
+              <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <button type="button" class="import-tab-btn active" id="tabImportRencana" data-tab="rencana">
+                  <i class="fa fa-calendar-check"></i>
+                  <span>Import Data Rencana (ROTS)</span>
+                </button>
+                <button type="button" class="import-tab-btn" id="tabImportRealisasi" data-tab="realisasi">
+                  <i class="fa fa-bolt"></i>
+                  <span>Import Data Realisasi Aktual</span>
+                </button>
+              </div>
+
               <div class="dropzone-container" id="excelDropzone">
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;">
-                <i class="fa fa-cloud-upload-alt dropzone-icon"></i>
-                <div class="dropzone-title">Tarik & Letakkan File Excel ROTS di Sini</div>
-                <div class="dropzone-sub">Mendukung format .xlsx, .xls, dan .csv dengan kolom standar PLN Operasi Sistem</div>
+                <i class="fa fa-cloud-upload-alt dropzone-icon" id="dropzoneIcon"></i>
+                <div class="dropzone-title" id="dropzoneTitleText">Tarik & Letakkan File Excel ROTS di Sini</div>
+                <div class="dropzone-sub" id="dropzoneSubText">Mendukung format .xlsx, .xls, dan .csv dengan kolom standar PLN Operasi Sistem</div>
               </div>
 
               <!-- Aturan Validasi -->
-              <div style="margin-top: 20px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+              <div style="margin-top: 20px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6;" id="importRulesBox">
                 <strong>Kriteria Validasi Sistem:</strong>
                 <ul style="margin-left: 20px; margin-top: 6px;">
                   <li>Kolom wajib: <code>Sistem</code>, <code>Tanggal</code>, <code>DMN</code>, <code>PO</code>, <code>MO</code>, <code>FO</code>, <code>FO EP</code>, <code>DER KIT</code>, <code>DER TRANS</code>, <code>VARMUS</code>, <code>BP</code>.</li>
@@ -1374,7 +1446,127 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       MODAL: FORM INPUT / EDIT REALISASI HARIAN
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalInputRealisasi">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-bolt" style="color: #10B981;"></i>
+          <span>Input Data Realisasi Operasi Harian</span>
+        </div>
+        <button class="modal-close-btn" id="btnCloseModalRealisasi">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Bar Tanggal Terpilih -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Pilih Tanggal Operasi</div>
+            <div style="font-size: 14px; font-weight: 700; color: #1E293B;" id="formRealisasiDateDisplay">01 Juli 2026</div>
+          </div>
+          <input type="date" id="formRealisasiDatePicker" class="filter-select" style="padding: 6px 12px; font-size: 13px; font-weight: 600;">
+        </div>
+
+        <form id="formInputRealisasi">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- BP Realisasi -->
+            <div class="form-group">
+              <label style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">
+                Beban Puncak (BP) Realisasi <span style="color:#EF4444;">*</span>
+              </label>
+              <div style="position: relative;">
+                <input type="number" step="0.01" id="inputRealBp" required class="filter-select" style="width: 100%; padding: 8px 36px 8px 12px; font-size: 14px; font-weight: 600;" placeholder="Contoh: 34120.50">
+                <span style="position: absolute; right: 12px; top: 9px; font-size: 12px; color: #64748B; font-weight: 600;">MW</span>
+              </div>
+              <div style="font-size: 11px; color: #64748B; margin-top: 3px;" id="hintPlanBp">Rencana: 33.950,21 MW</div>
+            </div>
+
+            <!-- DMN Realisasi -->
+            <div class="form-group">
+              <label style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">
+                DMN Realisasi
+              </label>
+              <div style="position: relative;">
+                <input type="number" step="0.01" id="inputRealDmn" class="filter-select" style="width: 100%; padding: 8px 36px 8px 12px; font-size: 14px; font-weight: 600;">
+                <span style="position: absolute; right: 12px; top: 9px; font-size: 12px; color: #64748B; font-weight: 600;">MW</span>
+              </div>
+              <div style="font-size: 11px; color: #64748B; margin-top: 3px;" id="hintPlanDmn">Rencana: 49.040,62 MW</div>
+            </div>
+          </div>
+
+          <!-- Rincian Outage Realisasi -->
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+            Rincian Pemadaman Aktual (Outage)
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">PO (Planned)</label>
+              <input type="number" step="0.01" id="inputRealPo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;" placeholder="0.00">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">MO (Maint.)</label>
+              <input type="number" step="0.01" id="inputRealMo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;" placeholder="0.00">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">FO (Gangguan)</label>
+              <input type="number" step="0.01" id="inputRealFo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;" placeholder="0.00">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">Derating</label>
+              <input type="number" step="0.01" id="inputRealDerating" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Live Calculation Preview Card -->
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #1D4ED8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa fa-calculator"></i> HASIL KALKULASI & DEVIASI OTOMATIS:
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">DMP Realisasi</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;" id="previewRealDmp">36.649 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Cadangan (CAD)</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: #10B981;" id="previewRealCad">2.698 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Δ BP vs Rencana</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: #F59E0B;" id="previewDeltaBp">+170 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Status Realisasi</div>
+                <span class="status-badge badge-normal" id="previewRealStatus" style="font-size: 11px; padding: 2px 8px;">NORMAL</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catatan / Logsheet -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 12px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">Catatan Realisasi (Opsional)</label>
+            <input type="text" id="inputRealNotes" class="filter-select" style="width: 100%; padding: 7px 12px; font-size: 12.5px;" placeholder="Misal: Puncak beban malam tercatat pukul 19.30 WIB">
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="header-btn" id="btnDeleteRealisasi" style="color: #EF4444; border-color: #FCA5A5; display: none;">
+          <i class="fa fa-trash"></i> Hapus Realisasi
+        </button>
+        <div style="display: flex; gap: 8px; margin-left: auto;">
+          <button type="button" class="header-btn" id="btnCancelModalRealisasi">Batal</button>
+          <button type="button" class="header-btn btn-primary" id="btnSaveRealisasi" style="background: #10B981; border-color: #10B981;">
+            <i class="fa fa-check"></i> Simpan Realisasi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

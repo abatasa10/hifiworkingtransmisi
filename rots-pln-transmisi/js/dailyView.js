@@ -155,6 +155,7 @@ export class DailyView {
             <a href="javascript:void(0)" class="daily-row-link" style="color: var(--pln-navy-dark); text-decoration: none; border-bottom: 1px dotted var(--pln-blue-primary);">
               ${CalculationService.formatDateIndo(r.tanggal)}
             </a>
+            ${r.realisasi ? `<span class="badge-realisasi-tag" style="margin-left: 6px;" title="Realisasi BP: ${CalculationService.formatNumber(r.realisasi.bp)} MW"><i class="fa fa-bolt"></i> Real</span>` : ''}
           </td>
           <td><span class="badge-system">${r.sistem}</span></td>
           <td class="text-right">${CalculationService.formatNumber(r.dmn)}</td>
@@ -454,7 +455,63 @@ export class DailyView {
             </div>
           </div>
         </div>
+
+        <!-- 7. Evaluasi Komparasi Rencana vs Realisasi -->
+        <div class="formula-step-card" style="border-left: 4px solid #10B981; background: #F0FDF4; margin-top: 14px;">
+          <div class="formula-step-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="formula-step-name" style="color: #047857;">
+              <i class="fa fa-balance-scale"></i>
+              7. Data Realisasi Aktual & Evaluasi Deviasi
+            </div>
+            <button type="button" class="header-btn" id="btnModalEditRealisasi" style="background: #10B981; color: #FFFFFF; border-color: #10B981; font-size: 11.5px; padding: 4px 12px; cursor: pointer;">
+              <i class="fa fa-pencil-alt"></i> ${record.realisasi ? 'Ubah Realisasi' : '+ Input Realisasi'}
+            </button>
+          </div>
+          ${record.realisasi ? `
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; text-align: center;">
+              <div style="background: #FFFFFF; padding: 10px 8px; border-radius: 6px; border: 1px solid #D1FAE5;">
+                <div style="font-size: 11px; color: #64748B;">BP Realisasi</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1E293B;">${CalculationService.formatNumber(record.realisasi.bp)} MW</div>
+                <div style="font-size: 11px; color: ${record.realisasi.deltaBP > 0 ? '#D97706' : '#059669'}; font-weight: 700;">
+                  ${CalculationService.formatDelta(record.realisasi.deltaBP)}
+                </div>
+              </div>
+              <div style="background: #FFFFFF; padding: 10px 8px; border-radius: 6px; border: 1px solid #D1FAE5;">
+                <div style="font-size: 11px; color: #64748B;">DMP Realisasi</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1E293B;">${CalculationService.formatNumber(record.realisasi.dmp)} MW</div>
+                <div style="font-size: 11px; color: #64748B;">Plan: ${CalculationService.formatNumber(record.dmp)}</div>
+              </div>
+              <div style="background: #FFFFFF; padding: 10px 8px; border-radius: 6px; border: 1px solid #D1FAE5;">
+                <div style="font-size: 11px; color: #64748B;">Cadangan (CAD) Real</div>
+                <div style="font-size: 14px; font-weight: 700; color: #047857;">${CalculationService.formatNumber(record.realisasi.cad)} MW</div>
+                <div style="font-size: 11px; color: ${record.realisasi.deltaCAD >= 0 ? '#059669' : '#DC2626'}; font-weight: 700;">
+                  ${CalculationService.formatDelta(record.realisasi.deltaCAD)}
+                </div>
+              </div>
+              <div style="background: #FFFFFF; padding: 10px 8px; border-radius: 6px; border: 1px solid #D1FAE5;">
+                <div style="font-size: 11px; color: #64748B;">Akurasi Forecast BP</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1E293B;">${record.realisasi.accuracyBP.toFixed(1)}%</div>
+                <span class="badge-status ${record.realisasi.statusBadge}" style="font-size: 9.5px; padding: 1px 6px;">${record.realisasi.statusLabel}</span>
+              </div>
+            </div>
+            ${record.realisasi.notes ? `<div style="margin-top: 10px; font-size: 11.5px; color: #475569; font-style: italic;">Catatan: ${record.realisasi.notes}</div>` : ''}
+          ` : `
+            <div style="padding: 12px; font-size: 12.5px; color: #64748B; font-style: italic;">
+              Belum ada data realisasi aktual untuk tanggal ini. Klik tombol di atas untuk memasukkan data realisasi.
+            </div>
+          `}
+        </div>
       `;
+
+      const btnEditReal = modalBody.querySelector('#btnModalEditRealisasi');
+      if (btnEditReal) {
+        btnEditReal.addEventListener('click', () => {
+          this.closeDetailModal();
+          if (window.ROTS_OPEN_REALISASI) {
+            window.ROTS_OPEN_REALISASI(dateStr);
+          }
+        });
+      }
     }
 
     modal.classList.add('active');

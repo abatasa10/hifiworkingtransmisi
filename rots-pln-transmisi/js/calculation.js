@@ -173,8 +173,69 @@ export const CalculationService = {
             : (cad >= 0 ? `0 ≤ ${this.formatNumber(cad)} < ${this.formatNumber(minReserveThreshold)}` : `${this.formatNumber(cad)} < 0`),
           result: status.label
         }
-      }
+      },
+      // Realisasi aktual jika tersedia
+      realisasi: (() => {
+        if (!raw.realisasi) return null;
+        const rRaw = raw.realisasi;
+        const rDmn = parseFloat(rRaw.dmn) || dmn;
+        const rPo = parseFloat(rRaw.po) || 0;
+        const rMo = parseFloat(rRaw.mo) || 0;
+        const rFo = parseFloat(rRaw.fo) || 0;
+        const rFoEp = parseFloat(rRaw.foEp) || 0;
+        const rDerKit = parseFloat(rRaw.derKit) || 0;
+        const rDerTrans = parseFloat(rRaw.derTrans) || 0;
+        const rVarmus = parseFloat(rRaw.varmus) || 0;
+        const rBp = parseFloat(rRaw.bp) || 0;
+
+        const rPlannedOutage = this.calculatePlannedOutage(rPo, rMo);
+        const rUnplannedOutage = this.calculateUnplannedOutage(rFo, rFoEp, rDerKit, rDerTrans, rVarmus);
+        const rDmp = this.calculateDMP(rDmn, rPlannedOutage, rUnplannedOutage);
+        const rCad = this.calculateCAD(rDmp, rBp);
+        const rStatus = this.determineStatus(rCad, minReserveThreshold);
+
+        return {
+          dmn: rDmn,
+          po: rPo,
+          mo: rMo,
+          fo: rFo,
+          foEp: rFoEp,
+          derKit: rDerKit,
+          derTrans: rDerTrans,
+          varmus: rVarmus,
+          bp: rBp,
+          plannedOutage: rPlannedOutage,
+          unplannedOutage: rUnplannedOutage,
+          totalOutage: rPlannedOutage + rUnplannedOutage,
+          dmp: rDmp,
+          cad: rCad,
+          statusKey: rStatus.key,
+          statusLabel: rStatus.label,
+          statusColor: rStatus.color,
+          statusBadge: rStatus.badgeClass,
+          // Deviasi vs Rencana (Realisasi - Rencana)
+          deltaBP: rBp - bp,
+          deltaCAD: rCad - cad,
+          deltaDMP: rDmp - dmp,
+          deltaPlannedOutage: rPlannedOutage - plannedOutage,
+          deltaUnplannedOutage: rUnplannedOutage - unplannedOutage,
+          deltaOutage: (rPlannedOutage + rUnplannedOutage) - (plannedOutage + unplannedOutage),
+          accuracyBP: bp > 0 ? Math.max(0, 100 - (Math.abs(rBp - bp) / bp) * 100) : 100,
+          notes: rRaw.notes || '',
+          updatedAt: rRaw.updatedAt || null
+        };
+      })()
     };
+  },
+
+  /**
+   * Format tanda selisih (delta): e.g. "+150,00 MW" atau "-80,50 MW"
+   */
+  formatDelta(val, decimals = 2, unit = 'MW') {
+    if (val === null || val === undefined || isNaN(val)) return '-';
+    const sign = val > 0 ? '+' : (val < 0 ? '-' : '±');
+    const absVal = Math.abs(val);
+    return `${sign}${this.formatNumber(absVal, decimals)} ${unit}`.trim();
   },
 
   /**

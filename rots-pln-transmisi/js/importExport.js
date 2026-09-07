@@ -11,6 +11,7 @@ export class ImportExportService {
   constructor() {
     this.stagedRecords = [];
     this.validationErrors = [];
+    this.importMode = 'rencana'; // 'rencana' | 'realisasi'
   }
 
   init() {
@@ -18,6 +19,57 @@ export class ImportExportService {
   }
 
   bindEvents() {
+    // Mode Switcher Tabs (Rencana vs Realisasi)
+    const tabRencana = document.getElementById('tabImportRencana');
+    const tabRealisasi = document.getElementById('tabImportRealisasi');
+    const titleEl = document.getElementById('importViewTitle');
+    const btnTemplateText = document.getElementById('btnDownloadTemplateText');
+    const dropTitle = document.getElementById('dropzoneTitleText');
+    const dropSub = document.getElementById('dropzoneSubText');
+    const rulesBox = document.getElementById('importRulesBox');
+
+    if (tabRencana && tabRealisasi) {
+      tabRencana.addEventListener('click', () => {
+        this.importMode = 'rencana';
+        tabRencana.classList.add('active');
+        tabRealisasi.classList.remove('active');
+        if (titleEl) titleEl.textContent = 'Import Data Operasi ROTS Excel / CSV';
+        if (btnTemplateText) btnTemplateText.textContent = 'Unduh Template Rencana ROTS (.xlsx)';
+        if (dropTitle) dropTitle.textContent = 'Tarik & Letakkan File Excel ROTS di Sini';
+        if (dropSub) dropSub.textContent = 'Mendukung format .xlsx, .xls, dan .csv dengan kolom standar perencanaan ROTS';
+        if (rulesBox) {
+          rulesBox.innerHTML = `
+            <strong>Kriteria Validasi Sistem Rencana:</strong>
+            <ul style="margin-left: 20px; margin-top: 6px;">
+              <li>Kolom wajib: <code>Sistem</code>, <code>Tanggal</code>, <code>DMN</code>, <code>PO</code>, <code>MO</code>, <code>FO</code>, <code>FO EP</code>, <code>DER KIT</code>, <code>DER TRANS</code>, <code>VARMUS</code>, <code>BP</code>.</li>
+              <li>Nilai MW harus numerik dan tidak boleh negatif.</li>
+              <li>Sistem akan otomatis menghitung Planned Outage, DMP, CAD, dan Status sesuai formula standar.</li>
+            </ul>
+          `;
+        }
+      });
+
+      tabRealisasi.addEventListener('click', () => {
+        this.importMode = 'realisasi';
+        tabRealisasi.classList.add('active');
+        tabRencana.classList.remove('active');
+        if (titleEl) titleEl.textContent = 'Import Data Realisasi Aktual Harian Excel / CSV';
+        if (btnTemplateText) btnTemplateText.textContent = 'Unduh Template Realisasi Aktual (.xlsx)';
+        if (dropTitle) dropTitle.textContent = 'Tarik & Letakkan File Excel Realisasi di Sini';
+        if (dropSub) dropSub.textContent = 'Format Excel dengan kolom Tanggal, BP_Realisasi, Outage aktual untuk perbandingan Rencana vs Realisasi';
+        if (rulesBox) {
+          rulesBox.innerHTML = `
+            <strong>Kriteria Validasi Sistem Realisasi Aktual:</strong>
+            <ul style="margin-left: 20px; margin-top: 6px;">
+              <li>Kolom wajib: <code>Tanggal</code> (format YYYY-MM-DD), <code>BP_Realisasi</code> (Beban Puncak aktual).</li>
+              <li>Kolom opsional: <code>DMN_Realisasi</code>, <code>PO_Realisasi</code>, <code>MO_Realisasi</code>, <code>FO_Realisasi</code>, <code>Derating_Realisasi</code>, <code>Catatan</code>.</li>
+              <li>Sistem akan otomatis membandingkan dengan rencana hari tersebut dan menghitung deviasi (Δ).</li>
+            </ul>
+          `;
+        }
+      });
+    }
+
     // Dropzone events
     const dropzone = document.getElementById('excelDropzone');
     const fileInput = document.getElementById('excelFileInput');
@@ -116,6 +168,10 @@ export class ImportExportService {
       }
       return undefined;
     };
+    if (this.importMode === 'realisasi') {
+      this.validateAndStageRealisasi(rawRows, filename);
+      return;
+    }
 
     rawRows.forEach((row, index) => {
       const rowNum = index + 2; // header is row 1
@@ -166,20 +222,13 @@ export class ImportExportService {
 
       // 3. Validasi Nilai Numerik MW
       const parseMw = (val, colName) => {
-        if (val === '' || val === undefined || val === null) {
+        if (val === undefined || val === null || val === '') return 0;
+        const n = parseFloat(String(val).replace(',', '.'));
+        if (isNaN(n) || n < 0) {
+          errors.push(`Nilai ${colName} (${val}) tidak valid`);
           return 0;
         }
-        let numStr = String(val).replace(/\./g, '').replace(',', '.');
-        if (typeof val === 'number') numStr = String(val);
-        const parsed = parseFloat(numStr);
-        if (isNaN(parsed)) {
-          errors.push(`Kolom ${colName} harus berupa angka`);
-          return 0;
-        }
-        if (parsed < 0) {
-          errors.push(`Nilai ${colName} tidak boleh negatif (${parsed})`);
-        }
-        return parsed;
+        return n;
       };
 
       const dmn = parseMw(dmnRaw, 'DMN');
@@ -219,6 +268,90 @@ export class ImportExportService {
     this.renderValidationPreview(filename);
   }
 
+  validateAndStageRealisasi(rawRows, filename) {
+    const normalizeHeader = (row, fieldNames) => {
+      for (const name of fieldNames) {
+        for (const k of Object.keys(row)) {
+          if (k.trim().toUpperCase() === name.toUpperCase()) {
+            return row[k];
+          }
+        }
+      }
+      return undefined;
+    };
+
+    rawRows.forEach((row, index) => {
+      const rowNum = index + 2;
+      const errors = [];
+
+      const tanggalRaw = normalizeHeader(row, ['Tanggal', 'TANGGAL', 'Date']);
+      const bpRaw = normalizeHeader(row, ['BP_Realisasi', 'BP', 'Beban Puncak', 'Beban_Puncak']);
+      const dmnRaw = normalizeHeader(row, ['DMN_Realisasi', 'DMN']);
+      const poRaw = normalizeHeader(row, ['PO_Realisasi', 'PO']);
+      const moRaw = normalizeHeader(row, ['MO_Realisasi', 'MO']);
+      const foRaw = normalizeHeader(row, ['FO_Realisasi', 'FO']);
+      const derRaw = normalizeHeader(row, ['Derating_Realisasi', 'Derating', 'DER KIT']);
+      const notesRaw = normalizeHeader(row, ['Catatan', 'Notes', 'Keterangan']);
+
+      let formattedDate = '';
+      if (!tanggalRaw) {
+        errors.push('Tanggal wajib diisi');
+      } else {
+        if (typeof tanggalRaw === 'number') {
+          const excelEpoch = new Date(1899, 11, 30);
+          const dateObj = new Date(excelEpoch.getTime() + tanggalRaw * 86400000);
+          formattedDate = dateObj.toISOString().substring(0, 10);
+        } else {
+          const str = String(tanggalRaw).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            formattedDate = str;
+          } else {
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) {
+              formattedDate = parsed.toISOString().substring(0, 10);
+            } else {
+              errors.push(`Format tanggal '${str}' tidak valid`);
+            }
+          }
+        }
+      }
+
+      const bp = parseFloat(String(bpRaw || '').replace(',', '.'));
+      if (isNaN(bp) || bp <= 0) {
+        errors.push('Beban Puncak (BP) Realisasi wajib diisi angka > 0');
+      }
+
+      // Check matching plan record
+      const planRec = store.records.find(r => r.tanggal === formattedDate);
+      if (!planRec && formattedDate) {
+        errors.push(`Tanggal ${formattedDate} tidak ditemukan pada data perencanaan ROTS aktif`);
+      }
+
+      const item = {
+        tanggal: formattedDate,
+        bp: isNaN(bp) ? 0 : bp,
+        dmn: dmnRaw ? parseFloat(String(dmnRaw).replace(',', '.')) : (planRec ? planRec.dmn : 49040.62),
+        po: poRaw ? parseFloat(String(poRaw).replace(',', '.')) : 0,
+        mo: moRaw ? parseFloat(String(moRaw).replace(',', '.')) : 0,
+        fo: foRaw ? parseFloat(String(foRaw).replace(',', '.')) : 0,
+        derKit: derRaw ? parseFloat(String(derRaw).replace(',', '.')) : 0,
+        derTrans: 0,
+        foEp: 0,
+        varmus: 0,
+        notes: String(notesRaw || 'Import Excel Realisasi').trim(),
+        planBP: planRec ? planRec.bp : 0
+      };
+
+      if (errors.length > 0) {
+        this.validationErrors.push({ rowNum, errors, rawRecord: item });
+      } else {
+        this.stagedRecords.push(item);
+      }
+    });
+
+    this.renderValidationPreview(filename);
+  }
+
   renderValidationPreview(filename) {
     const container = document.getElementById('importPreviewContainer');
     if (!container) return;
@@ -233,7 +366,7 @@ export class ImportExportService {
     if (summaryEl) {
       summaryEl.innerHTML = `
         <div class="val-stat" style="color: var(--pln-navy-dark);">
-          <i class="fa fa-file-excel" style="color: #10B981;"></i> File: <strong>${filename}</strong> (${total} baris)
+          <i class="fa fa-file-excel" style="color: #10B981;"></i> File: <strong>${filename}</strong> (${total} baris, Mode: ${this.importMode.toUpperCase()})
         </div>
         <div class="val-stat" style="color: #10B981;">
           <i class="fa fa-check-circle"></i> <strong>${validCount}</strong> baris valid & siap diimpor
@@ -249,7 +382,9 @@ export class ImportExportService {
     const btnCommit = document.getElementById('btnCommitImport');
     if (btnCommit) {
       btnCommit.disabled = validCount === 0;
-      btnCommit.textContent = `Simpan ${validCount} Data ke Sistem ROTS`;
+      btnCommit.textContent = this.importMode === 'realisasi'
+        ? `Simpan & Terapkan ${validCount} Data Realisasi`
+        : `Simpan ${validCount} Data ke Sistem ROTS`;
     }
 
     const previewTbody = document.getElementById('importPreviewTbody');
@@ -261,7 +396,7 @@ export class ImportExportService {
         rowsHtml += `
           <tr style="background: #FEF2F2;">
             <td><span class="badge-status badge-defisit">ERROR (Baris ${err.rowNum})</span></td>
-            <td>${err.rawRecord.sistem || '-'}</td>
+            <td>${err.rawRecord.sistem || 'Jamali'}</td>
             <td>${err.rawRecord.tanggal || '-'}</td>
             <td colspan="6" style="color: #DC2626; font-weight: 600;">
               ${err.errors.join('; ')}
@@ -270,22 +405,43 @@ export class ImportExportService {
         `;
       });
 
-      // Tampilkan sampel baris valid
-      this.stagedRecords.slice(0, 10).forEach(r => {
-        rowsHtml += `
-          <tr>
-            <td><span class="badge-status badge-normal">VALID</span></td>
-            <td><strong>${r.sistem}</strong></td>
-            <td>${CalculationService.formatDateIndo(r.tanggal)}</td>
-            <td class="text-right">${CalculationService.formatNumber(r.dmn)}</td>
-            <td class="text-right" style="color: #D97706;">${CalculationService.formatNumber(r.plannedOutage)}</td>
-            <td class="text-right" style="color: #DC2626;">${CalculationService.formatNumber(r.unplannedOutage)}</td>
-            <td class="text-right" style="color: #059669; font-weight: 700;">${CalculationService.formatNumber(r.dmp)}</td>
-            <td class="text-right" style="color: #7C3AED; font-weight: 700;">${CalculationService.formatNumber(r.bp)}</td>
-            <td class="text-right" style="font-weight: 800;">${CalculationService.formatNumber(r.cad)}</td>
-          </tr>
-        `;
-      });
+      // Tampilkan baris valid
+      if (this.importMode === 'realisasi') {
+        this.stagedRecords.slice(0, 10).forEach(r => {
+          const delta = r.bp - r.planBP;
+          rowsHtml += `
+            <tr>
+              <td><span class="badge-status badge-normal">REALISASI</span></td>
+              <td><strong>Jamali</strong></td>
+              <td>${CalculationService.formatDateIndo(r.tanggal)}</td>
+              <td class="text-right">${CalculationService.formatNumber(r.dmn)}</td>
+              <td class="text-right" style="color: #64748B;">Plan: ${CalculationService.formatNumber(r.planBP)}</td>
+              <td class="text-right" style="color: #10B981; font-weight: 700;">Real: ${CalculationService.formatNumber(r.bp)}</td>
+              <td class="text-right" style="font-weight: 700; color: ${delta > 0 ? '#F59E0B' : '#10B981'};">
+                ${CalculationService.formatDelta(delta)}
+              </td>
+              <td class="text-right" style="color: #64748B;">${r.notes || '-'}</td>
+              <td class="text-right"><span class="badge-realisasi-tag"><i class="fa fa-check"></i> Siap</span></td>
+            </tr>
+          `;
+        });
+      } else {
+        this.stagedRecords.slice(0, 10).forEach(r => {
+          rowsHtml += `
+            <tr>
+              <td><span class="badge-status badge-normal">VALID</span></td>
+              <td><strong>${r.sistem}</strong></td>
+              <td>${CalculationService.formatDateIndo(r.tanggal)}</td>
+              <td class="text-right">${CalculationService.formatNumber(r.dmn)}</td>
+              <td class="text-right" style="color: #D97706;">${CalculationService.formatNumber(r.plannedOutage)}</td>
+              <td class="text-right" style="color: #DC2626;">${CalculationService.formatNumber(r.unplannedOutage)}</td>
+              <td class="text-right" style="color: #059669; font-weight: 700;">${CalculationService.formatNumber(r.dmp)}</td>
+              <td class="text-right" style="color: #7C3AED; font-weight: 700;">${CalculationService.formatNumber(r.bp)}</td>
+              <td class="text-right" style="font-weight: 800;">${CalculationService.formatNumber(r.cad)}</td>
+            </tr>
+          `;
+        });
+      }
 
       if (this.stagedRecords.length > 10) {
         rowsHtml += `
@@ -303,6 +459,23 @@ export class ImportExportService {
 
   commitImport() {
     if (!this.stagedRecords.length) return;
+
+    if (this.importMode === 'realisasi') {
+      const count = store.importRealisasiRecords(this.stagedRecords);
+      alert(`Berhasil mengimpor ${count} data realisasi aktual ke dalam sistem! Beralih ke tampilan Komparasi.`);
+      const container = document.getElementById('importPreviewContainer');
+      if (container) container.style.display = 'none';
+
+      // Aktifkan mode komparasi
+      store.setViewMode('komparasi');
+      const pillKomparasi = document.getElementById('pillModeKomparasi');
+      if (pillKomparasi) {
+        document.querySelectorAll('.view-mode-pill').forEach(p => p.classList.remove('active'));
+        pillKomparasi.classList.add('active');
+      }
+      store.setCurrentView('dashboard');
+      return;
+    }
 
     const rawRecordsToSave = this.stagedRecords.map(r => ({
       id: `${r.sistem}_${r.tanggal}`,
@@ -333,6 +506,26 @@ export class ImportExportService {
   }
 
   downloadTemplate() {
+    if (this.importMode === 'realisasi') {
+      const sampleRecords = store.getFilteredRecords().slice(0, 5);
+      const templateData = sampleRecords.map((r, i) => ({
+        'Tanggal': r.tanggal,
+        'BP_Realisasi': Math.round((r.bp + (i % 2 === 0 ? 150.25 : -95.50)) * 100) / 100,
+        'DMN_Realisasi': r.dmn,
+        'PO_Realisasi': r.po,
+        'MO_Realisasi': r.mo,
+        'FO_Realisasi': r.fo,
+        'Derating_Realisasi': r.derKit,
+        'Catatan': `Realisasi operasional ${CalculationService.formatDateIndo(r.tanggal)}`
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Template_Realisasi');
+      XLSX.writeFile(wb, 'Template_Realisasi_Operasi_PLN.xlsx');
+      return;
+    }
+
     const templateData = [
       {
         'Sistem': 'Jamali',

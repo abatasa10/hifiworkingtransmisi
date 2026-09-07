@@ -599,3 +599,160 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   VIEW MODE TOGGLE PILL SWITCHER (Rencana | Realisasi | Komparasi)
+   ========================================================================== */
+.view-mode-toggle {
+  display: inline-flex;
+  background: #EEF2F6;
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid #E2E8F0;
+  gap: 3px;
+  align-items: center;
+}
+
+.view-mode-pill {
+  border: none;
+  background: transparent;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-mode-pill:hover {
+  color: #1E293B;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.view-mode-pill.active {
+  background: #1976D2;
+  color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.35);
+}
+
+.view-mode-pill.active i {
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   COMPARISON KPI GRID & CARDS
+   ========================================================================== */
+.comparison-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.comp-kpi-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.comp-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3.5px;
+  background: #1976D2;
+}
+
+.comp-kpi-card.amber::before { background: #F59E0B; }
+.comp-kpi-card.green::before { background: #10B981; }
+.comp-kpi-card.blue::before { background: #0284C7; }
+.comp-kpi-card.purple::before { background: #8B5CF6; }
+
+.comp-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.comp-kpi-title {
+  font-size: 11.5px;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.comp-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.comp-badge-amber { background: #FEF3C7; color: #B45309; }
+.comp-badge-blue { background: #E0F2FE; color: #0369A1; }
+.comp-badge-green { background: #DCFCE7; color: #15803D; }
+.comp-badge-red { background: #FEE2E2; color: #B91C1C; }
+
+.comp-kpi-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1E293B;
+  display: block;
+  line-height: 1.2;
+}
+
+.comp-kpi-sub {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 3px;
+  display: block;
+}
+
+/* Import Tabs */
+.import-tab-btn {
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.import-tab-btn.active {
+  background: #1976D2;
+  color: #FFFFFF;
+  border-color: #1976D2;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
+}
+
+.badge-realisasi-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #E0F2FE;
+  color: #0369A1;
+}
+

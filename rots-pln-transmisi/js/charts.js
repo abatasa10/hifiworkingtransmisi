@@ -28,7 +28,7 @@ export class ChartService {
    *   4. Garis DMN (Sapphire) sebagai plafon kapasitas total
    *   5. Garis Beban Puncak BP (Dark Carbon) di dalam zona pasokan DMP
    */
-  renderNeracaDayaChart(canvasId, records) {
+  renderNeracaDayaChart(canvasId, records, viewMode = 'rencana') {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
@@ -54,11 +54,15 @@ export class ChartService {
       return `${p[2]}/${p[1]}`;
     });
 
-    const dmpData = records.map(r => r.dmp);
-    const poData = records.map(r => r.plannedOutage);
-    const uoData = records.map(r => r.unplannedOutage);
-    const dmnData = records.map(r => r.dmn);
-    const bpData = records.map(r => r.bp);
+    const isRealisasiOnly = viewMode === 'realisasi';
+    const isKomparasi = viewMode === 'komparasi';
+
+    const dmpData = records.map(r => (isRealisasiOnly && r.realisasi) ? r.realisasi.dmp : r.dmp);
+    const poData = records.map(r => (isRealisasiOnly && r.realisasi) ? r.realisasi.plannedOutage : r.plannedOutage);
+    const uoData = records.map(r => (isRealisasiOnly && r.realisasi) ? r.realisasi.unplannedOutage : r.unplannedOutage);
+    const dmnData = records.map(r => (isRealisasiOnly && r.realisasi) ? r.realisasi.dmn : r.dmn);
+    const bpPlanData = records.map(r => r.bp);
+    const bpRealData = records.map(r => r.realisasi ? r.realisasi.bp : null);
 
     // Dynamic Gradients untuk tampilan mewah dan berdimensi
     const chartHeight = canvas.clientHeight || 320;
@@ -78,79 +82,126 @@ export class ChartService {
     uoGrad.addColorStop(0, 'rgba(244, 63, 94, 0.85)');
     uoGrad.addColorStop(1, 'rgba(225, 29, 72, 0.55)');
 
+    const datasets = [
+      // 1. DMP - Sky Cyan Area Stack
+      {
+        label: isRealisasiOnly ? 'DMP Realisasi' : 'DMP (Daya Mampu Pembangkitan)',
+        data: dmpData,
+        backgroundColor: dmpGrad,
+        borderColor: '#0284C7',
+        borderWidth: 1.5,
+        tension: 0.08,
+        fill: true,
+        stack: 'balanceStack',
+        pointRadius: 0,
+        order: 4
+      },
+      // 2. PLANNED OUTAGE - Golden Amber Area Stack
+      {
+        label: isRealisasiOnly ? 'Planned Outage Realisasi' : 'Planned Outage (PO + MO)',
+        data: poData,
+        backgroundColor: poGrad,
+        borderColor: '#D97706',
+        borderWidth: 1.2,
+        tension: 0.08,
+        fill: true,
+        stack: 'balanceStack',
+        pointRadius: 0,
+        order: 5
+      },
+      // 3. UNPLANNED OUTAGE - Rose/Crimson Area Stack
+      {
+        label: isRealisasiOnly ? 'Unplanned Outage Realisasi' : 'Unplanned Outage (FO + Derating)',
+        data: uoData,
+        backgroundColor: uoGrad,
+        borderColor: '#E11D48',
+        borderWidth: 1.2,
+        tension: 0.08,
+        fill: true,
+        stack: 'balanceStack',
+        pointRadius: 0,
+        order: 6
+      },
+      // 4. Garis DMN
+      {
+        label: 'DMN (Kapasitas Netto)',
+        data: dmnData,
+        borderColor: '#1D4ED8',
+        borderWidth: 2.2,
+        borderDash: [6, 4],
+        tension: 0.02,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: false,
+        order: 3
+      }
+    ];
+
+    if (isKomparasi) {
+      // Tampilkan BP Rencana (garis putus-putus abu-abu) dan BP Realisasi (garis solid tegas)
+      datasets.push({
+        label: 'BP Rencana (ROTS)',
+        data: bpPlanData,
+        borderColor: '#64748B',
+        borderWidth: 2,
+        borderDash: [5, 4],
+        tension: 0.15,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: false,
+        order: 2
+      });
+
+      datasets.push({
+        label: 'BP Realisasi (Aktual)',
+        data: bpRealData,
+        borderColor: '#10B981',
+        borderWidth: 2.8,
+        tension: 0.15,
+        pointRadius: 1,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#10B981',
+        pointHoverBorderColor: '#FFFFFF',
+        pointHoverBorderWidth: 2,
+        spanGaps: true,
+        fill: false,
+        order: 1
+      });
+    } else if (isRealisasiOnly) {
+      datasets.push({
+        label: 'BP Realisasi',
+        data: bpRealData,
+        borderColor: '#10B981',
+        borderWidth: 2.5,
+        tension: 0.15,
+        pointRadius: 1,
+        pointHoverRadius: 5,
+        spanGaps: true,
+        fill: false,
+        order: 1
+      });
+    } else {
+      datasets.push({
+        label: 'Beban Puncak (BP)',
+        data: bpPlanData,
+        borderColor: '#0F172A',
+        borderWidth: 2.5,
+        tension: 0.18,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#FFFFFF',
+        pointHoverBorderColor: '#0F172A',
+        pointHoverBorderWidth: 2.5,
+        fill: false,
+        order: 1
+      });
+    }
+
     const newInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          // 1. DMP - Sky Cyan Area Stack (Fondasi Pembangkitan dari 0 MW)
-          {
-            label: 'DMP (Daya Mampu Pembangkitan)',
-            data: dmpData,
-            backgroundColor: dmpGrad,
-            borderColor: '#0284C7',
-            borderWidth: 1.5,
-            tension: 0.08,
-            fill: true,
-            stack: 'balanceStack',
-            pointRadius: 0,
-            order: 3
-          },
-          // 2. PLANNED OUTAGE - Golden Amber Area Stack (Di atas DMP)
-          {
-            label: 'Planned Outage (PO + MO)',
-            data: poData,
-            backgroundColor: poGrad,
-            borderColor: '#D97706',
-            borderWidth: 1.2,
-            tension: 0.08,
-            fill: true,
-            stack: 'balanceStack',
-            pointRadius: 0,
-            order: 4
-          },
-          // 3. UNPLANNED OUTAGE - Rose/Crimson Area Stack (Di atas Planned Outage)
-          {
-            label: 'Unplanned Outage (FO + Derating)',
-            data: uoData,
-            backgroundColor: uoGrad,
-            borderColor: '#E11D48',
-            borderWidth: 1.2,
-            tension: 0.08,
-            fill: true,
-            stack: 'balanceStack',
-            pointRadius: 0,
-            order: 5
-          },
-          // 4. Garis DMN - Deep Sapphire Blue (Batas Kapasitas Total)
-          {
-            label: 'DMN (Kapasitas Netto)',
-            data: dmnData,
-            borderColor: '#1D4ED8',
-            borderWidth: 2.5,
-            borderDash: [6, 4],
-            tension: 0.02,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            fill: false,
-            order: 2
-          },
-          // 5. Garis Beban Puncak (BP) - Kurva halus dark carbon di dalam area DMP
-          {
-            label: 'Beban Puncak (BP)',
-            data: bpData,
-            borderColor: '#0F172A',
-            borderWidth: 2.5,
-            tension: 0.18,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: '#FFFFFF',
-            pointHoverBorderColor: '#0F172A',
-            pointHoverBorderWidth: 2.5,
-            fill: false,
-            order: 1
-          }
-        ]
+        datasets
       },
       options: {
         responsive: true,
@@ -353,7 +404,7 @@ export class ChartService {
   /**
    * Line Chart Trend Cadangan Daya dengan 2 Reference Lines (Threshold & 0 MW)
    */
-  renderTrendChart(canvasId, records, threshold = 2000) {
+  renderTrendChart(canvasId, records, threshold = 2000, viewMode = 'rencana') {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
@@ -366,51 +417,100 @@ export class ChartService {
       const parts = r.tanggal.split('-');
       return `${parts[2]}/${parts[1]}`;
     });
-    const cadValues = records.map(r => r.cad);
+    const cadPlanValues = records.map(r => r.cad);
+    const cadRealValues = records.map(r => r.realisasi ? r.realisasi.cad : null);
 
     // Gradient background for CAD line
     const gradient = ctx.createLinearGradient(0, 0, 0, 220);
     gradient.addColorStop(0, 'rgba(0, 163, 224, 0.25)');
     gradient.addColorStop(1, 'rgba(0, 163, 224, 0.01)');
 
+    const isKomparasi = viewMode === 'komparasi';
+    const isRealisasiOnly = viewMode === 'realisasi';
+
+    const datasets = [];
+
+    if (isKomparasi) {
+      datasets.push({
+        label: 'CAD Rencana (MW)',
+        data: cadPlanValues,
+        borderColor: '#0284C7',
+        borderWidth: 1.8,
+        borderDash: [5, 4],
+        tension: 0.25,
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      });
+
+      datasets.push({
+        label: 'CAD Realisasi (MW)',
+        data: cadRealValues,
+        borderColor: '#10B981',
+        borderWidth: 2.5,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 1,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#10B981',
+        pointHoverBorderColor: '#FFFFFF',
+        pointHoverBorderWidth: 2,
+        spanGaps: true
+      });
+    } else if (isRealisasiOnly) {
+      datasets.push({
+        label: 'CAD Realisasi (MW)',
+        data: cadRealValues,
+        borderColor: '#10B981',
+        borderWidth: 2.2,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 1,
+        pointHoverRadius: 5,
+        spanGaps: true
+      });
+    } else {
+      datasets.push({
+        label: 'CAD (MW)',
+        data: cadPlanValues,
+        borderColor: '#00A3E0',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        tension: 0.25,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#00A3E0',
+        pointHoverBorderColor: '#FFFFFF',
+        pointHoverBorderWidth: 2
+      });
+    }
+
+    datasets.push({
+      label: `Batas Minimum (${CalculationService.formatNumber(threshold, 0)} MW)`,
+      data: records.map(() => threshold),
+      borderColor: '#F59E0B',
+      borderWidth: 1.8,
+      borderDash: [5, 4],
+      pointRadius: 0,
+      fill: false
+    });
+
+    datasets.push({
+      label: '0 MW (Defisit)',
+      data: records.map(() => 0),
+      borderColor: '#EF4444',
+      borderWidth: 1.8,
+      borderDash: [4, 4],
+      pointRadius: 0,
+      fill: false
+    });
+
     this.trendChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'CAD (MW)',
-            data: cadValues,
-            borderColor: '#00A3E0',
-            backgroundColor: gradient,
-            borderWidth: 2,
-            tension: 0.25,
-            fill: true,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: '#00A3E0',
-            pointHoverBorderColor: '#FFFFFF',
-            pointHoverBorderWidth: 2
-          },
-          {
-            label: `Batas Minimum (${CalculationService.formatNumber(threshold, 0)} MW)`,
-            data: records.map(() => threshold),
-            borderColor: '#F59E0B',
-            borderWidth: 1.8,
-            borderDash: [5, 4],
-            pointRadius: 0,
-            fill: false
-          },
-          {
-            label: '0 MW (Defisit)',
-            data: records.map(() => 0),
-            borderColor: '#EF4444',
-            borderWidth: 1.8,
-            borderDash: [4, 4],
-            pointRadius: 0,
-            fill: false
-          }
-        ]
+        datasets
       },
       options: {
         responsive: true,

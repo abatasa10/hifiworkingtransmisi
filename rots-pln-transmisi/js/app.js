@@ -25,6 +25,7 @@ class RotsApp {
     this.bindGlobalNavigation();
     this.bindFilterBar();
     this.bindModals();
+    this.bindRealisasiModal();
 
     this.dailyView.init();
     this.outageView.init();
@@ -42,7 +43,15 @@ class RotsApp {
   }
 
   handleStoreEvent(event) {
-    if (event.type === 'PARAMETER_UPDATED' || event.type === 'FILTERS_CHANGED' || event.type === 'STORE_RESET') {
+    if (
+      event.type === 'PARAMETER_UPDATED' ||
+      event.type === 'FILTERS_CHANGED' ||
+      event.type === 'STORE_RESET' ||
+      event.type === 'VIEW_MODE_CHANGED' ||
+      event.type === 'REALISASI_UPDATED' ||
+      event.type === 'REALISASI_DELETED' ||
+      event.type === 'REALISASI_IMPORTED'
+    ) {
       this.renderDashboard();
       this.dailyView.render();
       this.outageView.render();
@@ -134,6 +143,18 @@ class RotsApp {
 
   bindFilterBar() {
     this.populateSystemSelect();
+
+    // View Mode Switcher Pills (Rencana / Realisasi / Komparasi)
+    const modePills = document.querySelectorAll('.view-mode-pill');
+    modePills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        const mode = pill.getAttribute('data-mode');
+        modePills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        this.store.setViewMode(mode);
+      });
+    });
 
     const selectSystem = document.getElementById('filterSystemSelect');
     if (selectSystem) {
@@ -424,6 +445,38 @@ class RotsApp {
 
     if (!selectedRecord || !filteredRecords.length) return;
 
+    // Mode Komparasi: Tampilkan atau sembunyikan Kartu Evaluasi Deviasi
+    const compGrid = document.getElementById('comparisonKpiGrid');
+    if (compGrid) {
+      if (this.store.viewMode === 'komparasi') {
+        compGrid.style.display = 'grid';
+        const comp = this.store.getComparisonSummary(filteredRecords);
+        const elDeltaBp = document.getElementById('compValDeltaBp');
+        const badgeDeltaBp = document.getElementById('compBadgeDeltaBp');
+        const elDeltaOutage = document.getElementById('compValDeltaOutage');
+        const elDeltaCad = document.getElementById('compValDeltaCad');
+        const badgeDeltaCad = document.getElementById('compBadgeDeltaCad');
+        const elAccuracy = document.getElementById('compValAccuracy');
+        const elDaysReal = document.getElementById('compSubDaysRealized');
+
+        if (elDeltaBp) elDeltaBp.textContent = CalculationService.formatDelta(comp.avgDeltaBP);
+        if (badgeDeltaBp) {
+          const sign = comp.avgDeltaBP > 0 ? '+' : '';
+          badgeDeltaBp.textContent = `${sign}${(comp.avgDeltaBP / 33950.2 * 100).toFixed(2)}%`;
+        }
+        if (elDeltaOutage) elDeltaOutage.textContent = CalculationService.formatDelta(comp.avgDeltaOutage);
+        if (elDeltaCad) elDeltaCad.textContent = CalculationService.formatDelta(comp.avgDeltaCAD);
+        if (badgeDeltaCad) {
+          badgeDeltaCad.textContent = comp.avgDeltaCAD >= 0 ? 'Cadangan Aman' : 'Cadangan Menipis';
+          badgeDeltaCad.className = comp.avgDeltaCAD >= 0 ? 'comp-badge comp-badge-green' : 'comp-badge comp-badge-red';
+        }
+        if (elAccuracy) elAccuracy.textContent = `${comp.accuracyBP.toFixed(1)}%`;
+        if (elDaysReal) elDaysReal.textContent = `${comp.totalDaysRealized} dari ${filteredRecords.length} Hari Terealisasi`;
+      } else {
+        compGrid.style.display = 'none';
+      }
+    }
+
     // 1. Render 6 KPI Cards (Berdasarkan data hari terpilih / seed 01 Juli 2026)
     this.updateKpiCards(selectedRecord);
 
@@ -436,8 +489,8 @@ class RotsApp {
     // 4. Neraca Daya ROTS (Excel Summary & Stacked Area Chart)
     this.updateNeracaDayaWidget(filteredRecords);
 
-    // 5. Trend Cadangan Daya Chart
-    this.chartService.renderTrendChart('trendCadanganCanvas', filteredRecords, threshold);
+    // 5. Trend Cadangan Daya Chart (Dukungan Rencana / Realisasi / Komparasi)
+    this.chartService.renderTrendChart('trendCadanganCanvas', filteredRecords, threshold, this.store.viewMode);
 
     // 6. DMP vs BP Monthly Bar Chart
     const monthlySummary = this.store.getMonthlySummary(filteredRecords);
@@ -581,8 +634,8 @@ class RotsApp {
     if (elCadMin) elCadMin.textContent = CalculationService.formatNumber(summary.cadMin, 0);
     if (elCadMinDate) elCadMinDate.textContent = formatModernBadgeDate(summary.cadMinDate);
 
-    // Render Neraca Daya Chart
-    this.chartService.renderNeracaDayaChart('neracaDayaCanvas', records);
+    // Render Neraca Daya Chart (Dukungan Rencana / Realisasi / Komparasi)
+    this.chartService.renderNeracaDayaChart('neracaDayaCanvas', records, this.store.viewMode);
   }
 
   updatePeriodSummaryCard(records) {
@@ -676,6 +729,168 @@ class RotsApp {
     if (elDerTrans) elDerTrans.textContent = CalculationService.formatNumber(rec.derTrans);
     if (elVarmus) elVarmus.textContent = CalculationService.formatNumber(rec.varmus);
     if (elTotalUnplanned) elTotalUnplanned.textContent = CalculationService.formatNumber(rec.unplannedOutage);
+  }
+
+  // ==========================================================================
+  // MODAL: INPUT & EDIT REALISASI HARIAN
+  // ==========================================================================
+  bindRealisasiModal() {
+    const modal = document.getElementById('modalInputRealisasi');
+    const btnOpen = document.getElementById('btnOpenInputRealisasi');
+    const btnClose = document.getElementById('btnCloseModalRealisasi');
+    const btnCancel = document.getElementById('btnCancelModalRealisasi');
+    const btnSave = document.getElementById('btnSaveRealisasi');
+    const btnDelete = document.getElementById('btnDeleteRealisasi');
+
+    const datePicker = document.getElementById('formRealisasiDatePicker');
+    const dateDisplay = document.getElementById('formRealisasiDateDisplay');
+    const inputBp = document.getElementById('inputRealBp');
+    const inputDmn = document.getElementById('inputRealDmn');
+    const inputPo = document.getElementById('inputRealPo');
+    const inputMo = document.getElementById('inputRealMo');
+    const inputFo = document.getElementById('inputRealFo');
+    const inputDerating = document.getElementById('inputRealDerating');
+    const inputNotes = document.getElementById('inputRealNotes');
+
+    const hintPlanBp = document.getElementById('hintPlanBp');
+    const hintPlanDmn = document.getElementById('hintPlanDmn');
+
+    const prevDmp = document.getElementById('previewRealDmp');
+    const prevCad = document.getElementById('previewRealCad');
+    const prevDeltaBp = document.getElementById('previewDeltaBp');
+    const prevStatus = document.getElementById('previewRealStatus');
+
+    const closeModal = () => {
+      if (modal) modal.classList.remove('active');
+    };
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    // Live preview update
+    const updateLivePreview = (planRec) => {
+      if (!planRec) return;
+      const dmn = parseFloat(inputDmn.value) || planRec.dmn;
+      const po = parseFloat(inputPo.value) || 0;
+      const mo = parseFloat(inputMo.value) || 0;
+      const fo = parseFloat(inputFo.value) || 0;
+      const der = parseFloat(inputDerating.value) || 0;
+      const bp = parseFloat(inputBp.value) || 0;
+
+      const plannedOutage = CalculationService.calculatePlannedOutage(po, mo);
+      const unplannedOutage = CalculationService.calculateUnplannedOutage(fo, 0, der, 0, 0);
+      const dmp = CalculationService.calculateDMP(dmn, plannedOutage, unplannedOutage);
+      const cad = CalculationService.calculateCAD(dmp, bp);
+      const status = CalculationService.determineStatus(cad, this.store.params.minReserveThreshold);
+
+      if (prevDmp) prevDmp.textContent = `${CalculationService.formatNumber(dmp, 0)} MW`;
+      if (prevCad) {
+        prevCad.textContent = `${CalculationService.formatNumber(cad, 0)} MW`;
+        prevCad.style.color = status.color;
+      }
+      if (prevDeltaBp) {
+        prevDeltaBp.textContent = CalculationService.formatDelta(bp - planRec.bp, 0);
+      }
+      if (prevStatus) {
+        prevStatus.className = `status-badge ${status.badgeClass}`;
+        prevStatus.textContent = status.label;
+      }
+    };
+
+    const loadDateIntoModal = (dateStr) => {
+      const records = this.store.getFilteredRecords();
+      const rec = records.find(r => r.tanggal === dateStr) || records[0];
+      if (!rec) return;
+
+      if (datePicker) datePicker.value = rec.tanggal;
+      if (dateDisplay) dateDisplay.textContent = CalculationService.formatDateIndo(rec.tanggal);
+
+      if (hintPlanBp) hintPlanBp.textContent = `Rencana: ${CalculationService.formatNumber(rec.bp)} MW`;
+      if (hintPlanDmn) hintPlanDmn.textContent = `Rencana: ${CalculationService.formatNumber(rec.dmn)} MW`;
+
+      if (rec.realisasi) {
+        inputBp.value = rec.realisasi.bp || '';
+        inputDmn.value = rec.realisasi.dmn || rec.dmn;
+        inputPo.value = rec.realisasi.po || '';
+        inputMo.value = rec.realisasi.mo || '';
+        inputFo.value = rec.realisasi.fo || '';
+        inputDerating.value = rec.realisasi.derKit || '';
+        inputNotes.value = rec.realisasi.notes || '';
+        if (btnDelete) btnDelete.style.display = 'inline-flex';
+      } else {
+        inputBp.value = '';
+        inputDmn.value = rec.dmn;
+        inputPo.value = rec.po;
+        inputMo.value = rec.mo;
+        inputFo.value = rec.fo;
+        inputDerating.value = rec.derKit;
+        inputNotes.value = '';
+        if (btnDelete) btnDelete.style.display = 'none';
+      }
+
+      updateLivePreview(rec);
+      if (modal) modal.classList.add('active');
+    };
+
+    this.openRealisasiModal = loadDateIntoModal;
+    window.ROTS_OPEN_REALISASI = loadDateIntoModal;
+
+    if (btnOpen) {
+      btnOpen.addEventListener('click', () => {
+        const selDate = this.store.filters.selectedDate || '2026-07-01';
+        loadDateIntoModal(selDate);
+      });
+    }
+
+    if (datePicker) {
+      datePicker.addEventListener('change', (e) => {
+        loadDateIntoModal(e.target.value);
+      });
+    }
+
+    [inputBp, inputDmn, inputPo, inputMo, inputFo, inputDerating].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('input', () => {
+          const curDate = datePicker.value;
+          const rec = this.store.getFilteredRecords().find(r => r.tanggal === curDate);
+          if (rec) updateLivePreview(rec);
+        });
+      }
+    });
+
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        const dateStr = datePicker.value;
+        const bp = parseFloat(inputBp.value);
+        if (isNaN(bp) || bp <= 0) {
+          alert('Mohon masukkan Beban Puncak (BP) Realisasi yang valid (> 0 MW)');
+          return;
+        }
+
+        const data = {
+          bp,
+          dmn: parseFloat(inputDmn.value),
+          po: parseFloat(inputPo.value) || 0,
+          mo: parseFloat(inputMo.value) || 0,
+          fo: parseFloat(inputFo.value) || 0,
+          derKit: parseFloat(inputDerating.value) || 0,
+          notes: inputNotes.value
+        };
+
+        this.store.setRealisasi(dateStr, data);
+        closeModal();
+      });
+    }
+
+    if (btnDelete) {
+      btnDelete.addEventListener('click', () => {
+        const dateStr = datePicker.value;
+        if (confirm(`Hapus data realisasi tanggal ${CalculationService.formatDateIndo(dateStr)}?`)) {
+          this.store.deleteRealisasi(dateStr);
+          closeModal();
+        }
+      });
+    }
   }
 }
 
