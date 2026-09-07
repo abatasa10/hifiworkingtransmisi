@@ -27,150 +27,99 @@
 </head>
 <body>
 
-  <div class="app-layout">
-    
-    <!-- ======================================================================
-         SIDEBAR NAVIGATION
-         ====================================================================== -->
-    <aside class="app-sidebar">
-      <div class="sidebar-header">
-        <a href="#" class="sidebar-brand">
-          <img src="assets/pln-logo.svg" alt="PLN Operasi Sistem Logo">
-        </a>
-      </div>
+  <!-- ======================================================================
+       MANTAPS TOP NAVBAR (Clean Horizontal Navigation)
+       ====================================================================== -->
+  <header class="mantaps-navbar">
+    <div class="mantaps-navbar-left">
+      <a href="#" class="mantaps-brand">
+        <img src="assets/pln-logo.svg" alt="ROTS PLN Operasi Sistem Logo">
+      </a>
+    </div>
 
-      <div class="sidebar-menu-wrapper">
-        <ul class="sidebar-nav">
-          <li class="sidebar-item active">
-            <a class="sidebar-link" data-view="dashboard" id="menuDashboard">
-              <i class="fa fa-home"></i>
-              <span>Dashboard</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="kondisi-harian" id="menuKondisiHarian">
-              <i class="fa fa-calendar-alt"></i>
-              <span>Kondisi Harian</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="rencana-outage" id="menuRencanaOutage">
-              <i class="fa fa-wrench"></i>
-              <span>Rencana Outage</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="ringkasan-bulanan" id="menuRingkasanBulanan">
-              <i class="fa fa-calendar-check"></i>
-              <span>Ringkasan Bulanan</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="detail-pembangkit" id="menuDetailPembangkit">
-              <i class="fa fa-bolt"></i>
-              <span>Detail Pembangkit</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="parameter" id="menuParameter">
-              <i class="fa fa-sliders-h"></i>
-              <span>Parameter</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="master-data" id="menuMasterData">
-              <i class="fa fa-database"></i>
-              <span>Master Data</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="import-data" id="menuImportData">
-              <i class="fa fa-file-import"></i>
-              <span>Import Data</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="laporan" id="menuLaporan">
-              <i class="fa fa-file-alt"></i>
-              <span>Laporan</span>
-            </a>
-          </li>
-          <li class="sidebar-item">
-            <a class="sidebar-link" data-view="pengaturan" id="menuPengaturan">
-              <i class="fa fa-cog"></i>
-              <span>Pengaturan</span>
-            </a>
-          </li>
-        </ul>
-      </div>
+    <nav class="mantaps-nav-menu">
+      <a class="mantaps-nav-link active" data-view="dashboard" id="menuDashboard">
+        <i class="fa fa-chart-pie"></i>
+        <span>Dashboard</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="kondisi-harian" id="menuKondisiHarian">
+        <i class="fa fa-calendar-alt"></i>
+        <span>Kondisi Harian</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="rencana-outage" id="menuRencanaOutage">
+        <i class="fa fa-wrench"></i>
+        <span>Rencana Outage</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="ringkasan-bulanan" id="menuRingkasanBulanan">
+        <i class="fa fa-calendar-check"></i>
+        <span>Ringkasan Bulanan</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="detail-pembangkit" id="menuDetailPembangkit">
+        <i class="fa fa-bolt"></i>
+        <span>Detail Pembangkit</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="parameter" id="menuParameter">
+        <i class="fa fa-sliders-h"></i>
+        <span>Parameter</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="master-data" id="menuMasterData">
+        <i class="fa fa-database"></i>
+        <span>Master Data</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="import-data" id="menuImportData">
+        <i class="fa fa-file-import"></i>
+        <span>Import Data</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="laporan" id="menuLaporan">
+        <i class="fa fa-file-alt"></i>
+        <span>Laporan</span>
+      </a>
+    </nav>
 
-      <!-- Sidebar Footer -->
-      <div class="sidebar-footer">
-        <img src="assets/transmission-tower.svg" class="sidebar-tower-bg" alt="Transmission Tower">
-        <div class="about-card">
-          <div class="about-title">Tentang ROTS</div>
-          <div class="about-desc">
-            ROTS adalah sistem informasi untuk monitoring cadangan daya sistem operasi tenaga listrik PLN berdasarkan rencana operasi tahunan semester.
-          </div>
-        </div>
-        <div class="sidebar-copyright">
-          &copy; 2026 PLN Operasi Sistem<br>All rights reserved.
-        </div>
-      </div>
-    </aside>
+    <div class="mantaps-navbar-right">
+      <button class="header-btn" id="btnAppWindowFullscreen" title="Layar Penuh Seluruh Aplikasi">
+        <i class="fa fa-expand-arrows-alt"></i>
+        <span>Layar Penuh</span>
+      </button>
 
-    <!-- ======================================================================
-         MAIN CONTENT AREA
-         ====================================================================== -->
-    <main class="app-main">
+      <button class="header-btn" id="btnHelpModal" title="Panduan Formula Perhitungan">
+        <i class="fa fa-question-circle"></i>
+        <span>Bantuan</span>
+      </button>
       
-      <!-- Top Application Header -->
-      <header class="app-header">
-        <div class="header-title-area">
-          <div class="header-app-name">
-            ROTS
-            <span class="badge-version">v2.4 PLN</span>
-          </div>
-          <div class="header-subtitle">
-            Rencana Operasi Tahunan Semester (Reserve Outlook Transmission System)
-          </div>
-        </div>
+      <button class="header-btn btn-primary" id="btnGlobalExport" title="Ekspor Data ke Excel">
+        <i class="fa fa-download"></i>
+        <span>Export</span>
+      </button>
 
-        <div class="header-actions">
-          <button class="header-btn" id="btnAppWindowFullscreen" title="Layar Penuh Seluruh Aplikasi">
-            <i class="fa fa-expand-arrows-alt"></i>
-            <span>Layar Penuh</span>
-          </button>
+      <div class="user-profile-badge" title="Profil Administrator">
+        <div class="user-avatar" style="background:#E2E8F0; color:#1976D2;"><i class="fa fa-user"></i></div>
+        <span class="user-name">super_admin_ridwan</span>
+      </div>
+    </div>
+  </header>
 
-          <button class="header-btn" id="btnHelpModal" title="Panduan Formula Perhitungan">
-            <i class="fa fa-question-circle"></i>
-            <span>Bantuan</span>
-          </button>
-          
-          <button class="header-btn btn-primary" id="btnGlobalExport" title="Ekspor Data ke Excel">
-            <i class="fa fa-download"></i>
-            <span>Export</span>
-          </button>
+  <!-- Page Subheader Bar (Title & Timestamp ala MANTAPS) -->
+  <div class="page-subheader">
+    <div class="subheader-title-group">
+      <h1 class="page-title-text" id="pageTitleText">ROTS – Rencana Operasi Tahunan Semester</h1>
+      <span class="page-badge-system">PLN Operasi Sistem</span>
+    </div>
+    <div class="subheader-last-update">
+      <i class="far fa-clock"></i>
+      <span>Last Update: 31/8/2026, 00.00.00</span>
+    </div>
+  </div>
 
-          <div class="notification-badge-btn" title="Pemberitahuan Sistem">
-            <i class="fa fa-bell"></i>
-            <span class="notification-count">3</span>
-          </div>
+  <div class="app-layout">
+    <main class="app-main">
 
-          <div class="user-profile-badge" title="Profil Administrator">
-            <div class="user-avatar">AD</div>
-            <span class="user-name">Admin</span>
-            <i class="fa fa-chevron-down" style="font-size: 10px; color: var(--text-muted);"></i>
-          </div>
-        </div>
-      </header>
-
-      <!-- Global Filter Bar -->
+      <!-- Global Filter Bar (MANTAPS Style Rounded Pill Filters) -->
       <section class="filter-bar">
         <div class="filter-group">
           <!-- Filter Sistem -->
           <div class="filter-control">
-            <label class="filter-label" for="filterSystemSelect">Sistem</label>
+            <label class="filter-label" for="filterSystemSelect">Sistem:</label>
             <select class="filter-select" id="filterSystemSelect">
               <option value="Jamali">Jamali</option>
               <option value="Sumatera">Sumatera</option>
@@ -183,7 +132,7 @@
 
           <!-- Filter Periode (Semester) -->
           <div class="filter-control">
-            <label class="filter-label" for="filterSemesterSelect">Periode (Semester)</label>
+            <label class="filter-label" for="filterSemesterSelect">Periode:</label>
             <select class="filter-select" id="filterSemesterSelect">
               <option value="Semester II 2026">Semester II 2026</option>
               <option value="Semester I 2026">Semester I 2026</option>
@@ -191,12 +140,9 @@
           </div>
 
           <!-- Periode Tanggal Badge -->
-          <div class="filter-control">
-            <label class="filter-label">Periode Tanggal</label>
-            <div class="date-range-badge">
-              <i class="fa fa-calendar-alt"></i>
-              <span id="displayDateRange">01 Jul 2026 - 31 Des 2026</span>
-            </div>
+          <div class="filter-control" style="cursor: default;">
+            <i class="far fa-calendar-alt" style="color: #64748B; font-size: 13px;"></i>
+            <span id="displayDateRange" style="font-weight: 600; font-size: 12.5px; color: #1E293B;">01 Jul 2026 - 31 Des 2026</span>
           </div>
         </div>
 
@@ -216,504 +162,436 @@
       <div class="view-container">
         <section class="view-section active" id="view-dashboard">
           
-          <!-- ROW 1: EXECUTIVE COCKPIT (STATUS SISTEM + 6 KPI HARIAN) -->
-          <div class="dashboard-top-cockpit">
+          <div class="mantaps-dashboard-grid">
             
-            <!-- STATUS SISTEM SAAT INI WIDGET -->
-            <div class="status-hero-card">
+            <!-- Left Main Column -->
+            <div class="mantaps-main-column">
               
-              <!-- Left: Big Status & Condition -->
-              <div class="status-left-panel">
-                <span class="legend-title">STATUS SISTEM SAAT INI</span>
-                <span class="status-subtitle-date" id="statusHeroDate">Data per 01 Juli 2026</span>
-                <div class="status-main-text status-text-siaga" id="statusHeroText">SIAGA</div>
-                <div class="status-condition-pill pill-siaga" id="statusHeroCondition">
-                  CAD &lt; 2.000 MW
+              <!-- 6 KPI CARDS (Clean Horizontal Grid) -->
+              <div class="dashboard-kpi-grid">
+                <!-- 1. DMN -->
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">DMN</span>
+                      <span class="kpi-desc">Daya Mampu Netto</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-blue"><i class="fa fa-wave-square"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValDmn">49.040,62</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
+                </div>
+
+                <!-- 2. Planned Outage -->
+                <div class="kpi-card kpi-po">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">Planned Outage</span>
+                      <span class="kpi-desc">PO + MO</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-amber"><i class="fa fa-wrench"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValPlanned">4.770,08</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
+                </div>
+
+                <!-- 3. Unplanned Outage -->
+                <div class="kpi-card kpi-uo">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">Unplanned Outage</span>
+                      <span class="kpi-desc" title="FO + Derating">FO + Derating</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-red"><i class="fa fa-exclamation-triangle"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValUnplanned">8.377,06</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
+                </div>
+
+                <!-- 4. DMP -->
+                <div class="kpi-card kpi-dmp">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">DMP</span>
+                      <span class="kpi-desc">Daya Mampu Pasok</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-green"><i class="fa fa-industry"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValDmp">35.893,48</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
+                </div>
+
+                <!-- 5. BP -->
+                <div class="kpi-card kpi-bp">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">BP</span>
+                      <span class="kpi-desc">Beban Puncak</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-purple"><i class="fa fa-chart-line"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValBp">33.950,21</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
+                </div>
+
+                <!-- 6. CAD -->
+                <div class="kpi-card kpi-cad">
+                  <div class="kpi-top">
+                    <div class="kpi-labels">
+                      <span class="kpi-title">CAD</span>
+                      <span class="kpi-desc">Cadangan Daya</span>
+                    </div>
+                    <div class="kpi-icon-badge kpi-icon-teal"><i class="fa fa-battery-half"></i></div>
+                  </div>
+                  <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiValCad">1.943,27</span>
+                    <span class="kpi-unit">MW</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Center: Semi-circular Radial Gauge -->
-              <div class="status-gauge-container">
-                <canvas id="statusGaugeCanvas" class="gauge-canvas"></canvas>
-                <div class="gauge-value-display">
-                  <span class="gauge-cad-number" id="gaugeCurrentCadVal">1.943,27 MW</span>
-                  <span class="gauge-cad-label">CAD Saat Ini</span>
+              <!-- NERACA DAYA ROTS (MODERN EXECUTIVE ANALYTICS & STACKED AREA CHART) -->
+              <div class="card nerda-card-modern">
+                <!-- Modern Executive Summary Metric Strip -->
+                <div class="nerda-modern-metrics-bar">
+                  
+                  <!-- DMN (Daya Mampu Netto) -->
+                  <div class="modern-metric-pill metric-pill-primary">
+                    <span class="pill-chip chip-primary">Netto</span>
+                    <div class="metric-pill-icon"><i class="fa fa-bolt"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">DMN Sistem</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num" id="nerdaDmnVal">49.041</span>
+                        <span class="metric-pill-unit">MW</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- FODER -->
+                  <div class="modern-metric-pill metric-pill-purple">
+                    <span class="pill-chip chip-purple">Target</span>
+                    <div class="metric-pill-icon"><i class="fa fa-percentage"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">Asumsi FODER</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num" id="nerdaFoderVal">15,69%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- DMP Rata-rata -->
+                  <div class="modern-metric-pill metric-pill-cyan">
+                    <span class="pill-chip chip-cyan">Pasokan</span>
+                    <div class="metric-pill-icon"><i class="fa fa-wave-square"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">DMP Rata-rata</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num" id="nerdaDmpAvgVal">36.649</span>
+                        <span class="metric-pill-unit">MW</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Beban Puncak Max -->
+                  <div class="modern-metric-pill metric-pill-danger">
+                    <span class="pill-chip chip-danger" id="nerdaBpMaxDate">27 Okt '26</span>
+                    <div class="metric-pill-icon"><i class="fa fa-fire"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">BP Maksimum</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num" id="nerdaBpMaxVal">35.998</span>
+                        <span class="metric-pill-unit">MW</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Cadangan Rata-rata -->
+                  <div class="modern-metric-pill metric-pill-success">
+                    <span class="pill-chip chip-success">Normal</span>
+                    <div class="metric-pill-icon"><i class="fa fa-shield-alt"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">CAD Rata-rata</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num" id="nerdaCadAvgVal">2.790</span>
+                        <span class="metric-pill-unit">MW</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Cadangan Terendah (Kritis) -->
+                  <div class="modern-metric-pill metric-pill-warning">
+                    <span class="pill-chip chip-warning" id="nerdaCadMinDate">18 Agu '26</span>
+                    <div class="metric-pill-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                    <div class="metric-pill-content">
+                      <div class="metric-pill-title">CAD Terendah</div>
+                      <div class="metric-pill-val-row">
+                        <span class="metric-pill-num text-warning" id="nerdaCadMinVal">1.024</span>
+                        <span class="metric-pill-unit">MW</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Chart Header & Canvas -->
+                <div class="card-header nerda-header-modern">
+                  <div class="card-title">
+                    <div class="title-glow-dot"></div>
+                    <span id="nerdaChartTitle">Neraca Daya ROTS Sistem Jamali</span>
+                    <span class="modern-title-badge">Semester II 2026</span>
+                  </div>
+                  <div class="nerda-header-actions">
+                    <div class="nerda-mini-legend">
+                      <span class="legend-chip"><span class="legend-dot dot-dmp"></span> DMP</span>
+                      <span class="legend-chip"><span class="legend-dot dot-po"></span> Planned</span>
+                      <span class="legend-chip"><span class="legend-dot dot-uo"></span> Unplanned</span>
+                      <span class="legend-chip"><span class="legend-line line-dmn"></span> DMN</span>
+                      <span class="legend-chip"><span class="legend-line line-bp"></span> BP</span>
+                    </div>
+                    <button class="card-action-btn" id="btnExpandNeracaDaya" title="Perbesar Layar Penuh (Fullscreen)">
+                      <i class="fa fa-expand"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="card-body" style="padding-top: 6px; padding-bottom: 8px;">
+                  <div class="chart-wrapper" style="height: 230px;">
+                    <canvas id="neracaDayaCanvas"></canvas>
+                  </div>
                 </div>
               </div>
 
-              <!-- Right: Status Reference Thresholds Box -->
-              <div class="status-legend-box">
-                <div class="legend-title">Keterangan Status</div>
+              <!-- DUAL CHARTS ROW (TREND CADANGAN & DMP VS BP) -->
+              <div class="dashboard-charts-grid" style="grid-template-columns: 1fr 1fr;">
+                <!-- Trend Cadangan Daya -->
+                <div class="card chart-card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fa fa-chart-line" style="color: var(--pln-blue-primary);"></i>
+                      Trend Cadangan Daya
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="card-subtitle">CAD vs Batas Threshold</span>
+                      <button class="card-action-btn" id="btnExpandTrend" title="Perbesar Layar Penuh (Fullscreen)">
+                        <i class="fa fa-expand"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-wrapper">
+                      <canvas id="trendCadanganCanvas"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- DMP vs BP (Rata-rata Bulanan) -->
+                <div class="card chart-card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fa fa-chart-bar" style="color: #10B981;"></i>
+                      DMP vs BP (Rata-rata Bulanan)
+                    </div>
+                    <div class="card-subtitle">MW per Bulan</div>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-wrapper">
+                      <canvas id="dmpBpBarCanvas"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTTOM ROW: RINGKASAN BULANAN TABLE & KOMPONEN OUTAGE WIDGET -->
+              <div class="dashboard-bottom-grid">
+                <!-- RINGKASAN BULANAN TABLE -->
+                <div class="card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fa fa-table" style="color: var(--pln-navy-dark);"></i>
+                      Ringkasan Bulanan
+                    </div>
+                    <div class="card-subtitle">Semester II 2026</div>
+                  </div>
+                  <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive" style="border: none;">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Bulan</th>
+                            <th class="text-right">DMP Average (MW)</th>
+                            <th class="text-right">BP Max (MW)</th>
+                            <th class="text-right">CAD Average (MW)</th>
+                            <th class="text-right">CAD Min (MW)</th>
+                            <th class="text-center">Normal</th>
+                            <th class="text-center">Siaga</th>
+                            <th class="text-center">Defisit</th>
+                            <th class="text-center">Total Hari</th>
+                          </tr>
+                        </thead>
+                        <tbody id="dashboardMonthlyTableBody"></tbody>
+                        <tfoot id="dashboardMonthlyTableFoot"></tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KOMPONEN OUTAGE WIDGET -->
+                <div class="card">
+                  <div class="card-header">
+                    <div class="card-title">
+                      <i class="fa fa-exclamation-circle" style="color: #D97706;"></i>
+                      Komponen Outage <span class="card-subtitle" id="outageWidgetDate">(01 Jul 2026)</span>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="outage-breakdown-grid">
+                      <!-- Planned Outage -->
+                      <div class="outage-box">
+                        <div class="outage-box-title planned-title">
+                          <span>Planned Outage (MW)</span>
+                          <i class="fa fa-wrench"></i>
+                        </div>
+                        <div class="outage-list">
+                          <div class="outage-list-item">
+                            <span class="outage-name">PO (Planned Outage)</span>
+                            <span class="outage-val" id="outagePoVal">4.490,55</span>
+                          </div>
+                          <div class="outage-list-item">
+                            <span class="outage-name">MO (Maintenance Outage)</span>
+                            <span class="outage-val" id="outageMoVal">279,53</span>
+                          </div>
+                        </div>
+                        <div class="outage-total-row planned-total">
+                          <span>Total Planned Outage</span>
+                          <span id="outageTotalPlannedVal">4.770,08</span>
+                        </div>
+                      </div>
+
+                      <!-- Unplanned Outage -->
+                      <div class="outage-box">
+                        <div class="outage-box-title unplanned-title">
+                          <span>Unplanned Outage (MW)</span>
+                          <i class="fa fa-bolt"></i>
+                        </div>
+                        <div class="outage-list">
+                          <div class="outage-list-item">
+                            <span class="outage-name">FO</span>
+                            <span class="outage-val" id="outageFoVal">1.481,44</span>
+                          </div>
+                          <div class="outage-list-item">
+                            <span class="outage-name">FO EP</span>
+                            <span class="outage-val" id="outageFoEpVal">4.020,28</span>
+                          </div>
+                          <div class="outage-list-item">
+                            <span class="outage-name">DER KIT</span>
+                            <span class="outage-val" id="outageDerKitVal">1.481,44</span>
+                          </div>
+                          <div class="outage-list-item">
+                            <span class="outage-name">DER TRANS</span>
+                            <span class="outage-val" id="outageDerTransVal">0,00</span>
+                          </div>
+                          <div class="outage-list-item">
+                            <span class="outage-name">VARMUS</span>
+                            <span class="outage-val" id="outageVarmusVal">1.393,89</span>
+                          </div>
+                        </div>
+                        <div class="outage-total-row unplanned-total">
+                          <span>Total Unplanned Outage</span>
+                          <span id="outageTotalUnplannedVal">8.377,06</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="outage-footnote">
+                      * Angka dalam MW (Mega Watt). Klik tanggal mana pun di halaman Kondisi Harian untuk melihat rincian historis.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Side Column (MANTAPS Style Summary Panel) -->
+            <div class="mantaps-side-column">
+              <div class="mantaps-summary-panel">
                 
-                <div class="legend-row">
-                  <div class="legend-indicator">
-                    <span class="legend-dot dot-normal"></span>
-                    <span>NORMAL</span>
-                  </div>
-                  <span class="legend-formula" id="legendThresholdNormal">CAD &ge; 2.000 MW</span>
+                <!-- Total Hari Operasi -->
+                <div class="mantaps-stat-box stat-total">
+                  <div class="mantaps-stat-num" id="mantapsTotalDays">184</div>
+                  <div class="mantaps-stat-label">Total Hari Operasi</div>
                 </div>
 
-                <div class="legend-row">
-                  <div class="legend-indicator">
-                    <span class="legend-dot dot-siaga"></span>
-                    <span>SIAGA</span>
-                  </div>
-                  <span class="legend-formula" id="legendThresholdSiaga">0 &le; CAD &lt; 2.000 MW</span>
+                <!-- High (Defisit) -->
+                <div class="mantaps-stat-box stat-high">
+                  <div class="mantaps-stat-num" id="mantapsCountDefisit">0</div>
+                  <div class="mantaps-stat-label" style="color: #DC2626;">High (Defisit &lt; 0 MW)</div>
                 </div>
 
-                <div class="legend-row">
-                  <div class="legend-indicator">
-                    <span class="legend-dot dot-defisit"></span>
-                    <span>DEFISIT</span>
-                  </div>
-                  <span class="legend-formula">CAD &lt; 0 MW</span>
+                <!-- Moderate (Siaga) -->
+                <div class="mantaps-stat-box stat-moderate">
+                  <div class="mantaps-stat-num" id="mantapsCountSiaga">73</div>
+                  <div class="mantaps-stat-label" style="color: #D97706;">Moderate (Siaga)</div>
                 </div>
-              </div>
 
-            </div>
-
-            <!-- 6 KPI CARDS (3x2 Grid: Generation & Outages / Demand & Reserve) -->
-            <div class="dashboard-kpi-grid">
-              
-              <!-- 1. DMN -->
-              <div class="kpi-card">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">DMN</span>
-                    <span class="kpi-desc">Daya Mampu Netto</span>
-                  </div>
-                  <div class="kpi-icon-badge kpi-icon-blue">
-                    <i class="fa fa-wave-square"></i>
-                  </div>
+                <!-- Low (Normal) -->
+                <div class="mantaps-stat-box stat-low">
+                  <div class="mantaps-stat-num" id="mantapsCountNormal">111</div>
+                  <div class="mantaps-stat-label" style="color: #16A34A;">Low (Normal &ge; 2.000 MW)</div>
                 </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValDmn">49.040,62</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
 
-              <!-- 2. Planned Outage -->
-              <div class="kpi-card kpi-po">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">Planned Outage</span>
-                    <span class="kpi-desc">PO + MO</span>
+                <!-- Real-time Status Gauge Card Block -->
+                <div class="mantaps-stat-box" style="padding: 16px 12px; background: #FAFBFD;">
+                  <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">
+                    Status Sistem Hari Ini
                   </div>
-                  <div class="kpi-icon-badge kpi-icon-amber">
-                    <i class="fa fa-wrench"></i>
+                  <div style="font-size: 11px; color: #94A3B8; margin-bottom: 8px;" id="statusHeroDate">
+                    Data per 01 Juli 2026
+                  </div>
+                  <div class="status-main-text status-text-siaga" id="statusHeroText" style="font-size: 22px; font-weight: 900; margin-bottom: 4px;">
+                    SIAGA
+                  </div>
+                  <div class="status-condition-pill pill-siaga" id="statusHeroCondition" style="margin-bottom: 12px;">
+                    CAD &lt; 2.000 MW
+                  </div>
+                  <div class="status-gauge-container" style="margin: 0 auto;">
+                    <canvas id="statusGaugeCanvas" class="gauge-canvas" style="width: 170px; height: 95px;"></canvas>
+                    <div class="gauge-value-display">
+                      <span class="gauge-cad-number" id="gaugeCurrentCadVal" style="font-size: 15px;">1.943,27 MW</span>
+                      <span class="gauge-cad-label">CAD Saat Ini</span>
+                    </div>
                   </div>
                 </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValPlanned">4.770,08</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
 
-              <!-- 3. Unplanned Outage -->
-              <div class="kpi-card kpi-uo">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">Unplanned Outage</span>
-                    <span class="kpi-desc" title="FO + Derating">FO + Derating</span>
-                  </div>
-                  <div class="kpi-icon-badge kpi-icon-red">
-                    <i class="fa fa-exclamation-triangle"></i>
-                  </div>
-                </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValUnplanned">8.377,06</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
-
-              <!-- 4. DMP -->
-              <div class="kpi-card kpi-dmp">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">DMP</span>
-                    <span class="kpi-desc">Daya Mampu Pasok</span>
-                  </div>
-                  <div class="kpi-icon-badge kpi-icon-green">
-                    <i class="fa fa-industry"></i>
-                  </div>
-                </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValDmp">35.893,48</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
-
-              <!-- 5. BP -->
-              <div class="kpi-card kpi-bp">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">BP</span>
-                    <span class="kpi-desc">Beban Puncak</span>
-                  </div>
-                  <div class="kpi-icon-badge kpi-icon-purple">
-                    <i class="fa fa-chart-line"></i>
-                  </div>
-                </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValBp">33.950,21</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
-
-              <!-- 6. CAD -->
-              <div class="kpi-card kpi-cad">
-                <div class="kpi-top">
-                  <div class="kpi-labels">
-                    <span class="kpi-title">CAD</span>
-                    <span class="kpi-desc">Cadangan Daya</span>
-                  </div>
-                  <div class="kpi-icon-badge kpi-icon-teal">
-                    <i class="fa fa-battery-half"></i>
-                  </div>
-                </div>
-                <div class="kpi-value-row">
-                  <span class="kpi-value" id="kpiValCad">1.943,27</span>
-                  <span class="kpi-unit">MW</span>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Hidden period summary elements for JS compatibility -->
-            <div style="display:none;" aria-hidden="true">
-              <span id="periodDmpAvg"></span>
-              <span id="periodBpMax"></span>
-              <span id="periodCadAvg"></span>
-              <span id="periodCadMin"></span>
-            </div>
-
-          </div>
-
-          <!-- NERACA DAYA ROTS (MODERN EXECUTIVE ANALYTICS & STACKED AREA CHART) -->
-          <div class="card nerda-card-modern">
-            <!-- Modern Executive Summary Metric Strip -->
-            <div class="nerda-modern-metrics-bar">
-              
-              <!-- DMN (Daya Mampu Netto) -->
-              <div class="modern-metric-pill metric-pill-primary">
-                <span class="pill-chip chip-primary">Netto</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-bolt"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">DMN Sistem</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num" id="nerdaDmnVal">49.041</span>
-                    <span class="metric-pill-unit">MW</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- FODER -->
-              <div class="modern-metric-pill metric-pill-purple">
-                <span class="pill-chip chip-purple">Target</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-percentage"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">Asumsi FODER</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num" id="nerdaFoderVal">15,69%</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- DMP Rata-rata -->
-              <div class="modern-metric-pill metric-pill-cyan">
-                <span class="pill-chip chip-cyan">Pasokan</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-wave-square"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">DMP Rata-rata</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num" id="nerdaDmpAvgVal">36.649</span>
-                    <span class="metric-pill-unit">MW</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Beban Puncak Max -->
-              <div class="modern-metric-pill metric-pill-danger">
-                <span class="pill-chip chip-danger" id="nerdaBpMaxDate">27 Okt '26</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-fire"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">BP Maksimum</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num" id="nerdaBpMaxVal">35.998</span>
-                    <span class="metric-pill-unit">MW</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Cadangan Rata-rata -->
-              <div class="modern-metric-pill metric-pill-success">
-                <span class="pill-chip chip-success">Normal</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-shield-alt"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">CAD Rata-rata</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num" id="nerdaCadAvgVal">2.790</span>
-                    <span class="metric-pill-unit">MW</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Cadangan Terendah (Kritis) -->
-              <div class="modern-metric-pill metric-pill-warning">
-                <span class="pill-chip chip-warning" id="nerdaCadMinDate">18 Agu '26</span>
-                <div class="metric-pill-icon">
-                  <i class="fa fa-exclamation-triangle"></i>
-                </div>
-                <div class="metric-pill-content">
-                  <div class="metric-pill-title">CAD Terendah</div>
-                  <div class="metric-pill-val-row">
-                    <span class="metric-pill-num text-warning" id="nerdaCadMinVal">1.024</span>
-                    <span class="metric-pill-unit">MW</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Chart Header & Canvas -->
-            <div class="card-header nerda-header-modern">
-              <div class="card-title">
-                <div class="title-glow-dot"></div>
-                <span id="nerdaChartTitle">Neraca Daya ROTS Sistem Jamali</span>
-                <span class="modern-title-badge">Semester II 2026</span>
-              </div>
-              <div class="nerda-header-actions">
-                <div class="nerda-mini-legend">
-                  <span class="legend-chip"><span class="legend-dot dot-dmp"></span> DMP</span>
-                  <span class="legend-chip"><span class="legend-dot dot-po"></span> Planned</span>
-                  <span class="legend-chip"><span class="legend-dot dot-uo"></span> Unplanned</span>
-                  <span class="legend-chip"><span class="legend-line line-dmn"></span> DMN</span>
-                  <span class="legend-chip"><span class="legend-line line-bp"></span> BP</span>
-                </div>
-                <button class="card-action-btn" id="btnExpandNeracaDaya" title="Perbesar Layar Penuh (Fullscreen)">
-                  <i class="fa fa-expand"></i>
-                </button>
-              </div>
-            </div>
-            <div class="card-body" style="padding-top: 6px; padding-bottom: 8px;">
-              <div class="chart-wrapper" style="height: 230px;">
-                <canvas id="neracaDayaCanvas"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <!-- ROW 2: CHARTS (TREND CADANGAN, DMP vs BP, RINGKASAN STATUS) -->
-          <div class="dashboard-charts-grid">
-            
-            <!-- Trend Cadangan Daya -->
-            <div class="card chart-card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fa fa-chart-line" style="color: var(--pln-blue-primary);"></i>
-                  Trend Cadangan Daya
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="card-subtitle">CAD vs Batas Threshold</span>
-                  <button class="card-action-btn" id="btnExpandTrend" title="Perbesar Layar Penuh (Fullscreen)">
-                    <i class="fa fa-expand"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="chart-wrapper">
-                  <canvas id="trendCadanganCanvas"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <!-- DMP vs BP (Rata-rata Bulanan) -->
-            <div class="card chart-card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fa fa-chart-bar" style="color: #10B981;"></i>
-                  DMP vs BP (Rata-rata Bulanan)
-                </div>
-                <div class="card-subtitle">MW per Bulan</div>
-              </div>
-              <div class="card-body">
-                <div class="chart-wrapper">
-                  <canvas id="dmpBpBarCanvas"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <!-- Ringkasan Status Donut -->
-            <div class="card chart-card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fa fa-chart-pie" style="color: #F59E0B;"></i>
-                  Ringkasan Status
-                </div>
-                <div class="card-subtitle">Distribusi Hari</div>
-              </div>
-              <div class="card-body">
-                <div class="chart-wrapper" style="height: 140px;">
+                <!-- Hidden elements for JS compatibility -->
+                <div style="display: none;" aria-hidden="true">
                   <canvas id="statusDonutCanvas"></canvas>
-                  <div class="chart-center-overlay" id="donutCenterOverlay">
-                    <div class="center-val">184</div>
-                    <div class="center-label">Total Hari</div>
-                  </div>
+                  <span id="donutCountNormal"></span>
+                  <span id="donutCountSiaga"></span>
+                  <span id="donutCountDefisit"></span>
+                  <span id="legendThresholdNormal"></span>
+                  <span id="legendThresholdSiaga"></span>
+                  <span id="periodDmpAvg"></span>
+                  <span id="periodBpMax"></span>
+                  <span id="periodCadAvg"></span>
+                  <span id="periodCadMin"></span>
                 </div>
 
-                <div class="donut-legend-list">
-                  <div class="donut-legend-item">
-                    <div class="legend-indicator">
-                      <span class="legend-dot dot-normal"></span>
-                      <span>Normal</span>
-                    </div>
-                    <span style="font-weight: 700; color: #059669;" id="donutCountNormal">120 hari (65,2%)</span>
-                  </div>
-                  <div class="donut-legend-item">
-                    <div class="legend-indicator">
-                      <span class="legend-dot dot-siaga"></span>
-                      <span>Siaga</span>
-                    </div>
-                    <span style="font-weight: 700; color: #D97706;" id="donutCountSiaga">45 hari (24,5%)</span>
-                  </div>
-                  <div class="donut-legend-item">
-                    <div class="legend-indicator">
-                      <span class="legend-dot dot-defisit"></span>
-                      <span>Defisit</span>
-                    </div>
-                    <span style="font-weight: 700; color: #DC2626;" id="donutCountDefisit">19 hari (10,3%)</span>
-                  </div>
-                </div>
-
-                <div style="text-align: center;">
-                  <a href="javascript:void(0)" class="donut-link-more" id="linkLihatDetailHarian">
+                <!-- Link ke Kondisi Harian -->
+                <div class="mantaps-stat-box" style="padding: 12px;">
+                  <a href="javascript:void(0)" class="donut-link-more" id="linkLihatDetailHarian" style="font-size: 12.5px; font-weight: 600;">
                     Lihat Detail Harian <i class="fa fa-arrow-right"></i>
                   </a>
                 </div>
-              </div>
-            </div>
 
-          </div>
-
-          <!-- ROW 3: RINGKASAN BULANAN TABLE & KOMPONEN OUTAGE WIDGET -->
-          <div class="dashboard-bottom-grid">
-            
-            <!-- RINGKASAN BULANAN TABLE -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fa fa-table" style="color: var(--pln-navy-dark);"></i>
-                  Ringkasan Bulanan
-                </div>
-                <div class="card-subtitle">Semester II 2026</div>
-              </div>
-              <div class="card-body" style="padding: 0;">
-                <div class="table-responsive" style="border: none;">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Bulan</th>
-                        <th class="text-right">DMP Average (MW)</th>
-                        <th class="text-right">BP Max (MW)</th>
-                        <th class="text-right">CAD Average (MW)</th>
-                        <th class="text-right">CAD Min (MW)</th>
-                        <th class="text-center">Normal</th>
-                        <th class="text-center">Siaga</th>
-                        <th class="text-center">Defisit</th>
-                        <th class="text-center">Total Hari</th>
-                      </tr>
-                    </thead>
-                    <tbody id="dashboardMonthlyTableBody">
-                      <!-- Populated dynamically via JS -->
-                    </tbody>
-                    <tfoot id="dashboardMonthlyTableFoot">
-                      <!-- Total / Rata-rata row -->
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- KOMPONEN OUTAGE WIDGET -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">
-                  <i class="fa fa-exclamation-circle" style="color: #D97706;"></i>
-                  Komponen Outage <span class="card-subtitle" id="outageWidgetDate">(01 Jul 2026)</span>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="outage-breakdown-grid">
-                  
-                  <!-- Planned Outage -->
-                  <div class="outage-box">
-                    <div class="outage-box-title planned-title">
-                      <span>Planned Outage (MW)</span>
-                      <i class="fa fa-wrench"></i>
-                    </div>
-                    <div class="outage-list">
-                      <div class="outage-list-item">
-                        <span class="outage-name">PO (Planned Outage)</span>
-                        <span class="outage-val" id="outagePoVal">4.490,55</span>
-                      </div>
-                      <div class="outage-list-item">
-                        <span class="outage-name">MO (Maintenance Outage)</span>
-                        <span class="outage-val" id="outageMoVal">279,53</span>
-                      </div>
-                    </div>
-                    <div class="outage-total-row planned-total">
-                      <span>Total Planned Outage</span>
-                      <span id="outageTotalPlannedVal">4.770,08</span>
-                    </div>
-                  </div>
-
-                  <!-- Unplanned Outage -->
-                  <div class="outage-box">
-                    <div class="outage-box-title unplanned-title">
-                      <span>Unplanned Outage (MW)</span>
-                      <i class="fa fa-bolt"></i>
-                    </div>
-                    <div class="outage-list">
-                      <div class="outage-list-item">
-                        <span class="outage-name">FO</span>
-                        <span class="outage-val" id="outageFoVal">1.481,44</span>
-                      </div>
-                      <div class="outage-list-item">
-                        <span class="outage-name">FO EP</span>
-                        <span class="outage-val" id="outageFoEpVal">4.020,28</span>
-                      </div>
-                      <div class="outage-list-item">
-                        <span class="outage-name">DER KIT</span>
-                        <span class="outage-val" id="outageDerKitVal">1.481,44</span>
-                      </div>
-                      <div class="outage-list-item">
-                        <span class="outage-name">DER TRANS</span>
-                        <span class="outage-val" id="outageDerTransVal">0,00</span>
-                      </div>
-                      <div class="outage-list-item">
-                        <span class="outage-name">VARMUS</span>
-                        <span class="outage-val" id="outageVarmusVal">1.393,89</span>
-                      </div>
-                    </div>
-                    <div class="outage-total-row unplanned-total">
-                      <span>Total Unplanned Outage</span>
-                      <span id="outageTotalUnplannedVal">8.377,06</span>
-                    </div>
-                  </div>
-
-                </div>
-                <div class="outage-footnote">
-                  * Angka dalam MW (Mega Watt). Klik tanggal mana pun di halaman Kondisi Harian untuk melihat rincian historis.
-                </div>
               </div>
             </div>
 

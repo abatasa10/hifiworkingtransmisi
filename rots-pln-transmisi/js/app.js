@@ -59,7 +59,7 @@ class RotsApp {
   }
 
   bindGlobalNavigation() {
-    const navLinks = document.querySelectorAll('.sidebar-link[data-view]');
+    const navLinks = document.querySelectorAll('[data-view]');
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -79,15 +79,38 @@ class RotsApp {
   }
 
   switchView(viewId) {
-    // Update active nav in sidebar
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-      const link = item.querySelector('.sidebar-link');
-      if (link && link.getAttribute('data-view') === viewId) {
-        item.classList.add('active');
+    // Update active nav in top navbar and sidebar
+    document.querySelectorAll('[data-view]').forEach(link => {
+      if (link.getAttribute('data-view') === viewId) {
+        link.classList.add('active');
+        if (link.parentElement && link.parentElement.classList.contains('sidebar-item')) {
+          link.parentElement.classList.add('active');
+        }
       } else {
-        item.classList.remove('active');
+        link.classList.remove('active');
+        if (link.parentElement && link.parentElement.classList.contains('sidebar-item')) {
+          link.parentElement.classList.remove('active');
+        }
       }
     });
+
+    // Update page title in subheader
+    const titleMap = {
+      'dashboard': 'ROTS – Rencana Operasi Tahunan Semester',
+      'kondisi-harian': 'Kondisi Harian Sistem Kelistrikan',
+      'rencana-outage': 'Rencana Pemeliharaan & Outage',
+      'ringkasan-bulanan': 'Ringkasan & Evaluasi Bulanan',
+      'detail-pembangkit': 'Detail Kapasitas Unit Pembangkit & Transmisi',
+      'parameter': 'Parameter & Pengaturan Ambang Batas',
+      'master-data': 'Master Data Sistem Tenaga Listrik',
+      'import-data': 'Impor Data Excel & Template ROTS',
+      'laporan': 'Pusat Laporan & Cetak PDF Resmi',
+      'pengaturan': 'Pengaturan Sistem ROTS'
+    };
+    const titleEl = document.getElementById('pageTitleText');
+    if (titleEl && titleMap[viewId]) {
+      titleEl.textContent = titleMap[viewId];
+    }
 
     // Update visible view container
     document.querySelectorAll('.view-section').forEach(sec => {
@@ -428,11 +451,24 @@ class RotsApp {
     };
     this.chartService.renderStatusDonut('statusDonutCanvas', statusCounts);
 
-    // 7. Donut legend numbers
+    // 7. Donut legend & MANTAPS summary card numbers
     const totalDays = statusCounts.normal + statusCounts.siaga + statusCounts.defisit;
-    document.getElementById('donutCountNormal').textContent = `${statusCounts.normal} hari (${((statusCounts.normal/totalDays)*100).toFixed(1)}%)`;
-    document.getElementById('donutCountSiaga').textContent = `${statusCounts.siaga} hari (${((statusCounts.siaga/totalDays)*100).toFixed(1)}%)`;
-    document.getElementById('donutCountDefisit').textContent = `${statusCounts.defisit} hari (${((statusCounts.defisit/totalDays)*100).toFixed(1)}%)`;
+    const elNorm = document.getElementById('donutCountNormal');
+    if (elNorm) elNorm.textContent = `${statusCounts.normal} hari (${((statusCounts.normal/totalDays)*100).toFixed(1)}%)`;
+    const elSiaga = document.getElementById('donutCountSiaga');
+    if (elSiaga) elSiaga.textContent = `${statusCounts.siaga} hari (${((statusCounts.siaga/totalDays)*100).toFixed(1)}%)`;
+    const elDef = document.getElementById('donutCountDefisit');
+    if (elDef) elDef.textContent = `${statusCounts.defisit} hari (${((statusCounts.defisit/totalDays)*100).toFixed(1)}%)`;
+
+    // MANTAPS Right Panel Cards
+    const mTotal = document.getElementById('mantapsTotalDays');
+    const mDef = document.getElementById('mantapsCountDefisit');
+    const mSiaga = document.getElementById('mantapsCountSiaga');
+    const mNorm = document.getElementById('mantapsCountNormal');
+    if (mTotal) mTotal.textContent = totalDays;
+    if (mDef) mDef.textContent = statusCounts.defisit;
+    if (mSiaga) mSiaga.textContent = statusCounts.siaga;
+    if (mNorm) mNorm.textContent = statusCounts.normal;
 
     // 8. Ringkasan Bulanan Table di Dashboard
     this.renderDashboardMonthlyTable(monthlySummary);
