@@ -677,15 +677,30 @@
                 <i class="fa fa-calendar-alt" style="color: var(--pln-blue-primary);"></i>
                 Tabel Kondisi Harian Sistem Pembangkitan & Operasi
               </div>
-              <div class="header-actions">
+              <div class="header-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <!-- Zona Aksi Rencana (Sesuai Periode Aktif) -->
+                <button type="button" class="header-btn" id="btnOpenInputRencana" style="background: #1E40AF; color: #FFFFFF; border-color: #1E40AF; font-weight: 600;">
+                  <i class="fa fa-file-invoice"></i>
+                  <span id="btnInputRencanaLabel">Input Rencana (ROTS)</span>
+                </button>
+                <button type="button" class="header-btn" id="btnUploadRencanaQuick" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; font-weight: 600;">
+                  <i class="fa fa-file-import"></i>
+                  <span>Upload Rencana</span>
+                </button>
+
+                <!-- Pemisah Visual -->
+                <div style="width: 1px; height: 24px; background: #CBD5E1; margin: 0 4px;"></div>
+
+                <!-- Zona Aksi Realisasi -->
                 <button type="button" class="header-btn" id="btnOpenInputRealisasi" style="background: #10B981; color: #FFFFFF; border-color: #10B981; font-weight: 600;">
-                  <i class="fa fa-pencil-alt"></i>
+                  <i class="fa fa-bolt"></i>
                   <span>Input Realisasi</span>
                 </button>
                 <button type="button" class="header-btn" id="btnUploadRealisasiQuick" style="background: #F0FDF4; color: #047857; border-color: #A7F3D0; font-weight: 600;">
                   <i class="fa fa-file-upload"></i>
-                  <span>Upload Excel</span>
+                  <span>Upload Realisasi</span>
                 </button>
+
                 <button class="header-btn btn-primary" id="btnExportDailyTable">
                   <i class="fa fa-file-excel"></i>
                   <span>Export Excel</span>
@@ -737,7 +752,7 @@
                   <thead>
                     <!-- Baris 1: Grup Header -->
                     <tr>
-                      <th colspan="16" style="background: #F8FAFC; border-bottom: none; font-size: 10.5px; color: #64748B; font-weight: 600; padding: 4px 12px;">📋 DATA RENCANA (ROTS)</th>
+                      <th colspan="16" id="thHeaderDataRencana" style="background: #F8FAFC; border-bottom: none; font-size: 10.5px; color: #64748B; font-weight: 600; padding: 4px 12px;">📋 DATA RENCANA (ROTS)</th>
                       <th colspan="6" style="background: #ECFDF5; border-bottom: none; border-left: 2px solid #A7F3D0; font-size: 10.5px; color: #047857; font-weight: 700; padding: 4px 12px; text-align: center;">⚡ REALISASI AKTUAL</th>
                     </tr>
                     <!-- Baris 2: Kolom Detail -->
@@ -792,8 +807,14 @@
                 <i class="fa fa-tools" style="color: #D97706;"></i>
                 Analisis & Dekomposisi Komponen Outage
               </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="header-btn outage-tab-btn active" data-tab="planned">Planned Outage (PO + MO)</button>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <!-- Toggle Garis Trend -->
+                <button type="button" class="header-btn" id="btnToggleOutageTrendLine" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; font-weight: 600; font-size: 12px;" title="Tampilkan atau sembunyikan Garis Trend Total Outage">
+                  <i class="fa fa-chart-line"></i>
+                  <span id="labelOutageTrendLine">Garis Trend: AKTIF</span>
+                </button>
+                <button class="header-btn outage-tab-btn active" data-tab="all">Semua Komponen</button>
+                <button class="header-btn outage-tab-btn" data-tab="planned">Planned Outage (PO + MO)</button>
                 <button class="header-btn outage-tab-btn" data-tab="unplanned">Unplanned Outage</button>
               </div>
             </div>
@@ -1722,6 +1743,225 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       MODAL: FORM INPUT / EDIT RENCANA OPERASI (ROT, ROTS, ROB, ROM)
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalInputRencana">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-pen-nib" style="color: #2563EB;"></i>
+          <span>Input & Penyesuaian Data Rencana Operasi</span>
+        </div>
+        <button class="modal-close-btn" id="btnCloseModalInputRencana">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Tab Pemilihan Jenis Periode Rencana -->
+        <div style="display: flex; gap: 6px; background: #F1F5F9; padding: 4px; border-radius: 8px; margin-bottom: 16px;">
+          <button type="button" class="header-btn plan-doc-tab-btn" data-plan="ROT" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROT (Tahunan)</button>
+          <button type="button" class="header-btn plan-doc-tab-btn active" data-plan="ROTS" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700; background: #1E40AF; color: #FFFFFF; border-color: #1E40AF;">ROTS (Semester)</button>
+          <button type="button" class="header-btn plan-doc-tab-btn" data-plan="ROB" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROB (Bulanan)</button>
+          <button type="button" class="header-btn plan-doc-tab-btn" data-plan="ROM" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROM (Mingguan)</button>
+        </div>
+
+        <!-- Tanggal Operasi -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Pilih Tanggal Rencana</div>
+            <div style="font-size: 14px; font-weight: 700; color: #1E293B;" id="formPlanDateDisplay">01 Juli 2026</div>
+          </div>
+          <input type="date" id="formPlanDatePicker" class="filter-select" style="padding: 6px 12px; font-size: 13px; font-weight: 600;">
+        </div>
+
+        <form id="formInputRencana">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <!-- DMN -->
+            <div class="form-group">
+              <label style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">
+                Daya Mampu Netto (DMN) <span style="color:#EF4444;">*</span>
+              </label>
+              <div style="position: relative;">
+                <input type="number" step="0.01" id="inputPlanDmn" required class="filter-select" style="width: 100%; padding: 8px 36px 8px 12px; font-size: 13.5px; font-weight: 600;" placeholder="Contoh: 49040.62">
+                <span style="position: absolute; right: 12px; top: 9px; font-size: 12px; color: #64748B; font-weight: 600;">MW</span>
+              </div>
+            </div>
+
+            <!-- BP -->
+            <div class="form-group">
+              <label style="font-size: 12.5px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">
+                Beban Puncak (BP) Rencana <span style="color:#EF4444;">*</span>
+              </label>
+              <div style="position: relative;">
+                <input type="number" step="0.01" id="inputPlanBp" required class="filter-select" style="width: 100%; padding: 8px 36px 8px 12px; font-size: 13.5px; font-weight: 600;" placeholder="Contoh: 33950.21">
+                <span style="position: absolute; right: 12px; top: 9px; font-size: 12px; color: #64748B; font-weight: 600;">MW</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Planned Outage Components -->
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px;">
+            Planned Outage (Pemeliharaan Terjadwal)
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">PO (Planned Outage)</label>
+              <input type="number" step="0.01" id="inputPlanPo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">MO (Maintenance Outage)</label>
+              <input type="number" step="0.01" id="inputPlanMo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12.5px;">
+            </div>
+          </div>
+
+          <!-- Unplanned Outage Components -->
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px;">
+            Unplanned Outage & Derating
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">FO (Gangguan)</label>
+              <input type="number" step="0.01" id="inputPlanFo" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12px;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">FO EP (Extension)</label>
+              <input type="number" step="0.01" id="inputPlanFoEp" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12px;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">Derating Kit</label>
+              <input type="number" step="0.01" id="inputPlanDerKit" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12px;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 2px;">VARMUS</label>
+              <input type="number" step="0.01" id="inputPlanVarmus" class="filter-select" style="width: 100%; padding: 6px 8px; font-size: 12px;">
+            </div>
+          </div>
+
+          <!-- Live Calculation Result Card -->
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #1D4ED8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa fa-calculator"></i> HASIL KALKULASI RENCANA <span id="previewPlanDocBadge" style="background:#1E40AF; color:#fff; font-size:10px; padding:1px 6px; border-radius:4px;">ROTS</span>:
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Total Outage</div>
+                <div style="font-size: 13px; font-weight: 700; color: #D97706;" id="previewPlanTotalOutage">13.147 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">DMP Pasok</div>
+                <div style="font-size: 13px; font-weight: 700; color: #1E293B;" id="previewPlanDmp">35.893 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Cadangan (CAD)</div>
+                <div style="font-size: 13px; font-weight: 700; color: #10B981;" id="previewPlanCad">1.943 MW</div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; color: #64748B;">Status Sistem</div>
+                <span class="status-badge badge-siaga" id="previewPlanStatus" style="font-size: 11px; padding: 2px 8px;">SIAGA</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catatan Rencana -->
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 12px; font-weight: 600; color: #1E293B; display: block; margin-bottom: 4px;">Catatan Penyesuaian Rencana</label>
+            <input type="text" id="inputPlanNotes" class="filter-select" style="width: 100%; padding: 7px 12px; font-size: 12.5px;" placeholder="Misal: Penyesuaian jadwal overhaul PLTU Paiton Unit 1">
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="header-btn" id="btnCancelModalInputRencana">Batal</button>
+        <button type="button" class="header-btn btn-primary" id="btnSaveRencana" style="background: #1E40AF; border-color: #1E40AF;">
+          <i class="fa fa-save"></i> <span id="btnSaveRencanaText">Simpan Data Rencana (ROTS)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: UPLOAD FILE EXCEL RENCANA OPERASI (ROT / ROTS / ROB / ROM)
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalUploadRencana">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-file-import" style="color: #2563EB;"></i>
+          <span>Upload File Rencana Operasi Excel / CSV</span>
+        </div>
+        <button class="modal-close-btn" id="btnCloseModalUploadRencana">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Pilihan Dokumen Rencana Target -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">Pilih Jenis Dokumen Rencana yang Diimpor:</div>
+          <div style="display: flex; gap: 6px; background: #F1F5F9; padding: 4px; border-radius: 8px;">
+            <button type="button" class="header-btn upload-doc-tab-btn" data-target="ROT" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROT (Tahunan)</button>
+            <button type="button" class="header-btn upload-doc-tab-btn active" data-target="ROTS" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700; background: #1E40AF; color: #FFFFFF; border-color: #1E40AF;">ROTS (Semester)</button>
+            <button type="button" class="header-btn upload-doc-tab-btn" data-target="ROB" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROB (Bulanan)</button>
+            <button type="button" class="header-btn upload-doc-tab-btn" data-target="ROM" style="flex: 1; justify-content: center; font-size: 12px; font-weight: 700;">ROM (Mingguan)</button>
+          </div>
+        </div>
+
+        <!-- Download Template Card -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+          <div>
+            <div style="font-weight: 700; font-size: 13px; color: #1E40AF; margin-bottom: 2px;" id="uploadRencanaTemplateTitle">
+              <i class="fa fa-file-excel"></i> Template Excel Rencana ROTS (.xlsx)
+            </div>
+            <div style="font-size: 11.5px; color: #3B82F6;">
+              Kolom wajib: <code>Tanggal</code>, <code>DMN</code>, <code>PO</code>, <code>MO</code>, <code>FO</code>, <code>FO_EP</code>, <code>DER_KIT</code>, <code>VARMUS</code>, <code>BP</code>.
+            </div>
+          </div>
+          <button type="button" class="header-btn" id="btnDownloadTemplateRencanaModal" style="background: #FFFFFF; color: #1E40AF; border-color: #93C5FD; font-weight: 600; font-size: 11.5px; white-space: nowrap;">
+            <i class="fa fa-download"></i> Unduh Template
+          </button>
+        </div>
+
+        <!-- Dropzone Box -->
+        <div id="quickPlanUploadDropzone" style="border: 2px dashed #93C5FD; border-radius: 10px; background: #F8FAFC; padding: 26px 20px; text-align: center; cursor: pointer; transition: all 0.2s;">
+          <input type="file" id="quickPlanUploadFileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+          <i class="fa fa-cloud-upload-alt" style="font-size: 38px; color: #2563EB; margin-bottom: 8px;"></i>
+          <div style="font-weight: 700; font-size: 14px; color: #1E293B;" id="quickPlanDropzoneTitle">Pilih atau Tarik File Excel Rencana ke Sini</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Mendukung format .xlsx, .xls, dan .csv</div>
+        </div>
+
+        <!-- Hasil Staging / Validasi File -->
+        <div id="quickPlanStagingArea" style="display: none; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: #1E293B;" id="quickPlanStagingSummary"></div>
+            <span id="quickPlanStagingBadge" class="badge-status badge-normal" style="font-size: 11px;">Valid</span>
+          </div>
+
+          <!-- Preview 5 baris pertama -->
+          <div style="max-height: 180px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 6px;">
+            <table class="data-table" style="font-size: 11.5px; margin: 0;">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th class="text-right">DMN (MW)</th>
+                  <th class="text-right">PO (MW)</th>
+                  <th class="text-right">FO (MW)</th>
+                  <th class="text-right">BP (MW)</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody id="quickPlanStagingTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="header-btn" id="btnCancelModalUploadRencana">Batal</button>
+        <button type="button" class="header-btn btn-primary" id="btnCommitPlanUpload" disabled style="background: #1E40AF; border-color: #1E40AF;">
+          <i class="fa fa-check"></i> <span id="btnCommitPlanUploadText">Simpan & Terapkan Data Rencana (ROTS)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer"></div>
 
@@ -1729,4 +1969,5 @@
   <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
+
 

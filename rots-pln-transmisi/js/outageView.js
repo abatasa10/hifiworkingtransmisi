@@ -9,7 +9,8 @@ import { chartService } from './charts.js';
 
 export class OutageView {
   constructor() {
-    this.activeTab = 'planned'; // 'planned' or 'unplanned'
+    this.activeTab = 'all'; // 'all' | 'planned' | 'unplanned'
+    this.showTrendLine = true;
   }
 
   init() {
@@ -18,15 +19,39 @@ export class OutageView {
   }
 
   bindEvents() {
+    // Tab filter komponen outage
     const tabButtons = document.querySelectorAll('.outage-tab-btn');
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         tabButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        this.activeTab = btn.getAttribute('data-tab');
+        this.activeTab = btn.getAttribute('data-tab') || 'all';
         this.render();
       });
     });
+
+    // Toggle Garis Trend
+    const btnTrend = document.getElementById('btnToggleOutageTrendLine');
+    const labelTrend = document.getElementById('labelOutageTrendLine');
+    if (btnTrend) {
+      btnTrend.addEventListener('click', () => {
+        this.showTrendLine = !this.showTrendLine;
+        if (this.showTrendLine) {
+          btnTrend.style.background = '#EFF6FF';
+          btnTrend.style.color = '#1D4ED8';
+          btnTrend.style.borderColor = '#BFDBFE';
+          if (labelTrend) labelTrend.textContent = 'Garis Trend: AKTIF';
+          window.showToast && window.showToast('📈 Garis Trend Outage diaktifkan', 'info');
+        } else {
+          btnTrend.style.background = '#F8FAFC';
+          btnTrend.style.color = '#64748B';
+          btnTrend.style.borderColor = '#CBD5E1';
+          if (labelTrend) labelTrend.textContent = 'Garis Trend: NONAKTIF';
+          window.showToast && window.showToast('Garis Trend disembunyikan', 'info');
+        }
+        this.render();
+      });
+    }
   }
 
   render() {
@@ -35,7 +60,10 @@ export class OutageView {
 
     this.renderMetrics(records);
     this.renderMonthlyTable(records);
-    chartService.renderOutageChart('outageTrendCanvas', records);
+    chartService.renderOutageChart('outageTrendCanvas', records, {
+      showTrendLine: this.showTrendLine,
+      tab: this.activeTab
+    });
   }
 
   renderMetrics(records) {

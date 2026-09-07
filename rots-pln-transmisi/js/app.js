@@ -27,6 +27,8 @@ class RotsApp {
     this.bindModals();
     this.bindRealisasiModal();
     this.bindQuickUploadRealisasiModal();
+    this.bindInputRencanaModal();
+    this.bindUploadRencanaModal();
 
     this.dailyView.init();
     this.outageView.init();
@@ -52,6 +54,8 @@ class RotsApp {
       event.type === 'REALISASI_UPDATED' ||
       event.type === 'REALISASI_DELETED' ||
       event.type === 'REALISASI_IMPORTED' ||
+      event.type === 'PLAN_RECORD_UPDATED' ||
+      event.type === 'PLAN_RECORDS_IMPORTED' ||
       event.type === 'PLANNING_PERIOD_CHANGED'
     ) {
       // Update badge tanggal jika ada perubahan periode
@@ -1182,6 +1186,417 @@ class RotsApp {
       });
     }
   }
+
+  // ==========================================================================
+  // MODAL: FORM INPUT / EDIT RENCANA OPERASI (ROT, ROTS, ROB, ROM)
+  // ==========================================================================
+  bindInputRencanaModal() {
+    const modal = document.getElementById('modalInputRencana');
+    const btnClose = document.getElementById('btnCloseModalInputRencana');
+    const btnCancel = document.getElementById('btnCancelModalInputRencana');
+    const tabButtons = document.querySelectorAll('.plan-doc-tab-btn');
+    const datePicker = document.getElementById('formPlanDatePicker');
+    const dateDisplay = document.getElementById('formPlanDateDisplay');
+
+    const inputDmn = document.getElementById('inputPlanDmn');
+    const inputBp = document.getElementById('inputPlanBp');
+    const inputPo = document.getElementById('inputPlanPo');
+    const inputMo = document.getElementById('inputPlanMo');
+    const inputFo = document.getElementById('inputPlanFo');
+    const inputFoEp = document.getElementById('inputPlanFoEp');
+    const inputDerKit = document.getElementById('inputPlanDerKit');
+    const inputVarmus = document.getElementById('inputPlanVarmus');
+    const inputNotes = document.getElementById('inputPlanNotes');
+
+    const previewTotalOutage = document.getElementById('previewPlanTotalOutage');
+    const previewDmp = document.getElementById('previewPlanDmp');
+    const previewCad = document.getElementById('previewPlanCad');
+    const previewStatus = document.getElementById('previewPlanStatus');
+    const previewBadge = document.getElementById('previewPlanDocBadge');
+    const btnSaveText = document.getElementById('btnSaveRencanaText');
+    const btnSave = document.getElementById('btnSaveRencana');
+
+    let activeDoc = this.store.planningPeriod.type || 'ROTS';
+
+    const closeModal = () => {
+      if (modal) modal.classList.remove('active');
+    };
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    const updatePreview = () => {
+      const dmn = parseFloat(inputDmn.value) || 0;
+      const bp = parseFloat(inputBp.value) || 0;
+      const po = parseFloat(inputPo.value) || 0;
+      const mo = parseFloat(inputMo.value) || 0;
+      const fo = parseFloat(inputFo.value) || 0;
+      const foEp = parseFloat(inputFoEp.value) || 0;
+      const derKit = parseFloat(inputDerKit.value) || 0;
+      const varmus = parseFloat(inputVarmus.value) || 0;
+
+      const planned = po + mo;
+      const unplanned = fo + foEp + derKit + varmus;
+      const totalOutage = planned + unplanned;
+      const dmp = dmn - totalOutage;
+      const cad = dmp - bp;
+      const threshold = this.store.params.minReserveThreshold;
+      const status = CalculationService.determineStatus(cad, threshold);
+
+      if (previewTotalOutage) previewTotalOutage.textContent = `${CalculationService.formatNumber(totalOutage, 0)} MW`;
+      if (previewDmp) previewDmp.textContent = `${CalculationService.formatNumber(dmp, 0)} MW`;
+      if (previewCad) {
+        previewCad.textContent = `${CalculationService.formatNumber(cad, 0)} MW`;
+        previewCad.style.color = status.color;
+      }
+      if (previewStatus) {
+        previewStatus.className = `status-badge ${status.badgeClass}`;
+        previewStatus.textContent = status.label;
+      }
+    };
+
+    const loadDataIntoModal = (dateStr, docType) => {
+      activeDoc = docType || activeDoc;
+      const records = this.store.records;
+      const rawRec = records.find(r => r.tanggal === dateStr) || records[0];
+      if (!rawRec) return;
+
+      if (datePicker) datePicker.value = rawRec.tanggal;
+      if (dateDisplay) dateDisplay.textContent = CalculationService.formatDateIndo(rawRec.tanggal);
+
+      // Sync active tab button
+      tabButtons.forEach(btn => {
+        if (btn.getAttribute('data-plan') === activeDoc) {
+          btn.classList.add('active');
+          btn.style.background = '#1E40AF';
+          btn.style.color = '#FFFFFF';
+          btn.style.borderColor = '#1E40AF';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = '#FFFFFF';
+          btn.style.color = '#475569';
+          btn.style.borderColor = '#CBD5E1';
+        }
+      });
+
+      if (previewBadge) previewBadge.textContent = activeDoc;
+      if (btnSaveText) btnSaveText.textContent = `Simpan Data Rencana (${activeDoc})`;
+
+      // Get period data
+      const pData = CalculationService.getPeriodRecordData(rawRec, activeDoc);
+      inputDmn.value = pData.dmn || '';
+      inputBp.value = pData.bp || '';
+      inputPo.value = pData.po || '';
+      inputMo.value = pData.mo || '';
+      inputFo.value = pData.fo || '';
+      inputFoEp.value = pData.foEp || '';
+      inputDerKit.value = pData.derKit || '';
+      inputVarmus.value = pData.varmus || '';
+      inputNotes.value = pData.notes || '';
+
+      updatePreview();
+      if (modal) modal.classList.add('active');
+    };
+
+    window.ROTS_OPEN_INPUT_RENCANA = loadDataIntoModal;
+
+    // Tab switcher
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const doc = btn.getAttribute('data-plan');
+        const curDate = datePicker.value;
+        loadDataIntoModal(curDate, doc);
+      });
+    });
+
+    if (datePicker) {
+      datePicker.addEventListener('change', (e) => {
+        loadDataIntoModal(e.target.value, activeDoc);
+      });
+    }
+
+    [inputDmn, inputBp, inputPo, inputMo, inputFo, inputFoEp, inputDerKit, inputVarmus].forEach(inp => {
+      if (inp) inp.addEventListener('input', updatePreview);
+    });
+
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        const dateStr = datePicker.value;
+        const dmn = parseFloat(inputDmn.value);
+        const bp = parseFloat(inputBp.value);
+
+        if (isNaN(dmn) || dmn <= 0) {
+          alert('Mohon masukkan nilai DMN yang valid (> 0 MW)');
+          return;
+        }
+        if (isNaN(bp) || bp <= 0) {
+          alert('Mohon masukkan nilai BP yang valid (> 0 MW)');
+          return;
+        }
+
+        const data = {
+          dmn,
+          bp,
+          po: parseFloat(inputPo.value) || 0,
+          mo: parseFloat(inputMo.value) || 0,
+          fo: parseFloat(inputFo.value) || 0,
+          foEp: parseFloat(inputFoEp.value) || 0,
+          derKit: parseFloat(inputDerKit.value) || 0,
+          derTrans: 0,
+          varmus: parseFloat(inputVarmus.value) || 0,
+          notes: inputNotes.value
+        };
+
+        this.store.setPeriodPlanRecord(activeDoc, dateStr, data);
+        closeModal();
+        window.showToast(`✅ Data Rencana ${activeDoc} tanggal ${CalculationService.formatDateIndo(dateStr)} berhasil disimpan!`);
+
+        setTimeout(() => {
+          const row = document.querySelector(`#dailyTableBody tr[data-date="${dateStr}"]`);
+          if (row) {
+            row.classList.add('row-recently-updated');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => row.classList.remove('row-recently-updated'), 3500);
+          }
+        }, 100);
+      });
+    }
+  }
+
+  // ==========================================================================
+  // MODAL: UPLOAD FILE EXCEL RENCANA OPERASI (ROT / ROTS / ROB / ROM)
+  // ==========================================================================
+  bindUploadRencanaModal() {
+    const modal = document.getElementById('modalUploadRencana');
+    const btnClose = document.getElementById('btnCloseModalUploadRencana');
+    const btnCancel = document.getElementById('btnCancelModalUploadRencana');
+    const tabButtons = document.querySelectorAll('.upload-doc-tab-btn');
+    const tplTitle = document.getElementById('uploadRencanaTemplateTitle');
+    const btnDownloadTpl = document.getElementById('btnDownloadTemplateRencanaModal');
+    const dropzone = document.getElementById('quickPlanUploadDropzone');
+    const fileInput = document.getElementById('quickPlanUploadFileInput');
+    const stagingArea = document.getElementById('quickPlanStagingArea');
+    const stagingSummary = document.getElementById('quickPlanStagingSummary');
+    const stagingBadge = document.getElementById('quickPlanStagingBadge');
+    const stagingTbody = document.getElementById('quickPlanStagingTableBody');
+    const btnCommit = document.getElementById('btnCommitPlanUpload');
+    const btnCommitText = document.getElementById('btnCommitPlanUploadText');
+
+    let activeDoc = this.store.planningPeriod.type || 'ROTS';
+    let stagedRows = [];
+
+    const closeModal = () => {
+      if (modal) modal.classList.remove('active');
+      stagedRows = [];
+      if (fileInput) fileInput.value = '';
+      if (stagingArea) stagingArea.style.display = 'none';
+      if (btnCommit) btnCommit.disabled = true;
+    };
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    const setDocType = (doc) => {
+      activeDoc = doc;
+      tabButtons.forEach(btn => {
+        if (btn.getAttribute('data-target') === doc) {
+          btn.classList.add('active');
+          btn.style.background = '#1E40AF';
+          btn.style.color = '#FFFFFF';
+          btn.style.borderColor = '#1E40AF';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = '#FFFFFF';
+          btn.style.color = '#475569';
+          btn.style.borderColor = '#CBD5E1';
+        }
+      });
+      if (tplTitle) tplTitle.innerHTML = `<i class="fa fa-file-excel"></i> Template Excel Rencana ${doc} (.xlsx)`;
+      if (btnCommitText) btnCommitText.textContent = `Simpan & Terapkan Data Rencana (${doc})`;
+    };
+
+    window.ROTS_OPEN_UPLOAD_RENCANA = (periodType) => {
+      setDocType(periodType || activeDoc);
+      if (modal) modal.classList.add('active');
+    };
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setDocType(btn.getAttribute('data-target'));
+      });
+    });
+
+    // Download template rencana
+    if (btnDownloadTpl) {
+      btnDownloadTpl.addEventListener('click', () => {
+        const records = this.store.records;
+        const tplData = records.slice(0, 31).map(r => {
+          const p = CalculationService.getPeriodRecordData(r, activeDoc);
+          return {
+            'Sistem': r.sistem,
+            'Tanggal': r.tanggal,
+            'DMN': p.dmn,
+            'PO': p.po,
+            'MO': p.mo,
+            'FO': p.fo,
+            'FO_EP': p.foEp,
+            'DER_KIT': p.derKit,
+            'VARMUS': p.varmus,
+            'BP': p.bp,
+            'Catatan': `Rencana Operasi ${activeDoc} ${r.tanggal}`
+          };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(tplData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `Template_${activeDoc}`);
+        XLSX.writeFile(wb, `Template_Rencana_${activeDoc}_PLN.xlsx`);
+        window.showToast(`📥 Berkas Template Rencana ${activeDoc} berhasil diunduh.`, 'info');
+      });
+    }
+
+    // Dropzone interaction
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#2563EB';
+        dropzone.style.background = '#EFF6FF';
+      });
+
+      ['dragleave', 'dragend'].forEach(evt => {
+        dropzone.addEventListener(evt, () => {
+          dropzone.style.borderColor = '#93C5FD';
+          dropzone.style.background = '#F8FAFC';
+        });
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#93C5FD';
+        dropzone.style.background = '#F8FAFC';
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          processFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          processFile(e.target.files[0]);
+        }
+      });
+    }
+
+    const processFile = (file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+
+          if (!rawRows || !rawRows.length) {
+            alert('Berkas Excel kosong atau lembar kerja tidak terbaca.');
+            return;
+          }
+
+          const normalize = (row, candidates) => {
+            for (const c of candidates) {
+              const key = Object.keys(row).find(k => k.trim().toLowerCase() === c.toLowerCase());
+              if (key && row[key] !== '') return row[key];
+            }
+            return null;
+          };
+
+          const validRows = [];
+          rawRows.forEach(r => {
+            const tglRaw = normalize(r, ['Tanggal', 'Date', 'Tgl', 'Waktu']);
+            const dmnRaw = normalize(r, ['DMN', 'Daya Mampu Netto']);
+            const bpRaw = normalize(r, ['BP', 'Beban Puncak', 'Beban_Puncak']);
+            const poRaw = normalize(r, ['PO', 'Planned Outage']);
+            const moRaw = normalize(r, ['MO', 'Maintenance Outage']);
+            const foRaw = normalize(r, ['FO', 'Forced Outage']);
+            const foEpRaw = normalize(r, ['FO_EP', 'FO EP']);
+            const derRaw = normalize(r, ['DER_KIT', 'DER KIT', 'Derating']);
+            const varmusRaw = normalize(r, ['VARMUS', 'Variasi Musim']);
+            const notesRaw = normalize(r, ['Catatan', 'Notes']);
+
+            if (!tglRaw) return;
+            let formattedDate = String(tglRaw).trim();
+            if (typeof tglRaw === 'number') {
+              const jsDate = new Date(Math.round((tglRaw - 25569) * 86400 * 1000));
+              formattedDate = jsDate.toISOString().split('T')[0];
+            }
+
+            const dmn = parseFloat(dmnRaw);
+            const bp = parseFloat(bpRaw);
+            if (isNaN(dmn) || isNaN(bp) || dmn <= 0 || bp <= 0) return;
+
+            validRows.push({
+              tanggal: formattedDate,
+              dmn,
+              bp,
+              po: parseFloat(poRaw) || 0,
+              mo: parseFloat(moRaw) || 0,
+              fo: parseFloat(foRaw) || 0,
+              foEp: parseFloat(foEpRaw) || 0,
+              derKit: parseFloat(derRaw) || 0,
+              derTrans: 0,
+              varmus: parseFloat(varmusRaw) || 0,
+              notes: String(notesRaw || `Import Excel Rencana ${activeDoc}`).trim()
+            });
+          });
+
+          if (!validRows.length) {
+            alert('Tidak ditemukan baris yang valid. Pastikan kolom Tanggal, DMN, dan BP terisi angka valid.');
+            return;
+          }
+
+          stagedRows = validRows;
+          if (stagingSummary) stagingSummary.textContent = `${validRows.length} baris data rencana valid untuk ${activeDoc}`;
+          if (stagingBadge) {
+            stagingBadge.className = 'badge-status badge-normal';
+            stagingBadge.textContent = `${validRows.length} Siap Diimpor`;
+          }
+
+          if (stagingTbody) {
+            stagingTbody.innerHTML = validRows.slice(0, 5).map(r => `
+              <tr>
+                <td><strong>${r.tanggal}</strong></td>
+                <td class="text-right" style="color:#0284C7; font-weight:700;">${CalculationService.formatNumber(r.dmn)}</td>
+                <td class="text-right" style="color:#D97706;">${CalculationService.formatNumber(r.po)}</td>
+                <td class="text-right" style="color:#DC2626;">${CalculationService.formatNumber(r.fo)}</td>
+                <td class="text-right" style="color:#7C3AED; font-weight:700;">${CalculationService.formatNumber(r.bp)}</td>
+                <td style="color: #64748B; font-size: 11px;">${r.notes}</td>
+              </tr>
+            `).join('');
+          }
+
+          if (stagingArea) stagingArea.style.display = 'block';
+          if (btnCommit) {
+            btnCommit.disabled = false;
+            btnCommit.innerHTML = `<i class="fa fa-check"></i> Simpan & Terapkan ${validRows.length} Data Rencana (${activeDoc})`;
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Terjadi kesalahan saat memproses file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    if (btnCommit) {
+      btnCommit.addEventListener('click', () => {
+        if (!stagedRows.length) return;
+        const count = this.store.importPeriodPlanRecords(activeDoc, stagedRows);
+        closeModal();
+        window.showToast(`🎉 Berhasil mengimpor ${count} data rencana ${activeDoc} ke dalam sistem!`);
+      });
+    }
+  }
+
 }
 
 // Global Toast Notification Helper

@@ -84,25 +84,104 @@ export const CalculationService = {
   },
 
   /**
+   * Dapatkan data spesifik untuk jenis periode tertentu (ROT, ROTS, ROB, ROM).
+   * Jika ada data kustom yang diinput/diimpor untuk periode ini di raw.periods[type], gunakan data itu.
+   * Jika belum, hitung nilai seed realistis yang mencerminkan karakteristik masing-masing jenis perencanaan PLN.
+   */
+  getPeriodRecordData(raw, periodType = 'ROTS') {
+    if (raw.periods && raw.periods[periodType]) {
+      return raw.periods[periodType];
+    }
+
+    const dmnBase = parseFloat(raw.dmn) || 0;
+    const poBase = parseFloat(raw.po) || 0;
+    const moBase = parseFloat(raw.mo) || 0;
+    const foBase = parseFloat(raw.fo) || 0;
+    const foEpBase = parseFloat(raw.foEp) || 0;
+    const derKitBase = parseFloat(raw.derKit) || 0;
+    const derTransBase = parseFloat(raw.derTrans) || 0;
+    const varmusBase = parseFloat(raw.varmus) || 0;
+    const bpBase = parseFloat(raw.bp) || 0;
+
+    if (periodType === 'ROT') {
+      // ROT (Tahunan): Rencana tahunan makro, DMN lebih tinggi (asumsi ketersediaan optimal), PO/MO terjadwal awal tahun
+      return {
+        dmn: Math.round((dmnBase + 180) * 100) / 100,
+        po: Math.round((poBase * 0.94) * 100) / 100,
+        mo: Math.round((moBase * 0.92) * 100) / 100,
+        fo: Math.round((foBase * 0.96) * 100) / 100,
+        foEp: Math.round((foEpBase * 0.96) * 100) / 100,
+        derKit: derKitBase,
+        derTrans: derTransBase,
+        varmus: varmusBase,
+        bp: Math.round((bpBase * 0.985) * 100) / 100
+      };
+    }
+
+    if (periodType === 'ROB') {
+      // ROB (Bulanan): Rencana bulanan terkoreksi sesuai realita bulan berjalan (DMN terkalibrasi, outage disesuaikan)
+      return {
+        dmn: Math.round((dmnBase - 160) * 100) / 100,
+        po: Math.round((poBase * 1.05 + 35) * 100) / 100,
+        mo: Math.round((moBase * 1.08 + 15) * 100) / 100,
+        fo: Math.round((foBase * 1.03 + 20) * 100) / 100,
+        foEp: Math.round((foEpBase * 1.02) * 100) / 100,
+        derKit: Math.round((derKitBase * 1.04) * 100) / 100,
+        derTrans: derTransBase,
+        varmus: varmusBase,
+        bp: Math.round((bpBase * 1.008 + 45) * 100) / 100
+      };
+    }
+
+    if (periodType === 'ROM') {
+      // ROM (Mingguan): Rencana mingguan operasional (H-7) dengan derating terkini dan ramalan beban mingguan
+      return {
+        dmn: Math.round((dmnBase - 280) * 100) / 100,
+        po: Math.round((poBase * 0.98 + 60) * 100) / 100,
+        mo: Math.round((moBase * 1.12 + 25) * 100) / 100,
+        fo: Math.round((foBase * 1.06 + 30) * 100) / 100,
+        foEp: Math.round((foEpBase * 1.04) * 100) / 100,
+        derKit: Math.round((derKitBase * 1.08 + 40) * 100) / 100,
+        derTrans: derTransBase,
+        varmus: varmusBase,
+        bp: Math.round((bpBase * 1.014 - 15) * 100) / 100
+      };
+    }
+
+    // Default ROTS (Semester)
+    return {
+      dmn: dmnBase,
+      po: poBase,
+      mo: moBase,
+      fo: foBase,
+      foEp: foEpBase,
+      derKit: derKitBase,
+      derTrans: derTransBase,
+      varmus: varmusBase,
+      bp: bpBase
+    };
+  },
+
+  /**
    * Proses satu record raw menjadi record lengkap dengan calculated fields dan jejak formula
    * @param {Object} raw - Record data mentah dari store
    * @param {number} minReserveThreshold - Batas Cadangan Minimum (MW)
    * @param {Object} periodAdjust - Penyesuaian nilai per jenis periode { dmnAdjust, foderAdj }
+   * @param {string} periodType - 'ROT' | 'ROTS' | 'ROB' | 'ROM'
    */
-  processRecord(raw, minReserveThreshold = 2000, periodAdjust = {}) {
-    const dmnBase = parseFloat(raw.dmn) || 0;
-    // Terapkan koreksi DMN dari periode aktif (ROB/ROM lebih konservatif)
+  processRecord(raw, minReserveThreshold = 2000, periodAdjust = {}, periodType = 'ROTS') {
+    const pData = this.getPeriodRecordData(raw, periodType);
     const dmnAdj = parseFloat(periodAdjust.dmnAdjust) || 0;
-    const dmn = dmnBase + dmnAdj;
+    const dmn = (parseFloat(pData.dmn) || 0) + dmnAdj;
 
-    const po = parseFloat(raw.po) || 0;
-    const mo = parseFloat(raw.mo) || 0;
-    const fo = parseFloat(raw.fo) || 0;
-    const foEp = parseFloat(raw.foEp) || 0;
-    const derKit = parseFloat(raw.derKit) || 0;
-    const derTrans = parseFloat(raw.derTrans) || 0;
-    const varmus = parseFloat(raw.varmus) || 0;
-    const bp = parseFloat(raw.bp) || 0;
+    const po = parseFloat(pData.po) || 0;
+    const mo = parseFloat(pData.mo) || 0;
+    const fo = parseFloat(pData.fo) || 0;
+    const foEp = parseFloat(pData.foEp) || 0;
+    const derKit = parseFloat(pData.derKit) || 0;
+    const derTrans = parseFloat(pData.derTrans) || 0;
+    const varmus = parseFloat(pData.varmus) || 0;
+    const bp = parseFloat(pData.bp) || 0;
 
     const plannedOutage = this.calculatePlannedOutage(po, mo);
     const unplannedOutage = this.calculateUnplannedOutage(fo, foEp, derKit, derTrans, varmus);

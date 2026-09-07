@@ -532,6 +532,93 @@ class Store {
     return imported;
   }
 
+  // ============================================================
+  // INPUT & IMPORT DATA RENCANA PER PERIODE (ROT, ROTS, ROB, ROM)
+  // ============================================================
+
+  /**
+   * Set / Update Data Rencana untuk jenis periode tertentu (ROT, ROTS, ROB, ROM)
+   */
+  setPeriodPlanRecord(periodType, tanggal, data, user = 'Perencana Sistem') {
+    const rec = this.records.find(r => r.tanggal === tanggal);
+    if (!rec) return false;
+
+    if (!rec.periods) rec.periods = {};
+    rec.periods[periodType] = {
+      dmn: parseFloat(data.dmn) || rec.dmn,
+      po: parseFloat(data.po) || 0,
+      mo: parseFloat(data.mo) || 0,
+      fo: parseFloat(data.fo) || 0,
+      foEp: parseFloat(data.foEp) || 0,
+      derKit: parseFloat(data.derKit) || 0,
+      derTrans: parseFloat(data.derTrans) || 0,
+      varmus: parseFloat(data.varmus) || 0,
+      bp: parseFloat(data.bp) || 0,
+      notes: data.notes || '',
+      updatedAt: new Date().toISOString()
+    };
+
+    this.saveRecords();
+    this.auditLogs.unshift({
+      id: 'audit-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      user,
+      action: `INPUT RENCANA ${periodType}`,
+      paramName: `${periodType} ${tanggal}`,
+      oldValue: '-',
+      newValue: `DMN: ${CalculationService.formatNumber(data.dmn)} MW, BP: ${CalculationService.formatNumber(data.bp)} MW`,
+      note: data.notes || `Update data rencana operasional ${periodType}`
+    });
+    this.saveAudit();
+
+    this.notify({ type: 'PLAN_RECORD_UPDATED', payload: { periodType, tanggal, data: rec.periods[periodType] } });
+    return true;
+  }
+
+  /**
+   * Batch Import Data Rencana per Periode (ROT / ROTS / ROB / ROM)
+   */
+  importPeriodPlanRecords(periodType, list, user = 'Perencana Sistem') {
+    let imported = 0;
+    list.forEach(item => {
+      const rec = this.records.find(r => r.tanggal === item.tanggal);
+      if (rec) {
+        if (!rec.periods) rec.periods = {};
+        rec.periods[periodType] = {
+          dmn: parseFloat(item.dmn) || rec.dmn,
+          po: parseFloat(item.po) || 0,
+          mo: parseFloat(item.mo) || 0,
+          fo: parseFloat(item.fo) || 0,
+          foEp: parseFloat(item.foEp) || 0,
+          derKit: parseFloat(item.derKit) || 0,
+          derTrans: parseFloat(item.derTrans) || 0,
+          varmus: parseFloat(item.varmus) || 0,
+          bp: parseFloat(item.bp) || 0,
+          notes: item.notes || `Batch import Excel ${periodType}`,
+          updatedAt: new Date().toISOString()
+        };
+        imported++;
+      }
+    });
+
+    if (imported > 0) {
+      this.saveRecords();
+      this.auditLogs.unshift({
+        id: 'audit-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        user,
+        action: `BATCH IMPORT RENCANA ${periodType}`,
+        paramName: `${imported} Hari Rencana ${periodType}`,
+        oldValue: '-',
+        newValue: 'Sinkronisasi Berkas Excel',
+        note: `Import massal data rencana ${periodType}`
+      });
+      this.saveAudit();
+      this.notify({ type: 'PLAN_RECORDS_IMPORTED', payload: { periodType, count: imported } });
+    }
+    return imported;
+  }
+
   // Summary Komparasi Rencana vs Realisasi
   getComparisonSummary(records = null) {
     const list = (records || this.getFilteredRecords()).filter(r => r.realisasi);
@@ -587,9 +674,10 @@ class Store {
   // Data processing queries
   getProcessedRecords() {
     const threshold = this.params.minReserveThreshold;
+    const periodType = this.planningPeriod.type || 'ROTS';
     // Ambil periodAdjust dari jenis periode aktif
-    const periodAdjust = this.getPeriodConfig(this.planningPeriod.type);
-    return this.records.map(rec => CalculationService.processRecord(rec, threshold, periodAdjust));
+    const periodAdjust = this.getPeriodConfig(periodType);
+    return this.records.map(rec => CalculationService.processRecord(rec, threshold, periodAdjust, periodType));
   }
 
   getFilteredRecords() {

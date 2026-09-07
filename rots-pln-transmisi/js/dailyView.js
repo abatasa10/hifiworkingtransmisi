@@ -74,6 +74,27 @@ export class DailyView {
       });
     }
 
+    // Tombol Input Rencana (buka modal input rencana sesuai periode aktif)
+    const btnInputPlan = document.getElementById('btnOpenInputRencana');
+    if (btnInputPlan) {
+      btnInputPlan.addEventListener('click', () => {
+        const dateStr = store.filters.selectedDate || store.getFilteredRecords()[0]?.tanggal || '2026-07-01';
+        if (window.ROTS_OPEN_INPUT_RENCANA) {
+          window.ROTS_OPEN_INPUT_RENCANA(dateStr, store.planningPeriod.type);
+        }
+      });
+    }
+
+    // Tombol Upload Rencana (buka modal upload rencana)
+    const btnUploadPlan = document.getElementById('btnUploadRencanaQuick');
+    if (btnUploadPlan) {
+      btnUploadPlan.addEventListener('click', () => {
+        if (window.ROTS_OPEN_UPLOAD_RENCANA) {
+          window.ROTS_OPEN_UPLOAD_RENCANA(store.planningPeriod.type);
+        }
+      });
+    }
+
     // Tombol Input Realisasi Harian (buka modal form)
     const btnInputReal = document.getElementById('btnOpenInputRealisasi');
     if (btnInputReal) {
@@ -165,6 +186,11 @@ export class DailyView {
   }
 
   render() {
+    const pType = store.planningPeriod.type || 'ROTS';
+    const lblPlan = document.getElementById('btnInputRencanaLabel');
+    if (lblPlan) lblPlan.textContent = `Input Rencana (${pType})`;
+    const thHeader = document.getElementById('thHeaderDataRencana');
+    if (thHeader) thHeader.textContent = `📋 DATA RENCANA (${pType})`;
     this.renderTable();
   }
 

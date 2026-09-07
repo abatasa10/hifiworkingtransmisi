@@ -857,9 +857,9 @@ export class ChartService {
   }
 
   /**
-   * Stacked Bar Chart for Outage Breakdown Tab
+   * Stacked Bar Chart for Outage Breakdown Tab with Dynamic Garis Trend Overlay
    */
-  renderOutageChart(canvasId, records) {
+  renderOutageChart(canvasId, records, options = {}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
@@ -868,36 +868,118 @@ export class ChartService {
       this.outageChartInstance.destroy();
     }
 
-    // Ambil sampel data tiap 3 hari agar chart tidak terlalu padat
-    const sampled = records.filter((_, idx) => idx % 2 === 0);
+    const showTrendLine = options.showTrendLine !== false;
+    const tab = options.tab || 'all'; // 'all' | 'planned' | 'unplanned'
+
+    // Ambil sampel data tiap 2 hari agar chart tidak terlalu padat jika data panjang
+    const sampled = records.length > 60 ? records.filter((_, idx) => idx % 2 === 0) : records;
     const labels = sampled.map(r => {
       const p = r.tanggal.split('-');
       return `${p[2]}/${p[1]}`;
     });
 
+    const datasets = [];
+
+    // 1. GARIS TREND OVERLAY (Direncanakan di atas bar)
+    if (showTrendLine) {
+      if (tab === 'planned') {
+        datasets.push({
+          type: 'line',
+          label: '📈 Garis Trend Planned Outage (PO + MO)',
+          data: sampled.map(r => r.plannedOutage),
+          borderColor: '#D97706',
+          backgroundColor: 'rgba(217, 119, 6, 0.08)',
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#D97706',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 1.5,
+          tension: 0.35,
+          order: 0,
+          yAxisID: 'y'
+        });
+      } else if (tab === 'unplanned') {
+        datasets.push({
+          type: 'line',
+          label: '📈 Garis Trend Unplanned Outage (FO + Derating)',
+          data: sampled.map(r => r.unplannedOutage),
+          borderColor: '#DC2626',
+          backgroundColor: 'rgba(220, 38, 38, 0.08)',
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#DC2626',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 1.5,
+          tension: 0.35,
+          order: 0,
+          yAxisID: 'y'
+        });
+      } else {
+        // Mode All: Garis Trend Total Outage
+        datasets.push({
+          type: 'line',
+          label: '📈 Garis Trend Total Outage (MW)',
+          data: sampled.map(r => r.plannedOutage + r.unplannedOutage),
+          borderColor: '#4F46E5', // Electric Indigo
+          backgroundColor: 'rgba(79, 70, 229, 0.08)',
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#4F46E5',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 1.5,
+          tension: 0.35,
+          order: 0,
+          yAxisID: 'y'
+        });
+      }
+    }
+
+    // 2. STACKED BAR DATASETS
+    if (tab === 'all' || tab === 'planned') {
+      datasets.push(
+        { type: 'bar', label: 'PO (Planned Outage)', data: sampled.map(r => r.po), backgroundColor: '#F59E0B', stack: 'planned', order: 1 },
+        { type: 'bar', label: 'MO (Maintenance)', data: sampled.map(r => r.mo), backgroundColor: '#D97706', stack: 'planned', order: 1 }
+      );
+    }
+
+    if (tab === 'all' || tab === 'unplanned') {
+      datasets.push(
+        { type: 'bar', label: 'FO (Forced Outage)', data: sampled.map(r => r.fo), backgroundColor: '#EF4444', stack: 'unplanned', order: 1 },
+        { type: 'bar', label: 'FO EP (FO Extension)', data: sampled.map(r => r.foEp), backgroundColor: '#DC2626', stack: 'unplanned', order: 1 },
+        { type: 'bar', label: 'DER KIT (Derating Kit)', data: sampled.map(r => r.derKit), backgroundColor: '#F87171', stack: 'unplanned', order: 1 },
+        { type: 'bar', label: 'VARMUS (Variasi Musim)', data: sampled.map(r => r.varmus), backgroundColor: '#FB923C', stack: 'unplanned', order: 1 }
+      );
+    }
+
     this.outageChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
-        datasets: [
-          { label: 'PO (Planned Outage)', data: sampled.map(r => r.po), backgroundColor: '#F59E0B', stack: 'planned' },
-          { label: 'MO (Maintenance)', data: sampled.map(r => r.mo), backgroundColor: '#D97706', stack: 'planned' },
-          { label: 'FO (Forced Outage)', data: sampled.map(r => r.fo), backgroundColor: '#EF4444', stack: 'unplanned' },
-          { label: 'FO EP (FO Extension)', data: sampled.map(r => r.foEp), backgroundColor: '#DC2626', stack: 'unplanned' },
-          { label: 'DER KIT (Derating Kit)', data: sampled.map(r => r.derKit), backgroundColor: '#F87171', stack: 'unplanned' },
-          { label: 'VARMUS (Variasi Musim)', data: sampled.map(r => r.varmus), backgroundColor: '#FB923C', stack: 'unplanned' }
-        ]
+        datasets
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
           legend: {
             position: 'top',
-            labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+            labels: {
+              boxWidth: 13,
+              usePointStyle: true,
+              font: { size: 11, family: 'Inter', weight: 600 }
+            }
           },
           tooltip: {
             backgroundColor: '#0A2540',
+            padding: 12,
+            cornerRadius: 8,
             callbacks: {
               label: (item) => `${item.dataset.label}: ${CalculationService.formatNumber(item.parsed.y)} MW`
             }
@@ -907,7 +989,7 @@ export class ChartService {
           x: {
             stacked: true,
             grid: { display: false },
-            ticks: { maxTicksLimit: 10, font: { size: 11, family: 'Inter' } }
+            ticks: { maxTicksLimit: 12, font: { size: 11, family: 'Inter' } }
           },
           y: {
             stacked: true,
