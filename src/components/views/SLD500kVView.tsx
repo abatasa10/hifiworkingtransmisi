@@ -313,7 +313,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[#f4f7fa] text-slate-800 overflow-hidden">
+    <div className="flex-1 flex flex-col w-full h-full bg-[#f4f7fa] text-slate-800 overflow-hidden">
       {/* Sub-Header with Breadcrumb, Title, Filters, and Search (Matching MANTAPS style) */}
       <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 shadow-xs">
         <div className="flex flex-col gap-0.5">
@@ -345,9 +345,9 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
       </div>
 
       {/* Main Canvas + Right Detail Panel */}
-      <div className="flex-1 flex relative overflow-hidden">
+      <div className="flex-1 flex w-full relative overflow-hidden">
         {/* Interactive Graph Canvas */}
-        <div className="flex-1 relative h-full">
+        <div className="flex-1 relative h-full min-w-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
