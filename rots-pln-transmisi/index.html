@@ -21,9 +21,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Application Stylesheets -->
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/main.css?v=9">
+  <link rel="stylesheet" href="css/components.css?v=9">
+  <link rel="stylesheet" href="css/responsive.css?v=9">
 </head>
 <body>
 
@@ -1580,53 +1580,535 @@
        MODAL: BANTUAN & PANDUAN FORMULA
        ======================================================================== -->
   <div class="modal-overlay" id="helpFormulaModal">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <div class="modal-title">Panduan Formula & Business Logic ROTS PLN Operasi Sistem</div>
-        <button class="modal-close-btn">&times;</button>
+    <div class="modal-content help-modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header help-modal-header">
+        <div class="modal-title">
+          <i class="fa fa-book-open" style="color: #60A5FA;"></i>
+          <span>Pusat Bantuan & Kamus Istilah Operasi Sistem PLN</span>
+        </div>
+        <button class="modal-close-btn" title="Tutup Panduan">&times;</button>
       </div>
-      <div class="modal-body" style="line-height: 1.6; font-size: 13px;">
-        <h4 style="color: #0284C7; margin-bottom: 8px;">1. Planned Outage (MW)</h4>
-        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #F59E0B; font-family: monospace;">
-          Planned Outage = PO + MO
-        </p>
-        <p style="color: var(--text-muted); margin-bottom: 14px;">
-          Gabungan dari Planned Outage terencana dan Maintenance Outage pemeliharaan berkala.
-        </p>
 
-        <h4 style="color: #0284C7; margin-bottom: 8px;">2. Unplanned Outage (MW)</h4>
-        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #EF4444; font-family: monospace;">
-          Unplanned Outage = FO + FO EP + DER KIT + DER TRANS + VARMUS
-        </p>
-        <p style="color: var(--text-muted); margin-bottom: 14px;">
-          Gabungan dari Forced Outage (gangguan seketika), Perpanjangan FO, Derating Pembangkit, Derating Transmisi, dan Variasi Musiman (suhu/debit air).
-        </p>
-
-        <h4 style="color: #0284C7; margin-bottom: 8px;">3. DMP – Daya Mampu Pembangkitan (MW)</h4>
-        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #10B981; font-family: monospace;">
-          DMP = DMN − Planned Outage − Unplanned Outage
-        </p>
-        <p style="color: var(--text-muted); margin-bottom: 14px;">
-          Sisa kapasitas pembangkitan netto yang siap menyalurkan daya setelah dikurangi seluruh outage.
-        </p>
-
-        <h4 style="color: #0284C7; margin-bottom: 8px;">4. CAD – Cadangan Daya (MW)</h4>
-        <p style="background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #7C3AED; font-family: monospace;">
-          CAD = DMP − BP
-        </p>
-        <p style="color: var(--text-muted); margin-bottom: 14px;">
-          Selisih antara kemampuan pembangkitan (DMP) dengan Beban Puncak (BP) harian.
-        </p>
-
-        <h4 style="color: #0284C7; margin-bottom: 8px;">5. Kriteria Status Operasi Sistem</h4>
-        <ul style="margin-left: 20px;">
-          <li><strong style="color: #10B981;">NORMAL</strong>: CAD &ge; Batas Cadangan Minimum (Default 2.000 MW)</li>
-          <li><strong style="color: #F59E0B;">SIAGA</strong>: 0 &le; CAD &lt; Batas Cadangan Minimum</li>
-          <li><strong style="color: #EF4444;">DEFISIT</strong>: CAD &lt; 0 MW</li>
-        </ul>
+      <!-- Navigation Tabs -->
+      <div class="help-tab-bar">
+        <button type="button" class="help-tab-btn active" data-help-tab="Glossary">
+          <i class="fa fa-spell-check"></i>
+          <span>1. Kamus Singkatan & Istilah (PO, MO, FO, dll)</span>
+        </button>
+        <button type="button" class="help-tab-btn" data-help-tab="Formula">
+          <i class="fa fa-calculator"></i>
+          <span>2. Rumus Neraca Daya & Simulasi Riil</span>
+        </button>
+        <button type="button" class="help-tab-btn" data-help-tab="Hierarchy">
+          <i class="fa fa-sitemap"></i>
+          <span>3. Tingkat Rencana (ROT, ROTS, ROB, ROM)</span>
+        </button>
+        <button type="button" class="help-tab-btn" data-help-tab="Status">
+          <i class="fa fa-traffic-light"></i>
+          <span>4. Kriteria Status (Normal, Siaga, Defisit)</span>
+        </button>
       </div>
-      <div class="modal-footer">
-        <button class="header-btn modal-close-btn">Mengerti</button>
+
+      <!-- Modal Body -->
+      <div class="modal-body" style="padding: 20px 24px; overflow-y: auto; max-height: calc(88vh - 135px); line-height: 1.6; font-size: 13px;">
+
+        <!-- ──────────────── PANE 1: GLOSARIUM SINGKATAN & ISTILAH ──────────────── -->
+        <div class="help-tab-pane active" id="paneHelpGlossary">
+          <div class="help-search-box">
+            <i class="fa fa-search help-search-icon"></i>
+            <input type="text" id="helpGlossarySearch" class="help-search-input" placeholder="Ketik istilah atau singkatan (misal: PO, FO, Derating, Cadangan, Beban Puncak)...">
+          </div>
+
+          <div class="glossary-list" id="glossaryListContainer">
+
+            <!-- 1. DMN -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge">DMN</span>
+                  <span>Daya Mampu Netto</span>
+                </div>
+                <span class="gc-category gc-cat-capacity">Kapasitas Pembangkit</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Kapasitas daya listrik maksimum (MW) yang mampu dibangkitkan oleh seluruh unit pembangkit secara terus-menerus dan siap dikirim ke jaringan transmisi setelah dikurangi pemakaian daya internal unit (pemakaian sendiri / <em>Auxiliary Power</em>).
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Ibarat kapasitas maksimal muatan sebuah armada truk saat seluruh mesin kendaraan dalam kondisi 100% prima dan tangki bensin penuh. Ini adalah "modal awal" listrik yang dimiliki PLN sebelum ada mesin yang diperbaiki atau rusak.
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PO -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#FEF3C7;color:#B45309;border-color:#FDE68A;">PO</span>
+                  <span>Planned Outage (Pemeliharaan Terencana)</span>
+                </div>
+                <span class="gc-category gc-cat-plan">Pemeliharaan Terencana</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Kondisi unit pembangkit dinonaktifkan (padam) dari jaringan untuk menjalani pekerjaan inspeksi besar, perbaikan turbin/boiler berkala, atau <em>Major Overhaul</em> terjadwal yang sudah disepakati jauh-jauh hari dalam dokumen perencanaan tahunan (ROT/ROTS).
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Ibarat servis berkala mobil ke bengkel resmi setiap 10.000 atau 20.000 km. Tanggal dan bulannya sudah dijadwalkan sejak awal tahun agar mesin tetap awet dan tidak meledak di kemudian hari. Selama mobil di bengkel, kapasitas angkut kita berkurang sementara.
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. MO -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#FEF3C7;color:#B45309;border-color:#FDE68A;">MO</span>
+                  <span>Maintenance Outage (Pemeliharaan Rutin)</span>
+                </div>
+                <span class="gc-category gc-cat-plan">Pemeliharaan Terencana</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Penghentian operasi unit pembangkit untuk pekerjaan pemeliharaan atau perbaikan bagian tertentu yang tidak dapat ditunda sampai jadwal overhaul berikutnya, namun tanggal pelaksanaannya masih fleksibel dan dapat digeser ke waktu beban rendah (seperti malam hari atau akhir pekan).
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Ibarat mengganti ban yang mulai gundul atau ganti kanvas rem yang menipis. Bukan mogok darurat, tetapi harus segera dikerjakan dalam beberapa hari ke depan sebelum menimbulkan bahaya. Biasanya dicari waktu luang saat akhir pekan.
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. FO -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#FEE2E2;color:#DC2626;border-color:#FECACA;">FO</span>
+                  <span>Forced Outage (Gangguan Seketika / Trip)</span>
+                </div>
+                <span class="gc-category gc-cat-unplan">Gangguan Tak Terduga</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Penghentian operasi unit pembangkit secara tiba-tiba/mendadak (<em>trip</em>) akibat gangguan tak terduga, seperti sambaran petir pada trafo, kebocoran pipa ketel uap (boiler tube leak), trip proteksi generator, atau kerusakan instrumen kontrol.
+              </p>
+              <div class="gc-layman-box" style="background: #FEF2F2; border-color: #FECACA; color: #991B1B;">
+                <i class="fa fa-lightbulb" style="color: #DC2626; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong style="color: #B91C1C;">Bahasa Awam / Analogi:</strong>
+                  Ibarat ban mobil yang tiba-tiba pecah atau mesin yang mendadak mogok di tengah jalan tol tanpa aba-aba. Pembangkit langsung padam seketika dan pasokan dayanya hilang saat itu juga.
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. FO EP -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#FEE2E2;color:#DC2626;border-color:#FECACA;">FO EP</span>
+                  <span>Forced Outage Extension Period</span>
+                </div>
+                <span class="gc-category gc-cat-unplan">Gangguan Tak Terduga</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Perpanjangan masa gangguan dari unit pembangkit yang mengalami Forced Outage, di mana pekerjaan investigasi dan perbaikan memakan waktu lebih lama dari target semula (misal karena kerusakan merembet ke rotor turbin atau menunggu suku cadang khusus dari luar negeri).
+              </p>
+              <div class="gc-layman-box" style="background: #FEF2F2; border-color: #FECACA; color: #991B1B;">
+                <i class="fa fa-lightbulb" style="color: #DC2626; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong style="color: #B91C1C;">Bahasa Awam / Analogi:</strong>
+                  Ibarat mobil yang masuk bengkel karena mogok, semula montir bilang selesai 2 hari, tapi saat dibongkar ternyata onderdil di dalam mesin patah dan harus inden 2 minggu. Waktu "menginap" mobil di bengkel terpaksa diperpanjang.
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. DER KIT -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge">DER KIT</span>
+                  <span>Derating Pembangkit (Penurunan Daya Unit)</span>
+                </div>
+                <span class="gc-category gc-cat-unplan">Penurunan Kemampuan</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Penurunan kapasitas daya output pembangkit di bawah nilai desain DMN-nya karena kendala teknis peralatan internal, misalnya batubara basah (kadar air tinggi), kerak pada pipa ketel, pompa pendingin bermasalah, atau efisiensi turbin menurun. Unit tetap berputar dan beroperasi, tetapi tidak mampu menyentuh daya penuh 100%.
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Truk tidak mogok dan tetap jalan, tapi karena saringan udaranya kotor atau bensinnya tercampur air, truk yang aslinya kuat membawa beban 10 ton sekarang cuma kuat membawa 7 ton.
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. DER TRANS -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge">DER TRANS</span>
+                  <span>Derating Transmisi (Kendala Saluran)</span>
+                </div>
+                <span class="gc-category gc-cat-unplan">Kendala Penyaluran</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Keterbatasan penyaluran daya listrik dari pembangkit menuju pusat beban konsumen akibat keterbatasan kapasitas termal kawat transmisi (SUTET/SUTT), trafo gardu induk (GITET) yang kelebihan beban (overload), atau adanya jalur transmisi ganda yang salah satunya sedang padam dipelihara.
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Pabrik di hulu siap memproduksi 1.000 dus barang, tapi jembatan atau jalan tol menuju kota sedang diperbaiki dan jalurnya menyempit, sehingga pengiriman barang harus dibatasi agar jalan tidak amblas.
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. VARMUS -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge">VARMUS</span>
+                  <span>Variasi Musiman (Pengaruh Iklim & Cuaca)</span>
+                </div>
+                <span class="gc-category gc-cat-unplan">Faktor Alam</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Fluktuasi kemampuan daya pembangkit yang dipengaruhi kondisi iklim/musim alamiah, misalnya debit air waduk PLTA yang menyusut drastis saat kemarau panjang, atau temperatur udara dan air laut yang sangat panas yang menurunkan efisiensi kondensor pendingin PLTU/PLTGU.
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Saat musim kemarau panjang, air waduk menyusut sehingga turbin air PLTA kekurangan tenaga air untuk memutar generator, sehingga daya listrik yang dihasilkan menurun secara alami karena faktor alam.
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. DMP -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#ECFDF5;color:#059669;border-color:#A7F3D0;">DMP</span>
+                  <span>Daya Mampu Pembangkitan / Pasok</span>
+                </div>
+                <span class="gc-category gc-cat-capacity">Kemampuan Pasok Riil</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Daya listrik bersih yang benar-benar siap dan mampu dipasok ke masyarakat pada hari tersebut setelah modal awal DMN dikurangi seluruh pemeliharaan terencana (PO, MO) dan seluruh kendala tak terduga (FO, FO EP, Derating, Varmus).
+                <br><code>DMP = DMN − Planned Outage − Unplanned Outage</code>
+              </p>
+              <div class="gc-layman-box" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534;">
+                <i class="fa fa-lightbulb" style="color: #10B981; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong style="color:#15803D;">Bahasa Awam / Analogi:</strong>
+                  Total stok barang riil yang ada di etalase toko PLN yang 100% siap dijual dan dialirkan ke rumah warga dan pabrik hari ini.
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. BP -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#F3E8FF;color:#7C3AED;border-color:#DDD6FE;">BP</span>
+                  <span>Beban Puncak (Peak Load)</span>
+                </div>
+                <span class="gc-category gc-cat-load">Kebutuhan Konsumen</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Nilai konsumsi daya listrik tertinggi (MW) yang ditarik oleh seluruh konsumen (rumah tangga, industri, bisnis, penerangan jalan) dalam kurun waktu 24 jam. Pada sistem Jamali, beban puncak umumnya terjadi pada malam hari (19.00 – 22.00) saat lampu, TV, dan AC menyala bersamaan.
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  "Jam sibuk" (rush hour) pemakaian listrik. Saat seluruh warga sampai di rumah, menyalakan lampu, memasak, menyalakan televisi, dan menyalakan AC, konsumsi listrik melonjak mencapai titik tertingginya dalam sehari.
+                </div>
+              </div>
+            </div>
+
+            <!-- 11. CAD -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#ECFDF5;color:#047857;border-color:#A7F3D0;">CAD</span>
+                  <span>Cadangan Daya (Reserve Margin)</span>
+                </div>
+                <span class="gc-category gc-cat-reserve">Ketahanan Operasi</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Selisih surplus daya antara kemampuan pasok (DMP) dengan kebutuhan pelanggan (BP). Cadangan ini wajib ada untuk menjaga kestabilan frekuensi listrik 50 Hertz dan menjadi benteng pengaman jika sewaktu-waktu ada unit pembangkit besar yang trip mendadak.
+                <br><code>CAD = DMP − BP</code>
+              </p>
+              <div class="gc-layman-box" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534;">
+                <i class="fa fa-lightbulb" style="color: #10B981; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong style="color:#15803D;">Bahasa Awam / Analogi:</strong>
+                  Ibarat tabungan darurat atau ban serep. Jika ban utama meletus di jalan, ban serep inilah yang membuat mobil tetap melaju aman. Semakin tebal cadangan daya, semakin kecil kemungkinan listrik di rumah warga padam saat ada gangguan.
+                </div>
+              </div>
+            </div>
+
+            <!-- 12. REALISASI & DEVIASI -->
+            <div class="glossary-card">
+              <div class="gc-header">
+                <div class="gc-term">
+                  <span class="gc-term-badge" style="background:#EFF6FF;color:#1E40AF;border-color:#BFDBFE;">BP Real & Δ BP</span>
+                  <span>Realisasi Aktual & Deviasi Beban Puncak</span>
+                </div>
+                <span class="gc-category gc-cat-capacity">Evaluasi Operasi</span>
+              </div>
+              <p class="gc-definition">
+                <strong>Definisi Teknis:</strong> Data riil yang tercatat di ruang kendali (P2B Dispatcher) pada hari operasional. Nilai selisih <code>Δ BP = BP Real − BP Rencana</code> menunjukkan apakah konsumsi listrik masyarakat ternyata lebih tinggi (+) atau lebih hemat (−) dibandingkan angka yang diperkirakan dalam rencana.
+              </p>
+              <div class="gc-layman-box">
+                <i class="fa fa-lightbulb" style="color: #D97706; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <strong>Bahasa Awam / Analogi:</strong>
+                  Membandingkan antara perkiraan belanja bulanan dengan struk belanja riil yang dibayar di kasir. Jika selisihnya positif (+), berarti pengeluaran daya listrik lebih boros dari perkiraan semula.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ──────────────── PANE 2: FORMULA NERACA DAYA ──────────────── -->
+        <div class="help-tab-pane" id="paneHelpFormula">
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+            <h5 style="color: #1E40AF; margin-bottom: 4px; font-size: 13.5px; font-weight: 700;">
+              <i class="fa fa-info-circle"></i> Alur Perhitungan Neraca Daya (Power Balance Chain)
+            </h5>
+            <span style="color: #334155; font-size: 12.5px;">
+              Perhitungan neraca daya dilakukan berurutan dari modal awal kapasitas (DMN) sampai menghasilkan sisa cadangan pengaman (CAD).
+            </span>
+          </div>
+
+          <div class="formula-flow-grid">
+
+            <!-- Step 1 -->
+            <div class="flow-step-card">
+              <div class="flow-step-header">
+                <div class="flow-step-num">1</div>
+                <div class="flow-step-title">Planned Outage (Total Pemeliharaan Terencana)</div>
+              </div>
+              <div class="flow-formula-code">Planned Outage = PO + MO</div>
+              <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+                Menggabungkan seluruh pemadaman pembangkit yang terencana: Overhaul besar (PO) dan perawatan berkala rutin (MO).
+              </p>
+              <div class="flow-sample-box">
+                <strong>Contoh Jamali 1 Juli:</strong> PO (4.490,55 MW) + MO (279,53 MW) = <strong>4.770,08 MW</strong>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flow-step-card">
+              <div class="flow-step-header">
+                <div class="flow-step-num">2</div>
+                <div class="flow-step-title">Unplanned Outage (Total Gangguan & Penurunan Daya)</div>
+              </div>
+              <div class="flow-formula-code">Unplanned Outage = FO + FO EP + DER KIT + DER TRANS + VARMUS</div>
+              <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+                Menggabungkan seluruh faktor ketidakmampuan yang tidak terjadwal: Trip mendadak (FO), perpanjangan gangguan (FO EP), penurunan daya mesin (DER KIT), kendala transmisi (DER TRANS), dan faktor musim/debit air (VARMUS).
+              </p>
+              <div class="flow-sample-box">
+                <strong>Contoh Jamali 1 Juli:</strong> FO (1.481,44) + FO EP (4.020,28) + DER KIT (1.481,44) + DER TRANS (0) + VARMUS (1.393,89) = <strong>8.377,06 MW</strong>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flow-step-card">
+              <div class="flow-step-header">
+                <div class="flow-step-num">3</div>
+                <div class="flow-step-title">DMP (Daya Mampu Pasok / Pembangkitan)</div>
+              </div>
+              <div class="flow-formula-code">DMP = DMN − Planned Outage − Unplanned Outage</div>
+              <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+                Daya riil bersih yang siap dialirkan ke pelanggan PLN setelah dipotong seluruh pemeliharaan dan gangguan.
+              </p>
+              <div class="flow-sample-box">
+                <strong>Contoh Jamali 1 Juli:</strong> DMN (49.040,62 MW) − Planned (4.770,08 MW) − Unplanned (8.377,06 MW) = <strong>35.893,48 MW</strong>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="flow-step-card">
+              <div class="flow-step-header">
+                <div class="flow-step-num">4</div>
+                <div class="flow-step-title">CAD (Cadangan Daya) & Kriteria Status</div>
+              </div>
+              <div class="flow-formula-code">CAD = DMP − BP</div>
+              <p style="color: #475569; font-size: 12.5px; margin-bottom: 8px;">
+                Sisa daya pasokan (DMP) setelah melayani kebutuhan jam sibuk seluruh pelanggan (BP).
+              </p>
+              <div class="flow-sample-box">
+                <strong>Contoh Jamali 1 Juli:</strong> DMP (35.893,48 MW) − BP (33.950,21 MW) = <strong>+1.943,27 MW</strong><br>
+                <em>Karena CAD (1.943,27 MW) berada di bawah ambang batas minimum 2.000 MW, maka status sistem hari tersebut adalah:</em>
+                <span class="badge-status status-siaga" style="font-size: 11px; padding: 2px 7px;">SIAGA</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ──────────────── PANE 3: HIRARKI PERENCANAAN ──────────────── -->
+        <div class="help-tab-pane" id="paneHelpHierarchy">
+          <p style="color: #475569; margin-bottom: 14px; font-size: 13px;">
+            Operasi sistem tenaga listrik PLN diatur melalui 4 tingkatan dokumen perencanaan berjenjang, dari perencanaan jangka panjang (1 tahun) hingga taktis mingguan (H-7):
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+
+            <div style="border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; background: #FFFFFF;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; font-weight: 800; color: #1E40AF;">
+                  <span class="gc-term-badge" style="background:#EFF6FF; color:#1D4ED8;">ROT</span>
+                  Rencana Operasi Tahunan
+                </span>
+                <span style="font-size: 11px; font-weight: 700; background: #F1F5F9; color: #475569; padding: 2px 8px; border-radius: 12px;">
+                  Horison: 1 Tahun (365 Hari)
+                </span>
+              </div>
+              <p style="color: #334155; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Tujuan:</strong> Mengalokasikan jadwal pemeliharaan unit pembangkit besar (Major Overhaul turbin), mengestimasi kebutuhan batubara & gas tahunan, serta memastikan kecukupan pasokan daya nasional sepanjang tahun.
+              </p>
+              <div style="font-size: 12px; color: #64748B;">
+                <em>Frekuensi Penyusunan: Diterbitkan setahun sekali menjelang tahun operasi baru.</em>
+              </div>
+            </div>
+
+            <div style="border: 2px solid #1E40AF; border-radius: 10px; padding: 14px 16px; background: #F8FAFC;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; font-weight: 800; color: #1E40AF;">
+                  <span class="gc-term-badge" style="background:#1E40AF; color:#FFFFFF;">ROTS</span>
+                  Rencana Operasi Tahunan Semester (Aplikasi Ini)
+                </span>
+                <span style="font-size: 11px; font-weight: 700; background: #DBEAFE; color: #1E40AF; padding: 2px 8px; border-radius: 12px;">
+                  Horison: 6 Bulan (Semester I / Semester II)
+                </span>
+              </div>
+              <p style="color: #334155; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Tujuan:</strong> Melakukan penyesuaian (adjustment) rencana operasi 6 bulanan berdasarkan evaluasi realisasi semester sebelumnya, pemutakhiran jadwal masuknya pembangkit baru (COD), serta pergeseran jadwal pemeliharaan.
+              </p>
+              <div style="font-size: 12px; color: #1E40AF; font-weight: 600;">
+                <em>Aplikasi ini secara khusus mendigitalkan Neraca Daya ROTS Semester II (Juli s.d. Desember) dan Semester I.</em>
+              </div>
+            </div>
+
+            <div style="border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; background: #FFFFFF;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; font-weight: 800; color: #0284C7;">
+                  <span class="gc-term-badge" style="background:#E0F2FE; color:#0369A1;">ROB</span>
+                  Rencana Operasi Bulanan
+                </span>
+                <span style="font-size: 11px; font-weight: 700; background: #F1F5F9; color: #475569; padding: 2px 8px; border-radius: 12px;">
+                  Horison: 1 Bulan (28–31 Hari)
+                </span>
+              </div>
+              <p style="color: #334155; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Tujuan:</strong> Mengunci alokasi kuota gas bumi bulanan (Daily Contract Quantity / DCQ), jadwal pengiriman tongkang batubara, serta jadwal pemeliharaan bulanan secara pasti.
+              </p>
+              <div style="font-size: 12px; color: #64748B;">
+                <em>Frekuensi Penyusunan: Diterbitkan pada akhir setiap bulan untuk bulan berikutnya (M-1).</em>
+              </div>
+            </div>
+
+            <div style="border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; background: #FFFFFF;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; font-weight: 800; color: #059669;">
+                  <span class="gc-term-badge" style="background:#D1FAE5; color:#065F46;">ROM</span>
+                  Rencana Operasi Mingguan
+                </span>
+                <span style="font-size: 11px; font-weight: 700; background: #F1F5F9; color: #475569; padding: 2px 8px; border-radius: 12px;">
+                  Horison: 7 Hari (Senin s.d. Minggu)
+                </span>
+              </div>
+              <p style="color: #334155; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Tujuan:</strong> Menjadi panduan operasional taktis paling presisi bagi para Pengatur Beban (Dispatcher) di Pusat Pengatur Beban (P2B) untuk penyusunan Rencana Operasi Harian (ROH).
+              </p>
+              <div style="font-size: 12px; color: #64748B;">
+                <em>Frekuensi Penyusunan: Diterbitkan setiap hari Kamis untuk minggu operasi berikutnya (W-1).</em>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ──────────────── PANE 4: KRITERIA STATUS OPERASI ──────────────── -->
+        <div class="help-tab-pane" id="paneHelpStatus">
+          <p style="color: #475569; margin-bottom: 14px; font-size: 13px;">
+            Status operasi sistem kelistrikan ditentukan berdasarkan besaran Cadangan Daya (CAD) terhadap <strong>Batas Cadangan Minimum (Operating Reserve Threshold)</strong> yang saat ini ditetapkan sebesar <strong>2.000 MW</strong> untuk Sistem Jamali:
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+
+            <!-- Status NORMAL -->
+            <div style="border-left: 5px solid #10B981; border-radius: 8px; padding: 14px 18px; background: #F0FDF4;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14.5px; font-weight: 800; color: #047857; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa fa-check-circle"></i> STATUS NORMAL
+                </span>
+                <span style="font-weight: 800; color: #047857; font-size: 13px;">CAD &ge; 2.000 MW</span>
+              </div>
+              <p style="color: #166534; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Artinya:</strong> Kondisi pasokan listrik sangat aman dan kokoh. Cadangan daya lebih dari cukup untuk menahan padamnya unit pembangkit terbesar dalam sistem (prinsip kriteria N-1 / N-2) tanpa mengganggu pasokan listrik ke masyarakat.
+              </p>
+              <div style="font-size: 12px; color: #15803D;">
+                <strong>Tindakan Operator:</strong> Operasi normal, memprioritaskan unit pembangkit dengan biaya bahan bakar terendah (<em>Merit Order Economic Dispatch</em>).
+              </div>
+            </div>
+
+            <!-- Status SIAGA -->
+            <div style="border-left: 5px solid #F59E0B; border-radius: 8px; padding: 14px 18px; background: #FFFBEB;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14.5px; font-weight: 800; color: #B45309; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa fa-exclamation-triangle"></i> STATUS SIAGA
+                </span>
+                <span style="font-weight: 800; color: #B45309; font-size: 13px;">0 MW &le; CAD &lt; 2.000 MW</span>
+              </div>
+              <p style="color: #78350F; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Artinya:</strong> Pasokan listrik pas-pasan. Listrik ke masyarakat masih menyala normal tanpa pemadaman, tetapi bantalan cadangan pengaman berada di bawah standar aman. Jika terjadi gangguan mendadak pada satu pembangkit besar lagi, sistem berpotensi mengalami defisit.
+              </p>
+              <div style="font-size: 12px; color: #92400E;">
+                <strong>Tindakan Operator:</strong> Menyiapkan pembangkit cadangan cepat (<em>Peaker</em> seperti PLTG/PLTA hidro), menunda jadwal pemeliharaan unit non-kritis, dan memantau fluktuasi beban secara ketat.
+              </div>
+            </div>
+
+            <!-- Status DEFISIT -->
+            <div style="border-left: 5px solid #EF4444; border-radius: 8px; padding: 14px 18px; background: #FEF2F2;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14.5px; font-weight: 800; color: #B91C1C; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa fa-times-circle"></i> STATUS DEFISIT
+                </span>
+                <span style="font-weight: 800; color: #B91C1C; font-size: 13px;">CAD &lt; 0 MW</span>
+              </div>
+              <p style="color: #991B1B; font-size: 12.5px; margin-bottom: 6px;">
+                <strong>Artinya:</strong> Kebutuhan konsumsi listrik masyarakat melebihi total daya yang mampu dihasilkan oleh seluruh pembangkit yang beroperasi.
+              </p>
+              <div style="font-size: 12px; color: #7F1D1D;">
+                <strong>Tindakan Operator:</strong> Manuver tanggap darurat, menyalakan seluruh unit cadangan berbiaya tinggi, mengaktifkan skema pemotongan beban industri (*Demand Side Management*), atau pelepasan beban terencana (*manual load shedding*) untuk mencegah sistem padam total (*blackout*).
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer" style="padding: 14px 24px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: #64748B; font-size: 12px;">
+          <i class="fa fa-shield-alt" style="color: #10B981;"></i> Standar Aturan Grid Code & Dokumen Operasi Sistem PLN
+        </span>
+        <button type="button" class="header-btn modal-close-btn-action" style="background: #1E40AF; color: #FFFFFF; font-weight: 600; padding: 8px 22px; border-radius: 8px;">
+          Tutup & Mengerti
+        </button>
       </div>
     </div>
   </div>
@@ -2188,7 +2670,7 @@
   <div id="toastContainer"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=8"></script>
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
 

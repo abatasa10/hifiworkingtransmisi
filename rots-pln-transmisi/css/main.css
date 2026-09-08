@@ -1131,4 +1131,260 @@ body {
   background: #F0F7FF;
 }
 
+/* ==========================================================================
+   HELP & GLOSSARY MODAL (PANDUAN LENGKAP ORANG AWAM)
+   ========================================================================== */
+.help-modal-content {
+  max-width: 900px !important;
+  width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-modal-header {
+  background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%);
+  color: #FFFFFF;
+  padding: 18px 24px;
+}
+
+.help-modal-header .modal-title {
+  color: #FFFFFF;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-modal-header .modal-close-btn {
+  color: #E2E8F0;
+}
+.help-modal-header .modal-close-btn:hover {
+  color: #FFFFFF;
+}
+
+.help-tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  flex-wrap: wrap;
+}
+
+.help-tab-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+}
+
+.help-tab-btn:hover {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #93C5FD;
+}
+
+.help-tab-btn.active {
+  background: #1E40AF;
+  color: #FFFFFF;
+  border-color: #1E40AF;
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25);
+}
+
+.help-search-box {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.help-search-input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  font-size: 13px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.help-search-input:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.help-search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  font-size: 14px;
+}
+
+.help-tab-pane {
+  display: none;
+}
+
+.help-tab-pane.active {
+  display: block;
+}
+
+.glossary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.glossary-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.glossary-card:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
+}
+
+.gc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gc-term {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gc-term-badge {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.gc-category {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.gc-cat-plan { background: #FEF3C7; color: #92400E; }
+.gc-cat-unplan { background: #FEE2E2; color: #991B1B; }
+.gc-cat-capacity { background: #E0E7FF; color: #3730A3; }
+.gc-cat-load { background: #F3E8FF; color: #6B21A8; }
+.gc-cat-reserve { background: #D1FAE5; color: #065F46; }
+
+.gc-definition {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.gc-layman-box {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 9px 13px;
+  font-size: 12.5px;
+  color: #78350F;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gc-layman-box strong {
+  color: #B45309;
+}
+
+/* Formula Step Flow Cards */
+.formula-flow-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flow-step-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 16px;
+  background: #FFFFFF;
+  position: relative;
+}
+
+.flow-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.flow-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1E40AF;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-step-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.flow-formula-code {
+  background: #0F172A;
+  color: #38BDF8;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.flow-sample-box {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: #166534;
+  line-height: 1.5;
+}
+
+
 

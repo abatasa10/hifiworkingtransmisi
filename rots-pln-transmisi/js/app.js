@@ -488,6 +488,36 @@ class RotsApp {
         if (modal) modal.classList.add('active');
       });
     }
+
+    // Help Modal Tab Switching & Search
+    const helpTabs = document.querySelectorAll('.help-tab-btn');
+    const helpPanes = document.querySelectorAll('.help-tab-pane');
+    helpTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-help-tab');
+        helpTabs.forEach(t => t.classList.remove('active'));
+        helpPanes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const targetPane = document.getElementById(`paneHelp${target}`);
+        if (targetPane) targetPane.classList.add('active');
+      });
+    });
+
+    const helpSearch = document.getElementById('helpGlossarySearch');
+    if (helpSearch) {
+      helpSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('#glossaryListContainer .glossary-card');
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (!query || text.includes(query)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    }
   }
 
   openQuickThresholdModal() {
