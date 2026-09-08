@@ -1,0 +1,139 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+:root {
+  --font-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --pln-blue: #0046ad;
+  --pln-blue-hover: #003380;
+  --pln-blue-light: #eff6ff;
+  --pln-blue-border: #dbeafe;
+  
+  --bg-app: #f4f7fa;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+
+  /* MANTAPS Solid & Soft Risk Colors */
+  --risk-very-good: #2baf75;
+  --risk-good: #f1c40f;
+  --risk-fair: #ea580c;
+  --risk-poor: #dc2626;
+
+  --risk-very-good-soft: #dcfce7;
+  --risk-good-soft: #fef9c3;
+  --risk-fair-soft: #ffedd5;
+  --risk-poor-soft: #fee2e2;
+
+  --navy-950: #040814;
+  --navy-900: #081020;
+  --navy-850: #0b152b;
+  --navy-800: #0d1a36;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-main);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Custom Scrollbar for MANTAPS panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* React Flow styling */
+.react-flow {
+  background-color: #0c1527 !important;
+}
+
+.react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.react-flow__controls {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #0f1c34 !important;
+}
+
+.react-flow__controls-button {
+  background: #0f1c34 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  fill: #94a3b8 !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #1a2c4e !important;
+  color: #00d2d3 !important;
+  fill: #00d2d3 !important;
+}
+
+.react-flow__minimap {
+  background-color: rgba(12, 21, 39, 0.95) !important;
+  border: 1px solid rgba(0, 210, 211, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Pulse animation for starburst risk badges */
+@keyframes pulse-risk {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.8));
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.12);
+    filter: drop-shadow(0 0 16px rgba(220, 38, 38, 1));
+  }
+}
+
+@keyframes pulse-risk-yellow {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    filter: drop-shadow(0 0 6px rgba(241, 196, 15, 0.8));
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    filter: drop-shadow(0 0 14px rgba(241, 196, 15, 1));
+  }
+}
+
+.animate-risk-pulse {
+  animation: pulse-risk 2s infinite ease-in-out;
+}
+
+.animate-risk-yellow-pulse {
+  animation: pulse-risk-yellow 2s infinite ease-in-out;
+}

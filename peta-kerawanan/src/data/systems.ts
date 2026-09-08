@@ -1,0 +1,102 @@
+import { PowerSystem } from '../types/system';
+
+export const powerSystems: PowerSystem[] = [
+  {
+    id: 'jamali',
+    name: 'Jawa, Madura dan Bali',
+    region: 'Jawa, Madura & Bali',
+    riskLevel: 'Rawan',
+    upbCount: 6,
+    subsystemCount: 12,
+    assetCount: 321,
+    giCount: 263,
+    ibtCount: 58,
+    lat: -7.2504,
+    lng: 110.0,
+    description: 'Sistem interkoneksi backbone 500 kV & 150 kV terbesar di Indonesia dengan beban puncak mencapai 32.500 MW.'
+  },
+  {
+    id: 'sumatera',
+    name: 'Sumatera',
+    region: 'Sumatera Bagian Utara, Tengah & Selatan',
+    riskLevel: 'Sedang',
+    upbCount: 4,
+    subsystemCount: 8,
+    assetCount: 184,
+    giCount: 142,
+    ibtCount: 32,
+    lat: 0.5897,
+    lng: 101.3431,
+    description: 'Sistem interkoneksi tol listrik 275 kV & 150 kV menghubungkan Aceh hingga Lampung.'
+  },
+  {
+    id: 'kalimantan',
+    name: 'Kalimantan',
+    region: 'Kalimantan Barat, Selatan, Tengah & Timur',
+    riskLevel: 'Sedang',
+    upbCount: 3,
+    subsystemCount: 6,
+    assetCount: 115,
+    giCount: 89,
+    ibtCount: 18,
+    lat: -1.2654,
+    lng: 114.8878,
+    description: 'Sistem interkoneksi 150 kV Kalseltengtim dan interkoneksi Khatulistiwa Kalbar.'
+  },
+  {
+    id: 'sulawesi',
+    name: 'Sulawesi',
+    region: 'Sulawesi Bagian Selatan & Utara',
+    riskLevel: 'Rawan',
+    upbCount: 2,
+    subsystemCount: 5,
+    assetCount: 84,
+    giCount: 64,
+    ibtCount: 14,
+    lat: -2.5337,
+    lng: 120.3015,
+    description: 'Sistem interkoneksi Sulbagsel 150 kV/275 kV dan Sulbagut 150 kV.'
+  },
+  {
+    id: 'nusa-tenggara',
+    name: 'Nusa Tenggara',
+    region: 'NTB & NTT',
+    riskLevel: 'Sedang',
+    upbCount: 2,
+    subsystemCount: 4,
+    assetCount: 48,
+    giCount: 38,
+    ibtCount: 8,
+    lat: -8.6529,
+    lng: 119.5888,
+    description: 'Sistem isolated dan loop 150 kV Lombok, Timor, dan Flores.'
+  },
+  {
+    id: 'maluku',
+    name: 'Maluku',
+    region: 'Maluku & Maluku Utara',
+    riskLevel: 'Aman',
+    upbCount: 1,
+    subsystemCount: 2,
+    assetCount: 28,
+    giCount: 22,
+    ibtCount: 4,
+    lat: -3.2385,
+    lng: 130.1453,
+    description: 'Sistem isolated 150 kV/70 kV Ambon dan Ternate-Tidore.'
+  },
+  {
+    id: 'papua',
+    name: 'Papua',
+    region: 'Papua & Papua Barat',
+    riskLevel: 'Aman',
+    upbCount: 1,
+    subsystemCount: 2,
+    assetCount: 24,
+    giCount: 18,
+    ibtCount: 3,
+    lat: -4.2699,
+    lng: 138.0804,
+    description: 'Sistem kelistrikan Jayapura, Timika, Sorong, dan Manokwari.'
+  }
+];
