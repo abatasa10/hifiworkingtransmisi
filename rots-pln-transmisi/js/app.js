@@ -10,6 +10,7 @@ import { dailyView } from './dailyView.js?v=8';
 import { outageView } from './outageView.js?v=8';
 import { parameterView } from './parameterView.js?v=8';
 import { importExportService } from './importExport.js?v=8';
+import { defenseSchemeView } from './defenseSchemeView.js?v=10';
 
 class RotsApp {
   constructor() {
@@ -19,6 +20,7 @@ class RotsApp {
     this.outageView = outageView;
     this.parameterView = parameterView;
     this.importExport = importExportService;
+    this.defenseSchemeView = defenseSchemeView;
   }
 
   init() {
@@ -35,6 +37,7 @@ class RotsApp {
     this.outageView.init();
     this.parameterView.init();
     this.importExport.init();
+    this.defenseSchemeView.init();
 
     // Subscribe to store updates
     this.store.subscribe((event) => {
@@ -176,6 +179,7 @@ class RotsApp {
       'rencana-outage': 'Rencana Pemeliharaan & Outage',
       'ringkasan-bulanan': 'Ringkasan & Evaluasi Bulanan',
       'detail-pembangkit': 'Detail Kapasitas Unit Pembangkit & Transmisi',
+      'defense-scheme': 'Defense Scheme Operasi Sistem & Peralatan FASOP Proteksi',
       'parameter': 'Parameter & Pengaturan Ambang Batas',
       'master-data': 'Master Data Sistem Tenaga Listrik',
       'import-data': 'Impor Data Excel & Template ROTS',
@@ -206,6 +210,8 @@ class RotsApp {
       this.dailyView.render();
     } else if (viewId === 'parameter') {
       this.parameterView.render();
+    } else if (viewId === 'defense-scheme') {
+      this.defenseSchemeView.render();
     }
   }
 

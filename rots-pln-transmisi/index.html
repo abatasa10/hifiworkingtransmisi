@@ -21,9 +21,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Application Stylesheets -->
-  <link rel="stylesheet" href="css/main.css?v=9">
-  <link rel="stylesheet" href="css/components.css?v=9">
-  <link rel="stylesheet" href="css/responsive.css?v=9">
+  <link rel="stylesheet" href="css/main.css?v=10">
+  <link rel="stylesheet" href="css/components.css?v=10">
+  <link rel="stylesheet" href="css/responsive.css?v=10">
 </head>
 <body>
 
@@ -57,6 +57,10 @@
       <a class="mantaps-nav-link" data-view="detail-pembangkit" id="menuDetailPembangkit">
         <i class="fa fa-bolt"></i>
         <span>Detail Pembangkit</span>
+      </a>
+      <a class="mantaps-nav-link" data-view="defense-scheme" id="menuDefenseScheme">
+        <i class="fa fa-shield-halved"></i>
+        <span>Defense Scheme</span>
       </a>
       <a class="mantaps-nav-link" data-view="parameter" id="menuParameter">
         <i class="fa fa-sliders-h"></i>
@@ -1098,6 +1102,167 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW: DEFENSE SCHEME (Operasi Sistem & Peralatan FASOP)
+             ================================================================== -->
+        <section class="view-section" id="view-defense-scheme">
+          <!-- Top KPI Cards -->
+          <div class="ds-kpi-grid">
+            <div class="ds-kpi-card">
+              <div class="ds-kpi-icon-box" style="background: #EFF6FF; color: #1D4ED8;">
+                <i class="fa fa-network-wired"></i>
+              </div>
+              <div class="ds-kpi-info">
+                <span class="ds-kpi-title">Titik Lokasi DS</span>
+                <span class="ds-kpi-value" id="kpiDsTotalLokasi">0</span>
+                <span class="ds-kpi-sub">Sistem &amp; Sub Sistem Terdaftar</span>
+              </div>
+            </div>
+
+            <div class="ds-kpi-card">
+              <div class="ds-kpi-icon-box" style="background: #ECFDF5; color: #059669;">
+                <i class="fa fa-shield-halved"></i>
+              </div>
+              <div class="ds-kpi-info">
+                <span class="ds-kpi-title">Skema Proteksi Aktif</span>
+                <span class="ds-kpi-value" id="kpiDsTotalSkema">0 / 0</span>
+                <span class="ds-kpi-sub">Kesiapan Operasi Sistem</span>
+              </div>
+            </div>
+
+            <div class="ds-kpi-card">
+              <div class="ds-kpi-icon-box" style="background: #FFFBEB; color: #D97706;">
+                <i class="fa fa-project-diagram"></i>
+              </div>
+              <div class="ds-kpi-info">
+                <span class="ds-kpi-title">Kesiapan Wiring</span>
+                <span class="ds-kpi-value" id="kpiDsTotalWiring">0 (0%)</span>
+                <span class="ds-kpi-sub">Diagram &amp; Wiring Ready</span>
+              </div>
+            </div>
+
+            <div class="ds-kpi-card">
+              <div class="ds-kpi-icon-box" style="background: #F3E8FF; color: #7C3AED;">
+                <i class="fa fa-microchip"></i>
+              </div>
+              <div class="ds-kpi-info">
+                <span class="ds-kpi-title">Alat FASOP Terpetakan</span>
+                <span class="ds-kpi-value" id="kpiDsTotalFasop">0 Unit</span>
+                <span class="ds-kpi-sub">Relay, RTU, Master Trip, IED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Table Card -->
+          <div class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 12px; justify-content: space-between;">
+              <div class="card-title">
+                <i class="fa fa-shield-alt" style="color: #0284C7;"></i>
+                Master Defense Scheme &amp; Integrasi Peralatan FASOP Proteksi
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="header-btn" id="btnOpenFasopModal" style="background: #F8FAFC; color: #334155; border: 1px solid #CBD5E1;" title="Lihat dan Kelola Master Peralatan FASOP / Proteksi">
+                  <i class="fa fa-microchip" style="color: #7C3AED;"></i>
+                  <span>Master FASOP</span>
+                </button>
+                <button type="button" class="header-btn" id="btnExportDefense" style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;" title="Ekspor Data Defense Scheme ke Excel">
+                  <i class="fa fa-file-excel" style="color: #10B981;"></i>
+                  <span>Ekspor Excel</span>
+                </button>
+                <button type="button" class="header-btn btn-primary" id="btnOpenDefenseModal" title="Tambah Data Defense Scheme Baru">
+                  <i class="fa fa-plus-circle"></i>
+                  <span>Tambah Defense Scheme</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <!-- Info Alert Banner -->
+              <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fa fa-info-circle" style="color: #1D4ED8; font-size: 18px; margin-top: 2px;"></i>
+                <div style="font-size: 12.5px; color: #1E3A8A; line-height: 1.5;">
+                  <strong>Integrasi Operasi Sistem &amp; Fasilitas Operasi (FASOP):</strong> Defense scheme menjaga keandalan sistem terhadap gangguan berat (<em>Overload, N-1, N-2, Gangguan Frekuensi &amp; Tegangan</em>). Setiap skema proteksi (OLS, OGS, UVLS, UFLS, SPS/RAS) terhubung secara fisik dan logis dengan peralatan IED (Relay Proteksi, RTU SCADA, Master Trip) di masing-masing Gardu Induk &amp; GITET.
+                </div>
+              </div>
+
+              <!-- Filter Bar -->
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                <div style="flex: 2; min-width: 220px; position: relative;">
+                  <i class="fa fa-search" style="position: absolute; left: 12px; top: 10px; color: #94A3B8; font-size: 13px;"></i>
+                  <input type="text" id="searchDefenseScheme" class="form-control form-control-sm" placeholder="Cari lokasi GI, sistem, skema (OLS, UFLS...), alat FASOP..." style="padding-left: 32px;">
+                </div>
+
+                <div style="flex: 1; min-width: 140px;">
+                  <select id="filterDSLokasi" class="form-control form-control-sm">
+                    <option value="ALL">Semua Level Lokasi</option>
+                    <option value="Sistem">Level Sistem</option>
+                    <option value="Sub Sistem">Level Sub Sistem</option>
+                  </select>
+                </div>
+
+                <div style="flex: 1; min-width: 150px;">
+                  <select id="filterDSType" class="form-control form-control-sm">
+                    <option value="ALL">Semua Tipe Skema</option>
+                    <option value="OLS">OLS (Overload Shedding)</option>
+                    <option value="OGS">OGS (Overgen Shedding)</option>
+                    <option value="UVLS">UVLS (Under Voltage)</option>
+                    <option value="OVTS">OVTS (Overvoltage)</option>
+                    <option value="UFLS">UFLS (Under Frequency)</option>
+                    <option value="OFGS">OFGS (Over Frequency)</option>
+                    <option value="SPS/RAS">SPS / RAS (Special Action)</option>
+                    <option value="DTT">DTT (Transfer Trip)</option>
+                    <option value="Island Statis">Island Statis</option>
+                  </select>
+                </div>
+
+                <div style="flex: 1; min-width: 120px;">
+                  <select id="filterDSStatus" class="form-control form-control-sm">
+                    <option value="ALL">Semua Status</option>
+                    <option value="Aktif">Status: Aktif</option>
+                    <option value="Tidak Aktif">Status: Tidak Aktif</option>
+                  </select>
+                </div>
+
+                <div style="flex: 1; min-width: 120px;">
+                  <select id="filterDSWiring" class="form-control form-control-sm">
+                    <option value="ALL">Semua Wiring</option>
+                    <option value="Ready">Wiring: Ready</option>
+                    <option value="Not Ready">Wiring: Not Ready</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Table -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width: 50px;">No</th>
+                      <th style="width: 130px;">Level Lokasi</th>
+                      <th>Sistem Kelistrikan</th>
+                      <th>Sub Sistem</th>
+                      <th>Daftar Skema &amp; Wiring Diagram</th>
+                      <th class="text-center" style="width: 140px;">Peralatan FASOP</th>
+                      <th class="text-center" style="width: 120px;">Status Sistem</th>
+                      <th class="text-center" style="width: 130px;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="defenseSchemeTableBody">
+                    <!-- Dinamis di-render oleh DefenseSchemeView -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty State Indicator -->
+              <div id="defenseSchemeEmptyState" style="display: none; padding: 40px 20px; text-align: center;">
+                <i class="fa fa-folder-open" style="font-size: 36px; color: #CBD5E1; margin-bottom: 10px; display: block;"></i>
+                <h4 style="font-size: 15px; font-weight: 700; color: #475569; margin-bottom: 4px;">Tidak ada data Defense Scheme</h4>
+                <p style="font-size: 12.5px; color: #94A3B8;">Tidak ditemukan data yang cocok dengan kriteria filter pencarian Anda.</p>
               </div>
             </div>
           </div>
@@ -2666,11 +2831,268 @@
     </div>
   </div>
 
+  <!-- ========================================================================
+       MODAL 1: TAMBAH & EDIT DATA DEFENSE SCHEME
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalDefenseScheme">
+    <div class="modal-content" style="max-width: 960px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0F3256, #1E40AF); color: #FFF; padding: 14px 20px;">
+        <div class="modal-title" style="color: #FFF; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-shield-alt" style="color: #60A5FA;"></i>
+          <span id="modalDefenseSchemeTitle">Tambah Data Defense Scheme</span>
+        </div>
+        <button class="modal-close-btn btn-close-ds-modal" title="Tutup Modal" style="color: #FFF;">&times;</button>
+      </div>
+
+      <form id="formDefenseScheme" style="display: flex; flex-direction: column; overflow: hidden; margin: 0;">
+        <div class="modal-body" style="padding: 20px; overflow-y: auto; max-height: calc(90vh - 140px);">
+          <input type="hidden" id="inputDSId" value="">
+
+          <!-- Baris Pilihan Lokasi & Sistem -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; background: #F8FAFC; padding: 14px; border-radius: 8px; border: 1px solid #E2E8F0;">
+            <div>
+              <label class="ds-form-label">Level Lokasi Defense Scheme <span style="color: #EF4444;">*</span></label>
+              <select id="inputDSLokasi" class="form-control" required>
+                <option value="Sub Sistem">Sub Sistem</option>
+                <option value="Sistem">Sistem (Lintas Subsistem / Grid Utama)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="ds-form-label">Sistem Tenaga Listrik <span style="color: #EF4444;">*</span></label>
+              <select id="inputDSSistem" class="form-control" required>
+                <option value="">-- Pilih Sistem --</option>
+              </select>
+            </div>
+
+            <div id="containerDSSubsistem">
+              <label class="ds-form-label">Sub Sistem <span style="color: #EF4444;">*</span></label>
+              <select id="inputDSSubsistem" class="form-control" required>
+                <option value="">-- Pilih Sub Sistem --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section Dynamic Skema List -->
+          <div style="border-top: 1px solid #E2E8F0; padding-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h4 style="font-size: 13px; font-weight: 700; color: #1E293B; margin: 0;">
+                  <i class="fa fa-list-ol" style="color: #0284C7;"></i> Daftar Skema Proteksi (Skema List)
+                </h4>
+                <p style="font-size: 11.5px; color: #64748B; margin: 2px 0 0 0;">
+                  Tambahkan satu atau beberapa skema proteksi (OLS, UFLS, UVLS, dll.) pada lokasi ini
+                </p>
+              </div>
+              <button type="button" class="header-btn btn-sm" id="btnAddSkemaRow" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
+                <i class="fa fa-plus"></i> Tambah Skema
+              </button>
+            </div>
+
+            <div id="dsSkemasContainer">
+              <!-- Dinamis diisi baris skema builder -->
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="header-btn btn-close-ds-modal" style="background: #FFF; border: 1px solid #CBD5E1;">Batal</button>
+          <button type="submit" class="header-btn btn-primary" id="btnSaveDefenseScheme">
+            <i class="fa fa-save"></i> Simpan Data Defense Scheme
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: DETAIL RINCIAN DEFENSE SCHEME & PERALATAN FASOP
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalDefenseDetail">
+    <div class="modal-content" style="max-width: 840px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: #0A2540; color: #FFF; padding: 14px 20px;">
+        <div class="modal-title" style="color: #FFF; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-shield-halved" style="color: #38BDF8;"></i>
+          <span>Rincian Lengkap Defense Scheme &amp; FASOP</span>
+        </div>
+        <button class="modal-close-btn btn-close-ds-modal" title="Tutup Modal" style="color: #FFF;">&times;</button>
+      </div>
+
+      <div class="modal-body" id="defenseDetailContent" style="padding: 20px; overflow-y: auto; max-height: calc(88vh - 120px);">
+        <!-- Dinamis di-render oleh viewDefenseDetail() -->
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
+        <button type="button" class="header-btn btn-close-ds-modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: PEMETAAN PERALATAN FASOP & PROTEKSI (MAPPING)
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalEquipmentMapping">
+    <div class="modal-content" style="max-width: 860px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: #1E3A8A; color: #FFF; padding: 14px 20px;">
+        <div class="modal-title" style="color: #FFF; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-link" style="color: #93C5FD;"></i>
+          <span>Petakan Peralatan FASOP &amp; Proteksi ke Skema</span>
+        </div>
+        <button class="modal-close-btn btn-close-ds-modal" title="Tutup Modal" style="color: #FFF;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; max-height: calc(88vh - 130px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <div style="position: relative; flex: 1; max-width: 350px;">
+            <i class="fa fa-search" style="position: absolute; left: 10px; top: 9px; color: #94A3B8; font-size: 12px;"></i>
+            <input type="text" id="searchMappingInput" class="form-control form-control-sm" placeholder="Cari GI, IED, No Alat, Merk..." style="padding-left: 28px;">
+          </div>
+          <div style="font-size: 12px; color: #64748B;">
+            Centang peralatan yang bertindak sebagai sensor/aktuator skema ini.
+          </div>
+        </div>
+
+        <div class="table-responsive" style="border: 1px solid #E2E8F0; border-radius: 6px;">
+          <table class="data-table" style="margin: 0; font-size: 12px;">
+            <thead>
+              <tr style="background: #F8FAFC;">
+                <th class="text-center" style="width: 40px;">
+                  <input type="checkbox" id="checkAllMapping" title="Pilih Semua">
+                </th>
+                <th>Jenis IED / Peralatan</th>
+                <th>Gardu Induk</th>
+                <th>Bay</th>
+                <th>No. Peralatan</th>
+                <th>Merk &amp; Tipe</th>
+                <th class="text-center">Tahun</th>
+              </tr>
+            </thead>
+            <tbody id="tableMappingBody">
+              <!-- Dinamis di-render oleh openEquipmentMapping() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="header-btn btn-close-ds-modal" style="background: #FFF; border: 1px solid #CBD5E1;">Batal</button>
+        <button type="button" class="header-btn btn-primary" id="btnSaveEquipmentMapping">
+          <i class="fa fa-check"></i> Simpan Pemetaan Peralatan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: MASTER DATA PERALATAN FASOP & PROTEKSI
+       ======================================================================== -->
+  <div class="modal-overlay" id="modalFasopMaster">
+    <div class="modal-content" style="max-width: 980px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: #0F172A; color: #FFF; padding: 14px 20px;">
+        <div class="modal-title" style="color: #FFF; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <i class="fa fa-microchip" style="color: #A855F7;"></i>
+          <span>Master Register Peralatan FASOP &amp; Proteksi Sistem</span>
+        </div>
+        <button class="modal-close-btn btn-close-ds-modal" title="Tutup Modal" style="color: #FFF;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px; overflow-y: auto; max-height: calc(90vh - 130px);">
+        <!-- Toolbar Master FASOP -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0;">
+              Daftar Peralatan Otomasi / FASOP Terdaftar
+            </h4>
+            <p style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;">
+              Master aset peralatan IED, Relay Proteksi, RTU SCADA, Master Trip, dan BCU Gardu Induk
+            </p>
+          </div>
+          <button type="button" class="header-btn btn-sm" id="btnToggleAddFasop" style="background: #FAF5FF; color: #7E22CE; border: 1px solid #E9D5FF;">
+            <i class="fa fa-plus-circle"></i> Tambah Peralatan Baru
+          </button>
+        </div>
+
+        <!-- Collapsible Form Tambah Alat FASOP Baru -->
+        <div id="boxNewFasopForm" class="hidden" style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+          <h5 style="font-size: 12.5px; font-weight: 700; color: #6B21A8; margin-bottom: 10px;">
+            <i class="fa fa-plus"></i> Form Registrasi Peralatan FASOP Baru
+          </h5>
+          <form id="formNewFasop" style="margin: 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label class="ds-form-label">Jenis IED / Peralatan <span style="color: red;">*</span></label>
+                <input type="text" id="newFasopJenis" class="form-control form-control-sm" placeholder="misal: Relay Proteksi OLS" required>
+              </div>
+              <div>
+                <label class="ds-form-label">Gardu Induk (GI / GITET) <span style="color: red;">*</span></label>
+                <input type="text" id="newFasopGI" class="form-control form-control-sm" placeholder="misal: GI Cilegon 500 kV" required>
+              </div>
+              <div>
+                <label class="ds-form-label">Bay Peralatan <span style="color: red;">*</span></label>
+                <input type="text" id="newFasopBay" class="form-control form-control-sm" placeholder="misal: Bay Penghantar 1" required>
+              </div>
+              <div>
+                <label class="ds-form-label">Nomor Peralatan / Serial</label>
+                <input type="text" id="newFasopNo" class="form-control form-control-sm" placeholder="misal: FAS-JML-009">
+              </div>
+              <div>
+                <label class="ds-form-label">Merk</label>
+                <input type="text" id="newFasopMerk" class="form-control form-control-sm" placeholder="misal: Alstom / ABB / Siemens">
+              </div>
+              <div>
+                <label class="ds-form-label">Tipe Peralatan</label>
+                <input type="text" id="newFasopType" class="form-control form-control-sm" placeholder="misal: REC670 / Micom P141">
+              </div>
+              <div>
+                <label class="ds-form-label">Unit Induk</label>
+                <input type="text" id="newFasopUnitInduk" class="form-control form-control-sm" placeholder="misal: UIP2B Jamali">
+              </div>
+              <div>
+                <label class="ds-form-label">Tahun Pasang</label>
+                <input type="number" id="newFasopTahun" class="form-control form-control-sm" value="2023" min="2000" max="2030">
+              </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="submit" class="header-btn btn-sm btn-primary">
+                <i class="fa fa-save"></i> Simpan Peralatan
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tabel Master FASOP -->
+        <div class="table-responsive" style="border: 1px solid #E2E8F0; border-radius: 8px;">
+          <table class="data-table" style="margin: 0; font-size: 12px;">
+            <thead>
+              <tr style="background: #F8FAFC;">
+                <th class="text-center" style="width: 40px;">No</th>
+                <th>Jenis IED</th>
+                <th>Gardu Induk</th>
+                <th>Bay</th>
+                <th>No. Peralatan</th>
+                <th>Merk &amp; Tipe</th>
+                <th>Unit Pengelola</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tableFasopMasterBody">
+              <!-- Dinamis diisi oleh renderFasopMasterTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
+        <button type="button" class="header-btn btn-close-ds-modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=9"></script>
+  <script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>
 
