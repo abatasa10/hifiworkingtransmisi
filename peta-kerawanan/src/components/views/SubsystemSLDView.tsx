@@ -82,7 +82,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-[#f4f7fa] text-slate-800 overflow-hidden relative select-none">
+    <div className="flex-1 flex flex-col w-full h-full bg-[#f4f7fa] text-slate-800 overflow-hidden relative select-none">
       {/* Top Banner with Breadcrumb & Back */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-xs">
         <div>
@@ -119,7 +119,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
       </div>
 
       {/* Main Grid: Left Selector, Center SLD Graph, Right Detail */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex w-full overflow-hidden relative">
         {/* Left Sidebar: Pilih Subsistem */}
         <div className="w-56 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto z-10 shadow-xs">
           <div>
@@ -159,7 +159,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         </div>
 
         {/* Center: Interactive SLD Canvas */}
-        <div className="flex-1 flex flex-col relative h-full">
+        <div className="flex-1 flex flex-col relative h-full min-w-0">
           {/* Top SLD Tabs: [SLD 500 kV] [SLD 150/70 kV] */}
           <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between z-10 shadow-xs">
             <div className="flex items-center gap-2">

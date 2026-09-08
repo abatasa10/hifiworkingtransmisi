@@ -46,7 +46,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans antialiased select-none">
+    <div className="w-full h-screen flex flex-col bg-[#f4f7fa] text-slate-800 overflow-hidden font-sans antialiased select-none">
       {/* Universal Enterprise Header */}
       <Header
         currentView={currentView}
@@ -55,7 +55,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main View Container */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex flex-col w-full h-full overflow-hidden relative bg-[#f4f7fa]">
         {currentView === 'national' && (
           <NationalMapView
             onSelectSystem={handleSelectSystem}
