@@ -99,114 +99,118 @@
     </div>
   </header>
 
-  <!-- Page Subheader Bar (Title & Timestamp ala MANTAPS) -->
-  <div class="page-subheader">
-    <div class="subheader-title-group">
-      <h1 class="page-title-text" id="pageTitleText">ROTS – Rencana Operasi Tahunan Semester</h1>
-      <span class="page-badge-system">PLN Operasi Sistem</span>
-      <!-- Badge jenis periode aktif -->
-      <span class="period-type-badge period-badge-ROTS" id="activePeriodTypeBadge" title="Jenis periode aktif">ROTS</span>
-    </div>
-    <div class="subheader-last-update">
-      <i class="far fa-clock"></i>
-      <span>Last Update: 31/8/2026, 00.00.00</span>
-    </div>
-  </div>
-
   <div class="app-layout">
     <main class="app-main">
 
-      <!-- Global Filter Bar (MANTAPS Style Rounded Pill Filters) -->
-      <section class="filter-bar">
-        <div class="filter-group">
-          <!-- View Mode Switcher (Rencana / Realisasi / Komparasi) -->
-          <div class="view-mode-toggle" id="viewModeToggleGroup">
-            <button type="button" class="view-mode-pill active" data-mode="rencana" id="pillModeRencana" title="Mode Perencanaan">
-              <i class="fa fa-calendar-check"></i>
-              <span id="pillModeRencanaLabel">Rencana (ROTS)</span>
-            </button>
-            <button type="button" class="view-mode-pill" data-mode="realisasi" id="pillModeRealisasi" title="Mode Realisasi Aktual">
-              <i class="fa fa-bolt"></i>
-              <span>Realisasi</span>
-            </button>
-            <button type="button" class="view-mode-pill" data-mode="komparasi" id="pillModeKomparasi" title="Mode Komparasi Rencana vs Realisasi">
-              <i class="fa fa-balance-scale"></i>
-              <span>Komparasi</span>
-            </button>
-          </div>
-
-          <!-- Filter Sistem -->
-          <div class="filter-control">
-            <label class="filter-label" for="filterSystemSelect">Sistem:</label>
-            <select class="filter-select" id="filterSystemSelect">
-              <option value="Jamali">Jamali</option>
-              <option value="Sumatera">Sumatera</option>
-              <option value="Interkoneksi">Interkoneksi</option>
-              <option value="Khatulistiwa">Khatulistiwa</option>
-              <option value="Sulbagsel">Sulbagsel</option>
-              <option value="Sulutgo">Sulutgo</option>
-            </select>
-          </div>
-
-          <!-- Filter Tingkat Rencana (Pills List: ROT / ROTS / ROB / ROM) -->
-          <div class="horizon-pill-group" id="globalHorizonPillGroup" title="Pilih Tingkat Dokumen Rencana">
-            <button type="button" class="horizon-pill" data-type="ROT" title="Rencana Operasi Tahunan">
-              <span class="hp-code">ROT</span>
-              <span class="hp-desc">Tahunan</span>
-            </button>
-            <button type="button" class="horizon-pill active" data-type="ROTS" title="Rencana Operasi Tahunan Semester">
-              <span class="hp-code">ROTS</span>
-              <span class="hp-desc">Semester</span>
-            </button>
-            <button type="button" class="horizon-pill" data-type="ROB" title="Rencana Operasi Bulanan">
-              <span class="hp-code">ROB</span>
-              <span class="hp-desc">Bulanan</span>
-            </button>
-            <button type="button" class="horizon-pill" data-type="ROM" title="Rencana Operasi Mingguan">
-              <span class="hp-code">ROM</span>
-              <span class="hp-desc">Mingguan</span>
-            </button>
-          </div>
-
-          <!-- Fallback select untuk backward compatibility -->
-          <select class="filter-select" id="filterPeriodTypeSelect" style="display: none;">
-            <option value="ROT">ROT – Tahunan</option>
-            <option value="ROTS" selected>ROTS – Semester</option>
-            <option value="ROB">ROB – Bulanan</option>
-            <option value="ROM">ROM – Mingguan</option>
-          </select>
-
-          <!-- Filter Nilai Periode (dinamis berdasarkan jenis) -->
-          <div class="filter-control">
-            <label class="filter-label" for="filterPeriodValueSelect">Periode:</label>
-            <select class="filter-select" id="filterPeriodValueSelect">
-              <!-- Isi diisi dinamis oleh app.js -->
-              <option value="ROTS_2026_S2" selected>Semester II 2026 (Jul–Des)</option>
-            </select>
-          </div>
-
-          <!-- Periode Tanggal Badge -->
-          <div class="filter-control" style="cursor: default;">
-            <i class="far fa-calendar-alt" style="color: #64748B; font-size: 13px;"></i>
-            <span id="displayDateRange" style="font-weight: 600; font-size: 12.5px; color: #1E293B;">01 Jul 2026 - 31 Des 2026</span>
-          </div>
-        </div>
-
-        <!-- Batas Cadangan Minimum (Editable Admin Badge) -->
-        <div class="threshold-quick-badge" id="quickEditThresholdBadge" title="Klik untuk mengubah Batas Cadangan Minimum">
-          <div class="threshold-info-group">
-            <span class="threshold-title">Batas Cadangan Minimum</span>
-            <span class="threshold-val" id="headerThresholdVal">2.000 MW</span>
-          </div>
-          <i class="fa fa-pencil-alt threshold-edit-icon"></i>
-        </div>
-      </section>
-
       <!-- ====================================================================
-           VIEW: DASHBOARD (Halaman Utama)
+           VIEW CONTAINER: Semua view bertransisi di sini
            ==================================================================== -->
       <div class="view-container">
+
+        <!-- ====================================================================
+             VIEW: DASHBOARD (Halaman Utama)
+             ==================================================================== -->
         <section class="view-section active" id="view-dashboard">
+
+          <!-- Page Subheader Bar (Dashboard Title & Timestamp) -->
+          <div class="page-subheader">
+            <div class="subheader-title-group">
+              <h1 class="page-title-text" id="pageTitleText">ROTS – Rencana Operasi Tahunan Semester</h1>
+              <span class="page-badge-system">PLN Operasi Sistem</span>
+              <!-- Badge jenis periode aktif -->
+              <span class="period-type-badge period-badge-ROTS" id="activePeriodTypeBadge" title="Jenis periode aktif">ROTS</span>
+            </div>
+            <div class="subheader-last-update">
+              <i class="far fa-clock"></i>
+              <span>Last Update: 31/8/2026, 00.00.00</span>
+            </div>
+          </div>
+
+          <!-- Dashboard Filter Bar (MANTAPS Style Rounded Pill Filters) -->
+          <section class="filter-bar">
+            <div class="filter-group">
+              <!-- View Mode Switcher (Rencana / Realisasi / Komparasi) -->
+              <div class="view-mode-toggle" id="viewModeToggleGroup">
+                <button type="button" class="view-mode-pill active" data-mode="rencana" id="pillModeRencana" title="Mode Perencanaan">
+                  <i class="fa fa-calendar-check"></i>
+                  <span id="pillModeRencanaLabel">Rencana (ROTS)</span>
+                </button>
+                <button type="button" class="view-mode-pill" data-mode="realisasi" id="pillModeRealisasi" title="Mode Realisasi Aktual">
+                  <i class="fa fa-bolt"></i>
+                  <span>Realisasi</span>
+                </button>
+                <button type="button" class="view-mode-pill" data-mode="komparasi" id="pillModeKomparasi" title="Mode Komparasi Rencana vs Realisasi">
+                  <i class="fa fa-balance-scale"></i>
+                  <span>Komparasi</span>
+                </button>
+              </div>
+
+              <!-- Filter Sistem -->
+              <div class="filter-control">
+                <label class="filter-label" for="filterSystemSelect">Sistem:</label>
+                <select class="filter-select" id="filterSystemSelect">
+                  <option value="Jamali">Jamali</option>
+                  <option value="Sumatera">Sumatera</option>
+                  <option value="Interkoneksi">Interkoneksi</option>
+                  <option value="Khatulistiwa">Khatulistiwa</option>
+                  <option value="Sulbagsel">Sulbagsel</option>
+                  <option value="Sulutgo">Sulutgo</option>
+                </select>
+              </div>
+
+              <!-- Filter Tingkat Rencana (Pills List: ROT / ROTS / ROB / ROM) -->
+              <div class="horizon-pill-group" id="globalHorizonPillGroup" title="Pilih Tingkat Dokumen Rencana">
+                <button type="button" class="horizon-pill" data-type="ROT" title="Rencana Operasi Tahunan">
+                  <span class="hp-code">ROT</span>
+                  <span class="hp-desc">Tahunan</span>
+                </button>
+                <button type="button" class="horizon-pill active" data-type="ROTS" title="Rencana Operasi Tahunan Semester">
+                  <span class="hp-code">ROTS</span>
+                  <span class="hp-desc">Semester</span>
+                </button>
+                <button type="button" class="horizon-pill" data-type="ROB" title="Rencana Operasi Bulanan">
+                  <span class="hp-code">ROB</span>
+                  <span class="hp-desc">Bulanan</span>
+                </button>
+                <button type="button" class="horizon-pill" data-type="ROM" title="Rencana Operasi Mingguan">
+                  <span class="hp-code">ROM</span>
+                  <span class="hp-desc">Mingguan</span>
+                </button>
+              </div>
+
+              <!-- Fallback select untuk backward compatibility -->
+              <select class="filter-select" id="filterPeriodTypeSelect" style="display: none;">
+                <option value="ROT">ROT – Tahunan</option>
+                <option value="ROTS" selected>ROTS – Semester</option>
+                <option value="ROB">ROB – Bulanan</option>
+                <option value="ROM">ROM – Mingguan</option>
+              </select>
+
+              <!-- Filter Nilai Periode (dinamis berdasarkan jenis) -->
+              <div class="filter-control">
+                <label class="filter-label" for="filterPeriodValueSelect">Periode:</label>
+                <select class="filter-select" id="filterPeriodValueSelect">
+                  <!-- Isi diisi dinamis oleh app.js -->
+                  <option value="ROTS_2026_S2" selected>Semester II 2026 (Jul–Des)</option>
+                </select>
+              </div>
+
+              <!-- Periode Tanggal Badge -->
+              <div class="filter-control" style="cursor: default;">
+                <i class="far fa-calendar-alt" style="color: #64748B; font-size: 13px;"></i>
+                <span id="displayDateRange" style="font-weight: 600; font-size: 12.5px; color: #1E293B;">01 Jul 2026 - 31 Des 2026</span>
+              </div>
+            </div>
+
+            <!-- Batas Cadangan Minimum (Editable Admin Badge) -->
+            <div class="threshold-quick-badge" id="quickEditThresholdBadge" title="Klik untuk mengubah Batas Cadangan Minimum">
+              <div class="threshold-info-group">
+                <span class="threshold-title">Batas Cadangan Minimum</span>
+                <span class="threshold-val" id="headerThresholdVal">2.000 MW</span>
+              </div>
+              <i class="fa fa-pencil-alt threshold-edit-icon"></i>
+            </div>
+          </section>
           
           <div class="mantaps-dashboard-grid">
             
@@ -713,6 +717,24 @@
                     <span class="hnb-badge">ROM</span>
                     <span class="hnb-label">Mingguan</span>
                   </button>
+                </div>
+
+                <!-- Pemisah Visual -->
+                <div style="width: 1px; height: 26px; background: #CBD5E1; margin: 0 4px;"></div>
+
+                <!-- Filter Sistem untuk Kondisi Harian -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa fa-bolt" style="color: #D97706;"></i> Sistem:
+                  </span>
+                  <select class="filter-select" id="kondisiSystemSelect" style="font-weight: 600; font-size: 12.5px; padding: 4px 10px; height: 32px; min-width: 125px; border: 1.5px solid #CBD5E1; border-radius: 8px; background: #FFFFFF; color: #1E293B;">
+                    <option value="Jamali" selected>Jamali</option>
+                    <option value="Sumatera">Sumatera</option>
+                    <option value="Interkoneksi">Interkoneksi</option>
+                    <option value="Khatulistiwa">Khatulistiwa</option>
+                    <option value="Sulbagsel">Sulbagsel</option>
+                    <option value="Sulutgo">Sulutgo</option>
+                  </select>
                 </div>
               </div>
 
@@ -2166,7 +2188,7 @@
   <div id="toastContainer"></div>
 
   <!-- Application Bootstrap -->
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
 

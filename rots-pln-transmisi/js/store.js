@@ -375,40 +375,82 @@ class Store {
 
   ensureFullYearRecords() {
     if (!this.records) return;
-    const hasJan = this.records.some(r => r.tanggal && r.tanggal.startsWith('2026-01'));
-    if (hasJan) return;
+    let modified = false;
 
-    // Tambahkan data Jan - Jun 2026 jika belum ada
-    const newRecs = [];
-    const d = new Date(2026, 0, 1);
-    const end = new Date(2026, 5, 30);
-    while (d <= end) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const tgl = `${y}-${m}-${day}`;
-      const dayNum = Math.floor((d - new Date(2026, 0, 1)) / 86400000);
-      const sinWave = Math.sin(dayNum / 8);
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    // 1. Tambahkan data Jan - Jun 2026 jika belum ada
+    const hasJan2026 = this.records.some(r => r.tanggal && r.tanggal.startsWith('2026-01'));
+    if (!hasJan2026) {
+      const newRecs2026 = [];
+      const d = new Date(2026, 0, 1);
+      const end = new Date(2026, 5, 30);
+      while (d <= end) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const tgl = `${y}-${m}-${day}`;
+        const dayNum = Math.floor((d - new Date(2026, 0, 1)) / 86400000);
+        const sinWave = Math.sin(dayNum / 8);
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
-      newRecs.push({
-        id: `Jamali_${tgl}`,
-        sistem: 'Jamali',
-        tanggal: tgl,
-        dmn: 49040.624,
-        po: Math.round((4100 + sinWave * 450) * 100) / 100,
-        mo: Math.round((240 + (dayNum % 6) * 15) * 100) / 100,
-        fo: Math.round((1440 + (dayNum % 4) * 20) * 100) / 100,
-        foEp: Math.round((3960 + sinWave * 180) * 100) / 100,
-        derKit: Math.round((1440 + (dayNum % 3) * 25) * 100) / 100,
-        derTrans: 0.0,
-        varmus: Math.round((1370 + sinWave * 40) * 100) / 100,
-        bp: isWeekend ? Math.round(30600 + sinWave * 300) : Math.round(33750 + sinWave * 500)
-      });
-      d.setDate(d.getDate() + 1);
+        newRecs2026.push({
+          id: `Jamali_${tgl}`,
+          sistem: 'Jamali',
+          tanggal: tgl,
+          dmn: 49040.624,
+          po: Math.round((4100 + sinWave * 450) * 100) / 100,
+          mo: Math.round((240 + (dayNum % 6) * 15) * 100) / 100,
+          fo: Math.round((1440 + (dayNum % 4) * 20) * 100) / 100,
+          foEp: Math.round((3960 + sinWave * 180) * 100) / 100,
+          derKit: Math.round((1440 + (dayNum % 3) * 25) * 100) / 100,
+          derTrans: 0.0,
+          varmus: Math.round((1370 + sinWave * 40) * 100) / 100,
+          bp: isWeekend ? Math.round(30600 + sinWave * 300) : Math.round(33750 + sinWave * 500)
+        });
+        d.setDate(d.getDate() + 1);
+      }
+      this.records = [...newRecs2026, ...this.records];
+      modified = true;
     }
-    this.records = [...newRecs, ...this.records].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-    this.saveRecords();
+
+    // 2. Tambahkan data Tahun 2027 (ROT 2027) jika belum ada
+    const has2027 = this.records.some(r => r.tanggal && r.tanggal.startsWith('2027'));
+    if (!has2027) {
+      const newRecs2027 = [];
+      const d27 = new Date(2027, 0, 1);
+      const end27 = new Date(2027, 11, 31);
+      while (d27 <= end27) {
+        const y = d27.getFullYear();
+        const m = String(d27.getMonth() + 1).padStart(2, '0');
+        const day = String(d27.getDate()).padStart(2, '0');
+        const tgl = `${y}-${m}-${day}`;
+        const dayNum = Math.floor((d27 - new Date(2027, 0, 1)) / 86400000);
+        const sinWave = Math.sin(dayNum / 9);
+        const isWeekend = d27.getDay() === 0 || d27.getDay() === 6;
+
+        newRecs2027.push({
+          id: `Jamali_${tgl}`,
+          sistem: 'Jamali',
+          tanggal: tgl,
+          dmn: 51200.0, // Pertumbuhan kapasitas 2027
+          po: Math.round((4350 + sinWave * 480) * 100) / 100,
+          mo: Math.round((260 + (dayNum % 6) * 16) * 100) / 100,
+          fo: Math.round((1520 + (dayNum % 4) * 22) * 100) / 100,
+          foEp: Math.round((4120 + sinWave * 190) * 100) / 100,
+          derKit: Math.round((1520 + (dayNum % 3) * 26) * 100) / 100,
+          derTrans: 0.0,
+          varmus: Math.round((1420 + sinWave * 45) * 100) / 100,
+          bp: isWeekend ? Math.round(31800 + sinWave * 320) : Math.round(35200 + sinWave * 520)
+        });
+        d27.setDate(d27.getDate() + 1);
+      }
+      this.records = [...this.records, ...newRecs2027];
+      modified = true;
+    }
+
+    if (modified) {
+      this.records.sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+      this.saveRecords();
+    }
   }
 
   /**

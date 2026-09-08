@@ -3,9 +3,9 @@
  * Menganalisis komponen Planned Outage (PO, MO) dan Unplanned Outage (FO, FO EP, DER KIT, DER TRANS, VARMUS)
  */
 
-import { CalculationService } from './calculation.js';
-import { store } from './store.js';
-import { chartService } from './charts.js';
+import { CalculationService } from './calculation.js?v=8';
+import { store } from './store.js?v=8';
+import { chartService } from './charts.js?v=8';
 
 export class OutageView {
   constructor() {

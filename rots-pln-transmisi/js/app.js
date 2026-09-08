@@ -3,13 +3,13 @@
  * Menghubungkan seluruh modul tampilan, store data, router navigasi, filter global, dan modal.
  */
 
-import { CalculationService } from './calculation.js?v=5';
-import { store } from './store.js?v=5';
-import { chartService } from './charts.js?v=5';
-import { dailyView } from './dailyView.js?v=5';
-import { outageView } from './outageView.js?v=5';
-import { parameterView } from './parameterView.js?v=5';
-import { importExportService } from './importExport.js?v=5';
+import { CalculationService } from './calculation.js?v=8';
+import { store } from './store.js?v=8';
+import { chartService } from './charts.js?v=8';
+import { dailyView } from './dailyView.js?v=8';
+import { outageView } from './outageView.js?v=8';
+import { parameterView } from './parameterView.js?v=8';
+import { importExportService } from './importExport.js?v=8';
 
 class RotsApp {
   constructor() {
@@ -41,8 +41,13 @@ class RotsApp {
       this.handleStoreEvent(event);
     });
 
-    // Initial render
-    this.renderDashboard();
+    // Check initial hash route before rendering
+    const initialHash = window.location.hash.replace('#', '').trim();
+    if (initialHash && document.getElementById(`view-${initialHash}`)) {
+      this.switchView(initialHash);
+    } else {
+      this.switchView('dashboard');
+    }
     this.updateThresholdBadges();
   }
 
@@ -59,7 +64,7 @@ class RotsApp {
       event.type === 'PLAN_RECORDS_IMPORTED' ||
       event.type === 'PLANNING_PERIOD_CHANGED'
     ) {
-      // Update badge tanggal jika ada perubahan periode
+      // Update badge tanggal dan dropdown periode jika ada perubahan periode
       if (event.type === 'PLANNING_PERIOD_CHANGED' || event.type === 'FILTERS_CHANGED') {
         const { dateStart, dateEnd } = this.store.filters;
         const rangeBadge = document.getElementById('displayDateRange');
@@ -71,11 +76,21 @@ class RotsApp {
           };
           rangeBadge.textContent = `${fmt(dateStart)} - ${fmt(dateEnd)}`;
         }
+        const pType = this.store.planningPeriod.type || 'ROTS';
+        const pVal = this.store.planningPeriod.value;
+        this.updatePeriodBadge(pType);
+        this.populatePeriodValues(pType);
+        const selVal = document.getElementById('filterPeriodValueSelect');
+        if (selVal && pVal) selVal.value = pVal;
+
         // Sync threshold badge (cadMin bisa berubah per periode)
         this.updateThresholdBadges();
       }
-      // Hanya re-render view yang sedang aktif agar respons instan tanpa lag
-      const current = this.store.currentView || 'dashboard';
+      // Dapatkan view yang sedang aktif langsung dari DOM agar sinkron 100%
+      const activeSec = document.querySelector('.view-section.active');
+      const current = activeSec ? activeSec.id.replace('view-', '') : (this.store.currentView || 'dashboard');
+      this.store.currentView = current;
+
       if (current === 'dashboard') {
         this.renderDashboard();
       } else if (current === 'kondisi-harian') {
@@ -132,6 +147,8 @@ class RotsApp {
   }
 
   switchView(viewId) {
+    this.store.currentView = viewId;
+
     // Sync URL hash
     if (window.location.hash.replace('#', '') !== viewId) {
       window.location.hash = viewId;
@@ -192,6 +209,47 @@ class RotsApp {
     }
   }
 
+  // Helper: isi dropdown nilai periode di dashboard
+  populatePeriodValues(type) {
+    const selectPeriodValue = document.getElementById('filterPeriodValueSelect');
+    if (!selectPeriodValue) return;
+    const options = this.store.getAvailablePeriodValues(type);
+    selectPeriodValue.innerHTML = options
+      .map(o => `<option value="${o.value}">${o.label}</option>`)
+      .join('');
+  }
+
+  // Helper: update badge + title + horizon pills + view mode label
+  updatePeriodBadge(type) {
+    const badge = document.getElementById('activePeriodTypeBadge');
+    if (badge) {
+      badge.textContent = type;
+      badge.className = `period-type-badge period-badge-${type}`;
+    }
+    const titleEl = document.getElementById('pageTitleText');
+    const titleMap = {
+      ROT:  'ROT \u2013 Rencana Operasi Tahunan',
+      ROTS: 'ROTS \u2013 Rencana Operasi Tahunan Semester',
+      ROB:  'ROB \u2013 Rencana Operasi Bulanan',
+      ROM:  'ROM \u2013 Rencana Operasi Mingguan'
+    };
+    if (titleEl) titleEl.textContent = titleMap[type] || 'ROTS';
+
+    // Update label tombol Mode Rencana (agar dinamis: Rencana (ROB), Rencana (ROT), dll)
+    const pillModeLabel = document.getElementById('pillModeRencanaLabel');
+    if (pillModeLabel) pillModeLabel.textContent = `Rencana (${type})`;
+
+    // Update pills di top global filter bar
+    const globalPills = document.querySelectorAll('#globalHorizonPillGroup .horizon-pill');
+    globalPills.forEach(p => {
+      if (p.getAttribute('data-type') === type) {
+        p.classList.add('active');
+      } else {
+        p.classList.remove('active');
+      }
+    });
+  }
+
   bindFilterBar() {
     this.populateSystemSelect();
 
@@ -218,46 +276,6 @@ class RotsApp {
     const selectPeriodType = document.getElementById('filterPeriodTypeSelect');
     const selectPeriodValue = document.getElementById('filterPeriodValueSelect');
 
-    // Helper: isi dropdown nilai periode berdasarkan jenis
-    const populatePeriodValues = (type) => {
-      if (!selectPeriodValue) return;
-      const options = this.store.getAvailablePeriodValues(type);
-      selectPeriodValue.innerHTML = options
-        .map(o => `<option value="${o.value}">${o.label}</option>`)
-        .join('');
-    };
-
-    // Helper: update badge + title + horizon pills + view mode label
-    const updatePeriodBadge = (type) => {
-      const badge = document.getElementById('activePeriodTypeBadge');
-      if (badge) {
-        badge.textContent = type;
-        badge.className = `period-type-badge period-badge-${type}`;
-      }
-      const titleEl = document.getElementById('pageTitleText');
-      const titleMap = {
-        ROT:  'ROT \u2013 Rencana Operasi Tahunan',
-        ROTS: 'ROTS \u2013 Rencana Operasi Tahunan Semester',
-        ROB:  'ROB \u2013 Rencana Operasi Bulanan',
-        ROM:  'ROM \u2013 Rencana Operasi Mingguan'
-      };
-      if (titleEl) titleEl.textContent = titleMap[type] || 'ROTS';
-
-      // Update label tombol Mode Rencana (agar dinamis: Rencana (ROB), Rencana (ROT), dll)
-      const pillModeLabel = document.getElementById('pillModeRencanaLabel');
-      if (pillModeLabel) pillModeLabel.textContent = `Rencana (${type})`;
-
-      // Update pills di top global filter bar
-      const globalPills = document.querySelectorAll('#globalHorizonPillGroup .horizon-pill');
-      globalPills.forEach(p => {
-        if (p.getAttribute('data-type') === type) {
-          p.classList.add('active');
-        } else {
-          p.classList.remove('active');
-        }
-      });
-    };
-
     // Event delegation untuk Pill Tingkat Rencana di Global Filter Bar (ROT / ROTS / ROB / ROM)
     const globalPillsGroup = document.getElementById('globalHorizonPillGroup');
     if (globalPillsGroup) {
@@ -267,24 +285,24 @@ class RotsApp {
         const type = pill.getAttribute('data-type');
         if (!type) return;
         if (selectPeriodType) selectPeriodType.value = type;
-        populatePeriodValues(type);
+        this.populatePeriodValues(type);
         const firstValue = this.store.getAvailablePeriodValues(type)[0]?.value;
         if (firstValue) {
           this.store.setPlanningPeriod(type, firstValue);
         }
-        updatePeriodBadge(type);
+        this.updatePeriodBadge(type);
       });
     }
 
     if (selectPeriodType) {
       selectPeriodType.addEventListener('change', (e) => {
         const type = e.target.value;
-        populatePeriodValues(type);
+        this.populatePeriodValues(type);
         const firstValue = this.store.getAvailablePeriodValues(type)[0]?.value;
         if (firstValue) {
           this.store.setPlanningPeriod(type, firstValue);
         }
-        updatePeriodBadge(type);
+        this.updatePeriodBadge(type);
       });
     }
 
@@ -296,8 +314,8 @@ class RotsApp {
     }
 
     // Inisialisasi awal: isi dropdown nilai sesuai ROTS
-    populatePeriodValues('ROTS');
-    updatePeriodBadge('ROTS');
+    this.populatePeriodValues('ROTS');
+    this.updatePeriodBadge('ROTS');
 
     // Tombol Layar Penuh Seluruh Aplikasi (Topbar)
     const btnAppFs = document.getElementById('btnAppWindowFullscreen');

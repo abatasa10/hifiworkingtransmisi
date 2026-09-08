@@ -3,8 +3,8 @@
  * Mengelola Batas Cadangan Minimum dengan Audit Trail, serta Master Data Sistem.
  */
 
-import { CalculationService } from './calculation.js';
-import { store } from './store.js';
+import { CalculationService } from './calculation.js?v=8';
+import { store } from './store.js?v=8';
 
 export class ParameterView {
   constructor() {}

@@ -4,8 +4,8 @@
  * dan modal "Detail Satu Hari" dengan traceability perhitungan matematis.
  */
 
-import { CalculationService } from './calculation.js';
-import { store } from './store.js';
+import { CalculationService } from './calculation.js?v=8';
+import { store } from './store.js?v=8';
 
 export class DailyView {
   constructor() {
@@ -134,9 +134,23 @@ export class DailyView {
         if (!btn) return;
         const type = btn.getAttribute('data-type');
         if (!type) return;
+
+        // Feedback klik instan
+        const allBtns = horizonList.querySelectorAll('.horizon-nav-btn');
+        allBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
         const opts = store.getAvailablePeriodValues(type);
         const firstVal = opts[0]?.value;
         store.setPlanningPeriod(type, firstVal);
+      });
+    }
+
+    // Filter Sistem di Kondisi Harian
+    const sysSelect = document.getElementById('kondisiSystemSelect');
+    if (sysSelect) {
+      sysSelect.addEventListener('change', (e) => {
+        store.setFilters({ sistem: e.target.value });
       });
     }
 
@@ -256,6 +270,11 @@ export class DailyView {
 
     const thHeader = document.getElementById('thHeaderDataRencana');
     if (thHeader) thHeader.textContent = `📋 DATA RENCANA (${pType} \u2013 ${range.label || pType})`;
+
+    const sysSelect = document.getElementById('kondisiSystemSelect');
+    if (sysSelect && store.filters.sistem) {
+      sysSelect.value = store.filters.sistem;
+    }
 
     this.renderTable();
   }
