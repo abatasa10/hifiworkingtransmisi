@@ -6,6 +6,7 @@ import { Breadcrumb } from '../layout/Breadcrumb';
 import { risksData } from '../../data/risks';
 import { RiskItem } from '../../types/risk';
 import { RiskDetailContent } from '../panels/RiskDetailContent';
+import { RiskTableView } from './RiskTableView';
 import {
   ArrowLeft,
   ArrowRight,
@@ -309,114 +310,13 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             </div>
           )}
 
-          {/* MODE 2: LIST KERAWANAN SLD 500 KV (Matching Gambar 2 Detail) */}
+          {/* MODE 2: LIST KERAWANAN SLD 500 KV (Official Table Format matching user reference) */}
           {canvasMode === 'list-kerawanan' && (
-            <div className="absolute inset-0 z-30 bg-slate-50 flex flex-col overflow-hidden">
-              {/* Top Sub-Header */}
-              <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between shrink-0 shadow-2xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono font-bold text-[#0046ad] uppercase tracking-wider">
-                      SLD 500 kV • Daftar Kerawanan
-                    </span>
-                    <span className="bg-[#fee2e2] text-[#dc2626] text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-[#fca5a5]">
-                      {filteredRisks.length} Jalur Transmisi Rawan
-                    </span>
-                  </div>
-                  <h2 className="text-sm font-black text-[#1e293b] mt-0.5">
-                    Daftar Semua Line Rawan & Detail Kerawanan SUTET 500 kV
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-2 pr-32">
-                  <button
-                    onClick={() => onNavigate('sld-500kv')}
-                    className="flex items-center gap-1.5 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#0046ad] border border-blue-200 text-xs px-3 py-1.5 rounded-lg font-bold transition-all shadow-3xs"
-                  >
-                    <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-                    <span>Buka di SLD 500 kV</span>
-                  </button>
-                  <button
-                    onClick={() => setCanvasMode('maps')}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                    title="Tutup dan Kembali ke Peta"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Split Body: Left List of All Lines, Right Gambar 2 Detail */}
-              <div className="flex-1 flex overflow-hidden">
-                {/* Left Column: List of All Rawan Lines */}
-                <div className="w-72 md:w-80 border-r border-slate-200 bg-white flex flex-col shrink-0">
-                  {/* Search Bar */}
-                  <div className="p-2.5 border-b border-slate-100 bg-[#f8fafc]">
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={riskSearchQuery}
-                        onChange={(e) => setRiskSearchQuery(e.target.value)}
-                        placeholder="Cari saluran atau No. Kerawanan..."
-                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-[#0046ad] placeholder:text-slate-400 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* List Items */}
-                  <div className="flex-1 overflow-y-auto p-2 space-y-1.5 divide-y divide-slate-100">
-                    {filteredRisks.map((risk) => {
-                      const isSelected = selectedRisk.id === risk.id;
-
-                      return (
-                        <div
-                          key={risk.id}
-                          onClick={() => setSelectedRisk(risk)}
-                          className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#eff6ff] border-[#0046ad] shadow-xs ring-1 ring-[#0046ad]'
-                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-start gap-2.5">
-                            {/* Starburst badge with number */}
-                            <div className="w-7 h-7 rounded-lg bg-[#dc2626] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                              #{risk.number}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1">
-                                <span className={`font-bold text-xs truncate ${isSelected ? 'text-[#0046ad]' : 'text-slate-800'}`}>
-                                  {risk.name}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                {risk.voltage} • {risk.circuits} Sirkit • {risk.lengthKm} km
-                              </div>
-                              <div className="flex items-center justify-between text-[10px] mt-1.5 pt-1.5 border-t border-slate-100">
-                                <span className="text-slate-400">Pembebanan:</span>
-                                <span className="font-bold text-[#dc2626] font-mono">
-                                  {risk.loadingCircuit1}% / {risk.loadingCircuit2}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right Column: Full Detail Panel matching EXACTLY Gambar 2 */}
-                <div className="flex-1 bg-white overflow-y-auto">
-                  {selectedRisk && (
-                    <RiskDetailContent
-                      risk={selectedRisk}
-                      onSelectAsset={() => onNavigate('sld-500kv')}
-                    />
-                  )}
-                </div>
-              </div>
+            <div className="absolute inset-0 z-30 bg-white flex flex-col overflow-hidden">
+              <RiskTableView
+                onNavigateToSLD={(riskNum) => onNavigate('sld-500kv')}
+                onClose={() => setCanvasMode('maps')}
+              />
             </div>
           )}
         </div>
