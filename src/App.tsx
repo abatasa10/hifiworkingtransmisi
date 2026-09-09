@@ -9,6 +9,7 @@ import { SubsystemSLDView } from './components/views/SubsystemSLDView';
 import { IBTListView } from './components/views/IBTListView';
 import { ReportView } from './components/views/ReportView';
 import { SystemRiskModal } from './components/views/SystemRiskModal';
+import { UploadSLDView } from './components/views/UploadSLDView';
 
 export const App: React.FC = () => {
   // Navigation State (starts at 'national' or 'sld-500kv')
@@ -122,6 +123,10 @@ export const App: React.FC = () => {
 
         {currentView === 'report-view' && (
           <ReportView onNavigate={setCurrentView} />
+        )}
+
+        {currentView === 'upload-sld' && (
+          <UploadSLDView onNavigate={setCurrentView} />
         )}
       </main>
 

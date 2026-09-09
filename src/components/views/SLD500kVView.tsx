@@ -38,7 +38,8 @@ import {
   ListFilter,
   ShieldAlert,
   X,
-  Search
+  Search,
+  UploadCloud
 } from 'lucide-react';
 
 const nodeTypes = {
@@ -402,6 +403,16 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
             <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#fee2e2] text-[#dc2626]">
               {risksData.length}
             </span>
+          </button>
+
+          {/* 4. Upload SLD */}
+          <button
+            onClick={() => onNavigate('upload-sld')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all ml-0.5 border-l border-slate-200 pl-3"
+            title="Upload atau Import Data SLD Baru"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-[#0046ad]" />
+            <span>Upload SLD</span>
           </button>
         </div>
 
