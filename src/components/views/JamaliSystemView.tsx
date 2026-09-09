@@ -269,21 +269,62 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
               </div>
             </div>
 
-            {/* Total Kerawanan 500 kV dan IBT 500/150 kV (Menggantikan klasifikasi N-1 / N-2 / N-1-2) */}
+            {/* Total Kerawanan 500 kV dan IBT 500/150 kV dengan klasifikasi N-1 s/d N-1-2 */}
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
               <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
                 Total Kerawanan 500 kV & IBT 500/150:
               </span>
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="bg-[#fee2e2]/70 p-2.5 rounded-xl border border-[#fecaca] flex flex-col items-center justify-center">
-                  <div className="text-[11px] text-[#dc2626] font-bold">Kerawanan 500 kV</div>
-                  <div className="text-xl font-black text-[#991b1b] mt-0.5 font-mono">14</div>
-                  <div className="text-[9.5px] text-slate-500 mt-0.5">Jalur Transmisi</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Kerawanan 500 kV */}
+                <div className="bg-gradient-to-b from-[#fef2f2] to-[#fee2e2]/60 p-2.5 rounded-xl border border-[#fecaca] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div>
+                      <div className="text-[11px] text-[#dc2626] font-bold">Kerawanan 500 kV</div>
+                      <div className="text-[9px] text-slate-500">Jalur Transmisi</div>
+                    </div>
+                    <div className="text-xl font-black text-[#991b1b] font-mono">14</div>
+                  </div>
+                  {/* Klasifikasi N-1, N-2, N-1-2 */}
+                  <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fecaca]/80 text-center font-mono">
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
+                      <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
+                      <div className="text-[11px] font-black text-[#b91c1c]">5</div>
+                    </div>
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
+                      <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
+                      <div className="text-[11px] font-black text-[#b45309]">6</div>
+                    </div>
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
+                      <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
+                      <div className="text-[11px] font-black text-slate-700">3</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-[#ffedd5]/70 p-2.5 rounded-xl border border-[#fed7aa] flex flex-col items-center justify-center">
-                  <div className="text-[11px] text-[#ea580c] font-bold">Kerawanan IBT 500/150</div>
-                  <div className="text-xl font-black text-[#c2410c] mt-0.5 font-mono">11</div>
-                  <div className="text-[9.5px] text-slate-500 mt-0.5">Trafo Interbus</div>
+
+                {/* Kerawanan IBT 500/150 */}
+                <div className="bg-gradient-to-b from-[#fff7ed] to-[#ffedd5]/60 p-2.5 rounded-xl border border-[#fed7aa] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div>
+                      <div className="text-[11px] text-[#ea580c] font-bold">Kerawanan IBT 500/150</div>
+                      <div className="text-[9px] text-slate-500">Trafo Interbus</div>
+                    </div>
+                    <div className="text-xl font-black text-[#c2410c] font-mono">11</div>
+                  </div>
+                  {/* Klasifikasi N-1, N-2, N-1-2 */}
+                  <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fed7aa]/80 text-center font-mono">
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
+                      <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
+                      <div className="text-[11px] font-black text-[#b91c1c]">4</div>
+                    </div>
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
+                      <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
+                      <div className="text-[11px] font-black text-[#b45309]">5</div>
+                    </div>
+                    <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
+                      <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
+                      <div className="text-[11px] font-black text-slate-700">2</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
