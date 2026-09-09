@@ -20,7 +20,19 @@ import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
 import { subsystems } from '../../data/subsystems';
 import { ActiveView } from '../layout/Header';
-import { ArrowLeft, Layers, ShieldAlert, ArrowRight, Zap } from 'lucide-react';
+import { RiskTableView } from './RiskTableView';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Layers,
+  ShieldAlert,
+  Zap,
+  Map,
+  Network,
+  ListFilter,
+  Info,
+  X
+} from 'lucide-react';
 import { SLDNodeData, SLDEdgeData } from '../../types/graph';
 
 const nodeTypes = {
@@ -51,6 +63,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   const currentSub = subsystems.find((s) => s.id === currentSubId) || subsystems[0];
 
   const [activeTab, setActiveTab] = useState<'500kv' | '150kv'>('500kv');
+  const [viewMode, setViewMode] = useState<'sld' | 'list-kerawanan'>('sld');
+  const [showSubsystemInfoOverlay, setShowSubsystemInfoOverlay] = useState(false);
+
   const [nodes, setNodes, onNodesChange] = useNodesState(subsystemBogorNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(subsystemBogorEdges);
   const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
@@ -79,6 +94,92 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
       }
     },
     []
+  );
+
+  const renderSubsystemInfoContent = (isOverlay: boolean) => (
+    <div className="flex flex-col justify-between h-full space-y-4">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+          <div>
+            <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
+              Informasi Subsistem
+            </span>
+            <h2 className="text-lg font-black text-[#1e293b] mt-1">
+              {currentSub.name}
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              {currentSub.description}
+            </p>
+          </div>
+          {isOverlay && (
+            <button
+              onClick={() => setShowSubsystemInfoOverlay(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 ml-2"
+              title="Tutup (Klik di luar untuk menutup)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Metrics */}
+        <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
+          <div className="flex justify-between py-1 border-b border-slate-200">
+            <span className="text-slate-500">Nama Subsistem:</span>
+            <span className="font-bold text-slate-800">{currentSub.name.replace('Subsistem ', '')}</span>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-200">
+            <span className="text-slate-500">UPB/P2B:</span>
+            <span className="font-bold text-slate-800">Jawa Barat</span>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-200">
+            <span className="text-slate-500">Jumlah GI:</span>
+            <span className="font-bold text-[#0046ad] font-mono text-sm">{currentSub.giCount} Lokasi</span>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-200">
+            <span className="text-slate-500">Beban Puncak:</span>
+            <span className="font-bold text-slate-800 font-mono text-sm">{currentSub.peakLoadMW} MW</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-slate-500">Tingkat Kerawanan:</span>
+            <span className="inline-flex items-center gap-1.5 font-bold text-[#ea580c] bg-[#ffedd5] border border-[#fed7aa] px-2 py-0.5 rounded-full text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#ea580c]" />
+              {currentSub.riskLevel}
+            </span>
+          </div>
+        </div>
+
+        {/* Key IBTs in this subsystem */}
+        <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+          <span className="font-bold text-slate-700 text-xs block">
+            IBT Utama Terpasang:
+          </span>
+          <div className="space-y-1.5">
+            <div className="p-2 rounded-lg bg-white border border-slate-200 flex justify-between items-center shadow-2xs">
+              <span className="text-slate-700 font-medium">IBT 1 Bogor (500 MVA)</span>
+              <span className="font-mono font-bold text-[#0046ad]">68%</span>
+            </div>
+            <div className="p-2 rounded-lg bg-white border border-slate-200 flex justify-between items-center shadow-2xs">
+              <span className="text-slate-700 font-medium">IBT 2 Bogor (500 MVA)</span>
+              <span className="font-mono font-bold text-[#0046ad]">62%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 pt-4 border-t border-slate-200 mt-4">
+        <button
+          onClick={() => {
+            if (isOverlay) setShowSubsystemInfoOverlay(false);
+            onNavigate('sld-500kv');
+          }}
+          className="w-full bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+        >
+          <span>Lihat Detail GI & SLD 500 kV</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   );
 
   return (
@@ -118,198 +219,254 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         </button>
       </div>
 
-      {/* Main Grid: Left Selector, Center SLD Graph, Right Detail */}
+      {/* Secondary Navigation Tabs (Consistent across all system pages) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onNavigate('jamali-system')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+          >
+            Peta Wilayah
+          </button>
+          <button
+            onClick={() => onNavigate('sld-500kv')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+          >
+            <Network className="w-3.5 h-3.5 text-[#0046ad]" />
+            <span>SLD 500 kV</span>
+          </button>
+          <button
+            onClick={() => onNavigate('ibt-view')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
+            <span>IBT</span>
+          </button>
+          <button
+            onClick={() => onNavigate('upb-view')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] transition-all"
+          >
+            <span>Daftar UPB/P2B</span>
+          </button>
+          <button
+            onClick={() => onNavigate('report-view')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+          >
+            <span>Ringkasan Kerawanan</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
+            <span>Subsistem: {currentSub.name}</span>
+            <span>•</span>
+            <span>Beban: {currentSub.peakLoadMW} MW</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid: Left Selector, Center SLD Graph / Table, Right Detail */}
       <div className="flex-1 flex w-full overflow-hidden relative">
-        {/* Left Sidebar: Pilih Subsistem */}
-        <div className="w-56 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto z-10 shadow-xs">
-          <div>
-            <div className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider mb-2.5">
-              Pilih Subsistem
+        {/* Left Sidebar: Pilih Subsistem (Visible only in SLD mode) */}
+        {viewMode === 'sld' && (
+          <div className="w-56 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto z-10 shadow-xs">
+            <div>
+              <div className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider mb-2.5">
+                Pilih Subsistem
+              </div>
+              <div className="space-y-1">
+                {[
+                  { id: 'sub-bogor', name: 'Subsistem Bogor' },
+                  { id: 'sub-depok', name: 'Subsistem Depok' },
+                  { id: 'sub-cileungsi', name: 'Subsistem Cileungsi' },
+                  { id: 'sub-krian-gresik', name: 'Subsistem Krian - Gresik' }
+                ].map((sub) => {
+                  const active = sub.id === currentSubId;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setCurrentSubId(sub.id)}
+                      className={`w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold transition-all flex items-center justify-between ${
+                        active
+                          ? 'bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] font-bold shadow-xs'
+                          : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] border border-transparent'
+                      }`}
+                    >
+                      <span>{sub.name}</span>
+                      {active && <span className="w-1.5 h-1.5 rounded-full bg-[#0046ad]" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-1">
-              {[
-                { id: 'sub-bogor', name: 'Subsistem Bogor' },
-                { id: 'sub-depok', name: 'Subsistem Depok' },
-                { id: 'sub-cileungsi', name: 'Subsistem Cileungsi' },
-                { id: 'sub-krian-gresik', name: 'Subsistem Krian - Gresik' }
-              ].map((sub) => {
-                const active = sub.id === currentSubId;
-                return (
+
+            <div className="p-3 bg-[#f8fafc] rounded-xl border border-slate-200 text-[11px] text-slate-600">
+              <span className="font-bold text-slate-800 block mb-1">Status Saluran:</span>
+              Penyulang Bogor - Cibinong mengalami pembebanan 72% pada saat jam beban puncak.
+            </div>
+          </div>
+        )}
+
+        {/* Center: Interactive SLD Canvas OR List Kerawanan */}
+        <div className="flex-1 flex flex-col relative h-full min-w-0">
+          {/* Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan) */}
+          <div className="absolute top-2 right-4 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
+            {/* 1. Maps */}
+            <button
+              onClick={() => onNavigate('upb-view')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Maps</span>
+            </button>
+
+            {/* 2. SLD */}
+            <button
+              onClick={() => setViewMode('sld')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'sld'
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+              }`}
+            >
+              <Network className="w-3.5 h-3.5" />
+              <span>SLD</span>
+            </button>
+
+            {/* 3. List Kerawanan */}
+            <button
+              onClick={() => setViewMode('list-kerawanan')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'list-kerawanan'
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+              }`}
+            >
+              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+              <span>List Kerawanan</span>
+            </button>
+
+            {/* 4. Info Subsistem Trigger (Only when on list-kerawanan) */}
+            {viewMode === 'list-kerawanan' && (
+              <button
+                onClick={() => setShowSubsystemInfoOverlay(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  showSubsystemInfoOverlay
+                    ? 'bg-[#0046ad] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+                }`}
+              >
+                <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+                <span>Info Subsistem</span>
+              </button>
+            )}
+          </div>
+
+          {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
+          {viewMode === 'list-kerawanan' && (
+            <button
+              onClick={() => setShowSubsystemInfoOverlay(true)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-[#eff6ff] text-[#0046ad] border-y border-l border-slate-300 shadow-md py-3 px-2 rounded-l-xl flex flex-col items-center gap-1 font-bold text-[10px] hover:pr-2.5 transition-all group"
+              title="Buka Informasi Subsistem"
+            >
+              <Info className="w-4 h-4 text-[#0046ad] group-hover:scale-110 transition-transform" />
+              <span style={{ writingMode: 'vertical-rl' }} className="tracking-widest rotate-180 text-slate-700 font-extrabold">
+                INFO SUBSISTEM
+              </span>
+            </button>
+          )}
+
+          {/* MODE 1: SLD GRAPH VIEW */}
+          {viewMode === 'sld' && (
+            <div className="flex-1 flex flex-col relative h-full min-w-0">
+              {/* Top SLD Tabs: [SLD 500 kV] [SLD 150/70 kV] */}
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between z-10 shadow-xs">
+                <div className="flex items-center gap-2">
                   <button
-                    key={sub.id}
-                    onClick={() => setCurrentSubId(sub.id)}
-                    className={`w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold transition-all flex items-center justify-between ${
-                      active
-                        ? 'bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] border border-transparent'
+                    onClick={() => setActiveTab('500kv')}
+                    className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                      activeTab === '500kv'
+                        ? 'bg-[#0046ad] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff]'
                     }`}
                   >
-                    <span>{sub.name}</span>
-                    {active && <span className="w-1.5 h-1.5 rounded-full bg-[#0046ad]" />}
+                    SLD 500 kV
                   </button>
-                );
-              })}
+                  <button
+                    onClick={() => setActiveTab('150kv')}
+                    className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                      activeTab === '150kv'
+                        ? 'bg-[#0046ad] text-white'
+                        : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff]'
+                    }`}
+                  >
+                    SLD 150/70 kV
+                  </button>
+                </div>
+                <div className="text-xs font-mono font-bold text-slate-700 mr-80 hidden lg:block">
+                  SLD 500 kV — SUBSISTEM {currentSub.name.toUpperCase()}
+                </div>
+              </div>
+
+              {/* ReactFlow Canvas */}
+              <div className="flex-1 relative bg-[#060c18] overflow-hidden">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onNodeClick={onNodeClick}
+                  onEdgeClick={onEdgeClick}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  fitView
+                  fitViewOptions={{ padding: 0.2 }}
+                  className="h-full w-full"
+                >
+                  <Background
+                    variant={BackgroundVariant.Dots}
+                    gap={20}
+                    size={1.5}
+                    color="rgba(0, 210, 211, 0.15)"
+                  />
+                  <Controls className="bg-slate-900 border border-slate-700 text-slate-300" />
+                </ReactFlow>
+
+                {/* Status bar at bottom */}
+                <div className="absolute bottom-2 left-4 z-10 text-[10px] text-slate-400 font-mono bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-800 backdrop-blur-xs flex items-center gap-4">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    STATUS: REAL-TIME TELEMETRY CONNECTED
+                  </span>
+                  <span>•</span>
+                  <span>FREKUENSI: 50.02 Hz</span>
+                  <span>•</span>
+                  <span>TEGANGAN BUS: 502.4 kV</span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="p-3 bg-[#f8fafc] rounded-xl border border-slate-200 text-[11px] text-slate-600">
-            <span className="font-bold text-slate-800 block mb-1">Status Saluran:</span>
-            Penyulang Bogor - Cibinong mengalami pembebanan 72% pada saat jam beban puncak.
-          </div>
-        </div>
-
-        {/* Center: Interactive SLD Canvas */}
-        <div className="flex-1 flex flex-col relative h-full min-w-0">
-          {/* Top SLD Tabs: [SLD 500 kV] [SLD 150/70 kV] */}
-          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between z-10 shadow-xs">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('500kv')}
-                className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === '500kv'
-                    ? 'bg-[#0046ad] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff]'
-                }`}
-              >
-                SLD 500 kV
-              </button>
-              <button
-                onClick={() => setActiveTab('150kv')}
-                className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === '150kv'
-                    ? 'bg-[#0046ad] text-white'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff]'
-                }`}
-              >
-                SLD 150/70 kV
-              </button>
-            </div>
-
-            <div className="text-xs font-bold text-slate-800 tracking-wide">
-              SLD 500 kV — SUBSISTEM BOGOR
-            </div>
-          </div>
-
-          {/* Graph View */}
-          <div className="flex-1 relative h-full">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onNodeClick={onNodeClick}
-              onEdgeClick={onEdgeClick}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
-              className="h-full w-full"
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={24}
-                size={1.5}
-                color="rgba(0, 210, 211, 0.1)"
+          {/* MODE 2: LIST KERAWANAN (Full Width) */}
+          {viewMode === 'list-kerawanan' && (
+            <div className="absolute inset-0 z-30 bg-white flex flex-col overflow-hidden">
+              <RiskTableView
+                onNavigateToSLD={(riskNum) => onNavigate('sld-500kv')}
+                onClose={() => setViewMode('sld')}
               />
-              <Controls className="!bg-slate-900 !border !border-slate-800" />
-            </ReactFlow>
-          </div>
-
-          {/* Subsystem Legend at Bottom */}
-          <div className="h-10 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between text-xs text-slate-400 z-10">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full border border-white bg-slate-800" />
-                <span>Gardu Induk (GI)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full border border-emerald-400" />
-                <span>Transformator (IBT)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-4 h-0.5 bg-cyan-400" />
-                <span>Saluran Transmisi</span>
-              </div>
             </div>
-            <div className="text-[10px] text-slate-500">
-              UIP2B JAMALI • Subsistem Bogor
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Right Info Panel: Informasi Subsistem */}
-        <div className="w-80 md:w-88 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
-          <div className="space-y-4">
-            <div>
-              <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
-                Informasi Subsistem
-              </span>
-              <h2 className="text-lg font-black text-[#1e293b] mt-1">
-                {currentSub.name}
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                {currentSub.description}
-              </p>
-            </div>
-
-            {/* Metrics */}
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">Nama Subsistem:</span>
-                <span className="font-bold text-slate-800">{currentSub.name.replace('Subsistem ', '')}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">UPB/P2B:</span>
-                <span className="font-bold text-slate-800">Jawa Barat</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah GI:</span>
-                <span className="font-bold text-[#0046ad] font-mono text-sm">{currentSub.giCount} Lokasi</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">Beban Puncak:</span>
-                <span className="font-bold text-slate-800 font-mono text-sm">{currentSub.peakLoadMW} MW</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Tingkat Kerawanan:</span>
-                <span className="inline-flex items-center gap-1.5 font-bold text-[#ea580c] bg-[#ffedd5] border border-[#fed7aa] px-2 py-0.5 rounded-full text-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#ea580c]" />
-                  {currentSub.riskLevel}
-                </span>
-              </div>
-            </div>
-
-            {/* Key IBTs in this subsystem */}
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-              <span className="font-bold text-slate-700 text-xs block">
-                IBT Utama Terpasang:
-              </span>
-              <div className="space-y-1.5">
-                <div className="p-2 rounded-lg bg-white border border-slate-200 flex justify-between items-center shadow-2xs">
-                  <span className="text-slate-700 font-medium">IBT 1 Bogor (500 MVA)</span>
-                  <span className="font-mono font-bold text-[#0046ad]">68%</span>
-                </div>
-                <div className="p-2 rounded-lg bg-white border border-slate-200 flex justify-between items-center shadow-2xs">
-                  <span className="text-slate-700 font-medium">IBT 2 Bogor (500 MVA)</span>
-                  <span className="font-mono font-bold text-[#0046ad]">62%</span>
-                </div>
-              </div>
-            </div>
+        {/* Right Info Panel: Informasi Subsistem (Static when in SLD mode, "kaya awal aja") */}
+        {viewMode === 'sld' && (
+          <div className="w-80 md:w-88 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
+            {renderSubsystemInfoContent(false)}
           </div>
-
-          <div className="space-y-2 pt-4 border-t border-slate-200 mt-4">
-            <button
-              onClick={() => onNavigate('sld-500kv')}
-              className="w-full bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-            >
-              <span>Lihat Detail GI & SLD 500 kV</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Selected item slide-over if clicked inside graph */}
-        {selectedItem && (
+        {viewMode === 'sld' && selectedItem && (
           <div className="absolute right-0 top-0 bottom-0 z-50">
             <RightDetailPanel
               selectedItem={selectedItem}
@@ -321,6 +478,25 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           </div>
         )}
       </div>
+
+      {/* Pop-up Overlay: Informasi Subsistem ONLY when in List Kerawanan mode and opened! */}
+      {viewMode === 'list-kerawanan' && showSubsystemInfoOverlay && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop with click outside to close */}
+          <div
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setShowSubsystemInfoOverlay(false)}
+          />
+
+          {/* Slide-over Drawer Panel */}
+          <div
+            className="relative w-96 md:w-[440px] h-full bg-white shadow-2xl z-50 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-250 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {renderSubsystemInfoContent(true)}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
