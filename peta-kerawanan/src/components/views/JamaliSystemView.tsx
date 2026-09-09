@@ -217,22 +217,10 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                         <span>{upb.subsystemCount} Subsistem</span>
                       </span>
                     </div>
-                  </div>
-
-                  {/* Total Kerawanan (Single Total, no classifications) */}
+                  </div>                  {/* Total Kerawanan (Warna seragam semua) */}
                   <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
                     <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap ${
-                        upb.riskCount >= 15
-                          ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
-                          : upb.riskCount >= 8
-                          ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
-                          : upb.riskCount >= 4
-                          ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
-                          : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
-                      }`}
-                    >
+                    <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
                       {upb.riskCount} Kerawanan
                     </span>
                   </div>
@@ -329,7 +317,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
               </div>
             </div>
 
-            {/* Rincian Kerawanan Per APB / P2B (Total Saja, Tanpa Klasifikasi N-1/N-2/N-1-2) */}
+            {/* Rincian Kerawanan Per APB / P2B (Total Saja, Tanpa Label Rawan/Sangat Rawan) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -351,25 +339,10 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                     }}
                     className="p-3 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] transition-all cursor-pointer group shadow-2xs"
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#0046ad] shrink-0" />
-                        <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors">
-                          {u.name}
-                        </span>
-                      </div>
-                      <span
-                        className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
-                          u.riskLevel === 'Sangat Rawan'
-                            ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]'
-                            : u.riskLevel === 'Rawan'
-                            ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fdba74]'
-                            : u.riskLevel === 'Sedang'
-                            ? 'bg-[#fef9c3] text-[#ca8a04] border border-[#fde047]'
-                            : 'bg-[#dcfce7] text-[#16a34a] border border-[#86efac]'
-                        }`}
-                      >
-                        {u.riskLevel}
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#0046ad] shrink-0" />
+                      <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors">
+                        {u.name}
                       </span>
                     </div>
 
@@ -379,20 +352,10 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                       <span>{u.region}</span>
                     </div>
 
-                    {/* Total Kerawanan (Total Saja Tanpa Klasifikasi) */}
+                    {/* Total Kerawanan (Warna seragam) */}
                     <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
                       <span className="text-[11px] text-slate-500 font-medium">Total Kerawanan:</span>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-md font-extrabold text-xs font-mono ${
-                          u.riskCount >= 15
-                            ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
-                            : u.riskCount >= 8
-                            ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
-                            : u.riskCount >= 4
-                            ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
-                            : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
-                        }`}
-                      >
+                      <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
                         {u.riskCount} Kerawanan
                       </span>
                     </div>
