@@ -27,7 +27,19 @@ import { initialEdges500kV } from '../../data/edges500kv';
 import { risksData } from '../../data/risks';
 import { SLDFilterOptions, SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { ActiveView } from '../layout/Header';
-import { Maximize2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  Maximize2,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  Network,
+  Layers,
+  Map,
+  ListFilter,
+  ShieldAlert,
+  X,
+  Search
+} from 'lucide-react';
 
 const nodeTypes = {
   busbar: BusbarNode,
@@ -75,6 +87,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   const [highlightedAssetId, setHighlightedAssetId] = useState<string | null>(() => {
     return initialSelectedRiskId ? `LINE_GNDUL_DKSBI` : 'LINE_GNDUL_DKSBI';
   });
+  const [showRiskListModal, setShowRiskListModal] = useState(false);
 
   // Highlight logic for nodes & edges
   const computedNodes = useMemo(() => {
@@ -344,10 +357,162 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
         </div>
       </div>
 
+      {/* Secondary Navigation Tabs (Tetap ada di SLD 500 kV) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 shadow-2xs">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onNavigate('jamali-system')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+          >
+            Peta Wilayah
+          </button>
+          <button
+            className="px-3.5 py-1.5 rounded-lg font-semibold bg-[#0046ad] text-white shadow-xs flex items-center gap-1.5"
+          >
+            <Network className="w-3.5 h-3.5 text-white" />
+            <span>SLD 500 kV</span>
+          </button>
+          <button
+            onClick={() => onNavigate('ibt-view')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
+            <span>IBT</span>
+          </button>
+          <button
+            onClick={() => onNavigate('upb-view')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+          >
+            <span>Daftar UPB/P2B</span>
+          </button>
+          <button
+            onClick={() => onNavigate('jamali-system')}
+            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+          >
+            Ringkasan Kerawanan
+          </button>
+        </div>
+
+        <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
+          <span>Tegangan Backbone: 500 kV</span>
+          <span>•</span>
+          <span>Interkoneksi: 150 kV</span>
+        </div>
+      </div>
+
       {/* Main Canvas + Right Detail Panel */}
       <div className="flex-1 flex w-full relative overflow-hidden">
         {/* Interactive Graph Canvas */}
         <div className="flex-1 relative h-full min-w-0">
+          {/* 3 Action Buttons Floating in Top Right Corner (Maps, SLD, List Kerawanan) */}
+          <div className="absolute top-4 right-6 z-30 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
+            {/* 1. Maps */}
+            <button
+              onClick={() => onNavigate('jamali-system')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Maps</span>
+            </button>
+
+            {/* 2. SLD */}
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0046ad] text-white shadow-xs transition-all"
+            >
+              <Network className="w-3.5 h-3.5" />
+              <span>SLD</span>
+            </button>
+
+            {/* 3. List Kerawanan */}
+            <button
+              onClick={() => setShowRiskListModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
+            >
+              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+              <span>List Kerawanan</span>
+              <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#fee2e2] text-[#dc2626]">
+                {risksData.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Modal List Seluruh Line Rawan SLD 500 kV */}
+          {showRiskListModal && (
+            <div className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[82vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                {/* Modal Header */}
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-[#f8fafc]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#fee2e2] text-[#dc2626] flex items-center justify-center font-bold">
+                      <ListFilter className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-[#1e293b]">
+                        Daftar Seluruh Line Rawan SLD 500 kV
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Klik salah satu line untuk melihat posisinya di canvas dan membuka detail lengkap kerawanan
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowRiskListModal(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* List Items */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 divide-y divide-slate-100">
+                  {risksData.map((risk) => (
+                    <div
+                      key={risk.id}
+                      onClick={() => {
+                        setShowRiskListModal(false);
+                        handleOpenRisk(risk.number);
+                      }}
+                      className="pt-2 p-3 rounded-xl border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] transition-all cursor-pointer group flex items-start justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-[#dc2626] text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                          #{risk.number}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors truncate">
+                            {risk.name}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                            {risk.voltage} • {risk.circuits} Sirkit • {risk.lengthKm} km • {risk.location}
+                          </div>
+                          <div className="text-[11px] text-slate-600 line-clamp-1 mt-1">
+                            {risk.condition}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-right flex flex-col items-end gap-1">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          risk.riskLevel === 'Sangat Rawan'
+                            ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]'
+                            : risk.riskLevel === 'Sedang'
+                            ? 'bg-[#fef9c3] text-[#ca8a04] border border-[#fde047]'
+                            : 'bg-[#ffedd5] text-[#ea580c] border border-[#fdba74]'
+                        }`}>
+                          {risk.riskLevel}
+                        </span>
+                        <span className="text-[10px] text-[#0046ad] font-bold group-hover:underline flex items-center gap-0.5">
+                          <span>Buka Detail di SLD</span>
+                          <span>→</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
