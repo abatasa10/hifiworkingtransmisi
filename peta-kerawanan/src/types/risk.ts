@@ -10,6 +10,8 @@ export interface RiskItem {
   id: number;
   number: number;
   name: string;
+  lineGiSegment?: string; // Dari Line GI apa ke Line GI apa
+  uit?: string; // Unit Induk Transmisi (JBB, JBT, JATIM)
   assetType: 'SUTET' | 'SUTT' | 'IBT' | 'GI' | 'GITET' | 'Pembangkit' | 'Peralatan';
   voltage: string;
   riskLevel: RiskLevel;
