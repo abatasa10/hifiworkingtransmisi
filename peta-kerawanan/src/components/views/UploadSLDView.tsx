@@ -66,10 +66,9 @@ const cleanKey = (str: any): string => {
 const UploadCustomNode: React.FC<any> = ({ data }) => {
   return (
     <div className="relative group">
-      <Handle type="target" position={Position.Top} id="top" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <Handle type="source" position={Position.Top} id="top-src" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0" />
-      <Handle type="source" position={Position.Bottom} id="bottom" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <Handle type="target" position={Position.Bottom} id="bottom-tgt" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0" />
+      {/* Default handles without explicit IDs for seamless edge routing */}
+      <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Handle type="source" position={Position.Bottom} className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
       <Handle type="target" position={Position.Left} id="left" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
       <Handle type="source" position={Position.Right} id="right" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
       {data?.label}

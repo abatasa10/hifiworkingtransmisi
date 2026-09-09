@@ -46,64 +46,71 @@ import {
 
 import { Handle, Position } from '@xyflow/react';
 
-const DefaultCustomNode: React.FC<any> = ({ data }) => {
+const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
+  const isRawan = data?.riskStatus && data?.riskStatus !== 'Normal';
+  const is500 = String(data?.voltage || '').includes('500');
+
   return (
-    <div className="relative group">
-      {/* Top handles */}
+    <div className="relative group cursor-pointer">
+      {/* Default handles without explicit IDs for seamless edge routing */}
       <Handle
         type="target"
         position={Position.Top}
-        id="top"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
       <Handle
         type="source"
-        position={Position.Top}
-        id="top-src"
-        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
-      />
-      {/* Bottom handles */}
-      <Handle
-        type="source"
         position={Position.Bottom}
-        id="bottom"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        id="bottom-tgt"
-        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
-      />
-      {/* Left and Right handles */}
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
 
-      {data?.label ? (
-        data.label
-      ) : (
-        <div className="p-3 bg-slate-900 border-2 border-[#0046ad] text-white rounded-xl shadow-lg min-w-[180px]">
-          <div className="font-bold text-xs">{data?.name || 'Gardu Induk'}</div>
-          <div className="text-[10px] text-cyan-400 font-mono">{data?.voltage || '150 kV'}</div>
+      <div
+        className={`p-3 rounded-xl border-2 transition-all shadow-lg min-w-[200px] max-w-[240px] bg-slate-900 text-white ${
+          isRawan
+            ? 'border-[#dc2626] shadow-[#dc2626]/30'
+            : 'border-[#0046ad] shadow-cyan-950/40 hover:border-cyan-400'
+        } ${selected ? 'ring-2 ring-cyan-400 scale-105' : ''}`}
+      >
+        <div className="flex items-center justify-between gap-1 mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${is500 ? 'bg-cyan-400 animate-pulse' : 'bg-emerald-400'}`} />
+            <span className="text-[10px] font-mono font-bold text-cyan-300">{data?.voltage || '150 kV'}</span>
+          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wide ${
+              isRawan ? 'bg-[#dc2626] text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+            }`}
+          >
+            {data?.riskStatus || 'Normal'}
+          </span>
         </div>
-      )}
+
+        <div className="font-bold text-xs text-white truncate tracking-tight">{data?.name || 'Gardu Induk'}</div>
+        <div className="text-[10px] text-slate-400 truncate mt-0.5 flex items-center justify-between">
+          <span>{data?.subsystem || data?.region || 'Gardu Induk'}</span>
+          <span className="text-[9px] font-mono text-slate-500">ID: {data?.id}</span>
+        </div>
+      </div>
     </div>
   );
 };
 
 const nodeTypes = {
-  default: DefaultCustomNode,
-  custom: DefaultCustomNode,
+  default: CustomExcelNode,
+  custom: CustomExcelNode,
+  'excel-node': CustomExcelNode,
   busbar: BusbarNode,
   generator: GeneratorNode,
   ibt: TransformerNode,
@@ -129,6 +136,11 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 }) => {
   const reactFlow = useReactFlow();
   const [currentSubId, setCurrentSubId] = useState<string>(selectedSubsystemId);
+
+  useEffect(() => {
+    setCurrentSubId(selectedSubsystemId);
+  }, [selectedSubsystemId]);
+
   const currentSub = subsystems.find((s) => s.id === currentSubId) || subsystems[0];
 
   const [activeTab, setActiveTab] = useState<'500kv' | '150kv'>('500kv');
@@ -155,43 +167,34 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
     return () => window.removeEventListener('custom-sld-updated', handleUpdate);
   }, [currentSubId]);
 
-  // Effective Nodes & Edges from Custom Excel Upload (if any)
-  const effectiveNodes = useMemo(() => {
+  // Synchronize Nodes and Edges when Custom Config or Subsystem changes
+  useEffect(() => {
     if (customConfig?.type === 'excel' && customConfig.excelData?.giList && customConfig.excelData.giList.length > 0) {
-      return customConfig.excelData.giList.map((gi, idx) => ({
-        id: gi.id,
-        type: 'default',
-        position: { x: 80 + (idx % 3) * 290, y: 80 + Math.floor(idx / 3) * 160 },
-        data: {
-          label: (
-            <div
-              onClick={() => setSelectedItem({ type: 'node', data: { name: gi.name, voltage: gi.voltage, region: gi.region, riskStatus: gi.riskStatus } as any })}
-              className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] bg-slate-900 text-white ${
-                gi.riskStatus !== 'Normal' ? 'border-[#dc2626] shadow-[#dc2626]/30' : 'border-[#0046ad]'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] font-mono text-cyan-400 mb-1">
-                <span>{gi.voltage}</span>
-                <span className={`px-1.5 py-0.2 rounded font-bold ${gi.riskStatus !== 'Normal' ? 'bg-[#dc2626] text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                  {gi.riskStatus}
-                </span>
-              </div>
-              <div className="font-bold text-xs truncate">{gi.name}</div>
-              <div className="text-[10px] text-slate-400">{gi.region}</div>
-            </div>
-          )
-        }
-      }));
-    }
-    return nodes;
-  }, [customConfig, nodes]);
+      const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(customConfig.excelData.giList.length))));
+      const newNodes: Node[] = customConfig.excelData.giList.map((gi, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        return {
+          id: gi.id,
+          type: 'custom',
+          position: { x: 80 + col * 280, y: 80 + row * 160 },
+          data: {
+            id: gi.id,
+            name: gi.name,
+            code: gi.name,
+            voltage: gi.voltage,
+            region: gi.region,
+            riskStatus: gi.riskStatus,
+            subsystem: gi.subsystem || currentSub.name
+          }
+        };
+      });
 
-  const effectiveEdges = useMemo(() => {
-    if (customConfig?.type === 'excel' && customConfig.excelData?.lineList) {
-      return customConfig.excelData.lineList.map((l) => ({
+      const newEdges: Edge[] = (customConfig.excelData.lineList || []).map((l) => ({
         id: l.id,
         source: l.sourceId,
         target: l.targetId,
+        type: 'default',
         animated: l.riskStatus !== 'Normal',
         style: {
           stroke: l.riskStatus !== 'Normal' ? '#dc2626' : '#00d2d3',
@@ -201,45 +204,79 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         labelStyle: { fill: l.riskStatus !== 'Normal' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
         labelBgPadding: [4, 2],
         labelBgBorderRadius: 4,
-        labelBgStyle: { fill: '#0f172a', color: '#fff', fillOpacity: 0.9 }
+        labelBgStyle: { fill: '#0f172a', color: '#fff', fillOpacity: 0.9 },
+        data: {
+          id: l.id,
+          name: l.lineName,
+          voltage: '150 kV',
+          status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
+          riskLevel: l.riskStatus,
+          loading: { circuit1: l.loadingPct }
+        }
       }));
+
+      setNodes(newNodes as any);
+      setEdges(newEdges as any);
+
+      const timer = setTimeout(() => {
+        reactFlow.fitView({ padding: 0.25, duration: 400 });
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      setNodes(subsystemBogorNodes);
+      setEdges(subsystemBogorEdges);
+      const timer = setTimeout(() => {
+        reactFlow.fitView({ padding: 0.25, duration: 400 });
+      }, 150);
+      return () => clearTimeout(timer);
     }
-    return edges;
-  }, [customConfig, edges]);
+  }, [customConfig, currentSubId, currentSub.name, reactFlow, setNodes, setEdges]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      const data = node.data as unknown as SLDNodeData;
+      const data = node.data as any;
       setHighlightedId(node.id);
-      if (data.type === 'ibt') {
+      if (data?.type === 'ibt') {
         setSelectedItem({ type: 'ibt', data });
       } else {
-        setSelectedItem({ type: 'node', data });
+        setSelectedItem({
+          type: 'node',
+          data: {
+            id: node.id,
+            name: data?.name || node.id,
+            code: data?.code || data?.name || node.id,
+            type: data?.type || 'gi',
+            voltage: data?.voltage || '150 kV',
+            region: data?.region || currentSub.name,
+            subsystem: data?.subsystem || currentSub.name,
+            riskStatus: data?.riskStatus || 'Normal'
+          } as any
+        });
       }
-      reactFlow.setCenter(node.position.x + 50, node.position.y, { duration: 500, zoom: 1.2 });
+      reactFlow.setCenter(node.position.x + 100, node.position.y + 40, { duration: 500, zoom: 1.2 });
     },
-    [reactFlow]
+    [reactFlow, currentSub]
   );
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
-      const data = edge.data as unknown as SLDEdgeData | undefined;
+      const data = edge.data as any;
       setHighlightedId(edge.id);
-      if (data) {
-        setSelectedItem({ type: 'line', data });
-      }
+      setSelectedItem({
+        type: 'line',
+        data: {
+          id: edge.id,
+          name: data?.name || (edge as any).label || edge.id,
+          type: 'transmission',
+          voltage: data?.voltage || '150 kV',
+          status: data?.status || 'normal',
+          riskLevel: data?.riskLevel || 'Normal',
+          loading: data?.loading || { circuit1: 60 }
+        } as any
+      });
     },
     []
   );
-
-  useEffect(() => {
-    if (customConfig && reactFlow) {
-      const t = setTimeout(() => {
-        reactFlow.fitView({ padding: 0.25, duration: 400 });
-      }, 150);
-      return () => clearTimeout(t);
-    }
-  }, [customConfig, reactFlow]);
 
   const renderSubsystemInfoContent = (isOverlay: boolean) => (
     <div className="flex flex-col justify-between h-full space-y-4">
@@ -635,8 +672,8 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                 /* ReactFlow Canvas (Default or Custom Excel) */
                 <div className="flex-1 relative bg-[#060c18] overflow-hidden">
                   <ReactFlow
-                    nodes={effectiveNodes as any}
-                    edges={effectiveEdges as any}
+                    nodes={nodes}
+                    edges={edges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodeClick={onNodeClick}

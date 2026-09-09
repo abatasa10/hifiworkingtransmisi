@@ -23,6 +23,11 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
   const edgeData = data as unknown as SLDEdgeData | undefined;
   const [isHovered, setIsHovered] = useState(false);
 
+  // Safety guard against undefined or NaN coordinates
+  if (typeof sourceX !== 'number' || typeof sourceY !== 'number' || typeof targetX !== 'number' || typeof targetY !== 'number') {
+    return null;
+  }
+
   // Smooth step orthogonal routing for single line diagrams
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
