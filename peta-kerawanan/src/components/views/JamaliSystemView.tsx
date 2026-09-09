@@ -8,7 +8,8 @@ import {
   ArrowRight,
   Network,
   Layers,
-  ShieldAlert
+  ShieldAlert,
+  MapPin
 } from 'lucide-react';
 
 interface JamaliSystemViewProps {
@@ -25,14 +26,17 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
   >('peta');
   const [hoveredUPB, setHoveredUPB] = useState<UPB | null>(null);
 
+  // Map coordinates for regional APBs/UP2Bs (Banten merged into P2B Jakban)
   const upbMapCoords: Record<string, { x: number; y: number }> = {
-    'upb-banten': { x: 130, y: 190 },
-    'upb-jakarta': { x: 230, y: 170 },
-    'upb-jabar': { x: 330, y: 240 },
-    'upb-jateng': { x: 530, y: 230 },
+    'upb-jakarta': { x: 200, y: 175 },
+    'upb-jabar': { x: 350, y: 240 },
+    'upb-jateng': { x: 540, y: 230 },
     'upb-jatim': { x: 740, y: 230 },
     'upb-bali': { x: 910, y: 260 }
   };
+
+  // Filter regional UPBs to display on map pins
+  const regionalUPBs = jamaliUPBs.filter((u) => u.id !== 'p2b-sistem');
 
   return (
     <div className="flex-1 flex flex-col bg-[#f4f7fa] text-slate-800 overflow-hidden relative select-none">
@@ -68,7 +72,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
         </button>
       </div>
 
-      {/* Secondary Navigation Tabs (matching MANTAPS style) */}
+      {/* Secondary Navigation Tabs */}
       <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-1.5">
           <button
@@ -174,8 +178,8 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             />
           </svg>
 
-          {/* UP2B Region Markers */}
-          {jamaliUPBs.map((upb) => {
+          {/* UP2B Region Markers with Pin Point and Merah/Kuning/Abu-Abu breakdown */}
+          {regionalUPBs.map((upb) => {
             const coord = upbMapCoords[upb.id] || { x: 500, y: 200 };
             const isHovered = hoveredUPB?.id === upb.id;
 
@@ -193,30 +197,55 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 onMouseLeave={() => setHoveredUPB(null)}
                 onClick={() => onSelectUPB(upb.id)}
               >
-                {/* Pin Card in MANTAPS style */}
+                {/* Pin Card in MANTAPS style with Pin Point & Kerawanan counts */}
                 <div
-                  className={`transition-all duration-200 rounded-xl p-2.5 border flex items-center gap-2 shadow-md ${
+                  className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
                     isHovered
-                      ? 'bg-white border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? 'border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
+                      : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div
-                    className={`w-3 h-3 rounded-full shrink-0 ${
-                      upb.riskLevel === 'Sangat Rawan'
-                        ? 'bg-[#dc2626] animate-pulse'
-                        : upb.riskLevel === 'Rawan'
-                        ? 'bg-[#ea580c]'
-                        : 'bg-[#f1c40f]'
-                    }`}
-                  />
-                  <div>
-                    <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block">
-                      {upb.name}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {upb.giCount} GI • {upb.subsystemCount} Subsistem
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] shrink-0">
+                      <MapPin className="w-3.5 h-3.5 fill-current" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block whitespace-nowrap">
+                        {upb.name}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
+                        <span>{upb.giCount} GI</span>
+                        <span>•</span>
+                        <span>{upb.ibtCount} IBT</span>
+                        <span>•</span>
+                        <span>{upb.subsystemCount} Sub</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Kerawanan Row: Merah (N-1), Kuning (N-2), Abu-Abu (N-1-2) */}
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-1 text-[10px]">
+                    <div
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fee2e2] text-[#dc2626] font-bold border border-[#fecaca]"
+                      title="Merah (N-1): Kerawanan Tunggal"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]" />
+                      <span>N-1: {upb.risksN1}</span>
+                    </div>
+                    <div
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fef9c3] text-[#a16207] font-bold border border-[#fef08a]"
+                      title="Kuning (N-2): Kerawanan Ganda"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#eab308]" />
+                      <span>N-2: {upb.risksN2}</span>
+                    </div>
+                    <div
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f1f5f9] text-[#475569] font-bold border border-[#cbd5e1]"
+                      title="Abu-Abu (N-1-2): Kerawanan Kombinasi"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#64748b]" />
+                      <span>N-1-2: {upb.risksN12}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -224,8 +253,8 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
           })}
         </div>
 
-        {/* Right Info Panel: Informasi Sistem (MANTAPS white card style) */}
-        <div className="w-80 md:w-96 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
+        {/* Right Info Panel: Informasi Sistem dengan Rincian Kerawanan Per APB / P2B */}
+        <div className="w-88 md:w-104 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
           <div className="space-y-4">
             <div>
               <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
@@ -235,14 +264,14 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 Jawa, Madura, dan Bali
               </h2>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Jaringan kelistrikan terpadu dengan transmisi backbone 500 kV dan penyaluran 150 kV melayani 8 pulau utama.
+                Jaringan kelistrikan interkoneksi backbone 500 kV & penyaluran 150 kV melayani 8 pulau dengan 6 unit pengatur operasi.
               </p>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
+            {/* Total System Metrics */}
+            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah UPB/P2B:</span>
+                <span className="text-slate-500">Jumlah UPB / P2B:</span>
                 <span className="font-bold text-slate-800 font-mono text-sm">6 Unit</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-slate-200">
@@ -250,19 +279,109 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 <span className="font-bold text-[#0046ad] font-mono text-sm">263 Lokasi</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah Subsistem:</span>
-                <span className="font-bold text-slate-800 font-mono text-sm">12 Subsistem</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200">
                 <span className="text-slate-500">Jumlah IBT 500/150 kV:</span>
                 <span className="font-bold text-[#16a34a] font-mono text-sm">58 Unit</span>
               </div>
               <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Tingkat Kerawanan:</span>
-                <span className="inline-flex items-center gap-1.5 font-bold text-[#ea580c] bg-[#ffedd5] border border-[#fed7aa] px-2 py-0.5 rounded-full text-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#ea580c]" />
-                  Rawan
+                <span className="text-slate-500">Jumlah Subsistem:</span>
+                <span className="font-bold text-slate-800 font-mono text-sm">12 Subsistem</span>
+              </div>
+            </div>
+
+            {/* System Kerawanan Breakdown (Merah N-1, Kuning N-2, Abu-Abu N-1-2) */}
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
+                Total Kerawanan Sistem Jamali:
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                <div className="bg-[#fee2e2] p-2 rounded-lg border border-[#fecaca]">
+                  <div className="text-[10px] text-[#dc2626] font-bold">Merah (N-1)</div>
+                  <div className="text-sm font-black text-[#991b1b]">18</div>
+                  <div className="text-[9px] text-slate-500">Tunggal</div>
+                </div>
+                <div className="bg-[#fef9c3] p-2 rounded-lg border border-[#fef08a]">
+                  <div className="text-[10px] text-[#a16207] font-bold">Kuning (N-2)</div>
+                  <div className="text-sm font-black text-[#854d0e]">24</div>
+                  <div className="text-[9px] text-slate-500">Ganda</div>
+                </div>
+                <div className="bg-[#f1f5f9] p-2 rounded-lg border border-[#cbd5e1]">
+                  <div className="text-[10px] text-[#475569] font-bold">Abu-Abu</div>
+                  <div className="text-sm font-black text-[#334155]">11</div>
+                  <div className="text-[9px] text-slate-500">N-1-2</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rincian Kerawanan Per APB / P2B (User Requested Detail) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Rincian Kerawanan Per APB / P2B:
                 </span>
+                <span className="text-[10px] text-slate-400">6 Unit</span>
+              </div>
+
+              <div className="space-y-2">
+                {jamaliUPBs.map((u) => (
+                  <div
+                    key={u.id}
+                    onClick={() => {
+                      if (u.id !== 'p2b-sistem') {
+                        onSelectUPB(u.id);
+                      } else {
+                        onNavigate('sld-500kv');
+                      }
+                    }}
+                    className="p-3 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] transition-all cursor-pointer group shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#0046ad] shrink-0" />
+                        <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors">
+                          {u.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
+                          u.riskLevel === 'Sangat Rawan'
+                            ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]'
+                            : u.riskLevel === 'Rawan'
+                            ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fdba74]'
+                            : u.riskLevel === 'Sedang'
+                            ? 'bg-[#fef9c3] text-[#ca8a04] border border-[#fde047]'
+                            : 'bg-[#dcfce7] text-[#16a34a] border border-[#86efac]'
+                        }`}
+                      >
+                        {u.riskLevel}
+                      </span>
+                    </div>
+
+                    <div className="text-[10px] text-slate-500 flex items-center gap-2 mb-2 font-mono">
+                      <span>{u.giCount} GI / GITET</span>
+                      <span>•</span>
+                      <span>{u.ibtCount} IBT</span>
+                      {u.subsystemCount > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>{u.subsystemCount} Subsistem</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Kerawanan Pill Row */}
+                    <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-mono">
+                      <div className="bg-[#fee2e2] py-0.5 px-1 rounded border border-[#fecaca] text-[#dc2626] font-bold">
+                        N-1: {u.risksN1}
+                      </div>
+                      <div className="bg-[#fef9c3] py-0.5 px-1 rounded border border-[#fef08a] text-[#a16207] font-bold">
+                        N-2: {u.risksN2}
+                      </div>
+                      <div className="bg-[#f1f5f9] py-0.5 px-1 rounded border border-[#cbd5e1] text-[#475569] font-bold">
+                        N-1-2: {u.risksN12}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -273,7 +392,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 <span>Titik Kritis Utama: Kerawanan #7</span>
               </div>
               <p className="text-[11px] text-slate-600 leading-snug">
-                SUTET Gandul-Durkos-Kembangan memasok radial 2 IBT Durikosambi & 2 IBT Muarakarang dengan risiko pemadaman 1.700 MW pada kondisi N-2.
+                SUTET Gandul-Durkos-Kembangan (P2B Jakban) memasok radial 2 IBT Durikosambi & 2 IBT Muarakarang dengan risiko pemadaman 1.700 MW pada kondisi N-2.
               </p>
             </div>
           </div>
