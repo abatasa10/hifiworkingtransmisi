@@ -118,24 +118,9 @@ export const UPBView: React.FC<UPBViewProps> = ({
             <span className="text-slate-500">Nama Unit:</span>
             <span className="font-bold text-slate-800">{currentUPB.name}</span>
           </div>
-          <div className="flex justify-between py-1 border-b border-slate-200">
-            <span className="text-slate-500">Jumlah GI / GITET:</span>
-            <span className="font-bold text-[#0046ad] font-mono text-sm">{currentUPB.giCount} Lokasi</span>
-          </div>
-          <div className="flex justify-between py-1 border-b border-slate-200">
-            <span className="text-slate-500">Jumlah IBT:</span>
-            <span className="font-bold text-[#16a34a] font-mono text-sm">{currentUPB.ibtCount} Unit</span>
-          </div>
-          <div className="flex justify-between py-1 border-b border-slate-200">
-            <span className="text-slate-500">Jumlah Subsistem:</span>
-            <span className="font-bold text-slate-800 font-mono text-sm">{currentUPB.subsystemCount}</span>
-          </div>
           <div className="flex justify-between py-1">
-            <span className="text-slate-500">Tingkat Kerawanan:</span>
-            <span className="inline-flex items-center gap-1.5 font-bold text-[#dc2626] bg-[#fee2e2] border border-[#fca5a5] px-2 py-0.5 rounded-full text-xs">
-              <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
-              {currentUPB.riskLevel}
-            </span>
+            <span className="text-slate-500">Jumlah Subsistem:</span>
+            <span className="font-bold text-slate-800 font-mono text-sm">{currentUPB.subsystemCount} Subsistem</span>
           </div>
         </div>
 

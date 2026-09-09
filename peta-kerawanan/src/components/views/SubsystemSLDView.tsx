@@ -136,16 +136,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             <span className="text-slate-500">Jumlah GI:</span>
             <span className="font-bold text-[#0046ad] font-mono text-sm">{currentSub.giCount} Lokasi</span>
           </div>
-          <div className="flex justify-between py-1 border-b border-slate-200">
+          <div className="flex justify-between py-1">
             <span className="text-slate-500">Beban Puncak:</span>
             <span className="font-bold text-slate-800 font-mono text-sm">{currentSub.peakLoadMW} MW</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span className="text-slate-500">Tingkat Kerawanan:</span>
-            <span className="inline-flex items-center gap-1.5 font-bold text-[#ea580c] bg-[#ffedd5] border border-[#fed7aa] px-2 py-0.5 rounded-full text-xs">
-              <span className="w-2 h-2 rounded-full bg-[#ea580c]" />
-              {currentSub.riskLevel}
-            </span>
           </div>
         </div>
 
