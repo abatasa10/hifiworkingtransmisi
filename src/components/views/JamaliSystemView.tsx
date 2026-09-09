@@ -178,7 +178,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             />
           </svg>
 
-          {/* UP2B Region Markers with Pin Point and Merah/Kuning/Abu-Abu breakdown */}
+          {/* UP2B Region Markers with Pin Point and Total Kerawanan (No Classifications) */}
           {regionalUPBs.map((upb) => {
             const coord = upbMapCoords[upb.id] || { x: 500, y: 200 };
             const isHovered = hoveredUPB?.id === upb.id;
@@ -197,7 +197,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 onMouseLeave={() => setHoveredUPB(null)}
                 onClick={() => onSelectUPB(upb.id)}
               >
-                {/* Pin Card in MANTAPS style with Pin Point & Kerawanan counts */}
+                {/* Pin Card in MANTAPS style with Pin Point & Total Kerawanan */}
                 <div
                   className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
                     isHovered
@@ -214,38 +214,27 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                         {upb.name}
                       </span>
                       <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
-                        <span>{upb.giCount} GI</span>
-                        <span>•</span>
-                        <span>{upb.ibtCount} IBT</span>
-                        <span>•</span>
-                        <span>{upb.subsystemCount} Sub</span>
+                        <span>{upb.subsystemCount} Subsistem</span>
                       </span>
                     </div>
                   </div>
 
-                  {/* Kerawanan Row: Merah (N-1), Kuning (N-2), Abu-Abu (N-1-2) */}
-                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-1 text-[10px]">
-                    <div
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fee2e2] text-[#dc2626] font-bold border border-[#fecaca]"
-                      title="Merah (N-1): Kerawanan Tunggal"
+                  {/* Total Kerawanan (Single Total, no classifications) */}
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
+                    <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap ${
+                        upb.riskCount >= 15
+                          ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
+                          : upb.riskCount >= 8
+                          ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
+                          : upb.riskCount >= 4
+                          ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
+                          : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
+                      }`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]" />
-                      <span>N-1: {upb.risksN1}</span>
-                    </div>
-                    <div
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fef9c3] text-[#a16207] font-bold border border-[#fef08a]"
-                      title="Kuning (N-2): Kerawanan Ganda"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#eab308]" />
-                      <span>N-2: {upb.risksN2}</span>
-                    </div>
-                    <div
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f1f5f9] text-[#475569] font-bold border border-[#cbd5e1]"
-                      title="Abu-Abu (N-1-2): Kerawanan Kombinasi"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#64748b]" />
-                      <span>N-1-2: {upb.risksN12}</span>
-                    </div>
+                      {upb.riskCount} Kerawanan
+                    </span>
                   </div>
                 </div>
               </div>
@@ -253,7 +242,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
           })}
         </div>
 
-        {/* Right Info Panel: Informasi Sistem dengan Rincian Kerawanan Per APB / P2B */}
+        {/* Right Info Panel: Informasi Sistem (GI & IBT removed from top, Total Kerawanan 500kV & IBT, Total Kerawanan per APB) */}
         <div className="w-88 md:w-104 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
           <div className="space-y-4">
             <div>
@@ -268,19 +257,11 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
               </p>
             </div>
 
-            {/* Total System Metrics */}
+            {/* Total System Metrics (Jumlah GI/GITET dan Jumlah IBT telah dihilangkan sesuai permintaan) */}
             <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-slate-200">
                 <span className="text-slate-500">Jumlah UPB / P2B:</span>
                 <span className="font-bold text-slate-800 font-mono text-sm">6 Unit</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah GI / GITET:</span>
-                <span className="font-bold text-[#0046ad] font-mono text-sm">263 Lokasi</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah IBT 500/150 kV:</span>
-                <span className="font-bold text-[#16a34a] font-mono text-sm">58 Unit</span>
               </div>
               <div className="flex justify-between items-center py-1">
                 <span className="text-slate-500">Jumlah Subsistem:</span>
@@ -288,31 +269,26 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
               </div>
             </div>
 
-            {/* System Kerawanan Breakdown (Merah N-1, Kuning N-2, Abu-Abu N-1-2) */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+            {/* Total Kerawanan 500 kV dan IBT 500/150 kV (Menggantikan klasifikasi N-1 / N-2 / N-1-2) */}
+            <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
               <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
-                Total Kerawanan Sistem Jamali:
+                Total Kerawanan 500 kV & IBT 500/150:
               </span>
-              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                <div className="bg-[#fee2e2] p-2 rounded-lg border border-[#fecaca]">
-                  <div className="text-[10px] text-[#dc2626] font-bold">Merah (N-1)</div>
-                  <div className="text-sm font-black text-[#991b1b]">18</div>
-                  <div className="text-[9px] text-slate-500">Tunggal</div>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div className="bg-[#fee2e2]/70 p-2.5 rounded-xl border border-[#fecaca] flex flex-col items-center justify-center">
+                  <div className="text-[11px] text-[#dc2626] font-bold">Kerawanan 500 kV</div>
+                  <div className="text-xl font-black text-[#991b1b] mt-0.5 font-mono">14</div>
+                  <div className="text-[9.5px] text-slate-500 mt-0.5">Jalur Transmisi</div>
                 </div>
-                <div className="bg-[#fef9c3] p-2 rounded-lg border border-[#fef08a]">
-                  <div className="text-[10px] text-[#a16207] font-bold">Kuning (N-2)</div>
-                  <div className="text-sm font-black text-[#854d0e]">24</div>
-                  <div className="text-[9px] text-slate-500">Ganda</div>
-                </div>
-                <div className="bg-[#f1f5f9] p-2 rounded-lg border border-[#cbd5e1]">
-                  <div className="text-[10px] text-[#475569] font-bold">Abu-Abu</div>
-                  <div className="text-sm font-black text-[#334155]">11</div>
-                  <div className="text-[9px] text-slate-500">N-1-2</div>
+                <div className="bg-[#ffedd5]/70 p-2.5 rounded-xl border border-[#fed7aa] flex flex-col items-center justify-center">
+                  <div className="text-[11px] text-[#ea580c] font-bold">Kerawanan IBT 500/150</div>
+                  <div className="text-xl font-black text-[#c2410c] mt-0.5 font-mono">11</div>
+                  <div className="text-[9.5px] text-slate-500 mt-0.5">Trafo Interbus</div>
                 </div>
               </div>
             </div>
 
-            {/* Rincian Kerawanan Per APB / P2B (User Requested Detail) */}
+            {/* Rincian Kerawanan Per APB / P2B (Total Saja, Tanpa Klasifikasi N-1/N-2/N-1-2) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -357,28 +333,27 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                     </div>
 
                     <div className="text-[10px] text-slate-500 flex items-center gap-2 mb-2 font-mono">
-                      <span>{u.giCount} GI / GITET</span>
+                      <span>{u.subsystemCount} Subsistem</span>
                       <span>•</span>
-                      <span>{u.ibtCount} IBT</span>
-                      {u.subsystemCount > 0 && (
-                        <>
-                          <span>•</span>
-                          <span>{u.subsystemCount} Subsistem</span>
-                        </>
-                      )}
+                      <span>{u.region}</span>
                     </div>
 
-                    {/* Kerawanan Pill Row */}
-                    <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-mono">
-                      <div className="bg-[#fee2e2] py-0.5 px-1 rounded border border-[#fecaca] text-[#dc2626] font-bold">
-                        N-1: {u.risksN1}
-                      </div>
-                      <div className="bg-[#fef9c3] py-0.5 px-1 rounded border border-[#fef08a] text-[#a16207] font-bold">
-                        N-2: {u.risksN2}
-                      </div>
-                      <div className="bg-[#f1f5f9] py-0.5 px-1 rounded border border-[#cbd5e1] text-[#475569] font-bold">
-                        N-1-2: {u.risksN12}
-                      </div>
+                    {/* Total Kerawanan (Total Saja Tanpa Klasifikasi) */}
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-medium">Total Kerawanan:</span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-md font-extrabold text-xs font-mono ${
+                          u.riskCount >= 15
+                            ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
+                            : u.riskCount >= 8
+                            ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
+                            : u.riskCount >= 4
+                            ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
+                            : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
+                        }`}
+                      >
+                        {u.riskCount} Kerawanan
+                      </span>
                     </div>
                   </div>
                 ))}

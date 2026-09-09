@@ -310,24 +310,25 @@ export const UPBView: React.FC<UPBViewProps> = ({
               </div>
             </div>
 
-            {/* Rincian Kerawanan Unit (Merah N-1, Kuning N-2, Abu-Abu N-1-2) */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
-              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
-                Rincian Kerawanan {currentUPB.shortName}:
-              </span>
-              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                <div className="bg-[#fee2e2] p-2 rounded-lg border border-[#fecaca]">
-                  <div className="text-[10px] text-[#dc2626] font-bold">Merah (N-1)</div>
-                  <div className="text-sm font-black text-[#991b1b]">{currentUPB.risksN1}</div>
-                </div>
-                <div className="bg-[#fef9c3] p-2 rounded-lg border border-[#fef08a]">
-                  <div className="text-[10px] text-[#a16207] font-bold">Kuning (N-2)</div>
-                  <div className="text-sm font-black text-[#854d0e]">{currentUPB.risksN2}</div>
-                </div>
-                <div className="bg-[#f1f5f9] p-2 rounded-lg border border-[#cbd5e1]">
-                  <div className="text-[10px] text-[#475569] font-bold">Abu-Abu</div>
-                  <div className="text-sm font-black text-[#334155]">{currentUPB.risksN12}</div>
-                </div>
+            {/* Total Kerawanan Unit (Total Saja Tanpa Klasifikasi) */}
+            <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Total Kerawanan {currentUPB.shortName}:
+                </span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-md font-extrabold text-xs font-mono ${
+                    currentUPB.riskCount >= 15
+                      ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
+                      : currentUPB.riskCount >= 8
+                      ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
+                      : currentUPB.riskCount >= 4
+                      ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
+                      : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
+                  }`}
+                >
+                  {currentUPB.riskCount} Kerawanan
+                </span>
               </div>
             </div>
 
@@ -357,16 +358,11 @@ export const UPBView: React.FC<UPBViewProps> = ({
                       {sub.giCount} GI • {sub.ibtCount ?? 2} IBT • Beban: {sub.peakLoadMW} MW
                     </div>
 
-                    {/* Kerawanan badge per subsystem */}
-                    <div className="grid grid-cols-3 gap-1 text-[9px] text-center font-mono pt-1 border-t border-slate-200/60">
-                      <span className="bg-[#fee2e2] text-[#dc2626] font-bold py-0.5 rounded border border-[#fecaca]">
-                        N-1: {sub.risksN1 ?? 1}
-                      </span>
-                      <span className="bg-[#fef9c3] text-[#a16207] font-bold py-0.5 rounded border border-[#fef08a]">
-                        N-2: {sub.risksN2 ?? 1}
-                      </span>
-                      <span className="bg-[#f1f5f9] text-[#475569] font-bold py-0.5 rounded border border-[#cbd5e1]">
-                        N-1-2: {sub.risksN12 ?? 0}
+                    {/* Kerawanan total per subsystem (Tanpa klasifikasi) */}
+                    <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60">
+                      <span className="text-slate-500 font-medium">Kerawanan Subsistem:</span>
+                      <span className="font-bold text-[#dc2626] font-mono bg-[#fee2e2] px-2 py-0.5 rounded border border-[#fecaca] text-[10px]">
+                        {sub.riskCount} Kerawanan
                       </span>
                     </div>
                   </button>
