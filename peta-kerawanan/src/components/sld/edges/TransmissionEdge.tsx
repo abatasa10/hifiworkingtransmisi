@@ -39,12 +39,14 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     borderRadius: 8
   });
 
-  const isCritical = edgeData?.status === 'critical' || edgeData?.riskLevel === 'Sangat Rawan';
-  const isWarning = edgeData?.status === 'warning' || edgeData?.riskLevel === 'Rawan' || edgeData?.riskLevel === 'Sedang';
+  const rLevel = String(edgeData?.riskLevel || '');
+  const isCritical = edgeData?.status === 'critical' || rLevel === 'Sangat Rawan' || rLevel === 'N-2' || rLevel === 'N-1-2';
+  const isWarning = edgeData?.status === 'warning' || rLevel === 'Rawan' || rLevel === 'Sedang' || rLevel === 'N-1';
   const isPlanned = edgeData?.status === 'planned';
   const isHighlighted = edgeData?.highlighted || selected;
   const isDimmed = edgeData?.dimmed;
-  const hasRisk = typeof edgeData?.riskId === 'number';
+  const hasRisk = typeof edgeData?.riskId === 'number' || isCritical || isWarning;
+  const riskBadgeText = edgeData?.riskId !== undefined ? String(edgeData.riskId) : (rLevel || '!');
 
   // Base line color
   let strokeColor = '#00d2d3'; // PLN Cyan
@@ -64,7 +66,7 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
         d={edgePath}
         fill="none"
         stroke="transparent"
-        strokeWidth={20}
+        strokeWidth={24}
         className="cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -103,7 +105,7 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            {/* Starburst Badge */}
+            {/* Starburst Badge (matches Gambar 1 & Gambar 2) */}
             <div
               className={`relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ${
                 isCritical ? 'animate-risk-pulse' : 'animate-risk-yellow-pulse'
@@ -113,14 +115,14 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
               <svg viewBox="0 0 100 100" className="w-8 h-8 filter drop-shadow-md">
                 <polygon
                   points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
-                  fill={isCritical ? '#ff4757' : edgeData?.riskLevel === 'Sedang' ? '#f1c40f' : '#ffa502'}
+                  fill={isCritical ? '#ff4757' : '#ffa502'}
                   stroke="#ffffff"
                   strokeWidth="4"
                 />
               </svg>
-              {/* Risk Number inside starburst */}
-              <span className="absolute inset-0 flex items-center justify-center text-slate-950 font-black text-xs">
-                {edgeData?.riskId}
+              {/* Risk Number / Code inside starburst */}
+              <span className="absolute inset-0 flex items-center justify-center text-slate-950 font-black text-[10px]">
+                {riskBadgeText}
               </span>
             </div>
 

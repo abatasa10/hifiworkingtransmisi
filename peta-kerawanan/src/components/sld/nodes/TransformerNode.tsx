@@ -17,6 +17,11 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
       <Handle
         type="target"
         position={Position.Top}
+        className="!w-2 !h-2 !bg-emerald-400 opacity-0 group-hover:opacity-100"
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
         id="ibt-top"
         className="!w-2 !h-2 !bg-emerald-400 opacity-0 group-hover:opacity-100"
       />
@@ -70,6 +75,11 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
         </span>
       </div>
 
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-2 !h-2 !bg-emerald-400 opacity-0 group-hover:opacity-100"
+      />
       <Handle
         type="source"
         position={Position.Bottom}

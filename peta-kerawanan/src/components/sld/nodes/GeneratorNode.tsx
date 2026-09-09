@@ -43,12 +43,23 @@ export const GeneratorNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         )}
       </div>
 
+      {/* Default bottom source handle */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-2 !h-2 !bg-amber-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
       {/* Bottom handle to connect to busbars */}
       <Handle
         type="source"
         position={Position.Bottom}
         id="gen-out"
         className="!w-2 !h-2 !bg-amber-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-2 !h-2 !bg-amber-400 opacity-0"
       />
       <Handle
         type="target"
