@@ -9,7 +9,9 @@ import {
   Node,
   Edge,
   ReactFlowProvider,
-  MarkerType
+  MarkerType,
+  Handle,
+  Position
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -30,7 +32,14 @@ import {
   Table as TableIcon,
   Network,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Check,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import {
@@ -53,6 +62,35 @@ const cleanKey = (str: any): string => {
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
 };
+
+const UploadCustomNode: React.FC<any> = ({ data }) => {
+  return (
+    <div className="relative group">
+      <Handle type="target" position={Position.Top} id="top" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Handle type="source" position={Position.Top} id="top-src" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0" />
+      <Handle type="source" position={Position.Bottom} id="bottom" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Handle type="target" position={Position.Bottom} id="bottom-tgt" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0" />
+      <Handle type="target" position={Position.Left} id="left" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Handle type="source" position={Position.Right} id="right" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {data?.label}
+    </div>
+  );
+};
+
+const uploadNodeTypes = {
+  default: UploadCustomNode,
+  custom: UploadCustomNode
+};
+
+export interface ColumnMapping {
+  gi: string;         // Kolom Nama Gardu Induk
+  from: string;       // Kolom Dari GI
+  to: string;         // Kolom Ke GI
+  lineName: string;   // Kolom Nama Penghantar
+  voltage: string;    // Kolom Tegangan
+  risk: string;       // Kolom Status Kerawanan
+  load: string;       // Kolom Pembebanan / Nilai MW
+}
 
 // Initial sample data for immediate test
 const initialSampleGINodes: ParsedGINode[] = [
@@ -105,10 +143,22 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const [uploadStatusMsg, setUploadStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
-  // Raw sheets info for diagnostics
+  // Advanced Excel Workbook & Multi-sheet mapping states
+  const [rawWorkbook, setRawWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [detectedSheets, setDetectedSheets] = useState<string[]>([]);
   const [activeSheetName, setActiveSheetName] = useState<string>('');
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
+  const [previewRows, setPreviewRows] = useState<any[][]>([]);
+  const [showMappingPanel, setShowMappingPanel] = useState<boolean>(true);
+  const [colMapping, setColMapping] = useState<ColumnMapping>({
+    gi: '',
+    from: '',
+    to: '',
+    lineName: '',
+    voltage: '',
+    risk: '',
+    load: ''
+  });
 
   // Image mode states
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -173,6 +223,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
           calculatedNodes.push({
             id: node.id,
+            type: 'custom',
             position: { x, y },
             data: {
               label: (
@@ -208,7 +259,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         });
       });
     } else {
-      // Single grid layout (e.g. Subsistem layout 3 columns)
+      // Single grid layout (e.g. Subsistem layout 3-4 columns)
       const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(giList.length))));
       giList.forEach((node, idx) => {
         const col = idx % cols;
@@ -220,6 +271,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
         calculatedNodes.push({
           id: node.id,
+          type: 'custom',
           position: { x, y },
           data: {
             label: (
@@ -286,7 +338,213 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     return { flowNodes: calculatedNodes, flowEdges: calculatedEdges };
   }, [giList, lineList, filterRisk]);
 
-  // SMART UNIVERSAL EXCEL PARSER
+  // SMART COLUMN AUTO-DETECTOR
+  const autoDetectMapping = (headers: string[]): ColumnMapping => {
+    const colMap: Record<string, string> = {};
+    headers.forEach((h) => {
+      colMap[cleanKey(h)] = h;
+    });
+
+    const findHeader = (patterns: string[]): string => {
+      for (const p of patterns) {
+        for (const [k, originalHeader] of Object.entries(colMap)) {
+          if (k.includes(p)) return originalHeader;
+        }
+      }
+      return '';
+    };
+
+    const fromCol = findHeader(['darigi', 'dari', 'from', 'asal', 'bus1', 'source', 'pangkal']);
+    const toCol = findHeader(['kegi', 'ke', 'to', 'tujuan', 'bus2', 'target', 'ujung']);
+    const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'sirkit', 'bay']);
+    const giCol = findHeader(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'gi', 'nama', 'gardu', 'bay']);
+    const voltageCol = findHeader(['tegangan', 'kv', 'voltage', 'level']);
+    const riskCol = findHeader(['statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kondisi', 'keterangan', 'risk', 'kategori']);
+    const loadCol = findHeader(['pembebanan', 'loading', 'bebanmw', 'load', 'beban', 'mw', 'mva', 'arus', 'ampere']);
+
+    return {
+      gi: giCol,
+      from: fromCol,
+      to: toCol,
+      lineName: lineNameCol,
+      voltage: voltageCol,
+      risk: riskCol,
+      load: loadCol
+    };
+  };
+
+  // EXECUTE PARSING FROM RAW SHEET WITH SPECIFIED COLUMN MAPPING
+  const executeParsingWithMapping = (
+    sheet: XLSX.WorkSheet,
+    mapping: ColumnMapping,
+    currentTargetName: string
+  ) => {
+    const rawGrid: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    if (!rawGrid || rawGrid.length === 0) {
+      setGiList([]);
+      setLineList([]);
+      setUploadStatusMsg({ type: 'error', text: 'Lembar kerja (sheet) ini kosong.' });
+      return;
+    }
+
+    // Auto-find header row index (scanning first 15 rows)
+    let headerRowIndex = 0;
+    for (let r = 0; r < Math.min(15, rawGrid.length); r++) {
+      const row = rawGrid[r];
+      if (Array.isArray(row) && row.length > 0) {
+        const hasKey = row.some((cell) => {
+          const k = cleanKey(cell);
+          return (
+            k.includes('gi') ||
+            k.includes('gardu') ||
+            k.includes('nama') ||
+            k.includes('penghantar') ||
+            k.includes('line') ||
+            k.includes('dari') ||
+            k.includes('ke') ||
+            k.includes('functloc') ||
+            k.includes('bay') ||
+            k.includes('trafo') ||
+            k.includes('tegangan') ||
+            k.includes('beban')
+          );
+        });
+        if (hasKey) {
+          headerRowIndex = r;
+          break;
+        }
+      }
+    }
+
+    const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim()).filter(Boolean);
+    setRawHeaders(headers);
+
+    const dataRows = rawGrid
+      .slice(headerRowIndex + 1)
+      .filter((r) => Array.isArray(r) && r.some((c) => c !== undefined && c !== null && String(c).trim() !== ''));
+
+    setPreviewRows(dataRows.slice(0, 5));
+
+    const colIdx = (headerName: string) => (headerName ? headers.indexOf(headerName) : -1);
+
+    const colFromIdx = colIdx(mapping.from);
+    const colToIdx = colIdx(mapping.to);
+    const colLineNameIdx = colIdx(mapping.lineName);
+    const colGiIdx = colIdx(mapping.gi);
+    const colVoltageIdx = colIdx(mapping.voltage);
+    const colRiskIdx = colIdx(mapping.risk);
+    const colLoadIdx = colIdx(mapping.load);
+
+    const parsedNodes: ParsedGINode[] = [];
+    const parsedLines: ParsedTransmissionLine[] = [];
+
+    // 1. Process Transmission Lines if From and To columns are specified
+    if (colFromIdx !== -1 && colToIdx !== -1) {
+      dataRows.forEach((row, rIdx) => {
+        const dariVal = String(row[colFromIdx] || '').trim();
+        const keVal = String(row[colToIdx] || '').trim();
+        if (!dariVal || !keVal) return;
+
+        const lineNameVal = colLineNameIdx !== -1 && row[colLineNameIdx] ? String(row[colLineNameIdx]).trim() : `${dariVal} - ${keVal}`;
+        const riskVal = colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal';
+        const loadVal = colLoadIdx !== -1 && !isNaN(Number(row[colLoadIdx])) ? Number(row[colLoadIdx]) : Math.floor(50 + Math.random() * 40);
+
+        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+        const rUpper = riskVal.toUpperCase();
+        if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
+        else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
+        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'N-1';
+
+        const sourceNodeId = `GI_${cleanKey(dariVal)}`;
+        const targetNodeId = `GI_${cleanKey(keVal)}`;
+
+        parsedLines.push({
+          id: `LINE_${rIdx + 1}_${cleanKey(lineNameVal)}`,
+          sourceId: sourceNodeId,
+          targetId: targetNodeId,
+          lineName: lineNameVal,
+          circuit: 'Sirkit 1',
+          lengthKm: 25,
+          loadingPct: loadVal,
+          riskStatus: normalizedRisk
+        });
+
+        const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV';
+
+        if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
+          parsedNodes.push({
+            id: sourceNodeId,
+            name: dariVal,
+            voltage: voltageVal,
+            region: currentTargetName,
+            riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
+            subsystem: currentTargetName
+          });
+        }
+
+        if (!parsedNodes.some((n) => n.id === targetNodeId)) {
+          parsedNodes.push({
+            id: targetNodeId,
+            name: keVal,
+            voltage: voltageVal,
+            region: currentTargetName,
+            riskStatus: 'Normal',
+            subsystem: currentTargetName
+          });
+        }
+      });
+    }
+
+    // 2. Process / Merge Gardu Induk (GI) Simpul Nodes if GI column is specified
+    if (colGiIdx !== -1) {
+      dataRows.forEach((row, rIdx) => {
+        const giVal = String(row[colGiIdx] || '').trim();
+        if (!giVal) return;
+
+        const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV';
+        const riskVal = colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal';
+
+        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+        const rUpper = riskVal.toUpperCase();
+        if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
+        else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
+        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'N-1';
+
+        const nodeId = `GI_${cleanKey(giVal)}`;
+        const existing = parsedNodes.find((n) => n.id === nodeId);
+        if (existing) {
+          if (voltageVal) existing.voltage = voltageVal;
+          if (normalizedRisk !== 'Normal') existing.riskStatus = normalizedRisk;
+        } else {
+          parsedNodes.push({
+            id: nodeId,
+            name: giVal,
+            voltage: voltageVal,
+            region: currentTargetName,
+            riskStatus: normalizedRisk,
+            subsystem: currentTargetName
+          });
+        }
+      });
+    }
+
+    setGiList(parsedNodes);
+    setLineList(parsedLines);
+
+    if (parsedNodes.length > 0) {
+      setUploadStatusMsg({
+        type: 'success',
+        text: `Berhasil mengekstrak ${parsedNodes.length} Gardu Induk dan ${parsedLines.length} Jalur Transmisi.`
+      });
+    } else {
+      setUploadStatusMsg({
+        type: 'error',
+        text: 'Belum ada Gardu Induk terdeteksi. Silakan pilih kolom Nama GI pada panel Pemetaan Kolom di bawah.'
+      });
+    }
+  };
+
+  // SMART UNIVERSAL EXCEL PARSER (FILE LOAD ENTRY)
   const processExcelBuffer = (buffer: ArrayBuffer, name: string) => {
     try {
       const data = new Uint8Array(buffer);
@@ -297,191 +555,118 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         return;
       }
 
+      setRawWorkbook(workbook);
       setDetectedSheets(workbook.SheetNames);
-      setActiveSheetName(workbook.SheetNames[0]);
 
-      let parsedNodes: ParsedGINode[] = [];
-      let parsedLines: ParsedTransmissionLine[] = [];
-
-      // Check each sheet to see if there is a Nodes sheet or Lines sheet
-      for (const sheetName of workbook.SheetNames) {
-        const worksheet = workbook.Sheets[sheetName];
-        const rawGrid: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        if (!rawGrid || rawGrid.length === 0) continue;
-
-        // Auto-find header row index (scanning first 10 rows)
-        let headerRowIndex = -1;
-        for (let r = 0; r < Math.min(10, rawGrid.length); r++) {
-          const row = rawGrid[r];
-          if (Array.isArray(row) && row.length > 0) {
-            const hasHeaderKeyword = row.some((cell) => {
-              const k = cleanKey(cell);
-              return (
-                k.includes('gardu') ||
-                k.includes('gi') ||
-                k.includes('nama') ||
-                k.includes('penghantar') ||
-                k.includes('line') ||
-                k.includes('dari') ||
-                k.includes('ke') ||
-                k.includes('functloc') ||
-                k.includes('substation') ||
-                k.includes('tegangan')
-              );
-            });
-            if (hasHeaderKeyword) {
-              headerRowIndex = r;
-              break;
-            }
-          }
-        }
-
-        if (headerRowIndex === -1) {
-          // If no keyword row found, assume row 0 if non-empty
-          headerRowIndex = 0;
-        }
-
-        const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim());
-        setRawHeaders(headers);
-
-        const dataRows = rawGrid.slice(headerRowIndex + 1).filter((r) => Array.isArray(r) && r.some((c) => c !== undefined && c !== null && c !== ''));
-
-        // Map column indices by normalized name
-        const colMap: Record<string, number> = {};
-        headers.forEach((h, idx) => {
-          const ck = cleanKey(h);
-          colMap[ck] = idx;
-        });
-
-        const findColIdx = (patterns: string[]): number => {
-          for (const p of patterns) {
-            for (const [k, idx] of Object.entries(colMap)) {
-              if (k.includes(p)) return idx;
-            }
-          }
-          return -1;
-        };
-
-        const colDari = findColIdx(['darigi', 'dari', 'from', 'asal', 'source', 'bus1', 'pangkal']);
-        const colKe = findColIdx(['kegi', 'ke', 'to', 'tujuan', 'target', 'bus2', 'ujung']);
-        const colLineName = findColIdx(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'sirkit', 'bay']);
-        const colGiName = findColIdx(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'gi', 'nama']);
-        const colVoltage = findColIdx(['tegangan', 'kv', 'voltage', 'level']);
-        const colRisk = findColIdx(['statuskerawanan', 'kerawanan', 'status', 'kondisi', 'keterangan', 'risk']);
-        const colLoading = findColIdx(['pembebanan', 'loading', 'load', 'beban', 'mw', 'mva', 'arus']);
-        const colRegion = findColIdx(['wilayah', 'up2b', 'p2b', 'region', 'subsistem', 'subsystem', 'unit', 'area']);
-
-        // Check if this sheet is a Transmission Lines sheet (has Dari and Ke)
-        if (colDari !== -1 && colKe !== -1) {
-          dataRows.forEach((row, rIdx) => {
-            const dariVal = String(row[colDari] || '').trim();
-            const keVal = String(row[colKe] || '').trim();
-            if (!dariVal || !keVal) return;
-
-            const lineNameVal = colLineName !== -1 && row[colLineName] ? String(row[colLineName]).trim() : `${dariVal} - ${keVal}`;
-            const riskVal = colRisk !== -1 && row[colRisk] ? String(row[colRisk]).trim() : 'Normal';
-            const loadVal = colLoading !== -1 && !isNaN(Number(row[colLoading])) ? Number(row[colLoading]) : Math.floor(50 + Math.random() * 40);
-
-            // Clean risk status value
-            let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
-            const rUpper = riskVal.toUpperCase();
-            if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
-            else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
-            else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
-
-            const sourceNodeId = `GI_${cleanKey(dariVal)}`;
-            const targetNodeId = `GI_${cleanKey(keVal)}`;
-
-            parsedLines.push({
-              id: `LINE_${rIdx + 1}_${cleanKey(lineNameVal)}`,
-              sourceId: sourceNodeId,
-              targetId: targetNodeId,
-              lineName: lineNameVal,
-              circuit: 'Sirkit 1',
-              lengthKm: 25,
-              loadingPct: loadVal,
-              riskStatus: normalizedRisk
-            });
-
-            // Auto-collect unique GI nodes from Dari and Ke
-            const voltageVal = colVoltage !== -1 && row[colVoltage] ? String(row[colVoltage]) : '150 kV';
-            const regionVal = colRegion !== -1 && row[colRegion] ? String(row[colRegion]) : currentTargetObj.name;
-
-            if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
-              parsedNodes.push({
-                id: sourceNodeId,
-                name: dariVal,
-                voltage: voltageVal,
-                region: regionVal,
-                riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
-                subsystem: currentTargetObj.name
-              });
-            }
-
-            if (!parsedNodes.some((n) => n.id === targetNodeId)) {
-              parsedNodes.push({
-                id: targetNodeId,
-                name: keVal,
-                voltage: voltageVal,
-                region: regionVal,
-                riskStatus: 'Normal',
-                subsystem: currentTargetObj.name
-              });
-            }
-          });
-        } else if (colGiName !== -1) {
-          // This sheet is a Gardu Induk list
-          dataRows.forEach((row, rIdx) => {
-            const giNameVal = String(row[colGiName] || '').trim();
-            if (!giNameVal) return;
-
-            const voltageVal = colVoltage !== -1 && row[colVoltage] ? String(row[colVoltage]) : '150 kV';
-            const riskVal = colRisk !== -1 && row[colRisk] ? String(row[colRisk]).trim() : 'Normal';
-            const regionVal = colRegion !== -1 && row[colRegion] ? String(row[colRegion]) : currentTargetObj.name;
-
-            let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
-            const rUpper = riskVal.toUpperCase();
-            if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
-            else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
-            else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
-
-            const nodeId = `GI_${cleanKey(giNameVal)}_${rIdx + 1}`;
-            if (!parsedNodes.some((n) => n.id === nodeId)) {
-              parsedNodes.push({
-                id: nodeId,
-                name: giNameVal,
-                voltage: voltageVal,
-                region: regionVal,
-                riskStatus: normalizedRisk,
-                subsystem: currentTargetObj.name
-              });
-            }
-          });
+      // Choose best initial sheet (prefer sheet with gi, gardu, line, sheet1)
+      let initialSheet = workbook.SheetNames[0];
+      for (const s of workbook.SheetNames) {
+        const sk = cleanKey(s);
+        if (sk.includes('gardu') || sk.includes('line') || sk.includes('penghantar') || sk.includes('transmisi') || sk.includes('sheet1')) {
+          initialSheet = s;
+          break;
         }
       }
 
-      if (parsedNodes.length === 0 && parsedLines.length === 0) {
-        setUploadStatusMsg({
-          type: 'error',
-          text: `Kolom tabel tidak dikenali. Kolom yang ditemukan: [${rawHeaders.join(', ')}]. Gunakan template standar atau pastikan terdapat kolom 'Nama GI' atau 'Dari' dan 'Ke'.`
-        });
-        return;
-      }
-
+      setActiveSheetName(initialSheet);
       setFileName(name);
-      setGiList(parsedNodes);
-      setLineList(parsedLines);
-      setUploadStatusMsg({
-        type: 'success',
-        text: `Berhasil membaca ${parsedNodes.length} Gardu Induk dan ${parsedLines.length} Jalur Penghantar dari file ${name}!`
-      });
+
+      const worksheet = workbook.Sheets[initialSheet];
+      const rawGrid: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      let headerRowIndex = 0;
+      for (let r = 0; r < Math.min(15, rawGrid.length); r++) {
+        const row = rawGrid[r];
+        if (Array.isArray(row) && row.length > 0) {
+          const hasKey = row.some((cell) => {
+            const k = cleanKey(cell);
+            return (
+              k.includes('gi') ||
+              k.includes('gardu') ||
+              k.includes('nama') ||
+              k.includes('penghantar') ||
+              k.includes('line') ||
+              k.includes('dari') ||
+              k.includes('ke') ||
+              k.includes('functloc') ||
+              k.includes('bay') ||
+              k.includes('trafo') ||
+              k.includes('tegangan') ||
+              k.includes('beban')
+            );
+          });
+          if (hasKey) {
+            headerRowIndex = r;
+            break;
+          }
+        }
+      }
+
+      const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim()).filter(Boolean);
+      const initialMapping = autoDetectMapping(headers);
+      setColMapping(initialMapping);
+
+      executeParsingWithMapping(worksheet, initialMapping, currentTargetObj.name);
     } catch (err: any) {
       console.error(err);
       setUploadStatusMsg({
         type: 'error',
-        text: `Gagal memproses file Excel: ${err.message || 'Format tidak didukung'}`
+        text: `Gagal membaca file Excel: ${err.message || 'Format tidak didukung'}`
       });
+    }
+  };
+
+  // Handler when user switches active sheet
+  const handleSwitchSheet = (sheetName: string) => {
+    if (!rawWorkbook) return;
+    setActiveSheetName(sheetName);
+    const worksheet = rawWorkbook.Sheets[sheetName];
+    if (!worksheet) return;
+
+    const rawGrid: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    let headerRowIndex = 0;
+    for (let r = 0; r < Math.min(15, rawGrid.length); r++) {
+      const row = rawGrid[r];
+      if (Array.isArray(row) && row.length > 0) {
+        const hasKey = row.some((cell) => {
+          const k = cleanKey(cell);
+          return (
+            k.includes('gi') ||
+            k.includes('gardu') ||
+            k.includes('nama') ||
+            k.includes('penghantar') ||
+            k.includes('line') ||
+            k.includes('dari') ||
+            k.includes('ke') ||
+            k.includes('functloc') ||
+            k.includes('bay') ||
+            k.includes('trafo') ||
+            k.includes('tegangan') ||
+            k.includes('beban')
+          );
+        });
+        if (hasKey) {
+          headerRowIndex = r;
+          break;
+        }
+      }
+    }
+
+    const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim()).filter(Boolean);
+    const newMapping = autoDetectMapping(headers);
+    setColMapping(newMapping);
+    executeParsingWithMapping(worksheet, newMapping, currentTargetObj.name);
+  };
+
+  // Handler when user customizes column mapping dropdowns
+  const handleMappingChange = (field: keyof ColumnMapping, value: string) => {
+    const updatedMapping = { ...colMapping, [field]: value };
+    setColMapping(updatedMapping);
+    if (rawWorkbook && activeSheetName) {
+      const worksheet = rawWorkbook.Sheets[activeSheetName];
+      if (worksheet) {
+        executeParsingWithMapping(worksheet, updatedMapping, currentTargetObj.name);
+      }
     }
   };
 
@@ -600,6 +785,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const targetObj = defaultTargetOptions.find((t) => t.id === selectedTargetId) || defaultTargetOptions[1];
 
     if (activeTab === 'excel') {
+      if (giList.length === 0) {
+        alert('Gagal menyimpan: Belum ada data Gardu Induk yang terdeteksi dari file Excel. Silakan pilih kolom Nama GI yang sesuai pada panel Pemetaan Kolom.');
+        return;
+      }
       const config: CustomSLDConfig = {
         targetId: selectedTargetId,
         targetName: targetObj.name,
@@ -803,6 +992,185 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                   </div>
                 )}
 
+                {/* Sheet Selector (if file has multiple sheets) */}
+                {detectedSheets.length > 1 && (
+                  <div className="bg-[#eff6ff] p-3 rounded-xl border border-[#bfdbfe] space-y-1.5">
+                    <label className="text-xs font-bold text-[#0046ad] flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Lembar Kerja (Sheet):</span>
+                    </label>
+                    <select
+                      value={activeSheetName}
+                      onChange={(e) => handleSwitchSheet(e.target.value)}
+                      className="w-full bg-white border border-[#93c5fd] font-bold text-slate-800 text-xs rounded-lg px-2.5 py-1.5 shadow-2xs focus:ring-2 focus:ring-[#0046ad] cursor-pointer"
+                    >
+                      {detectedSheets.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Column Mapping Selector (Auto & Manual) */}
+                {rawHeaders.length > 0 && (
+                  <div className="bg-white rounded-xl border border-slate-300 shadow-xs overflow-hidden">
+                    <button
+                      onClick={() => setShowMappingPanel(!showMappingPanel)}
+                      className="w-full bg-slate-50 px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5 text-[#0046ad]">
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>Pemetaan Kolom Excel ({rawHeaders.length} Kolom)</span>
+                      </span>
+                      {showMappingPanel ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                    </button>
+
+                    {showMappingPanel && (
+                      <div className="p-3 space-y-2.5 text-xs bg-white">
+                        <div className="text-[10px] text-slate-500 leading-tight">
+                          Sistem otomatis mengenali kolom berikut. Ubah jika kolom tabel Anda berbeda:
+                        </div>
+
+                        {/* GI Node Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Nama GI / Simpul (Wajib):
+                          </label>
+                          <select
+                            value={colMapping.gi}
+                            onChange={(e) => handleMappingChange('gi', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Pilih Kolom Nama GI] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Dari GI Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Dari GI (Jalur Transmisi):
+                          </label>
+                          <select
+                            value={colMapping.from}
+                            onChange={(e) => handleMappingChange('from', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Tidak ada / Auto] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Ke GI Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Ke GI (Jalur Transmisi):
+                          </label>
+                          <select
+                            value={colMapping.to}
+                            onChange={(e) => handleMappingChange('to', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Tidak ada / Auto] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Line Name Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Nama Penghantar (Opsional):
+                          </label>
+                          <select
+                            value={colMapping.lineName}
+                            onChange={(e) => handleMappingChange('lineName', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Dari - Ke] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tegangan Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Tegangan (kV):
+                          </label>
+                          <select
+                            value={colMapping.voltage}
+                            onChange={(e) => handleMappingChange('voltage', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: 150 kV / 500 kV] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Status Kerawanan Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Status Kerawanan / Kondisi:
+                          </label>
+                          <select
+                            value={colMapping.risk}
+                            onChange={(e) => handleMappingChange('risk', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Normal / N-1 / N-2] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Raw Preview Rows */}
+                {previewRows.length > 0 && (
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[10px] space-y-1 overflow-hidden">
+                    <div className="font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Database className="w-3 h-3 text-[#0046ad]" />
+                        <span>Pratinjau Data Terbaca ({previewRows.length} baris):</span>
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-28 border border-slate-200 rounded bg-white">
+                      <table className="w-full text-left font-mono text-[9px]">
+                        <thead className="bg-slate-100 text-slate-600">
+                          <tr>
+                            {rawHeaders.slice(0, 4).map((h, i) => (
+                              <th key={i} className="p-1 border-b border-slate-200 whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {previewRows.map((row, rIdx) => (
+                            <tr key={rIdx} className="hover:bg-slate-50">
+                              {rawHeaders.slice(0, 4).map((h, cIdx) => (
+                                <td key={cIdx} className="p-1 whitespace-nowrap text-slate-700 truncate max-w-[90px]">
+                                  {String(row[cIdx] ?? '')}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* Download Template Action */}
                 <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl space-y-2">
                   <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -814,7 +1182,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                   </p>
                   <button
                     onClick={handleDownloadTemplate}
-                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Template (.xlsx)</span>
@@ -920,6 +1288,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     <ReactFlow
                       nodes={flowNodes}
                       edges={flowEdges}
+                      nodeTypes={uploadNodeTypes}
                       fitView
                       attributionPosition="bottom-left"
                       className="h-full w-full"

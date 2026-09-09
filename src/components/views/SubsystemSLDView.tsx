@@ -44,12 +44,59 @@ import {
   ImageHotspot
 } from '../../data/customSLDStore';
 
+import { Handle, Position } from '@xyflow/react';
+
 const DefaultCustomNode: React.FC<any> = ({ data }) => {
-  if (data?.label) return <>{data.label}</>;
   return (
-    <div className="p-3 bg-slate-900 border-2 border-[#0046ad] text-white rounded-xl shadow-lg min-w-[180px]">
-      <div className="font-bold text-xs">{data?.name || 'Gardu Induk'}</div>
-      <div className="text-[10px] text-cyan-400 font-mono">{data?.voltage || '150 kV'}</div>
+    <div className="relative group">
+      {/* Top handles */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-src"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
+      />
+      {/* Bottom handles */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-tgt"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
+      />
+      {/* Left and Right handles */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+
+      {data?.label ? (
+        data.label
+      ) : (
+        <div className="p-3 bg-slate-900 border-2 border-[#0046ad] text-white rounded-xl shadow-lg min-w-[180px]">
+          <div className="font-bold text-xs">{data?.name || 'Gardu Induk'}</div>
+          <div className="text-[10px] text-cyan-400 font-mono">{data?.voltage || '150 kV'}</div>
+        </div>
+      )}
     </div>
   );
 };
@@ -66,6 +113,7 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
+  default: TransmissionEdge,
   transmission: TransmissionEdge,
   transformer_link: TransmissionEdge
 };
@@ -475,11 +523,29 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
               {/* Custom SLD Active Banner */}
               {customConfig && (
-                <div className="bg-[#0f172a] border-b border-cyan-500/40 px-4 py-2 flex items-center justify-between text-xs text-white z-20 shrink-0 shadow-sm">
+                <div
+                  className={`border-b px-4 py-2 flex items-center justify-between text-xs z-20 shrink-0 shadow-sm ${
+                    customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                      ? 'bg-amber-950/90 border-amber-500/60 text-amber-200'
+                      : 'bg-[#0f172a] border-cyan-500/40 text-white'
+                  }`}
+                >
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="font-bold text-emerald-300">
-                      SLD Kustom Pengguna Aktif ({customConfig.type === 'excel' ? 'Import Excel' : 'Blueprint Skema Gambar'})
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                          ? 'bg-amber-400'
+                          : 'bg-emerald-400 animate-pulse'
+                      }`}
+                    />
+                    <span className="font-bold">
+                      {customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                        ? `⚠️ Data SLD Kustom Kosong (0 Simpul GI). Menampilkan SLD default ${currentSub.name}.`
+                        : `SLD Kustom Pengguna Aktif (${
+                            customConfig.type === 'excel'
+                              ? `Import Excel: ${customConfig.excelData?.giList?.length || 0} GI • ${customConfig.excelData?.lineList?.length || 0} Jalur`
+                              : 'Blueprint Skema Gambar'
+                          })`}
                     </span>
                     <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
                       • Diperbarui: {customConfig.updatedAt}
@@ -488,18 +554,17 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => onNavigate('upload-sld')}
-                      className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs"
+                      className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs cursor-pointer"
                     >
                       <UploadCloud className="w-3 h-3" />
                       <span>Upload Ulang</span>
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`Reset SLD ${currentSub.name} ke tampilan default?`)) {
-                          removeCustomSLD(currentSubId);
-                        }
+                        removeCustomSLD(currentSubId);
                       }}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700"
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700 cursor-pointer"
+                      title="Kembalikan ke tampilan default subsistem"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>Reset Default</span>
