@@ -248,40 +248,67 @@ export const UPBView: React.FC<UPBViewProps> = ({
         </button>
       </div>
 
-      {/* Secondary Navigation Tabs (Matching Jamali System View) */}
-      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-1.5">
+      {/* Top View Mode Bar (Maps | SLD | List Kerawanan) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+          {/* 1. Maps */}
           <button
-            onClick={() => onNavigate('jamali-system')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+            onClick={() => setUpbCanvasMode('maps')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              upbCanvasMode === 'maps'
+                ? 'bg-[#0046ad] text-white shadow-xs'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+            }`}
           >
-            Peta Wilayah
+            <Map className="w-3.5 h-3.5" />
+            <span>Maps</span>
           </button>
+
+          {/* 2. SLD */}
           <button
-            onClick={() => onNavigate('sld-500kv')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+            onClick={() => onNavigate('subsystem-sld')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all"
           >
             <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-            <span>SLD 500 kV</span>
+            <span>SLD</span>
           </button>
+
+          {/* 3. List Kerawanan */}
           <button
-            onClick={() => onNavigate('ibt-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+            onClick={() => setUpbCanvasMode('list-kerawanan')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              upbCanvasMode === 'list-kerawanan'
+                ? 'bg-[#0046ad] text-white shadow-xs'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+            }`}
           >
-            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
-            <span>IBT</span>
+            <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+            <span>List Kerawanan</span>
+            <span
+              className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
+                upbCanvasMode === 'list-kerawanan'
+                  ? 'bg-white/25 text-white'
+                  : 'bg-[#fee2e2] text-[#dc2626]'
+              }`}
+            >
+              {currentUPB.riskCount}
+            </span>
           </button>
-          <button
-            className="px-3.5 py-1.5 rounded-lg font-semibold bg-[#0046ad] text-white shadow-xs transition-all"
-          >
-            <span>Daftar UPB/P2B</span>
-          </button>
-          <button
-            onClick={() => onNavigate('report-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
-          >
-            <span>Ringkasan Kerawanan</span>
-          </button>
+
+          {/* 4. Info UPB Trigger (Only when on list-kerawanan) */}
+          {upbCanvasMode === 'list-kerawanan' && (
+            <button
+              onClick={() => setShowUpbInfoOverlay(true)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                showUpbInfoOverlay
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+              }`}
+            >
+              <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+              <span>Info UPB</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -354,67 +381,6 @@ export const UPBView: React.FC<UPBViewProps> = ({
             }}
           />
 
-          {/* Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan) */}
-          <div className="absolute top-4 right-6 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
-            {/* 1. Maps */}
-            <button
-              onClick={() => setUpbCanvasMode('maps')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                upbCanvasMode === 'maps'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <Map className="w-3.5 h-3.5" />
-              <span>Maps</span>
-            </button>
-
-            {/* 2. SLD */}
-            <button
-              onClick={() => onNavigate('subsystem-sld')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] transition-all"
-            >
-              <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-              <span>SLD</span>
-            </button>
-
-            {/* 3. List Kerawanan */}
-            <button
-              onClick={() => setUpbCanvasMode('list-kerawanan')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                upbCanvasMode === 'list-kerawanan'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
-              <span>List Kerawanan</span>
-              <span
-                className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                  upbCanvasMode === 'list-kerawanan'
-                    ? 'bg-white/25 text-white'
-                    : 'bg-[#fee2e2] text-[#dc2626]'
-                }`}
-              >
-                {currentUPB.riskCount}
-              </span>
-            </button>
-
-            {/* 4. Info UPB Trigger (Only when on list-kerawanan) */}
-            {upbCanvasMode === 'list-kerawanan' && (
-              <button
-                onClick={() => setShowUpbInfoOverlay(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  showUpbInfoOverlay
-                    ? 'bg-[#0046ad] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-                }`}
-              >
-                <Info className="w-3.5 h-3.5 text-[#0046ad]" />
-                <span>Info UPB</span>
-              </button>
-            )}
-          </div>
 
           {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
           {upbCanvasMode === 'list-kerawanan' && (

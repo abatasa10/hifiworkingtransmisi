@@ -360,46 +360,57 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
         </div>
       </div>
 
-      {/* Secondary Navigation Tabs (Tetap ada di SLD 500 kV) */}
-      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 shadow-2xs">
-        <div className="flex items-center gap-1.5">
+      {/* Top View Mode Bar (Maps | SLD | List Kerawanan) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+          {/* 1. Maps */}
           <button
-            onClick={() => onNavigate('jamali-system')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+            onClick={() => {
+              if (onNavigateToMaps) {
+                onNavigateToMaps();
+              } else {
+                onNavigate('jamali-system');
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all"
           >
-            Peta Wilayah
+            <Map className="w-3.5 h-3.5" />
+            <span>Maps</span>
           </button>
+
+          {/* 2. SLD (Active) */}
           <button
-            className="px-3.5 py-1.5 rounded-lg font-semibold bg-[#0046ad] text-white shadow-xs flex items-center gap-1.5"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#0046ad] text-white shadow-xs transition-all"
           >
-            <Network className="w-3.5 h-3.5 text-white" />
-            <span>SLD 500 kV</span>
+            <Network className="w-3.5 h-3.5" />
+            <span>SLD</span>
           </button>
+
+          {/* 3. List Kerawanan */}
           <button
-            onClick={() => onNavigate('ibt-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+            onClick={() => {
+              if (onNavigateToListKerawanan) {
+                onNavigateToListKerawanan();
+              } else {
+                onNavigate('jamali-system');
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all"
           >
-            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
-            <span>IBT</span>
-          </button>
-          <button
-            onClick={() => onNavigate('upb-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
-          >
-            <span>Daftar UPB/P2B</span>
-          </button>
-          <button
-            onClick={() => onNavigate('jamali-system')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
-          >
-            Ringkasan Kerawanan
+            <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+            <span>List Kerawanan</span>
+            <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#fee2e2] text-[#dc2626]">
+              {risksData.length}
+            </span>
           </button>
         </div>
 
-        <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
-          <span>Tegangan Backbone: 500 kV</span>
-          <span>•</span>
-          <span>Interkoneksi: 150 kV</span>
+        <div className="flex items-center gap-3">
+          <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
+            <span>Tegangan Backbone: 500 kV</span>
+            <span>•</span>
+            <span>Interkoneksi: 150 kV</span>
+          </div>
         </div>
       </div>
 
@@ -407,49 +418,6 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
       <div className="flex-1 flex w-full relative overflow-hidden">
         {/* Interactive Graph Canvas */}
         <div className="flex-1 relative h-full min-w-0">
-          {/* 3 Action Buttons Floating in Top Right Corner (Maps, SLD, List Kerawanan) */}
-          <div className="absolute top-4 right-6 z-30 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
-            {/* 1. Maps */}
-            <button
-              onClick={() => {
-                if (onNavigateToMaps) {
-                  onNavigateToMaps();
-                } else {
-                  onNavigate('jamali-system');
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
-            >
-              <Map className="w-3.5 h-3.5" />
-              <span>Maps</span>
-            </button>
-
-            {/* 2. SLD */}
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0046ad] text-white shadow-xs transition-all"
-            >
-              <Network className="w-3.5 h-3.5" />
-              <span>SLD</span>
-            </button>
-
-            {/* 3. List Kerawanan */}
-            <button
-              onClick={() => {
-                if (onNavigateToListKerawanan) {
-                  onNavigateToListKerawanan();
-                } else {
-                  onNavigate('jamali-system');
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
-            >
-              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
-              <span>List Kerawanan</span>
-              <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold bg-[#fee2e2] text-[#dc2626]">
-                {risksData.length}
-              </span>
-            </button>
-          </div>
 
           <ReactFlow
             nodes={nodes}
