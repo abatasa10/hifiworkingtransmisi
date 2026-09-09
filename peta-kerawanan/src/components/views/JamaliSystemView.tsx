@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { jamaliUPBs } from '../../data/upbs';
 import { UPB } from '../../types/system';
 import { ActiveView } from '../layout/Header';
 import { Breadcrumb } from '../layout/Breadcrumb';
+import { risksData } from '../../data/risks';
+import { RiskItem } from '../../types/risk';
+import { RiskDetailContent } from '../panels/RiskDetailContent';
 import {
   ArrowLeft,
   ArrowRight,
   Network,
   Layers,
   ShieldAlert,
-  MapPin
+  MapPin,
+  Map,
+  ListFilter,
+  Search,
+  X,
+  Zap,
+  ExternalLink
 } from 'lucide-react';
 
 interface JamaliSystemViewProps {
@@ -25,6 +34,23 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
     'peta' | 'sld' | 'ibt' | 'daftar-upb' | 'ringkasan'
   >('peta');
   const [hoveredUPB, setHoveredUPB] = useState<UPB | null>(null);
+  const [canvasMode, setCanvasMode] = useState<'maps' | 'list-kerawanan'>('maps');
+  const [selectedRisk, setSelectedRisk] = useState<RiskItem>(
+    () => risksData.find((r) => r.number === 7) || risksData[0]
+  );
+  const [riskSearchQuery, setRiskSearchQuery] = useState('');
+
+  const filteredRisks = useMemo(() => {
+    return risksData.filter((r) => {
+      const q = riskSearchQuery.toLowerCase();
+      return (
+        r.name.toLowerCase().includes(q) ||
+        r.number.toString().includes(q) ||
+        r.location.toLowerCase().includes(q) ||
+        r.assetType.toLowerCase().includes(q)
+      );
+    });
+  }, [riskSearchQuery]);
 
   // Map coordinates for regional APBs/UP2Bs (Banten merged into P2B Jakban)
   const upbMapCoords: Record<string, { x: number; y: number }> = {
@@ -126,108 +152,273 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 flex relative overflow-hidden">
-        {/* Left / Center: Interactive Map of Java-Bali */}
-        <div className="flex-1 relative flex items-center justify-center p-6 bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden">
+        {/* Left / Center: Interactive Map of Java-Bali OR List Kerawanan SLD 500 kV */}
+        <div className="flex-1 relative flex items-center justify-center bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden min-w-0">
           {/* Subtle grid */}
           <div
-            className="absolute inset-0 opacity-40"
+            className="absolute inset-0 opacity-40 pointer-events-none"
             style={{
               backgroundImage: `radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0)`,
               backgroundSize: '24px 24px'
             }}
           />
 
-          {/* Java, Madura & Bali Vector Map */}
-          <svg
-            viewBox="0 0 1000 400"
-            className="w-full h-full max-h-[75vh] filter drop-shadow-sm"
-          >
-            {/* Java Silhouette */}
-            <path
-              d="M 80,180 Q 150,150 240,160 Q 320,180 420,190 Q 520,200 620,190 Q 720,170 820,190 L 840,240 Q 760,250 680,260 Q 580,270 480,260 Q 380,270 280,270 Q 180,260 100,240 Z"
-              fill="#cbd5e1"
-              stroke="#94a3b8"
-              strokeWidth="1.5"
-            />
-            {/* Madura */}
-            <path
-              d="M 720,140 Q 780,130 830,145 Q 810,170 740,165 Z"
-              fill="#cbd5e1"
-              stroke="#94a3b8"
-              strokeWidth="1.5"
-            />
-            {/* Bali */}
-            <path
-              d="M 880,220 Q 940,210 960,240 Q 930,270 890,260 Z"
-              fill="#cbd5e1"
-              stroke="#94a3b8"
-              strokeWidth="1.5"
-            />
+          {/* 3 Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan) */}
+          <div className="absolute top-4 right-6 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
+            {/* 1. Maps */}
+            <button
+              onClick={() => setCanvasMode('maps')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                canvasMode === 'maps'
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Maps</span>
+            </button>
 
-            {/* Submarine Cable */}
-            <line x1="760" y1="190" x2="760" y2="165" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
-            <line x1="835" y1="230" x2="880" y2="235" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
+            {/* 2. SLD */}
+            <button
+              onClick={() => onNavigate('sld-500kv')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] transition-all"
+            >
+              <Network className="w-3.5 h-3.5 text-[#0046ad]" />
+              <span>SLD</span>
+            </button>
 
-            {/* Backbone 500 kV Transmission Lines */}
-            <path
-              d="M 120,190 L 220,180 L 330,220 L 520,220 L 730,210 L 820,210"
-              fill="none"
-              stroke="#0046ad"
-              strokeWidth="3"
-              strokeOpacity="0.8"
-            />
-          </svg>
-
-          {/* UP2B Region Markers with Pin Point and Total Kerawanan (No Classifications) */}
-          {regionalUPBs.map((upb) => {
-            const coord = upbMapCoords[upb.id] || { x: 500, y: 200 };
-            const isHovered = hoveredUPB?.id === upb.id;
-
-            return (
-              <div
-                key={upb.id}
-                style={{
-                  position: 'absolute',
-                  left: `${(coord.x / 1000) * 100}%`,
-                  top: `${(coord.y / 400) * 100}%`,
-                  transform: 'translate(-50%, -50%)'
-                }}
-                className="z-30 cursor-pointer group"
-                onMouseEnter={() => setHoveredUPB(upb)}
-                onMouseLeave={() => setHoveredUPB(null)}
-                onClick={() => onSelectUPB(upb.id)}
+            {/* 3. List Kerawanan */}
+            <button
+              onClick={() => setCanvasMode('list-kerawanan')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                canvasMode === 'list-kerawanan'
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+              }`}
+            >
+              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+              <span>List Kerawanan</span>
+              <span
+                className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
+                  canvasMode === 'list-kerawanan'
+                    ? 'bg-white/25 text-white'
+                    : 'bg-[#fee2e2] text-[#dc2626]'
+                }`}
               >
-                {/* Pin Card in MANTAPS style with Pin Point & Total Kerawanan */}
-                <div
-                  className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
-                    isHovered
-                      ? 'border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
+                {risksData.length}
+              </span>
+            </button>
+          </div>
+
+          {/* MODE 1: MAPS VIEW */}
+          {canvasMode === 'maps' && (
+            <div className="w-full h-full relative flex items-center justify-center p-6">
+              {/* Java, Madura & Bali Vector Map */}
+              <svg
+                viewBox="0 0 1000 400"
+                className="w-full h-full max-h-[75vh] filter drop-shadow-sm"
+              >
+                {/* Java Silhouette */}
+                <path
+                  d="M 80,180 Q 150,150 240,160 Q 320,180 420,190 Q 520,200 620,190 Q 720,170 820,190 L 840,240 Q 760,250 680,260 Q 580,270 480,260 Q 380,270 280,270 Q 180,260 100,240 Z"
+                  fill="#cbd5e1"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                />
+                {/* Madura */}
+                <path
+                  d="M 720,140 Q 780,130 830,145 Q 810,170 740,165 Z"
+                  fill="#cbd5e1"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                />
+                {/* Bali */}
+                <path
+                  d="M 880,220 Q 940,210 960,240 Q 930,270 890,260 Z"
+                  fill="#cbd5e1"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                />
+
+                {/* Submarine Cable */}
+                <line x1="760" y1="190" x2="760" y2="165" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
+                <line x1="835" y1="230" x2="880" y2="235" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
+
+                {/* Backbone 500 kV Transmission Lines */}
+                <path
+                  d="M 120,190 L 220,180 L 330,220 L 520,220 L 730,210 L 820,210"
+                  fill="none"
+                  stroke="#0046ad"
+                  strokeWidth="3"
+                  strokeOpacity="0.8"
+                />
+              </svg>
+
+              {/* UP2B Region Markers with Pin Point and Total Kerawanan (No Classifications) */}
+              {regionalUPBs.map((upb) => {
+                const coord = upbMapCoords[upb.id] || { x: 500, y: 200 };
+                const isHovered = hoveredUPB?.id === upb.id;
+
+                return (
+                  <div
+                    key={upb.id}
+                    style={{
+                      position: 'absolute',
+                      left: `${(coord.x / 1000) * 100}%`,
+                      top: `${(coord.y / 400) * 100}%`,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                    className="z-30 cursor-pointer group"
+                    onMouseEnter={() => setHoveredUPB(upb)}
+                    onMouseLeave={() => setHoveredUPB(null)}
+                    onClick={() => onSelectUPB(upb.id)}
+                  >
+                    {/* Pin Card in MANTAPS style with Pin Point & Total Kerawanan */}
+                    <div
+                      className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
+                        isHovered
+                          ? 'border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] shrink-0">
+                          <MapPin className="w-3.5 h-3.5 fill-current" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block whitespace-nowrap">
+                            {upb.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
+                            <span>{upb.subsystemCount} Subsistem</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Total Kerawanan (Warna seragam semua) */}
+                      <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
+                        <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
+                        <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
+                          {upb.riskCount} Kerawanan
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* MODE 2: LIST KERAWANAN SLD 500 KV (Matching Gambar 2 Detail) */}
+          {canvasMode === 'list-kerawanan' && (
+            <div className="absolute inset-0 z-30 bg-slate-50 flex flex-col overflow-hidden">
+              {/* Top Sub-Header */}
+              <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between shrink-0 shadow-2xs">
+                <div>
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] shrink-0">
-                      <MapPin className="w-3.5 h-3.5 fill-current" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block whitespace-nowrap">
-                        {upb.name}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
-                        <span>{upb.subsystemCount} Subsistem</span>
-                      </span>
-                    </div>
-                  </div>                  {/* Total Kerawanan (Warna seragam semua) */}
-                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
-                    <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
-                    <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
-                      {upb.riskCount} Kerawanan
+                    <span className="text-[11px] font-mono font-bold text-[#0046ad] uppercase tracking-wider">
+                      SLD 500 kV • Daftar Kerawanan
+                    </span>
+                    <span className="bg-[#fee2e2] text-[#dc2626] text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-[#fca5a5]">
+                      {filteredRisks.length} Jalur Transmisi Rawan
                     </span>
                   </div>
+                  <h2 className="text-sm font-black text-[#1e293b] mt-0.5">
+                    Daftar Semua Line Rawan & Detail Kerawanan SUTET 500 kV
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2 pr-32">
+                  <button
+                    onClick={() => onNavigate('sld-500kv')}
+                    className="flex items-center gap-1.5 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#0046ad] border border-blue-200 text-xs px-3 py-1.5 rounded-lg font-bold transition-all shadow-3xs"
+                  >
+                    <Network className="w-3.5 h-3.5 text-[#0046ad]" />
+                    <span>Buka di SLD 500 kV</span>
+                  </button>
+                  <button
+                    onClick={() => setCanvasMode('maps')}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    title="Tutup dan Kembali ke Peta"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            );
-          })}
+
+              {/* Split Body: Left List of All Lines, Right Gambar 2 Detail */}
+              <div className="flex-1 flex overflow-hidden">
+                {/* Left Column: List of All Rawan Lines */}
+                <div className="w-72 md:w-80 border-r border-slate-200 bg-white flex flex-col shrink-0">
+                  {/* Search Bar */}
+                  <div className="p-2.5 border-b border-slate-100 bg-[#f8fafc]">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={riskSearchQuery}
+                        onChange={(e) => setRiskSearchQuery(e.target.value)}
+                        placeholder="Cari saluran atau No. Kerawanan..."
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-[#0046ad] placeholder:text-slate-400 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* List Items */}
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1.5 divide-y divide-slate-100">
+                    {filteredRisks.map((risk) => {
+                      const isSelected = selectedRisk.id === risk.id;
+
+                      return (
+                        <div
+                          key={risk.id}
+                          onClick={() => setSelectedRisk(risk)}
+                          className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#eff6ff] border-[#0046ad] shadow-xs ring-1 ring-[#0046ad]'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            {/* Starburst badge with number */}
+                            <div className="w-7 h-7 rounded-lg bg-[#dc2626] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                              #{risk.number}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className={`font-bold text-xs truncate ${isSelected ? 'text-[#0046ad]' : 'text-slate-800'}`}>
+                                  {risk.name}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                {risk.voltage} • {risk.circuits} Sirkit • {risk.lengthKm} km
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] mt-1.5 pt-1.5 border-t border-slate-100">
+                                <span className="text-slate-400">Pembebanan:</span>
+                                <span className="font-bold text-[#dc2626] font-mono">
+                                  {risk.loadingCircuit1}% / {risk.loadingCircuit2}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Column: Full Detail Panel matching EXACTLY Gambar 2 */}
+                <div className="flex-1 bg-white overflow-y-auto">
+                  {selectedRisk && (
+                    <RiskDetailContent
+                      risk={selectedRisk}
+                      onSelectAsset={() => onNavigate('sld-500kv')}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Info Panel: Informasi Sistem (GI & IBT removed from top, Total Kerawanan 500kV & IBT, Total Kerawanan per APB) */}
@@ -365,14 +556,28 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             </div>
 
             {/* Kerawanan #7 Highlight Card */}
-            <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3.5 space-y-1.5">
-              <div className="flex items-center gap-2 text-[#b45309] font-bold text-xs">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Titik Kritis Utama: Kerawanan #7</span>
+            <div
+              onClick={() => {
+                const r7 = risksData.find((r) => r.number === 7);
+                if (r7) setSelectedRisk(r7);
+                setCanvasMode('list-kerawanan');
+              }}
+              className="bg-[#fffbeb] hover:bg-[#fef3c7] border border-[#fde68a] hover:border-[#f59e0b] rounded-xl p-3.5 space-y-1.5 cursor-pointer transition-all shadow-2xs group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#b45309] font-bold text-xs">
+                  <ShieldAlert className="w-4 h-4 text-[#d97706]" />
+                  <span>Titik Kritis Utama: Kerawanan #7</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-[#d97706] group-hover:translate-x-1 transition-transform" />
               </div>
               <p className="text-[11px] text-slate-600 leading-snug">
                 SUTET Gandul-Durkos-Kembangan (P2B Jakban) memasok radial 2 IBT Durikosambi & 2 IBT Muarakarang dengan risiko pemadaman 1.700 MW pada kondisi N-2.
               </p>
+              <div className="text-[10px] font-bold text-[#b45309] flex items-center gap-1 pt-0.5">
+                <span>Buka detail lengkap & mitigasi</span>
+                <span>→</span>
+              </div>
             </div>
           </div>
 
