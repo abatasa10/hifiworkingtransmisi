@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import {
   ReactFlow,
@@ -6,8 +6,6 @@ import {
   Controls,
   Background,
   BackgroundVariant,
-  useNodesState,
-  useEdgesState,
   Node,
   Edge,
   ReactFlowProvider,
@@ -19,69 +17,34 @@ import {
   FileSpreadsheet,
   Image as ImageIcon,
   Download,
-  Plus,
-  Play,
   RotateCcw,
   CheckCircle2,
-  AlertTriangle,
-  Flame,
   Info,
-  Layers,
   MapPin,
   Trash2,
-  Eye,
-  Sliders,
   Maximize2,
-  Zap,
+  Save,
   ArrowRight,
   ShieldAlert,
-  Save,
-  HelpCircle
+  Sparkles,
+  ExternalLink,
+  Target
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
+import {
+  ParsedGINode,
+  ParsedTransmissionLine,
+  ImageHotspot,
+  CustomSLDConfig,
+  saveCustomSLD,
+  getCustomSLD,
+  removeCustomSLD,
+  defaultTargetOptions
+} from '../../data/customSLDStore';
 
 interface UploadSLDViewProps {
   onNavigate: (view: ActiveView) => void;
-}
-
-interface ParsedGINode {
-  id: string;
-  name: string;
-  voltage: string; // '500 kV' | '150 kV'
-  region: string; // 'DKI Jakarta & Banten' | 'Jawa Barat' | 'Jawa Tengah' | 'Jawa Timur' | 'Bali'
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
-  subsystem?: string;
-  x?: number;
-  y?: number;
-}
-
-interface ParsedTransmissionLine {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  lineName: string;
-  circuit: string; // 'Sirkit 1' | 'Sirkit 2'
-  lengthKm: number;
-  loadingPct: number;
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
-}
-
-interface ImageHotspot {
-  id: string;
-  name: string;
-  voltage: string;
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
-  xPercent: number; // 0 - 100%
-  yPercent: number; // 0 - 100%
-  description?: string;
-}
-
-interface ImageLineConnection {
-  id: string;
-  fromHotspotId: string;
-  toHotspotId: string;
-  name: string;
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
+  onSelectSubsystem?: (subId: string) => void;
 }
 
 // Sample initial data for immediate demo
@@ -98,8 +61,7 @@ const sampleGINodes: ParsedGINode[] = [
   { id: 'GI_PEDAN', name: 'GITET Pedan', voltage: '500 kV', region: 'Jawa Tengah', riskStatus: 'N-1-2', subsystem: 'Pedan' },
   { id: 'GI_KEDIRI', name: 'GITET Kediri', voltage: '500 kV', region: 'Jawa Timur', riskStatus: 'Normal', subsystem: 'Kediri' },
   { id: 'GI_GRATI', name: 'GITET Grati', voltage: '500 kV', region: 'Jawa Timur', riskStatus: 'N-1', subsystem: 'Grati' },
-  { id: 'GI_PAITON', name: 'GITET Paiton', voltage: '500 kV', region: 'Jawa Timur', riskStatus: 'Normal', subsystem: 'Paiton' },
-  { id: 'GI_KAPAL', name: 'GITET Kapal (Bali)', voltage: '150 kV', region: 'Bali', riskStatus: 'Normal', subsystem: 'Bali' }
+  { id: 'GI_PAITON', name: 'GITET Paiton', voltage: '500 kV', region: 'Jawa Timur', riskStatus: 'Normal', subsystem: 'Paiton' }
 ];
 
 const sampleLines: ParsedTransmissionLine[] = [
@@ -117,14 +79,19 @@ const sampleLines: ParsedTransmissionLine[] = [
   { id: 'L_GRT_PTN', sourceId: 'GI_GRATI', targetId: 'GI_PAITON', lineName: 'Grati - Paiton', circuit: 'Sirkit 1', lengthKm: 84.7, loadingPct: 61, riskStatus: 'Normal' }
 ];
 
-export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
+export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
+  onNavigate,
+  onSelectSubsystem
+}) => {
   const [activeTab, setActiveTab] = useState<'excel' | 'image'>('excel');
+
+  // Target Destination Selection
+  const [selectedTargetId, setSelectedTargetId] = useState<string>('sub-bogor');
 
   // Excel mode states
   const [giList, setGiList] = useState<ParsedGINode[]>(sampleGINodes);
   const [lineList, setLineList] = useState<ParsedTransmissionLine[]>(sampleLines);
   const [fileName, setFileName] = useState<string>('sample_sld_jamali_500kv.xlsx');
-  const [isGenerated, setIsGenerated] = useState<boolean>(true);
   const [filterRisk, setFilterRisk] = useState<string>('Semua');
   const [selectedElement, setSelectedElement] = useState<any | null>(null);
 
@@ -141,13 +108,22 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
   const [newPointStatus, setNewPointStatus] = useState<'Normal' | 'N-1' | 'N-2' | 'N-1-2'>('N-1');
   const [selectedHotspot, setSelectedHotspot] = useState<ImageHotspot | null>(null);
 
+  // Success Confirmation Modal
+  const [savedSuccessModal, setSavedSuccessModal] = useState<{
+    isOpen: boolean;
+    targetName: string;
+    targetId: string;
+    type: 'excel' | 'image';
+  } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
+  const currentTargetObj = defaultTargetOptions.find((t) => t.id === selectedTargetId) || defaultTargetOptions[1];
+
   // Auto-layout calculation for React Flow
   const { flowNodes, flowEdges } = useMemo(() => {
-    // Determine positions horizontally across West to East Java
     const regionOrder: Record<string, number> = {
       'DKI Jakarta & Banten': 0,
       'Jawa Barat': 1,
@@ -156,7 +132,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
       'Bali': 4
     };
 
-    // Group nodes by region
     const groups: Record<string, ParsedGINode[]> = {};
     giList.forEach((gi) => {
       const reg = gi.region || 'Jawa Barat';
@@ -266,7 +241,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        // Check if there are sheets for Nodes and Edges
         const firstSheetName = workbook.SheetNames[0];
         const secondSheetName = workbook.SheetNames[1] || workbook.SheetNames[0];
 
@@ -285,7 +259,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
           setGiList(parsedNodes);
         }
 
-        // Parse lines if second sheet exists or check line columns
         if (workbook.SheetNames.length > 1) {
           const linesSheet = workbook.Sheets[secondSheetName];
           const rawLines = XLSX.utils.sheet_to_json<any>(linesSheet);
@@ -303,8 +276,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
             setLineList(parsedLines);
           }
         }
-
-        setIsGenerated(true);
       } catch (err) {
         alert('Gagal memproses file Excel. Pastikan format kolom sesuai dengan template.');
         console.error(err);
@@ -318,32 +289,24 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
   const handleDownloadTemplate = () => {
     const wb = XLSX.utils.book_new();
 
-    // Sheet 1: Gardu Induk
     const wsNodesData = [
-      { ID: 'GI_GANDUL', 'Nama GI': 'GITET Gandul', Tegangan: '500 kV', Wilayah: 'DKI Jakarta & Banten', Subsistem: 'Gandul', 'Status Kerawanan': 'N-1' },
-      { ID: 'GI_CIBINONG', 'Nama GI': 'GITET Cibinong', Tegangan: '500 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'N-1' },
-      { ID: 'GI_CIRATA', 'Nama GI': 'GITET Cirata', Tegangan: '500 kV', Wilayah: 'Jawa Barat', Subsistem: 'Cirata', 'Status Kerawanan': 'N-2' },
-      { ID: 'GI_SAGULING', 'Nama GI': 'GITET Saguling', Tegangan: '500 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bandung Barat', 'Status Kerawanan': 'Normal' },
-      { ID: 'GI_UNGARAN', 'Nama GI': 'GITET Ungaran', Tegangan: '500 kV', Wilayah: 'Jawa Tengah', Subsistem: 'Ungaran', 'Status Kerawanan': 'Normal' },
-      { ID: 'GI_PEDAN', 'Nama GI': 'GITET Pedan', Tegangan: '500 kV', Wilayah: 'Jawa Tengah', Subsistem: 'Pedan', 'Status Kerawanan': 'N-1-2' },
-      { ID: 'GI_GRATI', 'Nama GI': 'GITET Grati', Tegangan: '500 kV', Wilayah: 'Jawa Timur', Subsistem: 'Grati', 'Status Kerawanan': 'N-1' }
+      { ID: 'GI_BOGOR', 'Nama GI': 'GI Bogor Baru', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'Normal' },
+      { ID: 'GI_CIBINONG_150', 'Nama GI': 'GI Cibinong 150', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'N-1' },
+      { ID: 'GI_SENTUL', 'Nama GI': 'GI Sentul', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'N-2' },
+      { ID: 'GI_CIAWI', 'Nama GI': 'GI Ciawi', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'Normal' }
     ];
     const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
     XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk');
 
-    // Sheet 2: Jalur Transmisi
     const wsEdgesData = [
-      { ID: 'L_GND_CBN', 'Dari GI': 'GI_GANDUL', 'Ke GI': 'GI_CIBINONG', 'Nama Penghantar': 'Gandul - Cibinong', Sirkit: 'Sirkit 1', 'Panjang km': 34.2, 'Pembebanan %': 79, 'Status Kerawanan': 'N-1' },
-      { ID: 'L_CBN_CRT', 'Dari GI': 'GI_CIBINONG', 'Ke GI': 'GI_CIRATA', 'Nama Penghantar': 'Cibinong - Cirata', Sirkit: 'Sirkit 1', 'Panjang km': 65.8, 'Pembebanan %': 88, 'Status Kerawanan': 'N-2' },
-      { ID: 'L_CRT_SGL', 'Dari GI': 'GI_CIRATA', 'Ke GI': 'GI_SAGULING', 'Nama Penghantar': 'Cirata - Saguling', Sirkit: 'Sirkit 1', 'Panjang km': 22.0, 'Pembebanan %': 71, 'Status Kerawanan': 'Normal' },
-      { ID: 'L_SGL_UNG', 'Dari GI': 'GI_SAGULING', 'Ke GI': 'GI_UNGARAN', 'Nama Penghantar': 'Saguling - Ungaran', Sirkit: 'Sirkit 1', 'Panjang km': 185.0, 'Pembebanan %': 62, 'Status Kerawanan': 'Normal' },
-      { ID: 'L_UNG_PDN', 'Dari GI': 'GI_UNGARAN', 'Ke GI': 'GI_PEDAN', 'Nama Penghantar': 'Ungaran - Pedan', Sirkit: 'Sirkit 1', 'Panjang km': 68.2, 'Pembebanan %': 91, 'Status Kerawanan': 'N-1-2' },
-      { ID: 'L_PDN_GRT', 'Dari GI': 'GI_PEDAN', 'Ke GI': 'GI_GRATI', 'Nama Penghantar': 'Pedan - Grati', Sirkit: 'Sirkit 1', 'Panjang km': 210.5, 'Pembebanan %': 75, 'Status Kerawanan': 'N-1' }
+      { ID: 'L_BGR_CBN', 'Dari GI': 'GI_BOGOR', 'Ke GI': 'GI_CIBINONG_150', 'Nama Penghantar': 'Bogor - Cibinong', Sirkit: 'Sirkit 1', 'Panjang km': 18.2, 'Pembebanan %': 78, 'Status Kerawanan': 'N-1' },
+      { ID: 'L_CBN_STL', 'Dari GI': 'GI_CIBINONG_150', 'Ke GI': 'GI_SENTUL', 'Nama Penghantar': 'Cibinong - Sentul', Sirkit: 'Sirkit 1', 'Panjang km': 14.5, 'Pembebanan %': 89, 'Status Kerawanan': 'N-2' },
+      { ID: 'L_STL_CW', 'Dari GI': 'GI_SENTUL', 'Ke GI': 'GI_CIAWI', 'Nama Penghantar': 'Sentul - Ciawi', Sirkit: 'Sirkit 1', 'Panjang km': 12.0, 'Pembebanan %': 62, 'Status Kerawanan': 'Normal' }
     ];
     const wsEdges = XLSX.utils.json_to_sheet(wsEdgesData);
     XLSX.utils.book_append_sheet(wb, wsEdges, 'Jalur_Transmisi');
 
-    XLSX.writeFile(wb, 'template_data_sld_pln.xlsx');
+    XLSX.writeFile(wb, 'template_sld_subsistem_pln.xlsx');
   };
 
   // Image Upload Handling
@@ -352,8 +315,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
     if (!file) return;
 
     setImageFileName(file.name);
-    const url = URL.createObjectURL(file);
-    setUploadedImageUrl(url);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Image Click Handler (Place Hotspot)
@@ -370,11 +336,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
     const newSpot: ImageHotspot = {
       id: `spot-${Date.now()}`,
       name: newSpotName,
-      voltage: '500 kV',
+      voltage: selectedTargetId === 'sld-500kv' ? '500 kV' : '150 kV',
       riskStatus: newPointStatus,
       xPercent: Math.round(x * 10) / 10,
       yPercent: Math.round(y * 10) / 10,
-      description: 'Simpul interaktif baru ditambahkan dari blueprint gambar'
+      description: 'Simpul interaktif baru ditambahkan pada kanvas blueprint'
     };
 
     setHotspots((prev) => [...prev, newSpot]);
@@ -387,8 +353,60 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
     if (selectedHotspot?.id === id) setSelectedHotspot(null);
   };
 
+  // SAVE & BIND TO TARGET SUBSYSTEM / SYSTEM!
+  const handleSaveToTarget = () => {
+    const targetObj = defaultTargetOptions.find((t) => t.id === selectedTargetId) || defaultTargetOptions[1];
+
+    if (activeTab === 'excel') {
+      const config: CustomSLDConfig = {
+        targetId: selectedTargetId,
+        targetName: targetObj.name,
+        type: 'excel',
+        updatedAt: new Date().toLocaleString('id-ID'),
+        excelData: {
+          giList,
+          lineList
+        }
+      };
+      saveCustomSLD(config);
+    } else {
+      const config: CustomSLDConfig = {
+        targetId: selectedTargetId,
+        targetName: targetObj.name,
+        type: 'image',
+        updatedAt: new Date().toLocaleString('id-ID'),
+        imageData: {
+          imageUrl: uploadedImageUrl || '',
+          imageFileName: imageFileName || 'blueprint_skema_sld.png',
+          hotspots
+        }
+      };
+      saveCustomSLD(config);
+    }
+
+    setSavedSuccessModal({
+      isOpen: true,
+      targetName: targetObj.name,
+      targetId: selectedTargetId,
+      type: activeTab
+    });
+  };
+
+  // Navigate to Target SLD View directly
+  const handleOpenTargetSLD = (targetId: string) => {
+    setSavedSuccessModal(null);
+    if (targetId === 'sld-500kv') {
+      onNavigate('sld-500kv');
+    } else {
+      if (onSelectSubsystem) {
+        onSelectSubsystem(targetId);
+      }
+      onNavigate('subsystem-sld');
+    }
+  };
+
   return (
-    <div className="w-full h-full flex flex-col bg-[#f4f7fa] overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[#f4f7fa] overflow-hidden relative">
       {/* Top Header Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs z-20">
         <div>
@@ -404,10 +422,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('sld-500kv')}
               className="hover:text-[#0046ad] cursor-pointer"
             >
-              SLD 500 kV
+              SLD Jaringan
             </span>
             <span>/</span>
-            <span className="text-[#0046ad] font-bold">Upload & Builder SLD</span>
+            <span className="text-[#0046ad] font-bold">Upload & Binding SLD</span>
           </div>
           <h1 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
             <UploadCloud className="w-5 h-5 text-[#0046ad]" />
@@ -440,6 +458,36 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
             <span>2. Unggah Gambar / Blueprint SLD</span>
           </button>
         </div>
+      </div>
+
+      {/* Target Destination Bar */}
+      <div className="bg-[#eff6ff]/80 border-b border-[#bfdbfe] px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 z-10">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-[#0046ad]">
+            <Target className="w-4 h-4 text-[#0046ad]" />
+            <span>Pilih Target Sistem / Subsistem Tujuan:</span>
+          </div>
+          <select
+            value={selectedTargetId}
+            onChange={(e) => setSelectedTargetId(e.target.value)}
+            className="bg-white border border-[#93c5fd] font-bold text-slate-800 rounded-lg px-3 py-1.5 text-xs shadow-2xs focus:ring-2 focus:ring-[#0046ad] focus:outline-none cursor-pointer"
+          >
+            {defaultTargetOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.name} ({opt.parent})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Big Apply / Save Button */}
+        <button
+          onClick={handleSaveToTarget}
+          className="bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-xs transition-all flex items-center gap-2 animate-pulse hover:animate-none"
+        >
+          <Save className="w-4 h-4" />
+          <span>Simpan & Terapkan ke {currentTargetObj.name}</span>
+        </button>
       </div>
 
       {/* Main Content Area */}
@@ -490,8 +538,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                     <span>Template Standar Excel PLN</span>
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed">
-                    Unduh format Excel berisi kolom Gardu Induk (Sheet 1) dan Penghantar (Sheet 2)
-                    agar langsung dikenali sistem.
+                    Unduh format Excel resmi berisi Gardu Induk & Penghantar agar dikenali otomatis.
                   </p>
                   <button
                     onClick={handleDownloadTemplate}
@@ -550,12 +597,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                     setGiList(sampleGINodes);
                     setLineList(sampleLines);
                     setFileName('sample_sld_jamali_500kv.xlsx');
-                    setIsGenerated(true);
                   }}
                   className="w-full py-2 px-3 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#0046ad] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all border border-[#bfdbfe]"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset / Gunakan Data Contoh</span>
+                  <span>Reset / Muat Data Contoh</span>
                 </button>
               </div>
             </div>
@@ -573,7 +619,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 font-mono text-[11px]">
-                  <span className="text-slate-500">Grid: 500 kV Backbone Jawa-Bali</span>
+                  <span className="text-[#0046ad] font-bold">Target: {currentTargetObj.name}</span>
                 </div>
               </div>
 
@@ -796,21 +842,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
               {/* Action: Save Interactive Blueprint */}
               <div className="space-y-2 mt-4">
                 <button
-                  onClick={() => {
-                    const dataStr =
-                      'data:text/json;charset=utf-8,' +
-                      encodeURIComponent(JSON.stringify({ image: imageFileName, hotspots }, null, 2));
-                    const downloadAnchor = document.createElement('a');
-                    downloadAnchor.setAttribute('href', dataStr);
-                    downloadAnchor.setAttribute('download', 'konfigurasi_sld_interaktif.json');
-                    document.body.appendChild(downloadAnchor);
-                    downloadAnchor.click();
-                    downloadAnchor.remove();
-                  }}
+                  onClick={handleSaveToTarget}
                   className="w-full py-2.5 px-3 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Simpan Konfigurasi SLD (.json)</span>
+                  <span>Simpan ke {currentTargetObj.name}</span>
                 </button>
               </div>
             </div>
@@ -844,7 +880,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                   }`}
                   style={{ minWidth: '700px', minHeight: '440px' }}
                 >
-                  {/* Actual Uploaded Image OR Vector Blueprint Mockup */}
                   {uploadedImageUrl ? (
                     <img
                       src={uploadedImageUrl}
@@ -852,12 +887,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                       className="w-full h-auto object-contain pointer-events-none block"
                     />
                   ) : (
-                    // Default Schematic Blueprint Vector SVG representation of high voltage network
                     <svg
                       viewBox="0 0 900 500"
                       className="w-full h-auto bg-[#0b132b] block select-none pointer-events-none"
                     >
-                      {/* Grid background */}
                       <defs>
                         <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
                           <path
@@ -870,7 +903,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                       </defs>
                       <rect width="100%" height="100%" fill="url(#grid)" />
 
-                      {/* Schematic Transmission Lines Blueprint */}
                       <g stroke="#334155" strokeWidth="2.5" fill="none">
                         <line x1="250" y1="210" x2="470" y2="250" />
                         <line x1="470" y1="250" x2="410" y2="340" />
@@ -879,7 +911,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                         <line x1="700" y1="180" x2="800" y2="280" />
                       </g>
 
-                      {/* Schematic Busbars */}
                       <rect x="230" y="200" width="40" height="8" rx="2" fill="#38bdf8" />
                       <rect x="450" y="240" width="40" height="8" rx="2" fill="#38bdf8" />
                       <rect x="390" y="330" width="40" height="8" rx="2" fill="#38bdf8" />
@@ -887,18 +918,16 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                       <rect x="680" y="170" width="40" height="8" rx="2" fill="#38bdf8" />
                       <rect x="780" y="270" width="40" height="8" rx="2" fill="#38bdf8" />
 
-                      {/* Schematic Labels */}
                       <text x="250" y="190" fill="#94a3b8" fontSize="11" textAnchor="middle" fontFamily="monospace">
-                        BUSBAR 500 kV
+                        BUSBAR 150 kV
                       </text>
                       <text x="470" y="230" fill="#94a3b8" fontSize="11" textAnchor="middle" fontFamily="monospace">
-                        INTERBUS 500/150 kV
+                        IBT 150/20 kV
                       </text>
                       <text x="585" y="400" fill="#94a3b8" fontSize="11" textAnchor="middle" fontFamily="monospace">
-                        GITET CIRATA - SAGULING
+                        PENYULANG UTAMA
                       </text>
 
-                      {/* Helper overlay instruction if no custom image */}
                       <text
                         x="450"
                         y="80"
@@ -910,7 +939,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                         [SKEMA BLUEPRINT SLD ASLI SISTEM TRANSMISI]
                       </text>
                       <text x="450" y="105" fill="#64748b" fontSize="11" textAnchor="middle">
-                        Unggah gambar diagram SLD Anda melalui panel kiri atau klik di mana saja untuk menambah titik interaktif.
+                        Unggah gambar diagram SLD Anda melalui panel kiri atau klik di mana saja untuk menaruh titik interaktif.
                       </text>
                     </svg>
                   )}
@@ -930,12 +959,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                         style={{ left: `${spot.xPercent}%`, top: `${spot.yPercent}%` }}
                         className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer z-20"
                       >
-                        {/* Radar Pulse animation if Rawan */}
                         {isRawan && (
                           <span className="absolute -inset-2 rounded-full bg-[#dc2626] opacity-75 animate-ping" />
                         )}
 
-                        {/* Pin Head */}
                         <div
                           className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] shadow-lg transition-transform ${
                             isSelected ? 'scale-125 ring-4 ring-[#0046ad]' : 'hover:scale-115'
@@ -948,7 +975,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
                           {isRawan ? '⚠️' : '⚡'}
                         </div>
 
-                        {/* Label Tooltip */}
                         <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap shadow-xl border border-slate-700 pointer-events-none group-hover:scale-105 transition-transform flex items-center gap-1.5">
                           <span>{spot.name}</span>
                           <span
@@ -1015,6 +1041,49 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({ onNavigate }) => {
           </div>
         )}
       </div>
+
+      {/* SUCCESS CONFIRMATION MODAL WITH DIRECT NAVIGATION BUTTON */}
+      {savedSuccessModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#16a34a] flex items-center justify-center border border-emerald-200 mx-auto">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-black text-slate-800">
+                SLD Berhasil Disimpan & Diterapkan!
+              </h3>
+              <p className="text-xs text-slate-500">
+                Konfigurasi SLD ({savedSuccessModal.type === 'excel' ? 'Data Excel Graf' : 'Blueprint Skema Gambar'}) telah aktif ditautkan ke:
+              </p>
+              <div className="inline-block px-3 py-1 bg-[#eff6ff] text-[#0046ad] border border-[#bfdbfe] rounded-xl font-bold text-xs mt-1">
+                ⚡ {savedSuccessModal.targetName}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+              Kini ketika Anda membuka menu SLD pada unit tersebut, diagram interaktif hasil konfigurasi Anda akan langsung dimuat secara otomatis.
+            </p>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => setSavedSuccessModal(null)}
+                className="flex-1 py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-all"
+              >
+                Tetap di Halaman Ini
+              </button>
+              <button
+                onClick={() => handleOpenTargetSLD(savedSuccessModal.targetId)}
+                className="flex-1 py-2.5 px-3 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
+              >
+                <span>Buka Menu SLD Ini</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

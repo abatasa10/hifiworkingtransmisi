@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -27,6 +27,7 @@ import { initialEdges500kV } from '../../data/edges500kv';
 import { risksData } from '../../data/risks';
 import { SLDFilterOptions, SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { ActiveView } from '../layout/Header';
+import { getCustomSLD, removeCustomSLD, CustomSLDConfig } from '../../data/customSLDStore';
 import {
   Maximize2,
   RotateCcw,
@@ -92,6 +93,17 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   const [highlightedAssetId, setHighlightedAssetId] = useState<string | null>(() => {
     return initialSelectedRiskId ? `LINE_GNDUL_DKSBI` : 'LINE_GNDUL_DKSBI';
   });
+
+  // Custom Uploaded SLD Binding for 500 kV System
+  const [customConfig, setCustomConfig] = useState<CustomSLDConfig | null>(() => getCustomSLD('sld-500kv'));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCustomConfig(getCustomSLD('sld-500kv'));
+    };
+    window.addEventListener('custom-sld-updated', handleUpdate);
+    return () => window.removeEventListener('custom-sld-updated', handleUpdate);
+  }, []);
 
   // Highlight logic for nodes & edges
   const computedNodes = useMemo(() => {
@@ -426,13 +438,48 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
       </div>
 
       {/* Main Canvas + Right Detail Panel */}
-      <div className="flex-1 flex w-full relative overflow-hidden">
-        {/* Interactive Graph Canvas */}
-        <div className="flex-1 relative h-full min-w-0">
+      <div className="flex-1 flex flex-col w-full relative overflow-hidden">
+        {/* Custom SLD Active Banner */}
+        {customConfig && (
+          <div className="bg-[#0f172a] border-b border-cyan-500/40 px-4 py-2 flex items-center justify-between text-xs text-white z-20 shrink-0 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-bold text-emerald-300">
+                SLD Kustom Pengguna Aktif ({customConfig.type === 'excel' ? 'Import Excel' : 'Blueprint Skema Gambar'})
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
+                • Diperbarui: {customConfig.updatedAt}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onNavigate('upload-sld')}
+                className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs"
+              >
+                <UploadCloud className="w-3 h-3" />
+                <span>Upload Ulang</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('Reset SLD 500 kV ke tampilan default?')) {
+                    removeCustomSLD('sld-500kv');
+                  }
+                }}
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Default</span>
+              </button>
+            </div>
+          </div>
+        )}
 
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
+        <div className="flex-1 flex w-full relative overflow-hidden">
+          {/* Interactive Graph Canvas */}
+          <div className="flex-1 relative h-full min-w-0">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onNodeClick={onNodeClick}
@@ -518,6 +565,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
           onOpenRisk={handleOpenRisk}
         />
       </div>
+    </div>
 
       {/* Control Room Legend Footer (Matching Image 2) */}
       <SLDLegend />
