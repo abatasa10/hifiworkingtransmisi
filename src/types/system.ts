@@ -25,8 +25,12 @@ export interface UPB {
   shortName: string;
   region: string;
   giCount: number;
+  ibtCount: number;
   subsystemCount: number;
   riskCount: number;
+  risksN1: number;
+  risksN2: number;
+  risksN12: number;
   riskLevel: RiskLevel;
   lat: number;
   lng: number;
@@ -38,8 +42,12 @@ export interface Subsystem {
   upbId: string;
   name: string;
   giCount: number;
+  ibtCount?: number;
   riskLevel: RiskLevel;
   riskCount: number;
+  risksN1?: number;
+  risksN2?: number;
+  risksN12?: number;
   transformerCount: number;
   peakLoadMW: number;
   description: string;

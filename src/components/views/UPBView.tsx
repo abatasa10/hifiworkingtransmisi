@@ -3,7 +3,7 @@ import { jamaliUPBs } from '../../data/upbs';
 import { subsystems } from '../../data/subsystems';
 import { ActiveView } from '../layout/Header';
 import { Breadcrumb } from '../layout/Breadcrumb';
-import { ArrowLeft, ArrowRight, ListFilter } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ListFilter, MapPin, Zap } from 'lucide-react';
 
 interface UPBViewProps {
   selectedUpbId?: string;
@@ -12,27 +12,67 @@ interface UPBViewProps {
 }
 
 export const UPBView: React.FC<UPBViewProps> = ({
-  selectedUpbId = 'upb-jabar',
+  selectedUpbId = 'upb-jakarta',
   onSelectSubsystem,
   onNavigate
 }) => {
   const [currentUpbId, setCurrentUpbId] = useState<string>(selectedUpbId);
-  const currentUPB = jamaliUPBs.find((u) => u.id === currentUpbId) || jamaliUPBs[2];
+  const currentUPB = jamaliUPBs.find((u) => u.id === currentUpbId) || jamaliUPBs[0];
 
-  const jabarSubstations = [
-    { name: 'GI Cibinong', x: 260, y: 120, status: 'red', voltage: '500 kV' },
-    { name: 'GI Bekasi', x: 400, y: 130, status: 'red', voltage: '500 kV' },
-    { name: 'GI Cikarang', x: 530, y: 150, status: 'normal', voltage: '150 kV' },
-    { name: 'GI Cirata', x: 440, y: 220, status: 'orange', voltage: '500 kV' },
-    { name: 'GI Saguling', x: 380, y: 270, status: 'green', voltage: '500 kV' },
-    { name: 'GI Bandung', x: 480, y: 290, status: 'yellow', voltage: '150 kV' },
-    { name: 'GI Tasikmalaya', x: 560, y: 350, status: 'red', voltage: '500 kV' }
-  ];
+  const substationsByUPB: Record<
+    string,
+    Array<{ name: string; x: number; y: number; status: 'red' | 'yellow' | 'orange' | 'green'; voltage: string }>
+  > = {
+    'upb-jakarta': [
+      { name: 'GITET Gandul 500 kV', x: 380, y: 260, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Duri Kosambi 500 kV', x: 280, y: 160, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Kembangan 500 kV', x: 330, y: 200, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Muara Karang 500 kV', x: 380, y: 120, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Cawang 500 kV', x: 480, y: 230, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Balaraja 500 kV', x: 200, y: 220, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Suralaya 500 kV', x: 120, y: 150, status: 'green', voltage: '500 kV' }
+    ],
+    'upb-jabar': [
+      { name: 'GI Cibinong', x: 260, y: 120, status: 'red', voltage: '500 kV' },
+      { name: 'GI Bekasi', x: 400, y: 130, status: 'red', voltage: '500 kV' },
+      { name: 'GI Cikarang', x: 530, y: 150, status: 'green', voltage: '150 kV' },
+      { name: 'GI Cirata', x: 440, y: 220, status: 'orange', voltage: '500 kV' },
+      { name: 'GI Saguling', x: 380, y: 270, status: 'green', voltage: '500 kV' },
+      { name: 'GI Bandung', x: 480, y: 290, status: 'yellow', voltage: '150 kV' },
+      { name: 'GI Tasikmalaya', x: 560, y: 350, status: 'red', voltage: '500 kV' }
+    ],
+    'upb-jateng': [
+      { name: 'GITET Ungaran', x: 420, y: 180, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Pedan', x: 450, y: 280, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Kesugihan', x: 240, y: 300, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Pemalang', x: 280, y: 170, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Tanjung Jati', x: 490, y: 120, status: 'green', voltage: '500 kV' }
+    ],
+    'upb-jatim': [
+      { name: 'GITET Krian', x: 380, y: 220, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Gresik', x: 400, y: 150, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Ngimbang', x: 280, y: 200, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Grati', x: 500, y: 240, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Paiton', x: 620, y: 230, status: 'red', voltage: '500 kV' }
+    ],
+    'upb-bali': [
+      { name: 'GIS Kapal', x: 400, y: 200, status: 'yellow', voltage: '150 kV' },
+      { name: 'GI Pesanggaran', x: 430, y: 270, status: 'orange', voltage: '150 kV' },
+      { name: 'GI Gilimanuk', x: 220, y: 170, status: 'red', voltage: '150 kV' },
+      { name: 'GI Antosari', x: 330, y: 230, status: 'green', voltage: '150 kV' }
+    ],
+    'p2b-sistem': [
+      { name: 'P2B Gandul 500 kV', x: 280, y: 220, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Ungaran 500 kV', x: 450, y: 230, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Krian 500 kV', x: 620, y: 220, status: 'orange', voltage: '500 kV' }
+    ]
+  };
 
+  const currentSubstations = substationsByUPB[currentUpbId] || substationsByUPB['upb-jakarta'];
   const upbSubsystems = subsystems.filter((s) => s.upbId === currentUpbId);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f4f7fa] text-slate-800 overflow-hidden relative select-none">
+    <div className="flex-1 flex flex-col w-full h-full bg-[#f4f7fa] text-slate-800 overflow-hidden relative select-none">
       {/* Top Banner with Breadcrumb & Back */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-xs">
         <div>
@@ -68,28 +108,38 @@ export const UPBView: React.FC<UPBViewProps> = ({
       </div>
 
       {/* Main Grid: Left Selector, Center Map, Right Summary */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex w-full overflow-hidden">
         {/* Left Sidebar: Pilih UPB / P2B */}
-        <div className="w-56 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto shadow-xs">
+        <div className="w-60 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto shadow-xs">
           <div>
             <div className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider mb-2.5">
-              Pilih UPB / P2B
+              Pilih UPB / P2B (6 Unit)
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {jamaliUPBs.map((u) => {
                 const active = u.id === currentUpbId;
                 return (
                   <button
                     key={u.id}
                     onClick={() => setCurrentUpbId(u.id)}
-                    className={`w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold transition-all flex items-center justify-between ${
+                    className={`w-full p-2.5 rounded-xl text-left text-xs font-semibold transition-all flex flex-col gap-1 ${
                       active
                         ? 'bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] font-bold shadow-xs'
                         : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] border border-transparent'
                     }`}
                   >
-                    <span>{u.name}</span>
-                    {active && <span className="w-1.5 h-1.5 rounded-full bg-[#0046ad]" />}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3 text-[#0046ad] shrink-0" />
+                        <span className="text-xs truncate">{u.name}</span>
+                      </div>
+                      {active && <span className="w-1.5 h-1.5 rounded-full bg-[#0046ad] shrink-0" />}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono flex items-center gap-2 pl-4">
+                      <span>{u.giCount} GI</span>
+                      <span>•</span>
+                      <span>{u.ibtCount} IBT</span>
+                    </div>
                   </button>
                 );
               })}
@@ -106,7 +156,7 @@ export const UPBView: React.FC<UPBViewProps> = ({
         </div>
 
         {/* Center: Regional Power Grid Map Canvas */}
-        <div className="flex-1 relative flex items-center justify-center p-6 bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden">
+        <div className="flex-1 relative flex items-center justify-center p-6 bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden min-w-0">
           {/* Subtle grid */}
           <div
             className="absolute inset-0 opacity-40"
@@ -119,7 +169,7 @@ export const UPBView: React.FC<UPBViewProps> = ({
           {/* Region boundary shape */}
           <svg viewBox="0 0 800 500" className="w-full h-full max-h-[75vh] filter drop-shadow-sm">
             <path
-              d="M 180,80 Q 350,50 560,90 Q 690,180 670,330 Q 560,420 380,410 Q 200,380 140,260 Z"
+              d="M 160,90 Q 350,50 580,90 Q 710,180 670,350 Q 560,430 380,410 Q 180,390 120,260 Z"
               fill="#cbd5e1"
               stroke="#94a3b8"
               strokeWidth="1.5"
@@ -127,19 +177,29 @@ export const UPBView: React.FC<UPBViewProps> = ({
 
             {/* Interconnecting Transmission Lines */}
             <g stroke="#0046ad" strokeWidth="2.5" opacity="0.8">
-              <line x1="260" y1="120" x2="400" y2="130" />
-              <line x1="400" y1="130" x2="530" y2="150" />
-              <line x1="400" y1="130" x2="440" y2="220" stroke="#f1c40f" strokeWidth="3" />
-              <line x1="260" y1="120" x2="440" y2="220" stroke="#dc2626" strokeWidth="3" />
-              <line x1="440" y1="220" x2="380" y2="270" />
-              <line x1="440" y1="220" x2="480" y2="290" />
-              <line x1="380" y1="270" x2="480" y2="290" />
-              <line x1="480" y1="290" x2="560" y2="350" stroke="#dc2626" strokeWidth="3" />
+              {currentSubstations.map((gi, idx) => {
+                const next = currentSubstations[(idx + 1) % currentSubstations.length];
+                const isCritical = gi.status === 'red' && next.status === 'red';
+                const isWarning = gi.status === 'yellow' || next.status === 'yellow';
+
+                return (
+                  <line
+                    key={`${gi.name}-${next.name}`}
+                    x1={gi.x}
+                    y1={gi.y}
+                    x2={next.x}
+                    y2={next.y}
+                    stroke={isCritical ? '#dc2626' : isWarning ? '#f1c40f' : '#0046ad'}
+                    strokeWidth={isCritical ? 3.5 : 2.5}
+                    strokeDasharray={isCritical ? '4 2' : undefined}
+                  />
+                );
+              })}
             </g>
           </svg>
 
           {/* Substation Nodes */}
-          {jabarSubstations.map((gi) => {
+          {currentSubstations.map((gi) => {
             const isCritical = gi.status === 'red';
             const isWarning = gi.status === 'orange' || gi.status === 'yellow';
 
@@ -195,25 +255,25 @@ export const UPBView: React.FC<UPBViewProps> = ({
             </div>
             <div className="flex items-center gap-2 text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
-              <span className="text-slate-600">Sangat Rawan</span>
+              <span className="text-slate-600">Merah (N-1)</span>
             </div>
             <div className="flex items-center gap-2 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-[#f1c40f]" />
-              <span className="text-slate-600">Sedang</span>
+              <span className="w-2 h-2 rounded-full bg-[#eab308]" />
+              <span className="text-slate-600">Kuning (N-2)</span>
             </div>
             <div className="flex items-center gap-2 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-              <span className="text-slate-600">Aman</span>
+              <span className="w-2 h-2 rounded-full bg-[#64748b]" />
+              <span className="text-slate-600">Abu-Abu (N-1-2)</span>
             </div>
           </div>
         </div>
 
-        {/* Right Info Panel: Informasi UPB/P2B */}
-        <div className="w-80 md:w-88 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
+        {/* Right Info Panel: Informasi UPB/P2B dengan Rincian Kerawanan Lengkap */}
+        <div className="w-88 md:w-96 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
           <div className="space-y-4">
             <div>
               <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
-                Informasi UPB/P2B
+                Informasi UPB / P2B
               </span>
               <h2 className="text-lg font-black text-[#1e293b] mt-1">
                 {currentUPB.name}
@@ -224,14 +284,18 @@ export const UPBView: React.FC<UPBViewProps> = ({
             </div>
 
             {/* Metrics */}
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
+            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">Nama UPB/P2B:</span>
+                <span className="text-slate-500">Nama Unit:</span>
                 <span className="font-bold text-slate-800">{currentUPB.name}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah GI:</span>
-                <span className="font-bold text-[#0046ad] font-mono text-sm">{currentUPB.giCount}</span>
+                <span className="text-slate-500">Jumlah GI / GITET:</span>
+                <span className="font-bold text-[#0046ad] font-mono text-sm">{currentUPB.giCount} Lokasi</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500">Jumlah IBT:</span>
+                <span className="font-bold text-[#16a34a] font-mono text-sm">{currentUPB.ibtCount} Unit</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200">
                 <span className="text-slate-500">Jumlah Subsistem:</span>
@@ -239,19 +303,40 @@ export const UPBView: React.FC<UPBViewProps> = ({
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500">Tingkat Kerawanan:</span>
-                <span className="inline-flex items-center gap-1.5 font-bold text-[#ca8a04] bg-[#fef9c3] border border-[#fde047] px-2 py-0.5 rounded-full text-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#f1c40f]" />
+                <span className="inline-flex items-center gap-1.5 font-bold text-[#dc2626] bg-[#fee2e2] border border-[#fca5a5] px-2 py-0.5 rounded-full text-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
                   {currentUPB.riskLevel}
                 </span>
               </div>
             </div>
 
-            {/* Subsystems */}
+            {/* Rincian Kerawanan Unit (Merah N-1, Kuning N-2, Abu-Abu N-1-2) */}
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
+                Rincian Kerawanan {currentUPB.shortName}:
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                <div className="bg-[#fee2e2] p-2 rounded-lg border border-[#fecaca]">
+                  <div className="text-[10px] text-[#dc2626] font-bold">Merah (N-1)</div>
+                  <div className="text-sm font-black text-[#991b1b]">{currentUPB.risksN1}</div>
+                </div>
+                <div className="bg-[#fef9c3] p-2 rounded-lg border border-[#fef08a]">
+                  <div className="text-[10px] text-[#a16207] font-bold">Kuning (N-2)</div>
+                  <div className="text-sm font-black text-[#854d0e]">{currentUPB.risksN2}</div>
+                </div>
+                <div className="bg-[#f1f5f9] p-2 rounded-lg border border-[#cbd5e1]">
+                  <div className="text-[10px] text-[#475569] font-bold">Abu-Abu</div>
+                  <div className="text-sm font-black text-[#334155]">{currentUPB.risksN12}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Subsystems List with individual kerawanan */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                Daftar Subsistem:
+                Daftar Subsistem & Kerawanan:
               </span>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {upbSubsystems.map((sub) => (
                   <button
                     key={sub.id}
@@ -259,17 +344,31 @@ export const UPBView: React.FC<UPBViewProps> = ({
                       onSelectSubsystem(sub.id);
                       onNavigate('subsystem-sld');
                     }}
-                    className="w-full p-2.5 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] flex items-center justify-between text-left transition-colors group shadow-2xs"
+                    className="w-full p-3 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] flex flex-col gap-1.5 text-left transition-colors group shadow-2xs"
                   >
-                    <div>
+                    <div className="flex items-center justify-between w-full">
                       <div className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad]">
                         {sub.name}
                       </div>
-                      <div className="text-[10px] text-slate-500">
-                        {sub.giCount} GI • Beban: {sub.peakLoadMW} MW
-                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0046ad] group-hover:translate-x-0.5 transition-transform shrink-0" />
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0046ad] group-hover:translate-x-0.5 transition-transform" />
+
+                    <div className="text-[10px] text-slate-500 font-mono">
+                      {sub.giCount} GI • {sub.ibtCount ?? 2} IBT • Beban: {sub.peakLoadMW} MW
+                    </div>
+
+                    {/* Kerawanan badge per subsystem */}
+                    <div className="grid grid-cols-3 gap-1 text-[9px] text-center font-mono pt-1 border-t border-slate-200/60">
+                      <span className="bg-[#fee2e2] text-[#dc2626] font-bold py-0.5 rounded border border-[#fecaca]">
+                        N-1: {sub.risksN1 ?? 1}
+                      </span>
+                      <span className="bg-[#fef9c3] text-[#a16207] font-bold py-0.5 rounded border border-[#fef08a]">
+                        N-2: {sub.risksN2 ?? 1}
+                      </span>
+                      <span className="bg-[#f1f5f9] text-[#475569] font-bold py-0.5 rounded border border-[#cbd5e1]">
+                        N-1-2: {sub.risksN12 ?? 0}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -280,7 +379,7 @@ export const UPBView: React.FC<UPBViewProps> = ({
             onClick={() => onNavigate('subsystem-sld')}
             className="w-full bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all mt-4"
           >
-            <span>Buka SLD Subsistem Bogor</span>
+            <span>Buka SLD Subsistem Interaktif</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
