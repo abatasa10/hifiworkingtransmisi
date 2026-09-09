@@ -11,6 +11,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 321,
     giCount: 263,
     ibtCount: 58,
+    risksN1: 18,
+    risksN2: 24,
+    risksN12: 11,
     lat: -7.2504,
     lng: 110.0,
     description: 'Sistem interkoneksi backbone 500 kV & 150 kV terbesar di Indonesia dengan beban puncak mencapai 32.500 MW.'
@@ -25,6 +28,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 184,
     giCount: 142,
     ibtCount: 32,
+    risksN1: 9,
+    risksN2: 14,
+    risksN12: 6,
     lat: 0.5897,
     lng: 101.3431,
     description: 'Sistem interkoneksi tol listrik 275 kV & 150 kV menghubungkan Aceh hingga Lampung.'
@@ -39,6 +45,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 115,
     giCount: 89,
     ibtCount: 18,
+    risksN1: 5,
+    risksN2: 8,
+    risksN12: 4,
     lat: -1.2654,
     lng: 114.8878,
     description: 'Sistem interkoneksi 150 kV Kalseltengtim dan interkoneksi Khatulistiwa Kalbar.'
@@ -53,6 +62,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 84,
     giCount: 64,
     ibtCount: 14,
+    risksN1: 7,
+    risksN2: 9,
+    risksN12: 3,
     lat: -2.5337,
     lng: 120.3015,
     description: 'Sistem interkoneksi Sulbagsel 150 kV/275 kV dan Sulbagut 150 kV.'
@@ -67,6 +79,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 48,
     giCount: 38,
     ibtCount: 8,
+    risksN1: 3,
+    risksN2: 6,
+    risksN12: 2,
     lat: -8.6529,
     lng: 119.5888,
     description: 'Sistem isolated dan loop 150 kV Lombok, Timor, dan Flores.'
@@ -81,6 +96,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 28,
     giCount: 22,
     ibtCount: 4,
+    risksN1: 1,
+    risksN2: 3,
+    risksN12: 1,
     lat: -3.2385,
     lng: 130.1453,
     description: 'Sistem isolated 150 kV/70 kV Ambon dan Ternate-Tidore.'
@@ -95,6 +113,9 @@ export const powerSystems: PowerSystem[] = [
     assetCount: 24,
     giCount: 18,
     ibtCount: 3,
+    risksN1: 1,
+    risksN2: 2,
+    risksN12: 1,
     lat: -4.2699,
     lng: 138.0804,
     description: 'Sistem kelistrikan Jayapura, Timika, Sorong, dan Manokwari.'

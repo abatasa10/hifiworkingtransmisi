@@ -10,6 +10,9 @@ export interface PowerSystem {
   assetCount: number;
   giCount: number;
   ibtCount: number;
+  risksN1: number;
+  risksN2: number;
+  risksN12: number;
   lat: number;
   lng: number;
   description: string;
