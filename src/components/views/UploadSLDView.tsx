@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import {
   ReactFlow,
@@ -26,9 +26,11 @@ import {
   Save,
   ArrowRight,
   ShieldAlert,
-  Sparkles,
-  ExternalLink,
-  Target
+  Target,
+  Table as TableIcon,
+  Network,
+  AlertCircle,
+  HelpCircle
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import {
@@ -37,8 +39,6 @@ import {
   ImageHotspot,
   CustomSLDConfig,
   saveCustomSLD,
-  getCustomSLD,
-  removeCustomSLD,
   defaultTargetOptions
 } from '../../data/customSLDStore';
 
@@ -47,8 +47,15 @@ interface UploadSLDViewProps {
   onSelectSubsystem?: (subId: string) => void;
 }
 
-// Sample initial data for immediate demo
-const sampleGINodes: ParsedGINode[] = [
+// Normalize strings for resilient column matching
+const cleanKey = (str: any): string => {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+};
+
+// Initial sample data for immediate test
+const initialSampleGINodes: ParsedGINode[] = [
   { id: 'GI_MURA_KARANG', name: 'GITET Muara Karang', voltage: '500 kV', region: 'DKI Jakarta & Banten', riskStatus: 'Normal', subsystem: 'Cawang - Priok' },
   { id: 'GI_GANDUL', name: 'GITET Gandul', voltage: '500 kV', region: 'DKI Jakarta & Banten', riskStatus: 'N-1', subsystem: 'Gandul' },
   { id: 'GI_BEKASI', name: 'GITET Bekasi', voltage: '500 kV', region: 'Jawa Barat', riskStatus: 'Normal', subsystem: 'Bekasi' },
@@ -64,7 +71,7 @@ const sampleGINodes: ParsedGINode[] = [
   { id: 'GI_PAITON', name: 'GITET Paiton', voltage: '500 kV', region: 'Jawa Timur', riskStatus: 'Normal', subsystem: 'Paiton' }
 ];
 
-const sampleLines: ParsedTransmissionLine[] = [
+const initialSampleLines: ParsedTransmissionLine[] = [
   { id: 'L_MK_GND', sourceId: 'GI_MURA_KARANG', targetId: 'GI_GANDUL', lineName: 'Muara Karang - Gandul', circuit: 'Sirkit 1', lengthKm: 28.5, loadingPct: 62, riskStatus: 'Normal' },
   { id: 'L_GND_CBN', sourceId: 'GI_GANDUL', targetId: 'GI_CIBINONG', lineName: 'Gandul - Cibinong', circuit: 'Sirkit 1', lengthKm: 34.2, loadingPct: 79, riskStatus: 'N-1' },
   { id: 'L_CBN_BKS', sourceId: 'GI_CIBINONG', targetId: 'GI_BEKASI', lineName: 'Cibinong - Bekasi', circuit: 'Sirkit 1', lengthKm: 42.1, loadingPct: 58, riskStatus: 'Normal' },
@@ -89,11 +96,19 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const [selectedTargetId, setSelectedTargetId] = useState<string>('sub-bogor');
 
   // Excel mode states
-  const [giList, setGiList] = useState<ParsedGINode[]>(sampleGINodes);
-  const [lineList, setLineList] = useState<ParsedTransmissionLine[]>(sampleLines);
+  const [giList, setGiList] = useState<ParsedGINode[]>(initialSampleGINodes);
+  const [lineList, setLineList] = useState<ParsedTransmissionLine[]>(initialSampleLines);
   const [fileName, setFileName] = useState<string>('sample_sld_jamali_500kv.xlsx');
+  const [excelViewMode, setExcelViewMode] = useState<'graph' | 'table'>('graph');
   const [filterRisk, setFilterRisk] = useState<string>('Semua');
   const [selectedElement, setSelectedElement] = useState<any | null>(null);
+  const [uploadStatusMsg, setUploadStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  // Raw sheets info for diagnostics
+  const [detectedSheets, setDetectedSheets] = useState<string[]>([]);
+  const [activeSheetName, setActiveSheetName] = useState<string>('');
+  const [rawHeaders, setRawHeaders] = useState<string[]>([]);
 
   // Image mode states
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -132,23 +147,74 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       'Bali': 4
     };
 
-    const groups: Record<string, ParsedGINode[]> = {};
-    giList.forEach((gi) => {
-      const reg = gi.region || 'Jawa Barat';
-      if (!groups[reg]) groups[reg] = [];
-      groups[reg].push(gi);
-    });
-
     const calculatedNodes: Node[] = [];
-    const xBase = 80;
-    const colWidth = 280;
+    const xBase = 60;
+    const colWidth = 270;
+    const rowHeight = 150;
 
-    Object.entries(groups).forEach(([region, nodesInRegion]) => {
-      const colIdx = regionOrder[region] ?? 1;
-      nodesInRegion.forEach((node, rowIdx) => {
-        const x = xBase + colIdx * colWidth + (rowIdx % 2 === 1 ? 30 : -20);
-        const y = 80 + rowIdx * 140;
+    // Check if nodes have regional grouping or general layout
+    const hasMultipleRegions = new Set(giList.map((g) => g.region)).size > 1;
 
+    if (hasMultipleRegions) {
+      const groups: Record<string, ParsedGINode[]> = {};
+      giList.forEach((gi) => {
+        const reg = gi.region || 'Jawa Barat';
+        if (!groups[reg]) groups[reg] = [];
+        groups[reg].push(gi);
+      });
+
+      Object.entries(groups).forEach(([region, nodesInRegion]) => {
+        const colIdx = regionOrder[region] ?? 1;
+        nodesInRegion.forEach((node, rowIdx) => {
+          const x = xBase + colIdx * colWidth + (rowIdx % 2 === 1 ? 25 : -15);
+          const y = 80 + rowIdx * rowHeight;
+          const isRawan = node.riskStatus !== 'Normal';
+          const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
+
+          calculatedNodes.push({
+            id: node.id,
+            position: { x, y },
+            data: {
+              label: (
+                <div
+                  onClick={() => setSelectedElement({ type: 'node', data: node })}
+                  className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
+                    node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
+                  } ${
+                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
+                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
+                      <span className="text-[10px] font-mono font-bold text-slate-300">{node.voltage}</span>
+                    </div>
+                    {isRawan ? (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#dc2626] text-white">
+                        {node.riskStatus}
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-[#16a34a]/20 text-[#16a34a]">
+                        Normal
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-bold text-xs truncate">{node.name}</div>
+                  <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.region || node.subsystem || 'Unit Transmisi'}</div>
+                </div>
+              )
+            }
+          });
+        });
+      });
+    } else {
+      // Single grid layout (e.g. Subsistem layout 3 columns)
+      const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(giList.length))));
+      giList.forEach((node, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const x = xBase + col * 280;
+        const y = 80 + row * 150;
         const isRawan = node.riskStatus !== 'Normal';
         const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
 
@@ -160,23 +226,15 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               <div
                 onClick={() => setSelectedElement({ type: 'node', data: node })}
                 className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
-                  node.voltage === '500 kV' ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
+                  node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
                 } ${
-                  isRawan
-                    ? 'border-[#dc2626] shadow-[#dc2626]/20'
-                    : 'border-[#0046ad] shadow-slate-200'
+                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
                 } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
                   <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        node.voltage === '500 kV' ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'
-                      }`}
-                    />
-                    <span className="text-[10px] font-mono font-bold text-slate-300">
-                      {node.voltage}
-                    </span>
+                    <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
+                    <span className="text-[10px] font-mono font-bold text-slate-400">{node.voltage}</span>
                   </div>
                   {isRawan ? (
                     <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#dc2626] text-white">
@@ -189,13 +247,13 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                   )}
                 </div>
                 <div className="font-bold text-xs truncate">{node.name}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.region}</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.subsystem || node.region || 'Subsistem'}</div>
               </div>
             )
           }
         });
       });
-    });
+    }
 
     const calculatedEdges: Edge[] = lineList.map((line) => {
       const isRawan = line.riskStatus !== 'Normal';
@@ -228,60 +286,240 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     return { flowNodes: calculatedNodes, flowEdges: calculatedEdges };
   }, [giList, lineList, filterRisk]);
 
-  // Handle Excel Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // SMART UNIVERSAL EXCEL PARSER
+  const processExcelBuffer = (buffer: ArrayBuffer, name: string) => {
+    try {
+      const data = new Uint8Array(buffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        setUploadStatusMsg({ type: 'error', text: 'File Excel kosong atau tidak memiliki lembar kerja (sheet).' });
+        return;
+      }
+
+      setDetectedSheets(workbook.SheetNames);
+      setActiveSheetName(workbook.SheetNames[0]);
+
+      let parsedNodes: ParsedGINode[] = [];
+      let parsedLines: ParsedTransmissionLine[] = [];
+
+      // Check each sheet to see if there is a Nodes sheet or Lines sheet
+      for (const sheetName of workbook.SheetNames) {
+        const worksheet = workbook.Sheets[sheetName];
+        const rawGrid: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (!rawGrid || rawGrid.length === 0) continue;
+
+        // Auto-find header row index (scanning first 10 rows)
+        let headerRowIndex = -1;
+        for (let r = 0; r < Math.min(10, rawGrid.length); r++) {
+          const row = rawGrid[r];
+          if (Array.isArray(row) && row.length > 0) {
+            const hasHeaderKeyword = row.some((cell) => {
+              const k = cleanKey(cell);
+              return (
+                k.includes('gardu') ||
+                k.includes('gi') ||
+                k.includes('nama') ||
+                k.includes('penghantar') ||
+                k.includes('line') ||
+                k.includes('dari') ||
+                k.includes('ke') ||
+                k.includes('functloc') ||
+                k.includes('substation') ||
+                k.includes('tegangan')
+              );
+            });
+            if (hasHeaderKeyword) {
+              headerRowIndex = r;
+              break;
+            }
+          }
+        }
+
+        if (headerRowIndex === -1) {
+          // If no keyword row found, assume row 0 if non-empty
+          headerRowIndex = 0;
+        }
+
+        const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim());
+        setRawHeaders(headers);
+
+        const dataRows = rawGrid.slice(headerRowIndex + 1).filter((r) => Array.isArray(r) && r.some((c) => c !== undefined && c !== null && c !== ''));
+
+        // Map column indices by normalized name
+        const colMap: Record<string, number> = {};
+        headers.forEach((h, idx) => {
+          const ck = cleanKey(h);
+          colMap[ck] = idx;
+        });
+
+        const findColIdx = (patterns: string[]): number => {
+          for (const p of patterns) {
+            for (const [k, idx] of Object.entries(colMap)) {
+              if (k.includes(p)) return idx;
+            }
+          }
+          return -1;
+        };
+
+        const colDari = findColIdx(['darigi', 'dari', 'from', 'asal', 'source', 'bus1', 'pangkal']);
+        const colKe = findColIdx(['kegi', 'ke', 'to', 'tujuan', 'target', 'bus2', 'ujung']);
+        const colLineName = findColIdx(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'sirkit', 'bay']);
+        const colGiName = findColIdx(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'gi', 'nama']);
+        const colVoltage = findColIdx(['tegangan', 'kv', 'voltage', 'level']);
+        const colRisk = findColIdx(['statuskerawanan', 'kerawanan', 'status', 'kondisi', 'keterangan', 'risk']);
+        const colLoading = findColIdx(['pembebanan', 'loading', 'load', 'beban', 'mw', 'mva', 'arus']);
+        const colRegion = findColIdx(['wilayah', 'up2b', 'p2b', 'region', 'subsistem', 'subsystem', 'unit', 'area']);
+
+        // Check if this sheet is a Transmission Lines sheet (has Dari and Ke)
+        if (colDari !== -1 && colKe !== -1) {
+          dataRows.forEach((row, rIdx) => {
+            const dariVal = String(row[colDari] || '').trim();
+            const keVal = String(row[colKe] || '').trim();
+            if (!dariVal || !keVal) return;
+
+            const lineNameVal = colLineName !== -1 && row[colLineName] ? String(row[colLineName]).trim() : `${dariVal} - ${keVal}`;
+            const riskVal = colRisk !== -1 && row[colRisk] ? String(row[colRisk]).trim() : 'Normal';
+            const loadVal = colLoading !== -1 && !isNaN(Number(row[colLoading])) ? Number(row[colLoading]) : Math.floor(50 + Math.random() * 40);
+
+            // Clean risk status value
+            let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+            const rUpper = riskVal.toUpperCase();
+            if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
+            else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
+            else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
+
+            const sourceNodeId = `GI_${cleanKey(dariVal)}`;
+            const targetNodeId = `GI_${cleanKey(keVal)}`;
+
+            parsedLines.push({
+              id: `LINE_${rIdx + 1}_${cleanKey(lineNameVal)}`,
+              sourceId: sourceNodeId,
+              targetId: targetNodeId,
+              lineName: lineNameVal,
+              circuit: 'Sirkit 1',
+              lengthKm: 25,
+              loadingPct: loadVal,
+              riskStatus: normalizedRisk
+            });
+
+            // Auto-collect unique GI nodes from Dari and Ke
+            const voltageVal = colVoltage !== -1 && row[colVoltage] ? String(row[colVoltage]) : '150 kV';
+            const regionVal = colRegion !== -1 && row[colRegion] ? String(row[colRegion]) : currentTargetObj.name;
+
+            if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
+              parsedNodes.push({
+                id: sourceNodeId,
+                name: dariVal,
+                voltage: voltageVal,
+                region: regionVal,
+                riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
+                subsystem: currentTargetObj.name
+              });
+            }
+
+            if (!parsedNodes.some((n) => n.id === targetNodeId)) {
+              parsedNodes.push({
+                id: targetNodeId,
+                name: keVal,
+                voltage: voltageVal,
+                region: regionVal,
+                riskStatus: 'Normal',
+                subsystem: currentTargetObj.name
+              });
+            }
+          });
+        } else if (colGiName !== -1) {
+          // This sheet is a Gardu Induk list
+          dataRows.forEach((row, rIdx) => {
+            const giNameVal = String(row[colGiName] || '').trim();
+            if (!giNameVal) return;
+
+            const voltageVal = colVoltage !== -1 && row[colVoltage] ? String(row[colVoltage]) : '150 kV';
+            const riskVal = colRisk !== -1 && row[colRisk] ? String(row[colRisk]).trim() : 'Normal';
+            const regionVal = colRegion !== -1 && row[colRegion] ? String(row[colRegion]) : currentTargetObj.name;
+
+            let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+            const rUpper = riskVal.toUpperCase();
+            if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
+            else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
+            else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
+
+            const nodeId = `GI_${cleanKey(giNameVal)}_${rIdx + 1}`;
+            if (!parsedNodes.some((n) => n.id === nodeId)) {
+              parsedNodes.push({
+                id: nodeId,
+                name: giNameVal,
+                voltage: voltageVal,
+                region: regionVal,
+                riskStatus: normalizedRisk,
+                subsystem: currentTargetObj.name
+              });
+            }
+          });
+        }
+      }
+
+      if (parsedNodes.length === 0 && parsedLines.length === 0) {
+        setUploadStatusMsg({
+          type: 'error',
+          text: `Kolom tabel tidak dikenali. Kolom yang ditemukan: [${rawHeaders.join(', ')}]. Gunakan template standar atau pastikan terdapat kolom 'Nama GI' atau 'Dari' dan 'Ke'.`
+        });
+        return;
+      }
+
+      setFileName(name);
+      setGiList(parsedNodes);
+      setLineList(parsedLines);
+      setUploadStatusMsg({
+        type: 'success',
+        text: `Berhasil membaca ${parsedNodes.length} Gardu Induk dan ${parsedLines.length} Jalur Penghantar dari file ${name}!`
+      });
+    } catch (err: any) {
+      console.error(err);
+      setUploadStatusMsg({
+        type: 'error',
+        text: `Gagal memproses file Excel: ${err.message || 'Format tidak didukung'}`
+      });
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setFileName(file.name);
     const reader = new FileReader();
-
     reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const firstSheetName = workbook.SheetNames[0];
-        const secondSheetName = workbook.SheetNames[1] || workbook.SheetNames[0];
-
-        const nodesSheet = workbook.Sheets[firstSheetName];
-        const rawNodes = XLSX.utils.sheet_to_json<any>(nodesSheet);
-
-        if (rawNodes.length > 0) {
-          const parsedNodes: ParsedGINode[] = rawNodes.map((row, idx) => ({
-            id: row['ID'] || row['id'] || `GI_${idx + 1}`,
-            name: row['Nama GI'] || row['Nama'] || row['name'] || `GI ${idx + 1}`,
-            voltage: row['Tegangan'] || row['voltage'] || '500 kV',
-            region: row['Wilayah'] || row['UP2B'] || row['region'] || 'Jawa Barat',
-            riskStatus: (row['Status Kerawanan'] || row['Kerawanan'] || row['riskStatus'] || 'Normal') as any,
-            subsystem: row['Subsistem'] || row['subsystem'] || ''
-          }));
-          setGiList(parsedNodes);
-        }
-
-        if (workbook.SheetNames.length > 1) {
-          const linesSheet = workbook.Sheets[secondSheetName];
-          const rawLines = XLSX.utils.sheet_to_json<any>(linesSheet);
-          if (rawLines.length > 0) {
-            const parsedLines: ParsedTransmissionLine[] = rawLines.map((row, idx) => ({
-              id: row['ID'] || row['id'] || `LINE_${idx + 1}`,
-              sourceId: row['Dari GI'] || row['sourceId'] || '',
-              targetId: row['Ke GI'] || row['targetId'] || '',
-              lineName: row['Nama Penghantar'] || row['lineName'] || `Line ${idx + 1}`,
-              circuit: row['Sirkit'] || 'Sirkit 1',
-              lengthKm: Number(row['Panjang km'] || row['lengthKm'] || 25),
-              loadingPct: Number(row['Pembebanan %'] || row['loadingPct'] || 65),
-              riskStatus: (row['Status Kerawanan'] || row['riskStatus'] || 'Normal') as any
-            }));
-            setLineList(parsedLines);
-          }
-        }
-      } catch (err) {
-        alert('Gagal memproses file Excel. Pastikan format kolom sesuai dengan template.');
-        console.error(err);
+      const buffer = event.target?.result as ArrayBuffer;
+      if (buffer) {
+        processExcelBuffer(buffer, file.name);
       }
     };
+    reader.readAsArrayBuffer(file);
+    e.target.value = ''; // Reset input so same file can be reselected
+  };
 
+  // Handle drag and drop files
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      setUploadStatusMsg({ type: 'error', text: 'Mohon unggah file dengan format .xlsx, .xls, atau .csv' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const buffer = event.target?.result as ArrayBuffer;
+      if (buffer) {
+        processExcelBuffer(buffer, file.name);
+      }
+    };
     reader.readAsArrayBuffer(file);
   };
 
@@ -289,22 +527,25 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const handleDownloadTemplate = () => {
     const wb = XLSX.utils.book_new();
 
-    const wsNodesData = [
-      { ID: 'GI_BOGOR', 'Nama GI': 'GI Bogor Baru', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'Normal' },
-      { ID: 'GI_CIBINONG_150', 'Nama GI': 'GI Cibinong 150', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'N-1' },
-      { ID: 'GI_SENTUL', 'Nama GI': 'GI Sentul', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'N-2' },
-      { ID: 'GI_CIAWI', 'Nama GI': 'GI Ciawi', Tegangan: '150 kV', Wilayah: 'Jawa Barat', Subsistem: 'Bogor', 'Status Kerawanan': 'Normal' }
-    ];
-    const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
-    XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk');
-
+    // Sheet 1: Jalur Transmisi (Penghantar)
     const wsEdgesData = [
-      { ID: 'L_BGR_CBN', 'Dari GI': 'GI_BOGOR', 'Ke GI': 'GI_CIBINONG_150', 'Nama Penghantar': 'Bogor - Cibinong', Sirkit: 'Sirkit 1', 'Panjang km': 18.2, 'Pembebanan %': 78, 'Status Kerawanan': 'N-1' },
-      { ID: 'L_CBN_STL', 'Dari GI': 'GI_CIBINONG_150', 'Ke GI': 'GI_SENTUL', 'Nama Penghantar': 'Cibinong - Sentul', Sirkit: 'Sirkit 1', 'Panjang km': 14.5, 'Pembebanan %': 89, 'Status Kerawanan': 'N-2' },
-      { ID: 'L_STL_CW', 'Dari GI': 'GI_SENTUL', 'Ke GI': 'GI_CIAWI', 'Nama Penghantar': 'Sentul - Ciawi', Sirkit: 'Sirkit 1', 'Panjang km': 12.0, 'Pembebanan %': 62, 'Status Kerawanan': 'Normal' }
+      { 'No': 1, 'Nama Penghantar': 'Bogor - Cibinong 1', 'Dari GI': 'GI Bogor', 'Ke GI': 'GI Cibinong', 'Tegangan': '150 kV', 'Pembebanan %': 78, 'Status Kerawanan': 'N-1' },
+      { 'No': 2, 'Nama Penghantar': 'Cibinong - Sentul 1', 'Dari GI': 'GI Cibinong', 'Ke GI': 'GI Sentul', 'Tegangan': '150 kV', 'Pembebanan %': 89, 'Status Kerawanan': 'N-2' },
+      { 'No': 3, 'Nama Penghantar': 'Sentul - Ciawi 1', 'Dari GI': 'GI Sentul', 'Ke GI': 'GI Ciawi', 'Tegangan': '150 kV', 'Pembebanan %': 62, 'Status Kerawanan': 'Normal' },
+      { 'No': 4, 'Nama Penghantar': 'Ciawi - Bogor 1', 'Dari GI': 'GI Ciawi', 'Ke GI': 'GI Bogor', 'Tegangan': '150 kV', 'Pembebanan %': 55, 'Status Kerawanan': 'Normal' }
     ];
     const wsEdges = XLSX.utils.json_to_sheet(wsEdgesData);
     XLSX.utils.book_append_sheet(wb, wsEdges, 'Jalur_Transmisi');
+
+    // Sheet 2: Gardu Induk
+    const wsNodesData = [
+      { 'No': 1, 'Nama GI': 'GI Bogor', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'Normal' },
+      { 'No': 2, 'Nama GI': 'GI Cibinong', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'N-1' },
+      { 'No': 3, 'Nama GI': 'GI Sentul', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'N-2' },
+      { 'No': 4, 'Nama GI': 'GI Ciawi', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'Normal' }
+    ];
+    const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
+    XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk');
 
     XLSX.writeFile(wb, 'template_sld_subsistem_pln.xlsx');
   };
@@ -320,6 +561,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       setUploadedImageUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // Image Click Handler (Place Hotspot)
@@ -483,7 +725,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         {/* Big Apply / Save Button */}
         <button
           onClick={handleSaveToTarget}
-          className="bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-xs transition-all flex items-center gap-2 animate-pulse hover:animate-none"
+          className="bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-xs transition-all flex items-center gap-2"
         >
           <Save className="w-4 h-4" />
           <span>Simpan & Terapkan ke {currentTargetObj.name}</span>
@@ -500,14 +742,24 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             {/* Left Control & Data Sidebar */}
             <div className="w-full md:w-80 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 overflow-y-auto z-10 shadow-xs">
               <div className="space-y-4">
-                {/* Upload Box */}
+                {/* Upload Box with Drag & Drop */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
                     Upload File Excel / CSV:
                   </label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-[#0046ad]/40 hover:border-[#0046ad] bg-[#eff6ff]/40 hover:bg-[#eff6ff] rounded-xl p-4 text-center cursor-pointer transition-all group"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all group ${
+                      isDragging
+                        ? 'border-[#0046ad] bg-[#dbeafe]'
+                        : 'border-[#0046ad]/40 hover:border-[#0046ad] bg-[#eff6ff]/40 hover:bg-[#eff6ff]'
+                    }`}
                   >
                     <UploadCloud className="w-8 h-8 text-[#0046ad] mx-auto mb-2 group-hover:scale-110 transition-transform" />
                     <div className="text-xs font-bold text-slate-800">
@@ -526,10 +778,30 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     ref={fileInputRef}
                     type="file"
                     accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
+                    onChange={handleFileInputChange}
                     className="hidden"
                   />
                 </div>
+
+                {/* Upload Status / Diagnostic Alert */}
+                {uploadStatusMsg && (
+                  <div
+                    className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${
+                      uploadStatusMsg.type === 'success'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : uploadStatusMsg.type === 'error'
+                        ? 'bg-rose-50 text-rose-800 border-rose-200'
+                        : 'bg-blue-50 text-blue-800 border-blue-200'
+                    }`}
+                  >
+                    {uploadStatusMsg.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="leading-tight text-[11px]">{uploadStatusMsg.text}</div>
+                  </div>
+                )}
 
                 {/* Download Template Action */}
                 <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl space-y-2">
@@ -594,9 +866,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               <div className="space-y-2 mt-4">
                 <button
                   onClick={() => {
-                    setGiList(sampleGINodes);
-                    setLineList(sampleLines);
+                    setGiList(initialSampleGINodes);
+                    setLineList(initialSampleLines);
                     setFileName('sample_sld_jamali_500kv.xlsx');
+                    setUploadStatusMsg({ type: 'info', text: 'Memuat kembali data contoh 13 GI & 12 Jalur Transmisi.' });
                   }}
                   className="w-full py-2 px-3 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#0046ad] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all border border-[#bfdbfe]"
                 >
@@ -606,43 +879,152 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               </div>
             </div>
 
-            {/* Right: Interactive Graph Canvas */}
+            {/* Right: Interactive Canvas OR Data Preview Table */}
             <div className="flex-1 relative flex flex-col h-full bg-[#f8fafc] overflow-hidden">
-              <div className="p-2.5 bg-white border-b border-slate-200 px-4 flex items-center justify-between text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse" />
-                  <span className="font-semibold text-slate-800">
-                    SLD Interaktif Hasil Generate Otomatis dari Excel
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    (Dapat di-zoom, geser, & diklik)
-                  </span>
+              <div className="p-2.5 bg-white border-b border-slate-200 px-4 flex items-center justify-between text-xs text-slate-600 shrink-0">
+                {/* View Switcher: Graph vs Raw Table */}
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                  <button
+                    onClick={() => setExcelViewMode('graph')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold text-xs transition-all ${
+                      excelViewMode === 'graph'
+                        ? 'bg-white text-[#0046ad] shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Network className="w-3.5 h-3.5" />
+                    <span>Diagram Graf Interaktif</span>
+                  </button>
+                  <button
+                    onClick={() => setExcelViewMode('table')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold text-xs transition-all ${
+                      excelViewMode === 'table'
+                        ? 'bg-white text-[#0046ad] shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <TableIcon className="w-3.5 h-3.5" />
+                    <span>Tabel Data Terbaca ({giList.length} GI • {lineList.length} Line)</span>
+                  </button>
                 </div>
+
                 <div className="flex items-center gap-2 font-mono text-[11px]">
                   <span className="text-[#0046ad] font-bold">Target: {currentTargetObj.name}</span>
                 </div>
               </div>
 
-              <div className="flex-1 relative w-full h-full">
-                <ReactFlowProvider>
-                  <ReactFlow
-                    nodes={flowNodes}
-                    edges={flowEdges}
-                    fitView
-                    attributionPosition="bottom-left"
-                    className="h-full w-full"
-                  >
-                    <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-                    <Controls />
-                    <MiniMap
-                      nodeColor={(n) => {
-                        return n.data?.label ? '#0046ad' : '#94a3b8';
-                      }}
-                      className="rounded-xl border border-slate-200 shadow-md bg-white/90"
-                    />
-                  </ReactFlow>
-                </ReactFlowProvider>
-              </div>
+              {/* SUB-VIEW 1: GRAPH VIEW */}
+              {excelViewMode === 'graph' && (
+                <div className="flex-1 relative w-full h-full">
+                  <ReactFlowProvider>
+                    <ReactFlow
+                      nodes={flowNodes}
+                      edges={flowEdges}
+                      fitView
+                      attributionPosition="bottom-left"
+                      className="h-full w-full"
+                    >
+                      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
+                      <Controls />
+                      <MiniMap
+                        nodeColor={(n) => {
+                          return n.data?.label ? '#0046ad' : '#94a3b8';
+                        }}
+                        className="rounded-xl border border-slate-200 shadow-md bg-white/90"
+                      />
+                    </ReactFlow>
+                  </ReactFlowProvider>
+                </div>
+              )}
+
+              {/* SUB-VIEW 2: RAW PARSED TABLE PREVIEW */}
+              {excelViewMode === 'table' && (
+                <div className="flex-1 overflow-auto p-4 space-y-4">
+                  {/* Table 1: Gardu Induk */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#0046ad]" />
+                        Daftar Gardu Induk / Simpul Terdeteksi ({giList.length})
+                      </span>
+                    </div>
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-100/80 text-slate-600 font-mono text-[11px]">
+                        <tr>
+                          <th className="p-2.5 border-b border-slate-200">ID</th>
+                          <th className="p-2.5 border-b border-slate-200">Nama Gardu Induk</th>
+                          <th className="p-2.5 border-b border-slate-200">Tegangan</th>
+                          <th className="p-2.5 border-b border-slate-200">Wilayah / Subsistem</th>
+                          <th className="p-2.5 border-b border-slate-200">Status Kerawanan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {giList.map((gi, idx) => (
+                          <tr key={gi.id || idx} className="hover:bg-slate-50">
+                            <td className="p-2.5 font-mono text-slate-500">{gi.id}</td>
+                            <td className="p-2.5 font-bold text-slate-800">{gi.name}</td>
+                            <td className="p-2.5 font-mono text-[#0046ad]">{gi.voltage}</td>
+                            <td className="p-2.5 text-slate-600">{gi.region || gi.subsystem || '-'}</td>
+                            <td className="p-2.5">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  gi.riskStatus !== 'Normal' ? 'bg-[#fee2e2] text-[#dc2626]' : 'bg-emerald-50 text-emerald-600'
+                                }`}
+                              >
+                                {gi.riskStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Table 2: Jalur Transmisi (Penghantar) */}
+                  {lineList.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                      <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                        <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                          <Network className="w-3.5 h-3.5 text-[#16a34a]" />
+                          Daftar Jalur Penghantar Terdeteksi ({lineList.length})
+                        </span>
+                      </div>
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-100/80 text-slate-600 font-mono text-[11px]">
+                          <tr>
+                            <th className="p-2.5 border-b border-slate-200">ID</th>
+                            <th className="p-2.5 border-b border-slate-200">Nama Penghantar</th>
+                            <th className="p-2.5 border-b border-slate-200">Dari GI</th>
+                            <th className="p-2.5 border-b border-slate-200">Ke GI</th>
+                            <th className="p-2.5 border-b border-slate-200">Pembebanan</th>
+                            <th className="p-2.5 border-b border-slate-200">Status Kerawanan</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {lineList.map((line, idx) => (
+                            <tr key={line.id || idx} className="hover:bg-slate-50">
+                              <td className="p-2.5 font-mono text-slate-500">{line.id}</td>
+                              <td className="p-2.5 font-bold text-slate-800">{line.lineName}</td>
+                              <td className="p-2.5 font-mono text-slate-700">{line.sourceId}</td>
+                              <td className="p-2.5 font-mono text-slate-700">{line.targetId}</td>
+                              <td className="p-2.5 font-mono font-bold text-[#0046ad]">{line.loadingPct}%</td>
+                              <td className="p-2.5">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    line.riskStatus !== 'Normal' ? 'bg-[#fee2e2] text-[#dc2626]' : 'bg-emerald-50 text-emerald-600'
+                                  }`}
+                                >
+                                  {line.riskStatus}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Selected Element Detail Drawer */}
               {selectedElement && (
