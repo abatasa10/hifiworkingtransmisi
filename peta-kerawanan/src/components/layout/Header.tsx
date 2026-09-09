@@ -8,7 +8,8 @@ import {
   FileText,
   ShieldAlert,
   ChevronRight,
-  User
+  User,
+  UploadCloud
 } from 'lucide-react';
 
 export type ActiveView =
@@ -19,7 +20,8 @@ export type ActiveView =
   | 'subsystem-view'
   | 'subsystem-sld'
   | 'ibt-view'
-  | 'report-view';
+  | 'report-view'
+  | 'upload-sld';
 
 interface HeaderProps {
   currentView: ActiveView;
@@ -60,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'upb-view', label: 'UPB / P2B', icon: Layers },
     { id: 'subsystem-view', label: 'Subsistem', icon: Activity },
     { id: 'ibt-view', label: 'Daftar IBT', icon: Layers },
+    { id: 'upload-sld', label: 'Upload SLD', icon: UploadCloud },
     { id: 'report-view', label: 'Laporan', icon: FileText }
   ];
 

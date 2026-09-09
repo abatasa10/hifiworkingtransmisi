@@ -20,7 +20,8 @@ import {
   X,
   Zap,
   ExternalLink,
-  Info
+  Info,
+  UploadCloud
 } from 'lucide-react';
 
 interface JamaliSystemViewProps {
@@ -374,6 +375,16 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
               <span>Info Sistem</span>
             </button>
           )}
+
+          {/* 5. Upload SLD */}
+          <button
+            onClick={() => onNavigate('upload-sld')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all ml-0.5 border-l border-slate-200 pl-3"
+            title="Upload atau Import Data SLD Baru"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-[#0046ad]" />
+            <span>Upload SLD</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
