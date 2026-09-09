@@ -27,7 +27,6 @@ import { initialEdges500kV } from '../../data/edges500kv';
 import { risksData } from '../../data/risks';
 import { SLDFilterOptions, SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { ActiveView } from '../layout/Header';
-import { RiskTableView } from './RiskTableView';
 import {
   Maximize2,
   RotateCcw,
@@ -59,11 +58,15 @@ const edgeTypes = {
 interface SLD500kVCanvasProps {
   onNavigate: (view: ActiveView) => void;
   initialSelectedRiskId?: number;
+  onNavigateToMaps?: () => void;
+  onNavigateToListKerawanan?: () => void;
 }
 
 const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   onNavigate,
-  initialSelectedRiskId
+  initialSelectedRiskId,
+  onNavigateToMaps,
+  onNavigateToListKerawanan
 }) => {
   const reactFlow = useReactFlow();
 
@@ -88,7 +91,6 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   const [highlightedAssetId, setHighlightedAssetId] = useState<string | null>(() => {
     return initialSelectedRiskId ? `LINE_GNDUL_DKSBI` : 'LINE_GNDUL_DKSBI';
   });
-  const [showRiskListModal, setShowRiskListModal] = useState(false);
 
   // Highlight logic for nodes & edges
   const computedNodes = useMemo(() => {
@@ -409,7 +411,13 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
           <div className="absolute top-4 right-6 z-30 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
             {/* 1. Maps */}
             <button
-              onClick={() => onNavigate('jamali-system')}
+              onClick={() => {
+                if (onNavigateToMaps) {
+                  onNavigateToMaps();
+                } else {
+                  onNavigate('jamali-system');
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
             >
               <Map className="w-3.5 h-3.5" />
@@ -426,7 +434,13 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
 
             {/* 3. List Kerawanan */}
             <button
-              onClick={() => setShowRiskListModal(true)}
+              onClick={() => {
+                if (onNavigateToListKerawanan) {
+                  onNavigateToListKerawanan();
+                } else {
+                  onNavigate('jamali-system');
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
             >
               <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
@@ -436,21 +450,6 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
               </span>
             </button>
           </div>
-
-          {/* Modal List Seluruh Line Rawan SLD 500 kV (Official PLN Table) */}
-          {showRiskListModal && (
-            <div className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                <RiskTableView
-                  onNavigateToSLD={(riskNum) => {
-                    setShowRiskListModal(false);
-                    if (riskNum) handleOpenRisk(riskNum);
-                  }}
-                  onClose={() => setShowRiskListModal(false)}
-                />
-              </div>
-            </div>
-          )}
 
           <ReactFlow
             nodes={nodes}

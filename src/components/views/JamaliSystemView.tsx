@@ -26,17 +26,29 @@ import {
 interface JamaliSystemViewProps {
   onSelectUPB: (upbId: string) => void;
   onNavigate: (view: ActiveView) => void;
+  canvasMode?: 'maps' | 'list-kerawanan';
+  onCanvasModeChange?: (mode: 'maps' | 'list-kerawanan') => void;
+  onSelectRisk?: (riskId: number) => void;
 }
 
 export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
   onSelectUPB,
-  onNavigate
+  onNavigate,
+  canvasMode: controlledMode,
+  onCanvasModeChange,
+  onSelectRisk
 }) => {
   const [activeTab, setActiveTab] = useState<
     'peta' | 'sld' | 'ibt' | 'daftar-upb' | 'ringkasan'
   >('peta');
   const [hoveredUPB, setHoveredUPB] = useState<UPB | null>(null);
-  const [canvasMode, setCanvasMode] = useState<'maps' | 'list-kerawanan'>('maps');
+  const [internalMode, setInternalMode] = useState<'maps' | 'list-kerawanan'>('maps');
+  const canvasMode = controlledMode !== undefined ? controlledMode : internalMode;
+
+  const setCanvasMode = (mode: 'maps' | 'list-kerawanan') => {
+    setInternalMode(mode);
+    onCanvasModeChange?.(mode);
+  };
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<RiskItem>(
     () => risksData.find((r) => r.number === 7) || risksData[0]
@@ -344,7 +356,13 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
           {canvasMode === 'list-kerawanan' && (
             <div className="absolute inset-0 z-30 bg-white flex flex-col overflow-hidden">
               <RiskTableView
-                onNavigateToSLD={(riskNum) => onNavigate('sld-500kv')}
+                onNavigateToSLD={(riskNum) => {
+                  if (onSelectRisk && riskNum) {
+                    onSelectRisk(riskNum);
+                  } else {
+                    onNavigate('sld-500kv');
+                  }
+                }}
                 onClose={() => setCanvasMode('maps')}
               />
             </div>

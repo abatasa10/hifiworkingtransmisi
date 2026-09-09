@@ -18,9 +18,12 @@ export const App: React.FC = () => {
   const [selectedRiskId, setSelectedRiskId] = useState<number | undefined>(7); // Default to Risk #7
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
 
+  const [jamaliMode, setJamaliMode] = useState<'maps' | 'list-kerawanan'>('maps');
+
   // Drill-down Handlers
   const handleSelectSystem = (systemId: string) => {
     if (systemId === 'jamali') {
+      setJamaliMode('maps');
       setCurrentView('jamali-system');
     }
   };
@@ -67,6 +70,9 @@ export const App: React.FC = () => {
           <JamaliSystemView
             onSelectUPB={handleSelectUPB}
             onNavigate={setCurrentView}
+            canvasMode={jamaliMode}
+            onCanvasModeChange={setJamaliMode}
+            onSelectRisk={handleSelectRiskFromModal}
           />
         )}
 
@@ -74,6 +80,14 @@ export const App: React.FC = () => {
           <SLD500kVView
             onNavigate={setCurrentView}
             initialSelectedRiskId={selectedRiskId}
+            onNavigateToMaps={() => {
+              setJamaliMode('maps');
+              setCurrentView('jamali-system');
+            }}
+            onNavigateToListKerawanan={() => {
+              setJamaliMode('list-kerawanan');
+              setCurrentView('jamali-system');
+            }}
           />
         )}
 
