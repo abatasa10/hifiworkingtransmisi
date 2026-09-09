@@ -43,7 +43,63 @@ import {
   UploadCloud
 } from 'lucide-react';
 
+import { Handle, Position } from '@xyflow/react';
+
+const DefaultCustomNode: React.FC<any> = ({ data }) => {
+  return (
+    <div className="relative group">
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-src"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-tgt"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2 !h-2 !bg-cyan-400 !border !border-slate-900 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+
+      {data?.label ? (
+        data.label
+      ) : (
+        <div className="p-3 bg-slate-900 border-2 border-[#0046ad] text-white rounded-xl shadow-lg min-w-[180px]">
+          <div className="font-bold text-xs">{data?.name || 'Gardu Induk'}</div>
+          <div className="text-[10px] text-cyan-400 font-mono">{data?.voltage || '500 kV'}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const nodeTypes = {
+  default: DefaultCustomNode,
+  custom: DefaultCustomNode,
   busbar: BusbarNode,
   generator: GeneratorNode,
   ibt: TransformerNode,
@@ -53,6 +109,7 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
+  default: TransmissionEdge,
   transmission: TransmissionEdge,
   transformer_link: TransmissionEdge
 };
@@ -208,6 +265,73 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   React.useEffect(() => {
     setEdges(computedEdges);
   }, [computedEdges, setEdges]);
+
+  // Effective Nodes & Edges from Custom Excel Upload (if any)
+  const isCustomExcelValid = Boolean(
+    customConfig?.type === 'excel' &&
+    customConfig.excelData?.giList &&
+    customConfig.excelData.giList.length > 0
+  );
+
+  const effectiveNodes = useMemo(() => {
+    if (isCustomExcelValid && customConfig?.excelData?.giList) {
+      return customConfig.excelData.giList.map((gi, idx) => ({
+        id: gi.id,
+        type: 'default',
+        position: { x: 80 + (idx % 4) * 280, y: 80 + Math.floor(idx / 4) * 160 },
+        data: {
+          label: (
+            <div
+              onClick={() => setSelectedItem({ type: 'node', data: { name: gi.name, voltage: gi.voltage, region: gi.region, riskStatus: gi.riskStatus } as any })}
+              className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] bg-slate-900 text-white ${
+                gi.riskStatus !== 'Normal' ? 'border-[#dc2626] shadow-[#dc2626]/30' : 'border-[#0046ad]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[10px] font-mono text-cyan-400 mb-1">
+                <span>{gi.voltage}</span>
+                <span className={`px-1.5 py-0.2 rounded font-bold ${gi.riskStatus !== 'Normal' ? 'bg-[#dc2626] text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                  {gi.riskStatus}
+                </span>
+              </div>
+              <div className="font-bold text-xs truncate">{gi.name}</div>
+              <div className="text-[10px] text-slate-400">{gi.region || 'Jamali'}</div>
+            </div>
+          )
+        }
+      }));
+    }
+    return nodes;
+  }, [isCustomExcelValid, customConfig, nodes]);
+
+  const effectiveEdges = useMemo(() => {
+    if (isCustomExcelValid && customConfig?.excelData?.lineList) {
+      return customConfig.excelData.lineList.map((l) => ({
+        id: l.id,
+        source: l.sourceId,
+        target: l.targetId,
+        animated: l.riskStatus !== 'Normal',
+        style: {
+          stroke: l.riskStatus !== 'Normal' ? '#dc2626' : '#00d2d3',
+          strokeWidth: l.riskStatus !== 'Normal' ? 3 : 2
+        },
+        label: `${l.lineName} (${l.loadingPct}%)`,
+        labelStyle: { fill: l.riskStatus !== 'Normal' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
+        labelBgPadding: [4, 2],
+        labelBgBorderRadius: 4,
+        labelBgStyle: { fill: '#0f172a', color: '#fff', fillOpacity: 0.9 }
+      }));
+    }
+    return edges;
+  }, [isCustomExcelValid, customConfig, edges]);
+
+  useEffect(() => {
+    if (customConfig && reactFlow) {
+      const t = setTimeout(() => {
+        reactFlow.fitView({ padding: 0.25, duration: 400 });
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [customConfig, reactFlow]);
 
   // Click on Node (GI, GITET, IBT, Generator)
   const onNodeClick = useCallback(
@@ -441,11 +565,29 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
       <div className="flex-1 flex flex-col w-full relative overflow-hidden">
         {/* Custom SLD Active Banner */}
         {customConfig && (
-          <div className="bg-[#0f172a] border-b border-cyan-500/40 px-4 py-2 flex items-center justify-between text-xs text-white z-20 shrink-0 shadow-sm">
+          <div
+            className={`border-b px-4 py-2 flex items-center justify-between text-xs z-20 shrink-0 shadow-sm ${
+              customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                ? 'bg-amber-950/90 border-amber-500/60 text-amber-200'
+                : 'bg-[#0f172a] border-cyan-500/40 text-white'
+            }`}
+          >
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-bold text-emerald-300">
-                SLD Kustom Pengguna Aktif ({customConfig.type === 'excel' ? 'Import Excel' : 'Blueprint Skema Gambar'})
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                    ? 'bg-amber-400'
+                    : 'bg-emerald-400 animate-pulse'
+                }`}
+              />
+              <span className="font-bold">
+                {customConfig.type === 'excel' && (!customConfig.excelData?.giList || customConfig.excelData.giList.length === 0)
+                  ? '⚠️ Data SLD Kustom Kosong (0 Simpul GI). Menampilkan SLD default 500 kV.'
+                  : `SLD Kustom Pengguna Aktif (${
+                      customConfig.type === 'excel'
+                        ? `Import Excel: ${customConfig.excelData?.giList?.length || 0} GI • ${customConfig.excelData?.lineList?.length || 0} Jalur`
+                        : 'Blueprint Skema Gambar'
+                    })`}
               </span>
               <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
                 • Diperbarui: {customConfig.updatedAt}
@@ -454,18 +596,16 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onNavigate('upload-sld')}
-                className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs"
+                className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs cursor-pointer"
               >
                 <UploadCloud className="w-3 h-3" />
                 <span>Upload Ulang</span>
               </button>
               <button
                 onClick={() => {
-                  if (confirm('Reset SLD 500 kV ke tampilan default?')) {
-                    removeCustomSLD('sld-500kv');
-                  }
+                  removeCustomSLD('sld-500kv');
                 }}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700"
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700 cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset Default</span>
@@ -475,24 +615,66 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
         )}
 
         <div className="flex-1 flex w-full relative overflow-hidden">
-          {/* Interactive Graph Canvas */}
-          <div className="flex-1 relative h-full min-w-0">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            onEdgeClick={onEdgeClick}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultViewport={{ x: 100, y: 30, zoom: 0.85 }}
-            minZoom={0.3}
-            maxZoom={2.0}
-            fitViewOptions={{ padding: 0.2 }}
-            attributionPosition="bottom-left"
-            className="h-full w-full"
-          >
+          {/* Custom Image Blueprint View */}
+          {customConfig?.type === 'image' && customConfig.imageData ? (
+            <div className="flex-1 relative bg-[#060c18] overflow-auto flex items-center justify-center p-4 select-none">
+              <div className="relative max-w-full max-h-full rounded-2xl overflow-hidden shadow-2xl bg-white border border-slate-700" style={{ minWidth: '650px', minHeight: '400px' }}>
+                {customConfig.imageData.imageUrl ? (
+                  <img
+                    src={customConfig.imageData.imageUrl}
+                    alt="Custom SLD Blueprint 500 kV"
+                    className="w-full h-auto object-contain pointer-events-none block"
+                  />
+                ) : (
+                  <div className="w-full h-96 bg-slate-900 flex items-center justify-center text-slate-400 font-mono text-xs">
+                    Blueprint Skema SLD 500 kV
+                  </div>
+                )}
+                {customConfig.imageData.hotspots.map((spot) => {
+                  const isRawan = spot.riskStatus !== 'Normal';
+                  return (
+                    <div
+                      key={spot.id}
+                      onClick={() => setSelectedItem({ type: 'node', data: { name: spot.name, voltage: spot.voltage, region: 'Jamali', riskStatus: spot.riskStatus } as any })}
+                      style={{ left: `${spot.xPercent}%`, top: `${spot.yPercent}%` }}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-20"
+                    >
+                      <div className="relative">
+                        <span className={`absolute -inset-1 rounded-full animate-ping opacity-60 ${isRawan ? 'bg-[#dc2626]' : 'bg-[#00d2d3]'}`} />
+                        <div className={`relative w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-bold text-white shadow-lg ${isRawan ? 'bg-[#dc2626]' : 'bg-[#0046ad]'}`}>
+                          •
+                        </div>
+                      </div>
+                      <div className="absolute left-1/2 -translate-x-1/2 top-5 hidden group-hover:flex flex-col items-center bg-slate-950/95 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap shadow-xl border border-slate-700 z-30 pointer-events-none">
+                        <span className="font-bold">{spot.name}</span>
+                        <span className={`px-1 py-0.2 rounded text-[8px] font-mono ${isRawan ? 'bg-[#dc2626]' : 'bg-[#16a34a]'}`}>
+                          {spot.riskStatus}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Interactive Graph Canvas */
+            <div className="flex-1 relative h-full min-w-0">
+              <ReactFlow
+                nodes={effectiveNodes as any}
+                edges={effectiveEdges as any}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeClick={onNodeClick}
+                onEdgeClick={onEdgeClick}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                defaultViewport={{ x: 100, y: 30, zoom: 0.85 }}
+                minZoom={0.3}
+                maxZoom={2.0}
+                fitViewOptions={{ padding: 0.2 }}
+                attributionPosition="bottom-left"
+                className="h-full w-full"
+              >
             {/* Background grid dots */}
             <Background
               variant={BackgroundVariant.Dots}
@@ -552,6 +734,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
             />
           </ReactFlow>
         </div>
+      )}
 
         {/* Right Detail Panel */}
         <RightDetailPanel
