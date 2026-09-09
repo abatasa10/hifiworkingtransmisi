@@ -251,19 +251,15 @@ export const UPBView: React.FC<UPBViewProps> = ({
               <span>Saluran Transmisi</span>
             </div>
             <div className="border-t border-slate-100 pt-1 text-[11px] font-bold text-slate-700">
-              Tingkat Kerawanan
+              Status Gardu
             </div>
             <div className="flex items-center gap-2 text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
-              <span className="text-slate-600">Merah (N-1)</span>
+              <span className="text-slate-600">GI / GITET Rawan</span>
             </div>
             <div className="flex items-center gap-2 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-[#eab308]" />
-              <span className="text-slate-600">Kuning (N-2)</span>
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-[#64748b]" />
-              <span className="text-slate-600">Abu-Abu (N-1-2)</span>
+              <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+              <span className="text-slate-600">GI / GITET Normal</span>
             </div>
           </div>
         </div>
@@ -312,23 +308,22 @@ export const UPBView: React.FC<UPBViewProps> = ({
 
             {/* Total Kerawanan Unit (Total Saja Tanpa Klasifikasi) */}
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                  Total Kerawanan {currentUPB.shortName}:
-                </span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-md font-extrabold text-xs font-mono ${
-                    currentUPB.riskCount >= 15
-                      ? 'bg-[#fee2e2] text-[#dc2626] border border-[#fecaca]'
-                      : currentUPB.riskCount >= 8
-                      ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fed7aa]'
-                      : currentUPB.riskCount >= 4
-                      ? 'bg-[#fef9c3] text-[#a16207] border border-[#fef08a]'
-                      : 'bg-[#dcfce7] text-[#16a34a] border border-[#bbf7d0]'
-                  }`}
-                >
-                  {currentUPB.riskCount} Kerawanan
-                </span>
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                Total Kerawanan {currentUPB.shortName}:
+              </span>
+              <div className="bg-[#fee2e2]/70 p-3 rounded-xl border border-[#fecaca] flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#dc2626] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    🔥
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">Total Kerawanan</div>
+                    <div className="text-[10px] text-slate-500">Wilayah {currentUPB.shortName}</div>
+                  </div>
+                </div>
+                <div className="text-xl font-black text-[#dc2626] font-mono">
+                  {currentUPB.riskCount} <span className="text-xs font-semibold text-[#991b1b]">Kerawanan</span>
+                </div>
               </div>
             </div>
 
@@ -360,7 +355,7 @@ export const UPBView: React.FC<UPBViewProps> = ({
 
                     {/* Kerawanan total per subsystem (Tanpa klasifikasi) */}
                     <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-medium">Kerawanan Subsistem:</span>
+                      <span className="text-slate-500 font-medium">Total Kerawanan:</span>
                       <span className="font-bold text-[#dc2626] font-mono bg-[#fee2e2] px-2 py-0.5 rounded border border-[#fecaca] text-[10px]">
                         {sub.riskCount} Kerawanan
                       </span>
