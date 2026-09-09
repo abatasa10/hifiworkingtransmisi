@@ -313,50 +313,67 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
         </button>
       </div>
 
-      {/* Secondary Navigation Tabs */}
-      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-1.5">
+      {/* Top View Mode Bar (Maps | SLD | List Kerawanan) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+          {/* 1. Maps */}
           <button
-            onClick={() => setActiveTab('peta')}
-            className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all ${
-              activeTab === 'peta'
+            onClick={() => setCanvasMode('maps')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              canvasMode === 'maps'
                 ? 'bg-[#0046ad] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc]'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
             }`}
           >
-            Peta Wilayah
+            <Map className="w-3.5 h-3.5" />
+            <span>Maps</span>
           </button>
+
+          {/* 2. SLD */}
           <button
             onClick={() => onNavigate('sld-500kv')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all"
           >
             <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-            <span>SLD 500 kV</span>
+            <span>SLD</span>
           </button>
+
+          {/* 3. List Kerawanan */}
           <button
-            onClick={() => onNavigate('ibt-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
-          >
-            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
-            <span>IBT</span>
-          </button>
-          <button
-            onClick={() => onNavigate('upb-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
-          >
-            <span>Daftar UPB/P2B</span>
-          </button>
-          <button
-            onClick={() => setShowSystemInfo(true)}
-            className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              showSystemInfo
+            onClick={() => setCanvasMode('list-kerawanan')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              canvasMode === 'list-kerawanan'
                 ? 'bg-[#0046ad] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc]'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
             }`}
           >
-            <Info className="w-3.5 h-3.5" />
-            <span>Informasi Sistem</span>
+            <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+            <span>List Kerawanan</span>
+            <span
+              className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
+                canvasMode === 'list-kerawanan'
+                  ? 'bg-white/25 text-white'
+                  : 'bg-[#fee2e2] text-[#dc2626]'
+              }`}
+            >
+              {risksData.length}
+            </span>
           </button>
+
+          {/* 4. Info Sistem Trigger (Only when on list-kerawanan) */}
+          {canvasMode === 'list-kerawanan' && (
+            <button
+              onClick={() => setShowSystemInfo(true)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                showSystemInfo
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+              }`}
+            >
+              <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+              <span>Info Sistem</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -381,67 +398,6 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             }}
           />
 
-          {/* Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan, Info Sistem) */}
-          <div className="absolute top-4 right-6 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
-            {/* 1. Maps */}
-            <button
-              onClick={() => setCanvasMode('maps')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                canvasMode === 'maps'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <Map className="w-3.5 h-3.5" />
-              <span>Maps</span>
-            </button>
-
-            {/* 2. SLD */}
-            <button
-              onClick={() => onNavigate('sld-500kv')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] transition-all"
-            >
-              <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-              <span>SLD</span>
-            </button>
-
-            {/* 3. List Kerawanan */}
-            <button
-              onClick={() => setCanvasMode('list-kerawanan')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                canvasMode === 'list-kerawanan'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
-              <span>List Kerawanan</span>
-              <span
-                className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                  canvasMode === 'list-kerawanan'
-                    ? 'bg-white/25 text-white'
-                    : 'bg-[#fee2e2] text-[#dc2626]'
-                }`}
-              >
-                {risksData.length}
-              </span>
-            </button>
-
-            {/* 4. Informasi Sistem Trigger (Only when on list-kerawanan) */}
-            {canvasMode === 'list-kerawanan' && (
-              <button
-                onClick={() => setShowSystemInfo(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  showSystemInfo
-                    ? 'bg-[#0046ad] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-                }`}
-              >
-                <Info className="w-3.5 h-3.5 text-[#0046ad]" />
-                <span>Info Sistem</span>
-              </button>
-            )}
-          </div>
 
           {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
           {canvasMode === 'list-kerawanan' && (

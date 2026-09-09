@@ -219,41 +219,58 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         </button>
       </div>
 
-      {/* Secondary Navigation Tabs (Consistent across all system pages) */}
-      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => onNavigate('jamali-system')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
-          >
-            Peta Wilayah
-          </button>
-          <button
-            onClick={() => onNavigate('sld-500kv')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
-          >
-            <Network className="w-3.5 h-3.5 text-[#0046ad]" />
-            <span>SLD 500 kV</span>
-          </button>
-          <button
-            onClick={() => onNavigate('ibt-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] flex items-center gap-1.5 transition-all"
-          >
-            <Layers className="w-3.5 h-3.5 text-[#16a34a]" />
-            <span>IBT</span>
-          </button>
+      {/* Top View Mode Bar (Maps | SLD | List Kerawanan) */}
+      <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between text-xs shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+          {/* 1. Maps */}
           <button
             onClick={() => onNavigate('upb-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#eff6ff] transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all"
           >
-            <span>Daftar UPB/P2B</span>
+            <Map className="w-3.5 h-3.5" />
+            <span>Maps</span>
           </button>
+
+          {/* 2. SLD */}
           <button
-            onClick={() => onNavigate('report-view')}
-            className="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] transition-all"
+            onClick={() => setViewMode('sld')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'sld'
+                ? 'bg-[#0046ad] text-white shadow-xs'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+            }`}
           >
-            <span>Ringkasan Kerawanan</span>
+            <Network className="w-3.5 h-3.5" />
+            <span>SLD</span>
           </button>
+
+          {/* 3. List Kerawanan */}
+          <button
+            onClick={() => setViewMode('list-kerawanan')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'list-kerawanan'
+                ? 'bg-[#0046ad] text-white shadow-xs'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+            }`}
+          >
+            <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
+            <span>List Kerawanan</span>
+          </button>
+
+          {/* 4. Info Subsistem Trigger (Only when on list-kerawanan) */}
+          {viewMode === 'list-kerawanan' && (
+            <button
+              onClick={() => setShowSubsystemInfoOverlay(true)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                showSubsystemInfoOverlay
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+              }`}
+            >
+              <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+              <span>Info Subsistem</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -309,58 +326,6 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
         {/* Center: Interactive SLD Canvas OR List Kerawanan */}
         <div className="flex-1 flex flex-col relative h-full min-w-0">
-          {/* Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan) */}
-          <div className="absolute top-2 right-4 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
-            {/* 1. Maps */}
-            <button
-              onClick={() => onNavigate('upb-view')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-slate-100 transition-all"
-            >
-              <Map className="w-3.5 h-3.5" />
-              <span>Maps</span>
-            </button>
-
-            {/* 2. SLD */}
-            <button
-              onClick={() => setViewMode('sld')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === 'sld'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <Network className="w-3.5 h-3.5" />
-              <span>SLD</span>
-            </button>
-
-            {/* 3. List Kerawanan */}
-            <button
-              onClick={() => setViewMode('list-kerawanan')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === 'list-kerawanan'
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-              }`}
-            >
-              <ListFilter className="w-3.5 h-3.5 text-[#dc2626]" />
-              <span>List Kerawanan</span>
-            </button>
-
-            {/* 4. Info Subsistem Trigger (Only when on list-kerawanan) */}
-            {viewMode === 'list-kerawanan' && (
-              <button
-                onClick={() => setShowSubsystemInfoOverlay(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  showSubsystemInfoOverlay
-                    ? 'bg-[#0046ad] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
-                }`}
-              >
-                <Info className="w-3.5 h-3.5 text-[#0046ad]" />
-                <span>Info Subsistem</span>
-              </button>
-            )}
-          </div>
 
           {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
           {viewMode === 'list-kerawanan' && (
