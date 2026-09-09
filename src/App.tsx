@@ -126,7 +126,10 @@ export const App: React.FC = () => {
         )}
 
         {currentView === 'upload-sld' && (
-          <UploadSLDView onNavigate={setCurrentView} />
+          <UploadSLDView
+            onNavigate={setCurrentView}
+            onSelectSubsystem={handleSelectSubsystem}
+          />
         )}
       </main>
 

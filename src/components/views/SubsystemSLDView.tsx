@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -31,9 +31,18 @@ import {
   Network,
   ListFilter,
   Info,
-  X
+  X,
+  UploadCloud,
+  RotateCcw,
+  CheckCircle2
 } from 'lucide-react';
 import { SLDNodeData, SLDEdgeData } from '../../types/graph';
+import {
+  getCustomSLD,
+  removeCustomSLD,
+  CustomSLDConfig,
+  ImageHotspot
+} from '../../data/customSLDStore';
 
 const nodeTypes = {
   busbar: BusbarNode,
@@ -70,6 +79,72 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState(subsystemBogorEdges);
   const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  // Custom Uploaded SLD Binding
+  const [customConfig, setCustomConfig] = useState<CustomSLDConfig | null>(() => getCustomSLD(currentSubId));
+
+  useEffect(() => {
+    setCustomConfig(getCustomSLD(currentSubId));
+  }, [currentSubId]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCustomConfig(getCustomSLD(currentSubId));
+    };
+    window.addEventListener('custom-sld-updated', handleUpdate);
+    return () => window.removeEventListener('custom-sld-updated', handleUpdate);
+  }, [currentSubId]);
+
+  // Effective Nodes & Edges from Custom Excel Upload (if any)
+  const effectiveNodes = useMemo(() => {
+    if (customConfig?.type === 'excel' && customConfig.excelData?.giList) {
+      return customConfig.excelData.giList.map((gi, idx) => ({
+        id: gi.id,
+        position: { x: 80 + (idx % 3) * 290, y: 80 + Math.floor(idx / 3) * 160 },
+        data: {
+          label: (
+            <div
+              onClick={() => setSelectedItem({ type: 'node', data: { name: gi.name, voltage: gi.voltage, region: gi.region, riskStatus: gi.riskStatus } as any })}
+              className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] bg-slate-900 text-white ${
+                gi.riskStatus !== 'Normal' ? 'border-[#dc2626] shadow-[#dc2626]/30' : 'border-[#0046ad]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[10px] font-mono text-cyan-400 mb-1">
+                <span>{gi.voltage}</span>
+                <span className={`px-1.5 py-0.2 rounded font-bold ${gi.riskStatus !== 'Normal' ? 'bg-[#dc2626] text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                  {gi.riskStatus}
+                </span>
+              </div>
+              <div className="font-bold text-xs truncate">{gi.name}</div>
+              <div className="text-[10px] text-slate-400">{gi.region}</div>
+            </div>
+          )
+        }
+      }));
+    }
+    return nodes;
+  }, [customConfig, nodes]);
+
+  const effectiveEdges = useMemo(() => {
+    if (customConfig?.type === 'excel' && customConfig.excelData?.lineList) {
+      return customConfig.excelData.lineList.map((l) => ({
+        id: l.id,
+        source: l.sourceId,
+        target: l.targetId,
+        animated: l.riskStatus !== 'Normal',
+        style: {
+          stroke: l.riskStatus !== 'Normal' ? '#dc2626' : '#00d2d3',
+          strokeWidth: l.riskStatus !== 'Normal' ? 3 : 2
+        },
+        label: `${l.lineName} (${l.loadingPct}%)`,
+        labelStyle: { fill: l.riskStatus !== 'Normal' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
+        labelBgPadding: [4, 2],
+        labelBgBorderRadius: 4,
+        labelBgStyle: { fill: '#0f172a', color: '#fff', fillOpacity: 0.9 }
+      }));
+    }
+    return edges;
+  }, [customConfig, edges]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -250,6 +325,16 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             <span>List Kerawanan</span>
           </button>
 
+          {/* 4. Upload SLD */}
+          <button
+            onClick={() => onNavigate('upload-sld')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0046ad] hover:bg-white transition-all ml-0.5 border-l border-slate-200 pl-3"
+            title="Upload atau Import Data SLD Baru"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-[#0046ad]" />
+            <span>Upload SLD</span>
+          </button>
+
           {/* 4. Info Subsistem Trigger (Only when on list-kerawanan) */}
           {viewMode === 'list-kerawanan' && (
             <button
@@ -366,42 +451,137 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                 </div>
               </div>
 
-              {/* ReactFlow Canvas */}
-              <div className="flex-1 relative bg-[#060c18] overflow-hidden">
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  onNodeClick={onNodeClick}
-                  onEdgeClick={onEdgeClick}
-                  nodeTypes={nodeTypes}
-                  edgeTypes={edgeTypes}
-                  fitView
-                  fitViewOptions={{ padding: 0.2 }}
-                  className="h-full w-full"
-                >
-                  <Background
-                    variant={BackgroundVariant.Dots}
-                    gap={20}
-                    size={1.5}
-                    color="rgba(0, 210, 211, 0.15)"
-                  />
-                  <Controls className="bg-slate-900 border border-slate-700 text-slate-300" />
-                </ReactFlow>
-
-                {/* Status bar at bottom */}
-                <div className="absolute bottom-2 left-4 z-10 text-[10px] text-slate-400 font-mono bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-800 backdrop-blur-xs flex items-center gap-4">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                    STATUS: REAL-TIME TELEMETRY CONNECTED
-                  </span>
-                  <span>•</span>
-                  <span>FREKUENSI: 50.02 Hz</span>
-                  <span>•</span>
-                  <span>TEGANGAN BUS: 502.4 kV</span>
+              {/* Custom SLD Active Banner */}
+              {customConfig && (
+                <div className="bg-[#0f172a] border-b border-cyan-500/40 px-4 py-2 flex items-center justify-between text-xs text-white z-20 shrink-0 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="font-bold text-emerald-300">
+                      SLD Kustom Pengguna Aktif ({customConfig.type === 'excel' ? 'Import Excel' : 'Blueprint Skema Gambar'})
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
+                      • Diperbarui: {customConfig.updatedAt}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onNavigate('upload-sld')}
+                      className="px-2.5 py-1 bg-[#0046ad] hover:bg-[#00368a] text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 shadow-xs"
+                    >
+                      <UploadCloud className="w-3 h-3" />
+                      <span>Upload Ulang</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Reset SLD ${currentSub.name} ke tampilan default?`)) {
+                          removeCustomSLD(currentSubId);
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-lg text-[11px] transition-all flex items-center gap-1 border border-slate-700"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset Default</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Mode Canvas: Image Blueprint vs ReactFlow Graph */}
+              {customConfig?.type === 'image' && customConfig.imageData ? (
+                <div className="flex-1 relative bg-[#060c18] overflow-auto flex items-center justify-center p-4 select-none">
+                  <div className="relative max-w-full max-h-full rounded-2xl overflow-hidden shadow-2xl bg-white border border-slate-700" style={{ minWidth: '650px', minHeight: '400px' }}>
+                    {customConfig.imageData.imageUrl ? (
+                      <img
+                        src={customConfig.imageData.imageUrl}
+                        alt="Custom SLD Blueprint"
+                        className="w-full h-auto object-contain pointer-events-none block"
+                      />
+                    ) : (
+                      <div className="w-full h-96 bg-slate-900 flex items-center justify-center text-slate-400 font-mono text-xs">
+                        Blueprint Skema SLD {currentSub.name}
+                      </div>
+                    )}
+
+                    {/* Interactive Hotspot Pins */}
+                    {customConfig.imageData.hotspots.map((spot) => {
+                      const isRawan = spot.riskStatus !== 'Normal';
+                      return (
+                        <div
+                          key={spot.id}
+                          onClick={() =>
+                            setSelectedItem({
+                              type: 'node',
+                              data: {
+                                name: spot.name,
+                                voltage: spot.voltage,
+                                region: currentSub.name,
+                                riskStatus: spot.riskStatus,
+                                description: spot.description
+                              } as any
+                            })
+                          }
+                          style={{ left: `${spot.xPercent}%`, top: `${spot.yPercent}%` }}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer z-20"
+                        >
+                          {isRawan && (
+                            <span className="absolute -inset-2 rounded-full bg-[#dc2626] opacity-75 animate-ping" />
+                          )}
+                          <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] shadow-lg transition-transform hover:scale-125 ${
+                              isRawan ? 'bg-[#dc2626] text-white' : 'bg-[#16a34a] text-white'
+                            }`}
+                          >
+                            {isRawan ? '⚠️' : '⚡'}
+                          </div>
+                          <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap shadow-xl border border-slate-700 pointer-events-none flex items-center gap-1.5">
+                            <span>{spot.name}</span>
+                            <span className={`px-1 py-0.2 rounded text-[8px] font-mono ${isRawan ? 'bg-[#dc2626]' : 'bg-[#16a34a]'}`}>
+                              {spot.riskStatus}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* ReactFlow Canvas (Default or Custom Excel) */
+                <div className="flex-1 relative bg-[#060c18] overflow-hidden">
+                  <ReactFlow
+                    nodes={effectiveNodes as any}
+                    edges={effectiveEdges as any}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onNodeClick={onNodeClick}
+                    onEdgeClick={onEdgeClick}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    fitView
+                    fitViewOptions={{ padding: 0.2 }}
+                    className="h-full w-full"
+                  >
+                    <Background
+                      variant={BackgroundVariant.Dots}
+                      gap={20}
+                      size={1.5}
+                      color="rgba(0, 210, 211, 0.15)"
+                    />
+                    <Controls className="bg-slate-900 border border-slate-700 text-slate-300" />
+                  </ReactFlow>
+
+                  {/* Status bar at bottom */}
+                  <div className="absolute bottom-2 left-4 z-10 text-[10px] text-slate-400 font-mono bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-800 backdrop-blur-xs flex items-center gap-4">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      STATUS: REAL-TIME TELEMETRY CONNECTED
+                    </span>
+                    <span>•</span>
+                    <span>FREKUENSI: 50.02 Hz</span>
+                    <span>•</span>
+                    <span>TEGANGAN BUS: 502.4 kV</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
