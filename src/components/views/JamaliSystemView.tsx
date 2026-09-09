@@ -19,7 +19,8 @@ import {
   Search,
   X,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 
 interface JamaliSystemViewProps {
@@ -36,6 +37,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
   >('peta');
   const [hoveredUPB, setHoveredUPB] = useState<UPB | null>(null);
   const [canvasMode, setCanvasMode] = useState<'maps' | 'list-kerawanan'>('maps');
+  const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<RiskItem>(
     () => risksData.find((r) => r.number === 7) || risksData[0]
   );
@@ -133,21 +135,24 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             <span>Daftar UPB/P2B</span>
           </button>
           <button
-            onClick={() => setActiveTab('ringkasan')}
-            className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all ${
-              activeTab === 'ringkasan'
+            onClick={() => setShowSystemInfo(true)}
+            className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+              showSystemInfo
                 ? 'bg-[#0046ad] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc]'
             }`}
           >
-            Ringkasan Kerawanan
+            <Info className="w-3.5 h-3.5" />
+            <span>Informasi Sistem</span>
           </button>
         </div>
 
-        <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
-          <span>Tegangan Backbone: 500 kV</span>
-          <span>•</span>
-          <span>Interkoneksi: 150 kV</span>
+        <div className="flex items-center gap-3">
+          <div className="text-[11px] text-slate-500 hidden md:flex items-center gap-2 font-mono">
+            <span>Tegangan Backbone: 500 kV</span>
+            <span>•</span>
+            <span>Interkoneksi: 150 kV</span>
+          </div>
         </div>
       </div>
 
@@ -164,7 +169,7 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             }}
           />
 
-          {/* 3 Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan) */}
+          {/* Action Buttons in Top Right Corner (Maps, SLD, List Kerawanan, Info Sistem) */}
           <div className="absolute top-4 right-6 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl p-1 shadow-md flex items-center gap-1">
             {/* 1. Maps */}
             <button
@@ -209,7 +214,32 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
                 {risksData.length}
               </span>
             </button>
+
+            {/* 4. Informasi Sistem Trigger */}
+            <button
+              onClick={() => setShowSystemInfo(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                showSystemInfo
+                  ? 'bg-[#0046ad] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-slate-100'
+              }`}
+            >
+              <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+              <span>Info Sistem</span>
+            </button>
           </div>
+
+          {/* Floating Tab Button on Right Edge for Instant Access */}
+          <button
+            onClick={() => setShowSystemInfo(true)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-[#eff6ff] text-[#0046ad] border-y border-l border-slate-300 shadow-md py-3 px-2 rounded-l-xl flex flex-col items-center gap-1 font-bold text-[10px] hover:pr-2.5 transition-all group"
+            title="Buka Informasi Sistem"
+          >
+            <Info className="w-4 h-4 text-[#0046ad] group-hover:scale-110 transition-transform" />
+            <span style={{ writingMode: 'vertical-rl' }} className="tracking-widest rotate-180 text-slate-700 font-extrabold">
+              INFO SISTEM
+            </span>
+          </button>
 
           {/* MODE 1: MAPS VIEW */}
           {canvasMode === 'maps' && (
@@ -321,186 +351,216 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
           )}
         </div>
 
-        {/* Right Info Panel: Informasi Sistem (GI & IBT removed from top, Total Kerawanan 500kV & IBT, Total Kerawanan per APB) */}
-        <div className="w-88 md:w-104 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
-          <div className="space-y-4">
-            <div>
-              <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
-                Informasi Sistem
-              </span>
-              <h2 className="text-lg font-black text-[#1e293b] mt-1">
-                Jawa, Madura, dan Bali
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Jaringan kelistrikan interkoneksi backbone 500 kV & penyaluran 150 kV melayani 8 pulau dengan 6 unit pengatur operasi.
-              </p>
-            </div>
+      {/* Pop-up Overlay: Informasi Sistem (Close when clicking outside) */}
+      {showSystemInfo && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop with click outside to close */}
+          <div
+            className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setShowSystemInfo(false)}
+          />
 
-            {/* Total System Metrics (Jumlah GI/GITET dan Jumlah IBT telah dihilangkan sesuai permintaan) */}
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                <span className="text-slate-500">Jumlah UPB / P2B:</span>
-                <span className="font-bold text-slate-800 font-mono text-sm">6 Unit</span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Jumlah Subsistem:</span>
-                <span className="font-bold text-slate-800 font-mono text-sm">12 Subsistem</span>
-              </div>
-            </div>
-
-            {/* Total Kerawanan 500 kV dan IBT 500/150 kV dengan klasifikasi N-1 s/d N-1-2 */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
-                Total Kerawanan 500 kV & IBT 500/150:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Kerawanan 500 kV */}
-                <div className="bg-gradient-to-b from-[#fef2f2] to-[#fee2e2]/60 p-2.5 rounded-xl border border-[#fecaca] flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div>
-                      <div className="text-[11px] text-[#dc2626] font-bold">Kerawanan 500 kV</div>
-                      <div className="text-[9px] text-slate-500">Jalur Transmisi</div>
-                    </div>
-                    <div className="text-xl font-black text-[#991b1b] font-mono">14</div>
-                  </div>
-                  {/* Klasifikasi N-1, N-2, N-1-2 */}
-                  <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fecaca]/80 text-center font-mono">
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
-                      <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
-                      <div className="text-[11px] font-black text-[#b91c1c]">5</div>
-                    </div>
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
-                      <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
-                      <div className="text-[11px] font-black text-[#b45309]">6</div>
-                    </div>
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
-                      <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
-                      <div className="text-[11px] font-black text-slate-700">3</div>
-                    </div>
-                  </div>
+          {/* Slide-over Drawer Panel */}
+          <div
+            className="relative w-96 md:w-[440px] h-full bg-white shadow-2xl z-50 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-250 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-4">
+              {/* Header with Close Button */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+                <div>
+                  <span className="text-[11px] font-mono text-[#0046ad] font-bold uppercase tracking-wider">
+                    Informasi Sistem
+                  </span>
+                  <h2 className="text-xl font-black text-[#1e293b] mt-0.5">
+                    Jawa, Madura, dan Bali
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Jaringan kelistrikan interkoneksi backbone 500 kV & penyaluran 150 kV melayani 8 pulau dengan 6 unit pengatur operasi.
+                  </p>
                 </div>
+                <button
+                  onClick={() => setShowSystemInfo(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 ml-2"
+                  title="Tutup (Klik di luar untuk menutup)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-                {/* Kerawanan IBT 500/150 */}
-                <div className="bg-gradient-to-b from-[#fff7ed] to-[#ffedd5]/60 p-2.5 rounded-xl border border-[#fed7aa] flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div>
-                      <div className="text-[11px] text-[#ea580c] font-bold">Kerawanan IBT 500/150</div>
-                      <div className="text-[9px] text-slate-500">Trafo Interbus</div>
-                    </div>
-                    <div className="text-xl font-black text-[#c2410c] font-mono">11</div>
-                  </div>
-                  {/* Klasifikasi N-1, N-2, N-1-2 */}
-                  <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fed7aa]/80 text-center font-mono">
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
-                      <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
-                      <div className="text-[11px] font-black text-[#b91c1c]">4</div>
-                    </div>
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
-                      <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
-                      <div className="text-[11px] font-black text-[#b45309]">5</div>
-                    </div>
-                    <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
-                      <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
-                      <div className="text-[11px] font-black text-slate-700">2</div>
-                    </div>
-                  </div>
+              {/* Total System Metrics */}
+              <div className="bg-[#f8fafc] border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200">
+                  <span className="text-slate-500">Jumlah UPB / P2B:</span>
+                  <span className="font-bold text-slate-800 font-mono text-sm">6 Unit</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-slate-500">Jumlah Subsistem:</span>
+                  <span className="font-bold text-slate-800 font-mono text-sm">12 Subsistem</span>
                 </div>
               </div>
-            </div>
 
-            {/* Rincian Kerawanan Per APB / P2B (Total Saja, Tanpa Label Rawan/Sangat Rawan) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Rincian Kerawanan Per APB / P2B:
+              {/* Total Kerawanan 500 kV dan IBT 500/150 kV dengan klasifikasi N-1 s/d N-1-2 */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-2.5 shadow-2xs">
+                <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
+                  Total Kerawanan 500 kV & IBT 500/150:
                 </span>
-                <span className="text-[10px] text-slate-400">6 Unit</span>
-              </div>
-
-              <div className="space-y-2">
-                {jamaliUPBs.map((u) => (
-                  <div
-                    key={u.id}
-                    onClick={() => {
-                      if (u.id !== 'p2b-sistem') {
-                        onSelectUPB(u.id);
-                      } else {
-                        onNavigate('sld-500kv');
-                      }
-                    }}
-                    className="p-3 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] transition-all cursor-pointer group shadow-2xs"
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <MapPin className="w-3.5 h-3.5 text-[#0046ad] shrink-0" />
-                      <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors">
-                        {u.name}
-                      </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Kerawanan 500 kV */}
+                  <div className="bg-gradient-to-b from-[#fef2f2] to-[#fee2e2]/60 p-2.5 rounded-xl border border-[#fecaca] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div>
+                        <div className="text-[11px] text-[#dc2626] font-bold">Kerawanan 500 kV</div>
+                        <div className="text-[9px] text-slate-500">Jalur Transmisi</div>
+                      </div>
+                      <div className="text-xl font-black text-[#991b1b] font-mono">14</div>
                     </div>
-
-                    <div className="text-[10px] text-slate-500 flex items-center gap-2 mb-2 font-mono">
-                      <span>{u.subsystemCount} Subsistem</span>
-                      <span>•</span>
-                      <span>{u.region}</span>
-                    </div>
-
-                    {/* Total Kerawanan (Warna seragam) */}
-                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
-                      <span className="text-[11px] text-slate-500 font-medium">Total Kerawanan:</span>
-                      <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
-                        {u.riskCount} Kerawanan
-                      </span>
+                    {/* Klasifikasi N-1, N-2, N-1-2 */}
+                    <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fecaca]/80 text-center font-mono">
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
+                        <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
+                        <div className="text-[11px] font-black text-[#b91c1c]">5</div>
+                      </div>
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
+                        <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
+                        <div className="text-[11px] font-black text-[#b45309]">6</div>
+                      </div>
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
+                        <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
+                        <div className="text-[11px] font-black text-slate-700">3</div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Kerawanan #7 Highlight Card */}
-            <div
-              onClick={() => {
-                const r7 = risksData.find((r) => r.number === 7);
-                if (r7) setSelectedRisk(r7);
-                setCanvasMode('list-kerawanan');
-              }}
-              className="bg-[#fffbeb] hover:bg-[#fef3c7] border border-[#fde68a] hover:border-[#f59e0b] rounded-xl p-3.5 space-y-1.5 cursor-pointer transition-all shadow-2xs group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[#b45309] font-bold text-xs">
-                  <ShieldAlert className="w-4 h-4 text-[#d97706]" />
-                  <span>Titik Kritis Utama: Kerawanan #7</span>
+                  {/* Kerawanan IBT 500/150 */}
+                  <div className="bg-gradient-to-b from-[#fff7ed] to-[#ffedd5]/60 p-2.5 rounded-xl border border-[#fed7aa] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div>
+                        <div className="text-[11px] text-[#ea580c] font-bold">Kerawanan IBT 500/150</div>
+                        <div className="text-[9px] text-slate-500">Trafo Interbus</div>
+                      </div>
+                      <div className="text-xl font-black text-[#c2410c] font-mono">11</div>
+                    </div>
+                    {/* Klasifikasi N-1, N-2, N-1-2 */}
+                    <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#fed7aa]/80 text-center font-mono">
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fca5a5]/70 shadow-3xs">
+                        <div className="text-[8px] text-[#dc2626] font-bold">N-1</div>
+                        <div className="text-[11px] font-black text-[#b91c1c]">4</div>
+                      </div>
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-[#fde047]/80 shadow-3xs">
+                        <div className="text-[8px] text-[#b45309] font-bold">N-2</div>
+                        <div className="text-[11px] font-black text-[#b45309]">5</div>
+                      </div>
+                      <div className="bg-white/90 py-1 px-0.5 rounded border border-slate-200 shadow-3xs">
+                        <div className="text-[8px] text-slate-600 font-bold">N-1-2</div>
+                        <div className="text-[11px] font-black text-slate-700">2</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-[#d97706] group-hover:translate-x-1 transition-transform" />
               </div>
-              <p className="text-[11px] text-slate-600 leading-snug">
-                SUTET Gandul-Durkos-Kembangan (P2B Jakban) memasok radial 2 IBT Durikosambi & 2 IBT Muarakarang dengan risiko pemadaman 1.700 MW pada kondisi N-2.
-              </p>
-              <div className="text-[10px] font-bold text-[#b45309] flex items-center gap-1 pt-0.5">
-                <span>Buka detail lengkap & mitigasi</span>
-                <span>→</span>
+
+              {/* Rincian Kerawanan Per APB / P2B */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Rincian Kerawanan Per APB / P2B:
+                  </span>
+                  <span className="text-[10px] text-slate-400">6 Unit</span>
+                </div>
+
+                <div className="space-y-2">
+                  {jamaliUPBs.map((u) => (
+                    <div
+                      key={u.id}
+                      onClick={() => {
+                        setShowSystemInfo(false);
+                        if (u.id !== 'p2b-sistem') {
+                          onSelectUPB(u.id);
+                        } else {
+                          onNavigate('sld-500kv');
+                        }
+                      }}
+                      className="p-3 rounded-xl bg-[#f8fafc] border border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff] transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#0046ad] shrink-0" />
+                        <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors">
+                          {u.name}
+                        </span>
+                      </div>
+
+                      <div className="text-[10px] text-slate-500 flex items-center gap-2 mb-2 font-mono">
+                        <span>{u.subsystemCount} Subsistem</span>
+                        <span>•</span>
+                        <span>{u.region}</span>
+                      </div>
+
+                      {/* Total Kerawanan */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
+                        <span className="text-[11px] text-slate-500 font-medium">Total Kerawanan:</span>
+                        <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
+                          {u.riskCount} Kerawanan
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Kerawanan #7 Highlight Card */}
+              <div
+                onClick={() => {
+                  setShowSystemInfo(false);
+                  setCanvasMode('list-kerawanan');
+                }}
+                className="bg-[#fffbeb] hover:bg-[#fef3c7] border border-[#fde68a] hover:border-[#f59e0b] rounded-xl p-3.5 space-y-1.5 cursor-pointer transition-all shadow-2xs group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[#b45309] font-bold text-xs">
+                    <ShieldAlert className="w-4 h-4 text-[#d97706]" />
+                    <span>Titik Kritis Utama: Kerawanan #7</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#d97706] group-hover:translate-x-1 transition-transform" />
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  SUTET Gandul-Durkos-Kembangan (P2B Jakban) memasok radial 2 IBT Durikosambi & 2 IBT Muarakarang dengan risiko pemadaman 1.700 MW pada kondisi N-2.
+                </p>
+                <div className="text-[10px] font-bold text-[#b45309] flex items-center gap-1 pt-0.5">
+                  <span>Buka detail lengkap di Tabel</span>
+                  <span>→</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-2 pt-4 border-t border-slate-200 mt-4">
-            <button
-              onClick={() => onNavigate('sld-500kv')}
-              className="w-full bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-            >
-              <Network className="w-4 h-4" />
-              <span>Lihat SLD 500 kV Interaktif</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* Action Buttons at bottom of Drawer */}
+            <div className="space-y-2 pt-4 border-t border-slate-200 mt-4">
+              <button
+                onClick={() => {
+                  setShowSystemInfo(false);
+                  onNavigate('sld-500kv');
+                }}
+                className="w-full bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              >
+                <Network className="w-4 h-4" />
+                <span>Lihat SLD 500 kV Interaktif</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-            <button
-              onClick={() => onNavigate('ibt-view')}
-              className="w-full bg-[#f8fafc] hover:bg-[#f1f5f9] border border-slate-200 text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
-            >
-              <Layers className="w-4 h-4 text-[#16a34a]" />
-              <span>Lihat Daftar IBT</span>
-            </button>
+              <button
+                onClick={() => {
+                  setShowSystemInfo(false);
+                  onNavigate('ibt-view');
+                }}
+                className="w-full bg-[#f8fafc] hover:bg-[#f1f5f9] border border-slate-200 text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <Layers className="w-4 h-4 text-[#16a34a]" />
+                <span>Lihat Daftar IBT</span>
+              </button>
+            </div>
           </div>
         </div>
+      )}
       </div>
     </div>
   );
