@@ -44,7 +44,19 @@ import {
   ImageHotspot
 } from '../../data/customSLDStore';
 
+const DefaultCustomNode: React.FC<any> = ({ data }) => {
+  if (data?.label) return <>{data.label}</>;
+  return (
+    <div className="p-3 bg-slate-900 border-2 border-[#0046ad] text-white rounded-xl shadow-lg min-w-[180px]">
+      <div className="font-bold text-xs">{data?.name || 'Gardu Induk'}</div>
+      <div className="text-[10px] text-cyan-400 font-mono">{data?.voltage || '150 kV'}</div>
+    </div>
+  );
+};
+
 const nodeTypes = {
+  default: DefaultCustomNode,
+  custom: DefaultCustomNode,
   busbar: BusbarNode,
   generator: GeneratorNode,
   ibt: TransformerNode,
@@ -97,9 +109,10 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
   // Effective Nodes & Edges from Custom Excel Upload (if any)
   const effectiveNodes = useMemo(() => {
-    if (customConfig?.type === 'excel' && customConfig.excelData?.giList) {
+    if (customConfig?.type === 'excel' && customConfig.excelData?.giList && customConfig.excelData.giList.length > 0) {
       return customConfig.excelData.giList.map((gi, idx) => ({
         id: gi.id,
+        type: 'default',
         position: { x: 80 + (idx % 3) * 290, y: 80 + Math.floor(idx / 3) * 160 },
         data: {
           label: (
@@ -170,6 +183,15 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
     },
     []
   );
+
+  useEffect(() => {
+    if (customConfig && reactFlow) {
+      const t = setTimeout(() => {
+        reactFlow.fitView({ padding: 0.25, duration: 400 });
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [customConfig, reactFlow]);
 
   const renderSubsystemInfoContent = (isOverlay: boolean) => (
     <div className="flex flex-col justify-between h-full space-y-4">
