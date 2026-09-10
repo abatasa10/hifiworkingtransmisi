@@ -29,6 +29,11 @@ export interface SLDNodeData {
     lng?: number;
     operator?: string;
   };
+  uit?: string;
+  condition?: string;
+  impact?: string;
+  mitigation?: string;
+  solution?: string;
   [key: string]: unknown;
 }
 
@@ -52,6 +57,11 @@ export interface SLDEdgeData {
   };
   riskId?: number;
   riskLevel?: RiskLevel;
+  uit?: string;
+  condition?: string;
+  impact?: string;
+  mitigation?: string;
+  solution?: string;
   highlighted?: boolean;
   dimmed?: boolean;
   [key: string]: unknown;

@@ -98,6 +98,11 @@ export interface ColumnMapping {
   circuits: string;   // Kolom Jumlah Sirkit
   lengthKm: string;   // Kolom Panjang Saluran (km)
   corridor: string;   // Kolom Koridor / Wilayah
+  uit: string;        // Kolom UIT (Unit Induk Transmisi)
+  condition: string;  // Kolom Kondisi / Permasalahan
+  impact: string;     // Kolom Dampak
+  mitigation: string; // Kolom Mitigasi
+  solution: string;   // Kolom Usulan / Solusi
 }
 
 // Initial sample data for immediate test
@@ -174,7 +179,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     loadC2: '',
     circuits: '',
     lengthKm: '',
-    corridor: ''
+    corridor: '',
+    uit: '',
+    condition: '',
+    impact: '',
+    mitigation: '',
+    solution: ''
   });
 
   // Image mode states
@@ -380,13 +390,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const assetTypeCol = findHeader(['tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
     const ibtNumCol = findHeader(['noibt', 'nomoribt', 'nomeribt', 'ibt', 'unitibt']);
     const voltageCol = findHeader(['tegangan', 'kv', 'voltage', 'level']);
-    const riskCol = findHeader(['tingkatkerawanan', 'statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kondisi', 'keterangan', 'risk', 'kategori']);
+    const riskCol = findHeader(['tingkatkerawanan', 'statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kategori', 'risk']);
     const riskNumCol = findHeader(['nokerawanan', 'nomorkerawanan', 'nomerkerawanan', 'idkerawanan', 'norisk']);
     const loadCol = findHeader(['pembebanansirkit1', 'pembebanan', 'loading', 'bebanmw', 'load', 'beban', 'mw', 'mva', 'arus', 'ampere']);
     const loadC2Col = findHeader(['pembebanansirkit2', 'beban2', 'load2', 'loading2']);
     const circuitsCol = findHeader(['jumlahsirkit', 'sirkit', 'circuits', 'jmlsirkit']);
     const lengthKmCol = findHeader(['panjangsaluran', 'panjangkm', 'panjang', 'length', 'km']);
     const corridorCol = findHeader(['koridor', 'wilayah', 'region', 'lokasi', 'provinsi']);
+    const uitCol = findHeader(['uit', 'unitinduktransmisi', 'unitinduk', 'unit']);
+    const conditionCol = findHeader(['kondisipermasalahan', 'permasalahan', 'kondisi', 'kendala', 'isu']);
+    const impactCol = findHeader(['dampak', 'impact', 'akibat', 'risiko']);
+    const mitigationCol = findHeader(['mitigasi', 'mitigation', 'pencegahan', 'penanganan']);
+    const solutionCol = findHeader(['usulansolusi', 'usulan', 'solusi', 'solution', 'rekomendasi', 'jangkapendek']);
 
     return {
       gi: giCol,
@@ -404,7 +419,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       loadC2: loadC2Col,
       circuits: circuitsCol,
       lengthKm: lengthKmCol,
-      corridor: corridorCol
+      corridor: corridorCol,
+      uit: uitCol,
+      condition: conditionCol,
+      impact: impactCol,
+      mitigation: mitigationCol,
+      solution: solutionCol
     };
   };
 
@@ -480,6 +500,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colCircuitsIdx = colIdx(mapping.circuits);
     const colLengthKmIdx = colIdx(mapping.lengthKm);
     const colCorridorIdx = colIdx(mapping.corridor);
+    const colUitIdx = colIdx(mapping.uit);
+    const colConditionIdx = colIdx(mapping.condition);
+    const colImpactIdx = colIdx(mapping.impact);
+    const colMitigationIdx = colIdx(mapping.mitigation);
+    const colSolutionIdx = colIdx(mapping.solution);
 
     const parsedNodes: ParsedGINode[] = [];
     const parsedLines: ParsedTransmissionLine[] = [];
@@ -499,6 +524,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const circuitsVal = colCircuitsIdx !== -1 && !isNaN(Number(row[colCircuitsIdx])) ? Number(row[colCircuitsIdx]) : 2;
         const lengthKmVal = colLengthKmIdx !== -1 && !isNaN(Number(row[colLengthKmIdx])) ? Number(row[colLengthKmIdx]) : 21.4;
         const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
+        const uitVal = colUitIdx !== -1 && row[colUitIdx] ? String(row[colUitIdx]).trim() : undefined;
+        const conditionVal = colConditionIdx !== -1 && row[colConditionIdx] ? String(row[colConditionIdx]).trim() : undefined;
+        const impactVal = colImpactIdx !== -1 && row[colImpactIdx] ? String(row[colImpactIdx]).trim() : undefined;
+        const mitigationVal = colMitigationIdx !== -1 && row[colMitigationIdx] ? String(row[colMitigationIdx]).trim() : undefined;
+        const solutionVal = colSolutionIdx !== -1 && row[colSolutionIdx] ? String(row[colSolutionIdx]).trim() : undefined;
 
         let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
         const rUpper = riskVal.toUpperCase();
@@ -527,7 +557,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           riskStatus: normalizedRisk,
           riskNumber: riskNumVal || (normalizedRisk !== 'Normal' ? 11 : undefined),
           region: corridorVal || currentTargetName,
-          corridor: corridorVal || `Koridor ${dariVal} - ${keVal}`
+          corridor: corridorVal || `Koridor ${dariVal} - ${keVal}`,
+          uit: uitVal,
+          condition: conditionVal,
+          impact: impactVal,
+          mitigation: mitigationVal,
+          solution: solutionVal
         });
 
         const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '500 kV';
@@ -570,6 +605,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const assetTypeVal = colAssetTypeIdx !== -1 && row[colAssetTypeIdx] ? String(row[colAssetTypeIdx]).trim() : undefined;
         const codeVal = colCodeIdx !== -1 && row[colCodeIdx] ? String(row[colCodeIdx]).trim() : undefined;
         const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
+        const uitVal = colUitIdx !== -1 && row[colUitIdx] ? String(row[colUitIdx]).trim() : undefined;
+        const conditionVal = colConditionIdx !== -1 && row[colConditionIdx] ? String(row[colConditionIdx]).trim() : undefined;
+        const impactVal = colImpactIdx !== -1 && row[colImpactIdx] ? String(row[colImpactIdx]).trim() : undefined;
+        const mitigationVal = colMitigationIdx !== -1 && row[colMitigationIdx] ? String(row[colMitigationIdx]).trim() : undefined;
+        const solutionVal = colSolutionIdx !== -1 && row[colSolutionIdx] ? String(row[colSolutionIdx]).trim() : undefined;
 
         let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
         const rUpper = riskVal.toUpperCase();
@@ -588,6 +628,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           if (codeVal) existing.code = codeVal;
           if (riskNumVal) existing.riskNumber = riskNumVal;
           if (assetTypeVal) existing.assetType = assetTypeVal as any;
+          if (uitVal) existing.uit = uitVal;
+          if (conditionVal) existing.condition = conditionVal;
+          if (impactVal) existing.impact = impactVal;
+          if (mitigationVal) existing.mitigation = mitigationVal;
+          if (solutionVal) existing.solution = solutionVal;
           if (normalizedRisk !== 'Normal') existing.riskStatus = normalizedRisk;
         } else {
           parsedNodes.push({
@@ -601,7 +646,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,
             riskNumber: riskNumVal,
-            subsystem: currentTargetName
+            subsystem: currentTargetName,
+            uit: uitVal,
+            condition: conditionVal,
+            impact: impactVal,
+            mitigation: mitigationVal,
+            solution: solutionVal
           });
         }
       });
@@ -787,11 +837,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     reader.readAsArrayBuffer(file);
   };
 
-  // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: Konsep Tier Mulai 0, IBT, Spesifikasi Line)
+  // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: Konsep Tier Mulai 0, IBT, Spesifikasi Line, Tab Kerawanan)
   const handleDownloadTemplate = () => {
     const wb = XLSX.utils.book_new();
 
-    // Sheet 1: Jalur Transmisi (Penghantar) - Sesuai Gambar 1
+    // Sheet 1: Jalur Transmisi (Penghantar) - Sesuai Gambar 1 & Tab Kerawanan Gambar 2
     const wsEdgesData = [
       {
         'No': 1,
@@ -806,7 +856,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'Tingkat Kerawanan': 'Sedang',
         'Pembebanan Sirkit 1 (%)': 58,
         'Pembebanan Sirkit 2 (%)': 52,
-        'Koridor / Wilayah': 'Jawa Barat - DKI Jakarta'
+        'Koridor / Wilayah': 'Jawa Barat - DKI Jakarta',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'SUTET Gandul-Durkos-Kembangan memasok 2 IBT Durkosambi dan 2 IBT Muarakarang secara radial, dengan pembebanan SUTET Gandul-Durkos mencapai 55%, sedangkan SUTET Kembangan-Durkos mencapai 43%.',
+        'Dampak': '1. Jika terjadi kondisi N-2 SUTET Gandul-Durkos-Kembangan, terjadi pembebanan Konsumen dikarenakan padam IBT Muarakarang dan Durikosambi sebesar 1.700 MW.\n2. Potensi gangguan kestabilan sistem kelistrikan DKI Jakarta.',
+        'Mitigasi': '1. Terpasang Defense Scheme N-2 pada SUTET Gandul-Durkos-Kembangan.\n2. Uji periodik teleproteksi dan transfer trip antar GI.',
+        'Usulan / Solusi': 'Jangka Pendek :\n1. Percepatan pembangunan SUTET Muaratawar - Priok. RUPTL 2025-2034, COD Tahun 2025.'
       },
       {
         'No': 2,
@@ -821,7 +876,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'Tingkat Kerawanan': 'Sangat Rawan',
         'Pembebanan Sirkit 1 (%)': 86,
         'Pembebanan Sirkit 2 (%)': 82,
-        'Koridor / Wilayah': 'Banten'
+        'Koridor / Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Pembebanan sirkit evakuasi PLTU Suralaya Baru mendekati batas termal n-1 saat beban puncak.',
+        'Dampak': '1. Pembatasan evakuasi pembangkit PLTU Suralaya.\n2. Risiko pelepasan beban otomatis OLS.',
+        'Mitigasi': '1. Optimalisasi pola operasi PLTU Suralaya.\n2. Dispatching beban antar GI 500 kV Banten.',
+        'Usulan / Solusi': 'Jangka Pendek :\nRekonfigurasi bay penghantar dan pemeliharaan rutin konduktor.'
       },
       {
         'No': 3,
@@ -836,7 +896,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'Tingkat Kerawanan': 'Normal',
         'Pembebanan Sirkit 1 (%)': 55,
         'Pembebanan Sirkit 2 (%)': 51,
-        'Koridor / Wilayah': 'Banten'
+        'Koridor / Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 4,
@@ -851,13 +916,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'Tingkat Kerawanan': 'Sedang',
         'Pembebanan Sirkit 1 (%)': 74,
         'Pembebanan Sirkit 2 (%)': 69,
-        'Koridor / Wilayah': 'Banten'
+        'Koridor / Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Penyaluran pasokan industri KTT berfluktuasi tinggi pada jam sibuk operasi.',
+        'Dampak': '1. Penurunan tegangan busbar lokal jika terjadi gangguan kontinjensi.',
+        'Mitigasi': '1. Pengaturan tap trafo otomatis OLTC dan kompensasi kapasitor bank.',
+        'Usulan / Solusi': 'Jangka Pendek :\nPemasangan PMT kopel cadangan dan pemantauan realtime SCADA.'
       }
     ];
     const wsEdges = XLSX.utils.json_to_sheet(wsEdgesData);
     XLSX.utils.book_append_sheet(wb, wsEdges, 'Jalur_Transmisi');
 
-    // Sheet 2: Gardu Induk & Aset - Sesuai Konsep Tier (Mulai 0) & IBT (Gambar 2)
+    // Sheet 2: Gardu Induk & Aset - Sesuai Konsep Tier (Mulai 0) & IBT & Tab Kerawanan (Gambar 1 & Gambar 2)
     const wsNodesData = [
       {
         'No': 1,
@@ -869,7 +939,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 2,
@@ -881,7 +956,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 3,
@@ -893,7 +973,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 4,
@@ -905,7 +990,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '2',
         'Status Kerawanan': 'N-1-2',
         'No Kerawanan': '1&2',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
+        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
+        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
+        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
       },
       {
         'No': 5,
@@ -917,7 +1007,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '1',
         'Status Kerawanan': 'N-1-2',
         'No Kerawanan': '1&2',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
+        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
+        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
+        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
       },
       {
         'No': 6,
@@ -929,7 +1024,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 7,
@@ -941,7 +1041,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'N-2',
         'No Kerawanan': '2',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 8,
@@ -953,7 +1058,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 9,
@@ -965,7 +1075,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 10,
@@ -977,7 +1092,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 11,
@@ -989,7 +1109,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 12,
@@ -1001,7 +1126,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       },
       {
         'No': 13,
@@ -1013,11 +1143,46 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No IBT': '',
         'Status Kerawanan': 'Normal',
         'No Kerawanan': '',
-        'Wilayah': 'Banten'
+        'Wilayah': 'Banten',
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': '',
+        'Dampak': '',
+        'Mitigasi': '',
+        'Usulan / Solusi': ''
       }
     ];
     const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
     XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk_dan_Aset');
+
+    // Sheet 3: Data Kerawanan Detail - Persis Tabel Gambar 1 dari Pengguna
+    const wsRiskData = [
+      {
+        'No': 1,
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
+        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
+        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
+        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
+      },
+      {
+        'No': 2,
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'Daya Mampu Pasok dan pembebanan SUTET Gandul - Durkos - Kembangan memasok 2 IBT Durkosambi dan 2 IBT Muarakarang secara radial, dengan pembebanan SUTET Gandul-Durkos mencapai 55%, sedangkan SUTET Kembangan-Durkos mencapai 43%.',
+        'Dampak': '1. Ketidakseimbangan pembebanan dan jika terjadi kondisi N-2 SUTET Gandul-Durkos-Kembangan, terjadi pembebanan Konsumen dikarenakan padam IBT Muarakarang dan Durikosambi sebesar 1.700 MW.\n2. Potensi gangguan kestabilan sistem kelistrikan DKI Jakarta.',
+        'Mitigasi': '1. Terpasang Defense Scheme N-2 pada SUTET Gandul-Durkos-Kembangan.\n2. Uji periodik teleproteksi dan transfer trip antar GI.',
+        'Usulan / Solusi': 'Jangka Pendek :\n1. Percepatan pembangunan SUTET Muaratawar - Priok. RUPTL 2025-2034, COD Tahun 2025. COD timeline.'
+      },
+      {
+        'No': 3,
+        'UIT': 'JBB',
+        'Kondisi / Permasalahan': 'SUTET Tambun - Cawang memasok beban sentral DKI Jakarta dengan pembebanan sirkit 1 mencapai 58% dan sirkit 2 mencapai 52%. Memerlukan kontinuitas sistem interkoneksi.',
+        'Dampak': '1. Jika terjadi gangguan kriteria N-1 pada salah satu sirkit, beban sirkit lainnya akan melonjak mendekati kapasitas termal konduktor.\n2. Berpotensi menurunkan keandalan subsistem Cawang.',
+        'Mitigasi': '1. Terpasang Defense Scheme OLS pada koridor Tambun - Cawang.\n2. Uji periodik teleproteksi diferensial dan relai jarak digital.\n3. Monitoring realtime dispatching beban UP2B Jawa Barat.',
+        'Usulan / Solusi': 'Jangka Pendek :\nUprating kapasitas konduktor dan rekonfigurasi sistem proteksi bay penghantar GI Cawang.'
+      }
+    ];
+    const wsRisk = XLSX.utils.json_to_sheet(wsRiskData);
+    XLSX.utils.book_append_sheet(wb, wsRisk, 'Data_Kerawanan_Detail');
 
     XLSX.writeFile(wb, 'template_sld_subsistem_pln.xlsx');
   };
@@ -1406,7 +1571,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                         {/* Status Kerawanan Column */}
                         <div>
                           <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
-                            Kolom Status Kerawanan / Kondisi:
+                            Kolom Status Kerawanan / Tingkat Risiko:
                           </label>
                           <select
                             value={colMapping.risk}
@@ -1414,6 +1579,91 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                             className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
                           >
                             <option value="">-- [Auto: Normal / N-1 / N-2] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* UIT Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom UIT (Unit Induk Transmisi):
+                          </label>
+                          <select
+                            value={colMapping.uit}
+                            onChange={(e) => handleMappingChange('uit', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Opsional / Auto: JBB] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Kondisi / Permasalahan Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Kondisi / Permasalahan:
+                          </label>
+                          <select
+                            value={colMapping.condition}
+                            onChange={(e) => handleMappingChange('condition', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Kondisi / Permasalahan] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Dampak Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Dampak Kerawanan:
+                          </label>
+                          <select
+                            value={colMapping.impact}
+                            onChange={(e) => handleMappingChange('impact', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Dampak] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Mitigasi Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Mitigasi Kerawanan:
+                          </label>
+                          <select
+                            value={colMapping.mitigation}
+                            onChange={(e) => handleMappingChange('mitigation', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Mitigasi] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Usulan / Solusi Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Usulan / Solusi:
+                          </label>
+                          <select
+                            value={colMapping.solution}
+                            onChange={(e) => handleMappingChange('solution', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Usulan / Solusi] --</option>
                             {rawHeaders.map((h) => (
                               <option key={h} value={h}>{h}</option>
                             ))}

@@ -13,6 +13,11 @@ export interface ParsedGINode {
   riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan';
   riskNumber?: string | number;
   subsystem?: string;
+  uit?: string;
+  condition?: string;
+  impact?: string;
+  mitigation?: string;
+  solution?: string;
   x?: number;
   y?: number;
 }
@@ -34,6 +39,11 @@ export interface ParsedTransmissionLine {
   riskNumber?: string | number;
   region?: string;
   corridor?: string;
+  uit?: string;
+  condition?: string;
+  impact?: string;
+  mitigation?: string;
+  solution?: string;
 }
 
 export interface ImageHotspot {

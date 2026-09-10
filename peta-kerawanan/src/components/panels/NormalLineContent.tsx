@@ -229,26 +229,58 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
           </div>
         )}
 
-        {/* TAB 2: KERAWANAN */}
+        {/* TAB 2: KERAWANAN (Sesuai Gambar 2) */}
         {activeTab === 'risk' && (
-          <div className="space-y-3 text-xs">
-            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
-              <div className="font-bold text-amber-900 flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-amber-600" />
-                Analisis Kriteria Kontinjensi (N-1):
+          <div className="space-y-3.5 text-xs">
+            {/* Card 1: KONDISI / PERMASALAHAN */}
+            <div className="p-3.5 bg-amber-50/70 border border-amber-300 rounded-xl shadow-xs">
+              <div className="font-extrabold text-amber-800 text-[11px] flex items-center gap-1.5 uppercase tracking-wider mb-1.5">
+                <span className="text-amber-600 text-sm">⚠️</span>
+                KONDISI / PERMASALAHAN
               </div>
-              <p className="text-slate-600 mt-1 leading-relaxed text-[11px]">
-                Jika terjadi gangguan trip pada salah satu sirkit penghantar {sourceName} - {targetName}, sirkit pasangan akan mengalami lonjakan arus pembebanan hingga melebihi 85% kemampuan termal konduktor.
+              <p className="text-slate-700 leading-relaxed text-[11px] whitespace-pre-line font-medium">
+                {(line as any)?.condition ||
+                  (line as any)?.kondisi ||
+                  `${line?.name || `${lineType} ${sourceName} - ${targetName}`} memasok aliran daya transmisi dengan pembebanan sirkit 1 mencapai ${circuit1}%, sedangkan sirkit 2 mencapai ${circuit2}%. Memerlukan pengawasan kontinjensi kriteria N-1.`}
               </p>
             </div>
 
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-              <div className="font-bold text-slate-800 text-[11px]">Rekomendasi Operasional & Mitigasi:</div>
-              <ul className="list-disc list-inside mt-1.5 space-y-1 text-slate-600 text-[11px]">
-                <li>Dispatching pembebanan pembangkit pendukung sisi hilir.</li>
-                <li>Pemberlakuan skema SPS (Special Protection Scheme) overload tripping.</li>
-                <li>Pemantauan suhu sambungan (thermovision inspection) rutin bulanan.</li>
-              </ul>
+            {/* Card 2: DAMPAK */}
+            <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl shadow-xs">
+              <div className="font-extrabold text-rose-700 text-[11px] flex items-center gap-1.5 uppercase tracking-wider mb-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                DAMPAK
+              </div>
+              <div className="text-slate-700 leading-relaxed text-[11px] whitespace-pre-line font-medium">
+                {(line as any)?.impact ||
+                  (line as any)?.dampak ||
+                  `1. Jika terjadi kondisi N-1/N-2 pada ${line?.name || `${lineType} ${sourceName} - ${targetName}`}, terjadi lonjakan beban pada sirkit pasangan.\n2. Potensi gangguan kestabilan sistem kelistrikan pada subsistem terkait.`}
+              </div>
+            </div>
+
+            {/* Card 3: MITIGASI */}
+            <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl shadow-xs">
+              <div className="font-extrabold text-blue-700 text-[11px] flex items-center gap-1.5 uppercase tracking-wider mb-1.5">
+                <span className="text-blue-600 font-bold text-sm">✓</span>
+                MITIGASI
+              </div>
+              <div className="text-slate-700 leading-relaxed text-[11px] whitespace-pre-line font-medium">
+                {(line as any)?.mitigation ||
+                  (line as any)?.mitigasi ||
+                  `1. Terpasang Defense Scheme OLS / SPS pada koridor ${sourceName} - ${targetName}.\n2. Uji periodik teleproteksi dan transfer trip antar GI.\n3. Pemeliharaan dan monitoring dispatching beban saat kondisi beban tinggi.`}
+              </div>
+            </div>
+
+            {/* Card 4: USULAN / SOLUSI (JANGKA PENDEK) */}
+            <div className="p-3.5 bg-emerald-50/60 border border-emerald-300 rounded-xl shadow-xs">
+              <div className="font-extrabold text-emerald-800 text-[11px] uppercase tracking-wider mb-1.5">
+                USULAN / SOLUSI (JANGKA PENDEK)
+              </div>
+              <div className="bg-white/90 border border-emerald-200/80 rounded-lg p-2.5 text-slate-700 leading-relaxed text-[11px] whitespace-pre-line font-medium shadow-2xs">
+                {(line as any)?.solution ||
+                  (line as any)?.solusi ||
+                  `1. Uprating kapasitas konduktor dan rekonfigurasi sistem proteksi.\n2. Berdasarkan RUPTL, percepatan COD penambahan sirkit baru di Tahun 2025/2026.`}
+              </div>
             </div>
           </div>
         )}

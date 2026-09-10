@@ -327,7 +327,12 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
               region: gi.region,
               riskStatus: gi.riskStatus,
               riskNumber: gi.riskNumber,
-              subsystem: gi.subsystem || currentSub.name
+              subsystem: gi.subsystem || currentSub.name,
+              uit: gi.uit || 'JBB',
+              condition: gi.condition,
+              impact: gi.impact,
+              mitigation: gi.mitigation,
+              solution: gi.solution
             }
           });
         });
@@ -373,7 +378,12 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             circuit2: l.loadingCircuit2 || Math.round(l.loadingPct * 0.9)
           },
           region: l.region || 'Jawa Barat - DKI Jakarta',
-          corridor: l.corridor || 'Koridor Jakarta Barat - Selatan'
+          corridor: l.corridor || 'Koridor Jakarta Barat - Selatan',
+          uit: l.uit || 'JBB',
+          condition: l.condition,
+          impact: l.impact,
+          mitigation: l.mitigation,
+          solution: l.solution
         }
       }));
 
@@ -411,7 +421,12 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             voltage: data?.voltage || '150 kV',
             region: data?.region || currentSub.name,
             subsystem: data?.subsystem || currentSub.name,
-            riskStatus: data?.riskStatus || 'Normal'
+            riskStatus: data?.riskStatus || 'Normal',
+            uit: data?.uit,
+            condition: data?.condition,
+            impact: data?.impact,
+            mitigation: data?.mitigation,
+            solution: data?.solution
           } as any
         });
       }
@@ -441,7 +456,12 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           operatingStatus: data?.operatingStatus || 'Beroperasi',
           loading: data?.loading || { circuit1: 58, circuit2: 52 },
           region: data?.region || 'Jawa Barat - DKI Jakarta',
-          corridor: data?.corridor || 'Koridor Jakarta Barat - Selatan'
+          corridor: data?.corridor || 'Koridor Jakarta Barat - Selatan',
+          uit: data?.uit || 'JBB',
+          condition: data?.condition,
+          impact: data?.impact,
+          mitigation: data?.mitigation,
+          solution: data?.solution
         } as any
       });
     },

@@ -126,7 +126,12 @@ export const subsystemBogorEdges: Edge<SLDEdgeData>[] = [
       riskNumber: 11,
       riskLevel: 'Sedang',
       region: 'Jawa Barat - DKI Jakarta',
-      corridor: 'Koridor Cibinong - Bogor 500 kV'
+      corridor: 'Koridor Cibinong - Bogor 500 kV',
+      uit: 'JBB',
+      condition: 'Pembebanan penghantar SUTET Cibinong - Bogor tidak memenuhi kriteria N-1 saat pembebanan puncak dengan IBT-2 Bogor beroperasi mendekati batas kapasitas.',
+      impact: '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban subsistem menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu sirkit penghantar.',
+      mitigation: '1. Sudah terpasang DS OLS dengan target total pelepasan beban sebesar 102 MW.\n2. Rencana penambahan target DS OLS SS Bogor sebesar 137 MW.\n3. Pemeliharaan penghantar saat beban rendah.',
+      solution: 'Jangka Pendek:\nUprating konduktor penghantar dan penambahan kapasitas IBT dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 - 2034, COD di Tahun 2025.'
     }
   },
   {
