@@ -59,6 +59,15 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
 
   const strokeWidth = isHighlighted || isHovered ? 4.5 : isPlanned ? 2 : 2.5;
 
+  const isTransformerLink =
+    edgeData?.type === 'transformer_link' ||
+    (String(edgeData?.name || '').toLowerCase().includes('bay ibt') && !id.includes('EDGE_IBT'));
+
+  const edgeIbtNum =
+    String(edgeData?.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
+    id.match(/ibt\s*([0-9&]+)/i)?.[1] ||
+    '1';
+
   return (
     <>
       {/* Invisible wider path for easy hover & click detection */}
@@ -92,13 +101,41 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
         }}
       />
 
+      {/* Simbol IBT 3 Lingkaran (Persis Gambar Pengguna) di Tengah Garis jika Jalur IBT */}
+      {isTransformerLink && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all'
+            }}
+            className="z-20 cursor-pointer group"
+            title={`Simbol IBT ${edgeIbtNum} (500/150 kV)`}
+          >
+            <svg
+              viewBox="0 0 74 66"
+              className="w-13 h-11 filter drop-shadow-md transition-transform group-hover:scale-115"
+            >
+              <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
+              <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
+              <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
+              <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
+              <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, -apple-system, sans-serif">
+                {edgeIbtNum}
+              </text>
+            </svg>
+          </div>
+        </EdgeLabelRenderer>
+      )}
+
       {/* Starburst Risk Badge & Tooltip Overlay */}
       <EdgeLabelRenderer>
         {hasRisk && (
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              transform: `translate(-50%, -50%) translate(${labelX + (isTransformerLink ? 26 : 0)}px,${labelY + (isTransformerLink ? -18 : 0)}px)`,
               pointerEvents: 'all'
             }}
             className="z-30 group cursor-pointer"

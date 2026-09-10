@@ -78,54 +78,93 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
         title="PMT / Pemutus Tenaga Bay IBT"
       />
 
-      {/* 3. Authentic 3-Winding Interlocking Circles (Gambar 2) with IBT Number */}
-      <div className="relative flex items-center justify-center my-0.5">
+      {/* 3. Authentic 3-Winding Interlocking Circles (Persis Gambar Pengguna) with IBT Number Badge */}
+      <div className="relative flex items-center justify-center my-1">
         {isIBT ? (
-          /* 3-WINDING IBT (Auto-Transformer with Tertiary Winding) */
-          <div className="relative w-14 h-14 flex items-center justify-center">
-            <svg viewBox="0 0 60 60" className="w-14 h-14 filter drop-shadow-sm">
-              {/* Primary Winding (Top, 500 kV or 275 kV) */}
+          /* 3-WINDING IBT (Lingkaran Interlocking Biru, Merah, Kuning + Badge Nomor IBT) */
+          <div className="relative w-18 h-16 flex items-center justify-center">
+            <svg
+              viewBox="0 0 74 66"
+              className={`w-18 h-16 transition-all duration-300 ${
+                isHighlighted ? 'scale-105' : ''
+              }`}
+              style={{
+                filter: isRawan
+                  ? 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.75))'
+                  : 'drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45))'
+              }}
+            >
+              {/* Lingkaran 1: Atas (Biru - 500 kV / 275 kV) */}
               <circle
-                cx="30"
-                cy="19"
-                r="13"
+                cx="37"
+                cy="23"
+                r="16.5"
                 fill="none"
-                stroke={primaryColor}
-                strokeWidth="2.8"
+                stroke="#2563eb"
+                strokeWidth="3.6"
                 className="transition-colors"
               />
-              {/* Secondary Winding (Bottom-Left, 150 kV) */}
+
+              {/* Lingkaran 2: Bawah Kiri (Merah - 150 kV) */}
               <circle
-                cx="21"
-                cy="35"
-                r="13"
+                cx="26"
+                cy="42"
+                r="16.5"
                 fill="none"
-                stroke={secondaryColor}
-                strokeWidth="2.8"
+                stroke="#ef4444"
+                strokeWidth="3.6"
                 className="transition-colors"
               />
-              {/* Tertiary Delta Winding (Bottom-Right, 33 kV) */}
+
+              {/* Lingkaran 3: Bawah Kanan (Kuning / Golden Amber - 33 kV) */}
               <circle
-                cx="39"
-                cy="35"
-                r="13"
+                cx="48"
+                cy="42"
+                r="16.5"
                 fill="none"
-                stroke={tertiaryColor}
-                strokeWidth="2.8"
+                stroke="#f59e0b"
+                strokeWidth="3.6"
                 className="transition-colors"
               />
+
+              {/* Badge Nomor IBT (Persis Gambar: Rounded Box Semi-Transparan Putih / Abu Muda di Sebelah Kanan) */}
+              <rect
+                x="47"
+                y="14"
+                width="22"
+                height="22"
+                rx="6"
+                fill="rgba(226, 232, 240, 0.92)"
+                stroke="rgba(255, 255, 255, 0.7)"
+                strokeWidth="0.8"
+                className="filter drop-shadow-sm"
+              />
+              <text
+                x="58"
+                y="26"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#0f172a"
+                fontWeight="900"
+                fontSize={ibtNumber.length > 2 ? '10' : '13'}
+                fontFamily="system-ui, -apple-system, sans-serif"
+              >
+                {ibtNumber}
+              </text>
             </svg>
 
-            {/* IBT Number beside circles (Gambar 2) */}
-            <span
-              className="absolute right-0 top-3 font-black text-xs text-slate-900 bg-white/85 px-1 rounded shadow-xs border border-slate-300 pointer-events-none"
-              title={`Nomor IBT: ${ibtNumber}`}
-            >
-              {ibtNumber}
-            </span>
+            {/* Status Kerawanan Pill (Jika Rawan, diletakkan elegan di pojok kiri atas tanpa menutupi 3 lingkaran) */}
+            {isRawan && (
+              <div className="absolute -top-1.5 -left-3 z-20 animate-pulse pointer-events-none">
+                <span className="px-1.5 py-0.5 rounded-full bg-red-600/95 text-white font-black text-[9px] border border-red-300 shadow-md flex items-center gap-0.5">
+                  <span className="text-[8px]">⚠️</span>
+                  {riskLabel || String(nodeData.riskStatus || 'N-1')}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
-          /* STANDARD 2-WINDING TRANSFORMER (Step-Down / KTT) */
+          /* STANDARD 2-WINDING TRANSFORMER */
           <div className="relative w-8 h-12 flex flex-col items-center justify-center">
             <div
               className="w-6 h-6 rounded-full border-2 absolute top-0"
@@ -135,25 +174,6 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
               className="w-6 h-6 rounded-full border-2 absolute bottom-0"
               style={{ borderColor: tertiaryColor, backgroundColor: 'rgba(15, 23, 42, 0.6)' }}
             />
-          </div>
-        )}
-
-        {/* Starburst Explosion Risk Badge (Gambar 2: "1&2" or "2" or "3") */}
-        {isRawan && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 animate-pulse">
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <svg viewBox="0 0 100 100" className="w-12 h-12 filter drop-shadow-md">
-                <polygon
-                  points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
-                  fill="#facc15"
-                  stroke="#ef4444"
-                  strokeWidth="3.5"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-red-700 font-black text-[11px] tracking-tighter">
-                {riskLabel}
-              </span>
-            </div>
           </div>
         )}
       </div>
