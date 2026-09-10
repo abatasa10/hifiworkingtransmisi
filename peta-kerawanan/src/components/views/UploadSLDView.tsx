@@ -247,13 +247,56 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           const y = 80 + rowIdx * rowHeight;
           const isRawan = node.riskStatus !== 'Normal';
           const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
+          const isIBTNode =
+            node.assetType === 'ibt' ||
+            (node.name || '').toLowerCase().includes('ibt') ||
+            (node.name || '').toLowerCase().includes('trafo') ||
+            Boolean(node.ibtNumber) ||
+            String(node.voltage || '').includes('/');
+          const nodeIbtNum =
+            node.ibtNumber ||
+            (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
+            '1';
 
           calculatedNodes.push({
             id: node.id,
             type: 'custom',
             position: { x, y },
             data: {
-              label: (
+              label: isIBTNode ? (
+                /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
+                <div
+                  onClick={() => setSelectedElement({ type: 'node', data: node })}
+                  className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
+                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
+                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
+                      {node.name || `IBT ${nodeIbtNum}`}
+                    </span>
+                    {isRawan && (
+                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                        {node.riskStatus}
+                      </span>
+                    )}
+                  </div>
+                  {/* Simbol 3 Lingkaran IBT */}
+                  <div className="relative w-16 h-14 flex items-center justify-center my-0.5">
+                    <svg viewBox="0 0 74 66" className="w-16 h-14 filter drop-shadow-md">
+                      <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
+                      <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
+                      <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
+                      <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
+                      <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
+                        {nodeIbtNum}
+                      </text>
+                    </svg>
+                  </div>
+                  <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+                </div>
+              ) : (
+                /* Tampilan Standar GI Simpul */
                 <div
                   onClick={() => setSelectedElement({ type: 'node', data: node })}
                   className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
@@ -295,13 +338,56 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const y = 80 + row * 150;
         const isRawan = node.riskStatus !== 'Normal';
         const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
+        const isIBTNode =
+          node.assetType === 'ibt' ||
+          (node.name || '').toLowerCase().includes('ibt') ||
+          (node.name || '').toLowerCase().includes('trafo') ||
+          Boolean(node.ibtNumber) ||
+          String(node.voltage || '').includes('/');
+        const nodeIbtNum =
+          node.ibtNumber ||
+          (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
+          '1';
 
         calculatedNodes.push({
           id: node.id,
           type: 'custom',
           position: { x, y },
           data: {
-            label: (
+            label: isIBTNode ? (
+              /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
+              <div
+                onClick={() => setSelectedElement({ type: 'node', data: node })}
+                className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
+                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
+                } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
+                    {node.name || `IBT ${nodeIbtNum}`}
+                  </span>
+                  {isRawan && (
+                    <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                      {node.riskStatus}
+                    </span>
+                  )}
+                </div>
+                {/* Simbol 3 Lingkaran IBT */}
+                <div className="relative w-16 h-14 flex items-center justify-center my-0.5">
+                  <svg viewBox="0 0 74 66" className="w-16 h-14 filter drop-shadow-md">
+                    <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
+                    <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
+                    <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
+                    <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
+                    <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
+                      {nodeIbtNum}
+                    </text>
+                  </svg>
+                </div>
+                <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+              </div>
+            ) : (
+              /* Tampilan Standar GI Simpul */
               <div
                 onClick={() => setSelectedElement({ type: 'node', data: node })}
                 className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
@@ -568,24 +654,40 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '500 kV';
 
         if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
+          const isIBT =
+            dariVal.toLowerCase().includes('ibt') ||
+            dariVal.toLowerCase().includes('trafo') ||
+            voltageVal.includes('/');
+          const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: sourceNodeId,
             name: dariVal,
             voltage: voltageVal,
             region: currentTargetName,
             riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
-            subsystem: currentTargetName
+            subsystem: currentTargetName,
+            assetType: isIBT ? 'ibt' : undefined,
+            ibtNumber: num,
+            tier: isIBT ? 1 : undefined
           });
         }
 
         if (!parsedNodes.some((n) => n.id === targetNodeId)) {
+          const isIBT =
+            keVal.toLowerCase().includes('ibt') ||
+            keVal.toLowerCase().includes('trafo') ||
+            voltageVal.includes('/');
+          const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: targetNodeId,
             name: keVal,
             voltage: voltageVal,
             region: currentTargetName,
             riskStatus: 'Normal',
-            subsystem: currentTargetName
+            subsystem: currentTargetName,
+            assetType: isIBT ? 'ibt' : undefined,
+            ibtNumber: num,
+            tier: isIBT ? 1 : undefined
           });
         }
       });
@@ -619,15 +721,27 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
         else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
 
+        const isIBT =
+          (assetTypeVal && assetTypeVal.toLowerCase().includes('ibt')) ||
+          giVal.toLowerCase().includes('ibt') ||
+          giVal.toLowerCase().includes('trafo') ||
+          Boolean(ibtNumVal) ||
+          voltageVal.includes('/');
+        const resolvedIbtNum =
+          ibtNumVal ||
+          giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
+          (isIBT ? '1' : undefined);
+
         const nodeId = `GI_${cleanKey(giVal)}`;
         const existing = parsedNodes.find((n) => n.id === nodeId);
         if (existing) {
           if (voltageVal) existing.voltage = voltageVal;
           if (tierVal !== undefined) existing.tier = tierVal;
-          if (ibtNumVal) existing.ibtNumber = ibtNumVal;
+          if (resolvedIbtNum) existing.ibtNumber = resolvedIbtNum;
           if (codeVal) existing.code = codeVal;
           if (riskNumVal) existing.riskNumber = riskNumVal;
-          if (assetTypeVal) existing.assetType = assetTypeVal as any;
+          if (isIBT) existing.assetType = 'ibt';
+          else if (assetTypeVal) existing.assetType = assetTypeVal as any;
           if (uitVal) existing.uit = uitVal;
           if (conditionVal) existing.condition = conditionVal;
           if (impactVal) existing.impact = impactVal;
@@ -639,9 +753,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             id: nodeId,
             name: giVal,
             code: codeVal,
-            tier: tierVal,
-            ibtNumber: ibtNumVal,
-            assetType: (assetTypeVal as any) || (ibtNumVal || giVal.toLowerCase().includes('ibt') ? 'ibt' : undefined),
+            tier: tierVal !== undefined ? tierVal : isIBT ? 1 : undefined,
+            ibtNumber: resolvedIbtNum,
+            assetType: isIBT ? 'ibt' : (assetTypeVal as any),
             voltage: voltageVal,
             region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,
