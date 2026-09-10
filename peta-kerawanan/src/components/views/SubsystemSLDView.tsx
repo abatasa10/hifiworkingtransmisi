@@ -99,18 +99,46 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
           <span className="text-[9px] font-mono text-cyan-400 mt-1">{data?.voltage || '500 kV'}</span>
         </div>
       ) : isIBT ? (
-        /* 2. IBT TRANSFORMER (Gambar 2 - Interlocking double circles) */
+        /* 2. IBT TRANSFORMER (Gambar 2 - 3-Winding Interlocking Rings with PMT and IBT number) */
         <div className="flex flex-col items-center">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap ${
-            selected ? 'bg-emerald-400 text-slate-950 font-black' : 'bg-slate-900/90 text-emerald-300 border-slate-700'
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap transition-colors ${
+            selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-cyan-300 border-slate-700'
           }`}>
             {data?.code || data?.name}
           </span>
-          <div className="relative w-8 h-12 flex flex-col items-center justify-center my-0.5">
-            <div className={`w-6 h-6 rounded-full border-2 absolute top-0 ${selected ? 'border-emerald-300 bg-emerald-950/40' : 'border-emerald-400 bg-slate-900/80'}`} />
-            <div className={`w-6 h-6 rounded-full border-2 absolute bottom-0 ${selected ? 'border-emerald-300 bg-emerald-950/40' : 'border-emerald-400 bg-slate-900/80'}`} />
+          {/* PMT Breaker Block (Gambar 2) */}
+          <div className="w-2.5 h-3.5 bg-blue-600 rounded-xs mb-0.5 shadow-xs" title="PMT / Pemutus Tenaga Bay IBT" />
+          {/* 3 Interlocking Circles (Primary Blue, Secondary Red, Tertiary Yellow) */}
+          <div className="relative w-13 h-13 flex items-center justify-center my-0.5">
+            <svg viewBox="0 0 60 60" className="w-13 h-13 filter drop-shadow-sm">
+              <circle cx="30" cy="19" r="13" fill="none" stroke="#2563eb" strokeWidth="2.8" />
+              <circle cx="21" cy="35" r="13" fill="none" stroke="#dc2626" strokeWidth="2.8" />
+              <circle cx="39" cy="35" r="13" fill="none" stroke="#eab308" strokeWidth="2.8" />
+            </svg>
+            {/* IBT Number next to circles */}
+            <span className="absolute right-0 top-2 font-black text-[11px] text-slate-900 bg-white/90 px-1 rounded shadow-xs border border-slate-300 pointer-events-none">
+              {data?.ibtNumber || (data?.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] || '1'}
+            </span>
+            {/* Starburst Risk Badge */}
+            {isRawan && (
+              <div className="absolute inset-0 flex items-center justify-center animate-pulse pointer-events-none z-20">
+                <div className="relative w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-12 h-12 filter drop-shadow-md">
+                    <polygon
+                      points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
+                      fill="#facc15"
+                      stroke="#ef4444"
+                      strokeWidth="3.5"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-red-700 font-black text-[10px] tracking-tighter">
+                    {data?.riskNumber || '1&2'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-          <span className="text-[9px] font-mono text-emerald-400">{data?.voltage || '500/150 kV'}</span>
+          <span className="text-[9px] font-mono text-cyan-400 mt-0.5">{data?.voltage || '500/150 kV'}</span>
         </div>
       ) : (
         /* 3. ELECTRICAL BUSBAR (GI / GITET - Gambar 1 & Gambar 2 authentic SLD) */
@@ -235,52 +263,83 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   // Synchronize Nodes and Edges with authentic Tiered SLD Layout (Gambar 1 & Gambar 2)
   useEffect(() => {
     if (customConfig?.type === 'excel' && customConfig.excelData?.giList && customConfig.excelData.giList.length > 0) {
-      // Categorize nodes into Tiers (TIER 1 Pembangkit -> TIER 2 Backbone -> TIER 3 Interkoneksi -> TIER 4 Distribusi)
+      // KONSEP TIER PADA SLD: Dimulai dari Tier 0
+      // Tier 0 = asset/source utama yang menjadi titik awal sistem pada SLD.
+      // Tier 1 = asset yang terhubung langsung dari Tier 0.
+      // Tier 2 = asset yang terhubung dari Tier 1.
+      // Tier 3 = asset yang terhubung dari Tier 2.
+      // Tier 4 = asset yang terhubung dari Tier 3.
+      // Dan seterusnya.
+      const tier0Nodes: any[] = [];
       const tier1Nodes: any[] = [];
       const tier2Nodes: any[] = [];
       const tier3Nodes: any[] = [];
       const tier4Nodes: any[] = [];
+      const tier5Nodes: any[] = [];
 
       customConfig.excelData.giList.forEach((gi) => {
         const n = (gi.name + ' ' + (gi.subsystem || '')).toLowerCase();
         const v = String(gi.voltage || '');
-        if (n.includes('plt') || n.includes('muara karang') || n.includes('cirata') || n.includes('saguling') || n.includes('paiton') || n.includes('suralaya')) {
-          tier1Nodes.push(gi);
-        } else if (v.includes('500') || n.includes('gitet') || n.includes('gandul') || n.includes('cibinong') || n.includes('bekasi')) {
-          tier2Nodes.push(gi);
-        } else if (n.includes('ibt') || n.includes('trafo') || n.includes('bandung') || n.includes('mandirancan') || n.includes('ungaran') || n.includes('pedan')) {
-          tier3Nodes.push(gi);
+        const explicitTier = typeof gi.tier === 'number' ? gi.tier : undefined;
+
+        if (explicitTier !== undefined) {
+          if (explicitTier === 0) tier0Nodes.push(gi);
+          else if (explicitTier === 1) tier1Nodes.push(gi);
+          else if (explicitTier === 2) tier2Nodes.push(gi);
+          else if (explicitTier === 3) tier3Nodes.push(gi);
+          else if (explicitTier === 4) tier4Nodes.push(gi);
+          else tier5Nodes.push(gi);
         } else {
-          tier4Nodes.push(gi);
+          // Automatic hierarchy placement starting from Tier 0
+          if (n.includes('plt') || n.includes('pembangkit') || n.includes('suralaya baru') || n.includes('cilegon baru') || n.includes('muara karang') || n.includes('cirata') || n.includes('saguling') || n.includes('paiton')) {
+            tier0Nodes.push(gi);
+          } else if (n.includes('ibt') || n.includes('trafo') || (v.includes('500') && (n.includes('srlya') || n.includes('clbru')))) {
+            tier1Nodes.push(gi);
+          } else if (v.includes('500') || n.includes('gitet') || n.includes('gandul') || n.includes('cibinong') || n.includes('bekasi') || n.includes('slrda') || n.includes('pendo') || n.includes('peni')) {
+            tier2Nodes.push(gi);
+          } else if (n.includes('mtsui') || n.includes('ktt') || n.includes('mcci5') || n.includes('clgon')) {
+            tier3Nodes.push(gi);
+          } else {
+            tier4Nodes.push(gi);
+          }
         }
       });
 
       const newNodes: Node[] = [];
       const placeTierNodes = (nodeList: any[], yPos: number, xStart: number, spacing: number) => {
         nodeList.forEach((gi, i) => {
-          const isGen = (gi.name || '').toLowerCase().includes('plt') || (gi.name || '').toLowerCase().includes('muara karang') || (gi.name || '').toLowerCase().includes('cirata');
+          const isGen = (gi.name || '').toLowerCase().includes('plt') || (gi.name || '').toLowerCase().includes('pembangkit');
+          const isIBT = (gi.name || '').toLowerCase().includes('ibt') || (gi.name || '').toLowerCase().includes('trafo') || gi.assetType === 'ibt';
           newNodes.push({
             id: gi.id,
-            type: isGen ? 'generator' : 'custom',
+            type: isGen ? 'generator' : isIBT ? 'ibt' : 'custom',
             position: { x: xStart + i * spacing, y: yPos },
             data: {
               id: gi.id,
               name: gi.name,
-              code: gi.name.replace(/^GITET\s+|^GI\s+/, ''),
-              voltage: gi.voltage || '500 kV',
+              code: gi.code || gi.name.replace(/^GITET\s+|^GI\s+/, ''),
+              voltage: gi.voltage || (isIBT ? '500/150 kV' : '500 kV'),
+              primaryVoltage: gi.primaryVoltage || (isIBT ? '500 kV' : undefined),
+              secondaryVoltage: gi.secondaryVoltage || (isIBT ? '150 kV' : undefined),
+              ibtNumber: gi.ibtNumber,
+              capacityMVA: gi.capacityMVA,
+              tier: gi.tier,
               region: gi.region,
               riskStatus: gi.riskStatus,
+              riskNumber: gi.riskNumber,
               subsystem: gi.subsystem || currentSub.name
             }
           });
         });
       };
 
-      // Place along horizontal Tier lines
-      placeTierNodes(tier1Nodes, 70, 100, 260);
-      placeTierNodes(tier2Nodes, 240, 80, 240);
-      placeTierNodes(tier3Nodes, 410, 120, 250);
-      placeTierNodes(tier4Nodes, 570, 100, 240);
+      // Place along horizontal Tier lines (Mulai Tier 0)
+      placeTierNodes(tier0Nodes, 70, 100, 260);
+      placeTierNodes(tier1Nodes, 240, 80, 240);
+      placeTierNodes(tier2Nodes, 410, 120, 250);
+      placeTierNodes(tier3Nodes, 570, 100, 240);
+      placeTierNodes(tier4Nodes, 720, 100, 240);
+      placeTierNodes(tier5Nodes, 860, 100, 240);
 
       const newEdges: Edge[] = (customConfig.excelData.lineList || []).map((l) => ({
         id: l.id,
@@ -302,12 +361,19 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           source: l.sourceId,
           target: l.targetId,
           name: l.lineName,
-          voltage: '150 kV',
+          voltage: l.voltage || '500 kV',
           status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
           riskLevel: l.riskStatus,
-          circuitCount: 1,
-          operatingStatus: 'Beroperasi',
-          loading: { circuit1: l.loadingPct }
+          riskNumber: l.riskNumber || (l.riskStatus !== 'Normal' ? 11 : undefined),
+          circuitCount: l.circuitCount || 2,
+          lengthKm: l.lengthKm || 21.4,
+          operatingStatus: l.operatingStatus || 'Beroperasi',
+          loading: {
+            circuit1: l.loadingCircuit1 || l.loadingPct,
+            circuit2: l.loadingCircuit2 || Math.round(l.loadingPct * 0.9)
+          },
+          region: l.region || 'Jawa Barat - DKI Jakarta',
+          corridor: l.corridor || 'Koridor Jakarta Barat - Selatan'
         }
       }));
 
@@ -366,12 +432,16 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           target: edge.target,
           name: data?.name || (edge as any).label || edge.id,
           type: 'transmission',
-          voltage: data?.voltage || '150 kV',
-          status: data?.status || 'normal',
+          voltage: data?.voltage || '500 kV',
+          status: data?.status || (data?.riskLevel && data.riskLevel !== 'Normal' ? 'critical' : 'normal'),
           riskLevel: data?.riskLevel || 'Normal',
-          circuitCount: data?.circuitCount || 1,
+          riskNumber: data?.riskNumber || (data?.riskLevel && data.riskLevel !== 'Normal' ? 11 : undefined),
+          circuitCount: data?.circuitCount || 2,
+          lengthKm: data?.lengthKm || 21.4,
           operatingStatus: data?.operatingStatus || 'Beroperasi',
-          loading: data?.loading || { circuit1: 65 }
+          loading: data?.loading || { circuit1: 58, circuit2: 52 },
+          region: data?.region || 'Jawa Barat - DKI Jakarta',
+          corridor: data?.corridor || 'Koridor Jakarta Barat - Selatan'
         } as any
       });
     },
@@ -820,8 +890,8 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                       color={sldTheme === 'blueprint' ? 'rgba(0, 210, 211, 0.15)' : '#cbd5e1'}
                     />
 
-                    {/* Horizontal Tier Guide Lines (TIER 1 s/d TIER 4) - Gambar 1 & Gambar 2 */}
-                    <TierGuides />
+                    {/* Horizontal Tier Guide Lines (Mulai TIER-0) - Gambar 1 & Gambar 2 */}
+                    <TierGuides theme={sldTheme} />
 
                     <Controls className={sldTheme === 'blueprint' ? 'bg-slate-900 border border-slate-700 text-slate-300' : 'bg-white border border-slate-300 text-slate-700 shadow-sm'} />
                     

@@ -1,9 +1,17 @@
 export interface ParsedGINode {
   id: string;
   name: string;
-  voltage: string; // '500 kV' | '150 kV'
+  code?: string;
+  assetType?: 'pembangkit' | 'busbar' | 'gitet' | 'gi' | 'ibt' | 'trafo' | 'beban';
+  voltage: string; // '500 kV' | '275 kV' | '150 kV' | '70 kV' | '20 kV' | '500/150 kV' | '275/150 kV'
+  tier?: number; // Tier starts from 0: Tier 0 = Source utama, Tier 1 = Downstream 1, Tier 2 = Downstream 2, dst.
+  ibtNumber?: string | number; // e.g. 1, 2, 4, '1&2'
+  primaryVoltage?: string; // e.g. '500 kV' or '275 kV'
+  secondaryVoltage?: string; // e.g. '150 kV'
+  capacityMVA?: number;
   region: string;
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
+  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan';
+  riskNumber?: string | number;
   subsystem?: string;
   x?: number;
   y?: number;
@@ -15,9 +23,17 @@ export interface ParsedTransmissionLine {
   targetId: string;
   lineName: string;
   circuit: string;
+  circuitCount?: number;
   lengthKm: number;
   loadingPct: number;
-  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2';
+  loadingCircuit1?: number;
+  loadingCircuit2?: number;
+  voltage?: string;
+  operatingStatus?: string;
+  riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan';
+  riskNumber?: string | number;
+  region?: string;
+  corridor?: string;
 }
 
 export interface ImageHotspot {

@@ -82,13 +82,22 @@ const uploadNodeTypes = {
 };
 
 export interface ColumnMapping {
-  gi: string;         // Kolom Nama Gardu Induk
+  gi: string;         // Kolom Nama Gardu Induk / Asset
+  code: string;       // Kolom Kode Singkatan
+  tier: string;       // Kolom Tier (Mulai 0)
+  assetType: string;  // Kolom Tipe Asset
+  ibtNumber: string;  // Kolom No IBT (1, 2, 4, dll)
   from: string;       // Kolom Dari GI
   to: string;         // Kolom Ke GI
   lineName: string;   // Kolom Nama Penghantar
   voltage: string;    // Kolom Tegangan
-  risk: string;       // Kolom Status Kerawanan
-  load: string;       // Kolom Pembebanan / Nilai MW
+  risk: string;       // Kolom Status / Tingkat Kerawanan
+  riskNumber: string; // Kolom No Kerawanan (#11, 1, 2, 1&2)
+  load: string;       // Kolom Pembebanan Sirkit 1 / Nilai MW
+  loadC2: string;     // Kolom Pembebanan Sirkit 2
+  circuits: string;   // Kolom Jumlah Sirkit
+  lengthKm: string;   // Kolom Panjang Saluran (km)
+  corridor: string;   // Kolom Koridor / Wilayah
 }
 
 // Initial sample data for immediate test
@@ -151,12 +160,21 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const [showMappingPanel, setShowMappingPanel] = useState<boolean>(true);
   const [colMapping, setColMapping] = useState<ColumnMapping>({
     gi: '',
+    code: '',
+    tier: '',
+    assetType: '',
+    ibtNumber: '',
     from: '',
     to: '',
     lineName: '',
     voltage: '',
     risk: '',
-    load: ''
+    riskNumber: '',
+    load: '',
+    loadC2: '',
+    circuits: '',
+    lengthKm: '',
+    corridor: ''
   });
 
   // Image mode states
@@ -355,20 +373,38 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
     const fromCol = findHeader(['darigi', 'dari', 'from', 'asal', 'bus1', 'source', 'pangkal']);
     const toCol = findHeader(['kegi', 'ke', 'to', 'tujuan', 'bus2', 'target', 'ujung']);
-    const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'sirkit', 'bay']);
-    const giCol = findHeader(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'gi', 'nama', 'gardu', 'bay']);
+    const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'bay']);
+    const giCol = findHeader(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'namaasset', 'gi', 'nama', 'gardu']);
+    const codeCol = findHeader(['kodesingkatan', 'kodesingkat', 'kode', 'code', 'singkatan']);
+    const tierCol = findHeader(['tiermulai0', 'tier', 'leveltier', 'hirarki', 'hierarchy', 'level']);
+    const assetTypeCol = findHeader(['tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
+    const ibtNumCol = findHeader(['noibt', 'nomoribt', 'nomeribt', 'ibt', 'unitibt']);
     const voltageCol = findHeader(['tegangan', 'kv', 'voltage', 'level']);
-    const riskCol = findHeader(['statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kondisi', 'keterangan', 'risk', 'kategori']);
-    const loadCol = findHeader(['pembebanan', 'loading', 'bebanmw', 'load', 'beban', 'mw', 'mva', 'arus', 'ampere']);
+    const riskCol = findHeader(['tingkatkerawanan', 'statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kondisi', 'keterangan', 'risk', 'kategori']);
+    const riskNumCol = findHeader(['nokerawanan', 'nomorkerawanan', 'nomerkerawanan', 'idkerawanan', 'norisk']);
+    const loadCol = findHeader(['pembebanansirkit1', 'pembebanan', 'loading', 'bebanmw', 'load', 'beban', 'mw', 'mva', 'arus', 'ampere']);
+    const loadC2Col = findHeader(['pembebanansirkit2', 'beban2', 'load2', 'loading2']);
+    const circuitsCol = findHeader(['jumlahsirkit', 'sirkit', 'circuits', 'jmlsirkit']);
+    const lengthKmCol = findHeader(['panjangsaluran', 'panjangkm', 'panjang', 'length', 'km']);
+    const corridorCol = findHeader(['koridor', 'wilayah', 'region', 'lokasi', 'provinsi']);
 
     return {
       gi: giCol,
+      code: codeCol,
+      tier: tierCol,
+      assetType: assetTypeCol,
+      ibtNumber: ibtNumCol,
       from: fromCol,
       to: toCol,
       lineName: lineNameCol,
       voltage: voltageCol,
       risk: riskCol,
-      load: loadCol
+      riskNumber: riskNumCol,
+      load: loadCol,
+      loadC2: loadC2Col,
+      circuits: circuitsCol,
+      lengthKm: lengthKmCol,
+      corridor: corridorCol
     };
   };
 
@@ -401,6 +437,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             k.includes('line') ||
             k.includes('dari') ||
             k.includes('ke') ||
+            k.includes('tier') ||
+            k.includes('ibt') ||
             k.includes('functloc') ||
             k.includes('bay') ||
             k.includes('trafo') ||
@@ -430,9 +468,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colToIdx = colIdx(mapping.to);
     const colLineNameIdx = colIdx(mapping.lineName);
     const colGiIdx = colIdx(mapping.gi);
+    const colCodeIdx = colIdx(mapping.code);
+    const colTierIdx = colIdx(mapping.tier);
+    const colAssetTypeIdx = colIdx(mapping.assetType);
+    const colIbtNumIdx = colIdx(mapping.ibtNumber);
     const colVoltageIdx = colIdx(mapping.voltage);
     const colRiskIdx = colIdx(mapping.risk);
+    const colRiskNumIdx = colIdx(mapping.riskNumber);
     const colLoadIdx = colIdx(mapping.load);
+    const colLoadC2Idx = colIdx(mapping.loadC2);
+    const colCircuitsIdx = colIdx(mapping.circuits);
+    const colLengthKmIdx = colIdx(mapping.lengthKm);
+    const colCorridorIdx = colIdx(mapping.corridor);
 
     const parsedNodes: ParsedGINode[] = [];
     const parsedLines: ParsedTransmissionLine[] = [];
@@ -446,13 +493,20 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
         const lineNameVal = colLineNameIdx !== -1 && row[colLineNameIdx] ? String(row[colLineNameIdx]).trim() : `${dariVal} - ${keVal}`;
         const riskVal = colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal';
+        const riskNumVal = colRiskNumIdx !== -1 && row[colRiskNumIdx] ? String(row[colRiskNumIdx]).trim() : '';
         const loadVal = colLoadIdx !== -1 && !isNaN(Number(row[colLoadIdx])) ? Number(row[colLoadIdx]) : Math.floor(50 + Math.random() * 40);
+        const c2LoadVal = colLoadC2Idx !== -1 && !isNaN(Number(row[colLoadC2Idx])) ? Number(row[colLoadC2Idx]) : Math.round(loadVal * 0.9);
+        const circuitsVal = colCircuitsIdx !== -1 && !isNaN(Number(row[colCircuitsIdx])) ? Number(row[colCircuitsIdx]) : 2;
+        const lengthKmVal = colLengthKmIdx !== -1 && !isNaN(Number(row[colLengthKmIdx])) ? Number(row[colLengthKmIdx]) : 21.4;
+        const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
 
-        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
         const rUpper = riskVal.toUpperCase();
         if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
         else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
-        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'N-1';
+        else if (rUpper.includes('SANGAT RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'Sangat Rawan';
+        else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
+        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
 
         const sourceNodeId = `GI_${cleanKey(dariVal)}`;
         const targetNodeId = `GI_${cleanKey(keVal)}`;
@@ -462,13 +516,21 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           sourceId: sourceNodeId,
           targetId: targetNodeId,
           lineName: lineNameVal,
-          circuit: 'Sirkit 1',
-          lengthKm: 25,
+          circuit: `${circuitsVal} Sirkit`,
+          circuitCount: circuitsVal,
+          lengthKm: lengthKmVal,
           loadingPct: loadVal,
-          riskStatus: normalizedRisk
+          loadingCircuit1: loadVal,
+          loadingCircuit2: c2LoadVal,
+          voltage: colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '500 kV',
+          operatingStatus: 'Beroperasi',
+          riskStatus: normalizedRisk,
+          riskNumber: riskNumVal || (normalizedRisk !== 'Normal' ? 11 : undefined),
+          region: corridorVal || currentTargetName,
+          corridor: corridorVal || `Koridor ${dariVal} - ${keVal}`
         });
 
-        const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV';
+        const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '500 kV';
 
         if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
           parsedNodes.push({
@@ -502,25 +564,43 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
         const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV';
         const riskVal = colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal';
+        const riskNumVal = colRiskNumIdx !== -1 && row[colRiskNumIdx] ? String(row[colRiskNumIdx]).trim() : '';
+        const tierVal = colTierIdx !== -1 && !isNaN(Number(row[colTierIdx])) ? Number(row[colTierIdx]) : undefined;
+        const ibtNumVal = colIbtNumIdx !== -1 && row[colIbtNumIdx] ? String(row[colIbtNumIdx]).trim() : undefined;
+        const assetTypeVal = colAssetTypeIdx !== -1 && row[colAssetTypeIdx] ? String(row[colAssetTypeIdx]).trim() : undefined;
+        const codeVal = colCodeIdx !== -1 && row[colCodeIdx] ? String(row[colCodeIdx]).trim() : undefined;
+        const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
 
-        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' = 'Normal';
+        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
         const rUpper = riskVal.toUpperCase();
         if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
         else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
-        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'N-1';
+        else if (rUpper.includes('SANGAT RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'Sangat Rawan';
+        else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
+        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
 
         const nodeId = `GI_${cleanKey(giVal)}`;
         const existing = parsedNodes.find((n) => n.id === nodeId);
         if (existing) {
           if (voltageVal) existing.voltage = voltageVal;
+          if (tierVal !== undefined) existing.tier = tierVal;
+          if (ibtNumVal) existing.ibtNumber = ibtNumVal;
+          if (codeVal) existing.code = codeVal;
+          if (riskNumVal) existing.riskNumber = riskNumVal;
+          if (assetTypeVal) existing.assetType = assetTypeVal as any;
           if (normalizedRisk !== 'Normal') existing.riskStatus = normalizedRisk;
         } else {
           parsedNodes.push({
             id: nodeId,
             name: giVal,
+            code: codeVal,
+            tier: tierVal,
+            ibtNumber: ibtNumVal,
+            assetType: (assetTypeVal as any) || (ibtNumVal || giVal.toLowerCase().includes('ibt') ? 'ibt' : undefined),
             voltage: voltageVal,
-            region: currentTargetName,
+            region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,
+            riskNumber: riskNumVal,
             subsystem: currentTargetName
           });
         }
@@ -707,29 +787,237 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     reader.readAsArrayBuffer(file);
   };
 
-  // Download Sample Excel Template
+  // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: Konsep Tier Mulai 0, IBT, Spesifikasi Line)
   const handleDownloadTemplate = () => {
     const wb = XLSX.utils.book_new();
 
-    // Sheet 1: Jalur Transmisi (Penghantar)
+    // Sheet 1: Jalur Transmisi (Penghantar) - Sesuai Gambar 1
     const wsEdgesData = [
-      { 'No': 1, 'Nama Penghantar': 'Bogor - Cibinong 1', 'Dari GI': 'GI Bogor', 'Ke GI': 'GI Cibinong', 'Tegangan': '150 kV', 'Pembebanan %': 78, 'Status Kerawanan': 'N-1' },
-      { 'No': 2, 'Nama Penghantar': 'Cibinong - Sentul 1', 'Dari GI': 'GI Cibinong', 'Ke GI': 'GI Sentul', 'Tegangan': '150 kV', 'Pembebanan %': 89, 'Status Kerawanan': 'N-2' },
-      { 'No': 3, 'Nama Penghantar': 'Sentul - Ciawi 1', 'Dari GI': 'GI Sentul', 'Ke GI': 'GI Ciawi', 'Tegangan': '150 kV', 'Pembebanan %': 62, 'Status Kerawanan': 'Normal' },
-      { 'No': 4, 'Nama Penghantar': 'Ciawi - Bogor 1', 'Dari GI': 'GI Ciawi', 'Ke GI': 'GI Bogor', 'Tegangan': '150 kV', 'Pembebanan %': 55, 'Status Kerawanan': 'Normal' }
+      {
+        'No': 1,
+        'No Kerawanan': 11,
+        'Nama Penghantar': 'SUTET Tambun - Cawang',
+        'Dari GI': 'TMBUN',
+        'Ke GI': 'CWANG',
+        'Tegangan': '500 kV',
+        'Panjang Saluran (km)': 21.4,
+        'Jumlah Sirkit': 2,
+        'Status Operasi': 'Beroperasi',
+        'Tingkat Kerawanan': 'Sedang',
+        'Pembebanan Sirkit 1 (%)': 58,
+        'Pembebanan Sirkit 2 (%)': 52,
+        'Koridor / Wilayah': 'Jawa Barat - DKI Jakarta'
+      },
+      {
+        'No': 2,
+        'No Kerawanan': 1,
+        'Nama Penghantar': 'SUTET Suralaya Baru - SRLYA 1',
+        'Dari GI': 'Suralaya Baru',
+        'Ke GI': 'SRLYA',
+        'Tegangan': '500 kV',
+        'Panjang Saluran (km)': 12.5,
+        'Jumlah Sirkit': 2,
+        'Status Operasi': 'Beroperasi',
+        'Tingkat Kerawanan': 'Sangat Rawan',
+        'Pembebanan Sirkit 1 (%)': 86,
+        'Pembebanan Sirkit 2 (%)': 82,
+        'Koridor / Wilayah': 'Banten'
+      },
+      {
+        'No': 3,
+        'No Kerawanan': '',
+        'Nama Penghantar': 'SUTT SRLYA - PENDO 1',
+        'Dari GI': 'SRLYA',
+        'Ke GI': 'PENDO',
+        'Tegangan': '150 kV',
+        'Panjang Saluran (km)': 18.2,
+        'Jumlah Sirkit': 2,
+        'Status Operasi': 'Beroperasi',
+        'Tingkat Kerawanan': 'Normal',
+        'Pembebanan Sirkit 1 (%)': 55,
+        'Pembebanan Sirkit 2 (%)': 51,
+        'Koridor / Wilayah': 'Banten'
+      },
+      {
+        'No': 4,
+        'No Kerawanan': 3,
+        'Nama Penghantar': 'SUTT PENI - MTSUI',
+        'Dari GI': 'PENI',
+        'Ke GI': 'MTSUI',
+        'Tegangan': '150 kV',
+        'Panjang Saluran (km)': 14.8,
+        'Jumlah Sirkit': 2,
+        'Status Operasi': 'Beroperasi',
+        'Tingkat Kerawanan': 'Sedang',
+        'Pembebanan Sirkit 1 (%)': 74,
+        'Pembebanan Sirkit 2 (%)': 69,
+        'Koridor / Wilayah': 'Banten'
+      }
     ];
     const wsEdges = XLSX.utils.json_to_sheet(wsEdgesData);
     XLSX.utils.book_append_sheet(wb, wsEdges, 'Jalur_Transmisi');
 
-    // Sheet 2: Gardu Induk
+    // Sheet 2: Gardu Induk & Aset - Sesuai Konsep Tier (Mulai 0) & IBT (Gambar 2)
     const wsNodesData = [
-      { 'No': 1, 'Nama GI': 'GI Bogor', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'Normal' },
-      { 'No': 2, 'Nama GI': 'GI Cibinong', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'N-1' },
-      { 'No': 3, 'Nama GI': 'GI Sentul', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'N-2' },
-      { 'No': 4, 'Nama GI': 'GI Ciawi', 'Tegangan': '150 kV', 'Wilayah': 'Jawa Barat', 'Subsistem': 'Bogor', 'Status Kerawanan': 'Normal' }
+      {
+        'No': 1,
+        'Nama Asset / GI': 'Suralaya Baru',
+        'Kode Singkatan': 'SRL-BARU',
+        'Tipe Asset': 'Pembangkit',
+        'Tier (Mulai 0)': 0,
+        'Tegangan': '500 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 2,
+        'Nama Asset / GI': 'Suralaya',
+        'Kode Singkatan': 'SURLYA',
+        'Tipe Asset': 'Pembangkit',
+        'Tier (Mulai 0)': 0,
+        'Tegangan': '500 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 3,
+        'Nama Asset / GI': 'Cilegon Baru',
+        'Kode Singkatan': 'CLG-BARU',
+        'Tipe Asset': 'Busbar GITET',
+        'Tier (Mulai 0)': 0,
+        'Tegangan': '500 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 4,
+        'Nama Asset / GI': 'IBT 2 Suralaya Baru',
+        'Kode Singkatan': 'IBT 2 SRL-BARU',
+        'Tipe Asset': 'IBT 3-Winding',
+        'Tier (Mulai 0)': 1,
+        'Tegangan': '500/150 kV',
+        'No IBT': '2',
+        'Status Kerawanan': 'N-1-2',
+        'No Kerawanan': '1&2',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 5,
+        'Nama Asset / GI': 'IBT 1 Suralaya',
+        'Kode Singkatan': 'IBT 1 SURLYA',
+        'Tipe Asset': 'IBT 3-Winding',
+        'Tier (Mulai 0)': 1,
+        'Tegangan': '500/150 kV',
+        'No IBT': '1',
+        'Status Kerawanan': 'N-1-2',
+        'No Kerawanan': '1&2',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 6,
+        'Nama Asset / GI': 'SRLYA',
+        'Kode Singkatan': 'SRLYA',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 1,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 7,
+        'Nama Asset / GI': 'CLBRU',
+        'Kode Singkatan': 'CLBRU',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 1,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'N-2',
+        'No Kerawanan': '2',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 8,
+        'Nama Asset / GI': 'SLRDA',
+        'Kode Singkatan': 'SLRDA',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 2,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 9,
+        'Nama Asset / GI': 'PENDO',
+        'Kode Singkatan': 'PENDO',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 2,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 10,
+        'Nama Asset / GI': 'PENI',
+        'Kode Singkatan': 'PENI',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 2,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 11,
+        'Nama Asset / GI': 'MCCI5',
+        'Kode Singkatan': 'MCCI5',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 2,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 12,
+        'Nama Asset / GI': 'CLGON',
+        'Kode Singkatan': 'CLGON',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 2,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      },
+      {
+        'No': 13,
+        'Nama Asset / GI': 'MTSUI',
+        'Kode Singkatan': 'MTSUI',
+        'Tipe Asset': 'Busbar GI',
+        'Tier (Mulai 0)': 3,
+        'Tegangan': '150 kV',
+        'No IBT': '',
+        'Status Kerawanan': 'Normal',
+        'No Kerawanan': '',
+        'Wilayah': 'Banten'
+      }
     ];
     const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
-    XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk');
+    XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk_dan_Aset');
 
     XLSX.writeFile(wb, 'template_sld_subsistem_pln.xlsx');
   };
