@@ -84,7 +84,9 @@ const uploadNodeTypes = {
 export interface ColumnMapping {
   gi: string;         // Kolom Nama Gardu Induk / Asset
   code: string;       // Kolom Kode Singkatan
-  tier: string;       // Kolom Tier (Mulai 0)
+  tier: string;       // Kolom Tier (Mulai 0) - untuk Sheet 2 (GI)
+  tierFrom: string;   // Kolom Tier Dari GI - untuk Sheet 1 (Jalur Transmisi)
+  tierTo: string;     // Kolom Tier Ke GI - untuk Sheet 1 (Jalur Transmisi)
   assetType: string;  // Kolom Tipe Asset
   ibtNumber: string;  // Kolom No IBT (1, 2, 4, dll)
   from: string;       // Kolom Dari GI
@@ -167,6 +169,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     gi: '',
     code: '',
     tier: '',
+    tierFrom: '',
+    tierTo: '',
     assetType: '',
     ibtNumber: '',
     from: '',
@@ -473,6 +477,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const giCol = findHeader(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'namaasset', 'gi', 'nama', 'gardu']);
     const codeCol = findHeader(['kodesingkatan', 'kodesingkat', 'kode', 'code', 'singkatan']);
     const tierCol = findHeader(['tiermulai0', 'tier', 'leveltier', 'hirarki', 'hierarchy', 'level']);
+    const tierFromCol = findHeader(['tierdarigi', 'tierdari', 'tierfrom', 'tiersumber', 'tierasal']);
+    const tierToCol = findHeader(['tierkegi', 'tierke', 'tierto', 'tiertujuan', 'tierujung']);
     const assetTypeCol = findHeader(['tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
     const ibtNumCol = findHeader(['noibt', 'nomoribt', 'nomeribt', 'ibt', 'unitibt']);
     const voltageCol = findHeader(['tegangan', 'kv', 'voltage', 'level']);
@@ -493,6 +499,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       gi: giCol,
       code: codeCol,
       tier: tierCol,
+      tierFrom: tierFromCol,
+      tierTo: tierToCol,
       assetType: assetTypeCol,
       ibtNumber: ibtNumCol,
       from: fromCol,
@@ -576,6 +584,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colGiIdx = colIdx(mapping.gi);
     const colCodeIdx = colIdx(mapping.code);
     const colTierIdx = colIdx(mapping.tier);
+    const colTierFromIdx = colIdx(mapping.tierFrom);
+    const colTierToIdx = colIdx(mapping.tierTo);
     const colAssetTypeIdx = colIdx(mapping.assetType);
     const colIbtNumIdx = colIdx(mapping.ibtNumber);
     const colVoltageIdx = colIdx(mapping.voltage);
@@ -652,6 +662,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         });
 
         const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '500 kV';
+        // Baca Tier Dari GI dan Tier Ke GI dari Sheet 1
+        const tierFromVal = colTierFromIdx !== -1 && row[colTierFromIdx] !== undefined && row[colTierFromIdx] !== '' ? Number(row[colTierFromIdx]) : undefined;
+        const tierToVal   = colTierToIdx   !== -1 && row[colTierToIdx]   !== undefined && row[colTierToIdx]   !== '' ? Number(row[colTierToIdx])   : undefined;
 
         if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
           const isIBT =
@@ -668,7 +681,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             subsystem: currentTargetName,
             assetType: isIBT ? 'ibt' : undefined,
             ibtNumber: num,
-            tier: isIBT ? 1 : undefined
+            tier: tierFromVal !== undefined ? tierFromVal : (isIBT ? 1 : undefined)
           });
         }
 
@@ -687,7 +700,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             subsystem: currentTargetName,
             assetType: isIBT ? 'ibt' : undefined,
             ibtNumber: num,
-            tier: isIBT ? 1 : undefined
+            tier: tierToVal !== undefined ? tierToVal : (isIBT ? 1 : undefined)
           });
         }
       });
@@ -962,7 +975,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No Kerawanan': 11,
         'Nama Penghantar': 'SUTET Tambun - Cawang',
         'Dari GI': 'TMBUN',
+        'Tier Dari GI': 0,
         'Ke GI': 'CWANG',
+        'Tier Ke GI': 1,
         'Tegangan': '500 kV',
         'Panjang Saluran (km)': 21.4,
         'Jumlah Sirkit': 2,
@@ -982,7 +997,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No Kerawanan': 1,
         'Nama Penghantar': 'SUTET Suralaya Baru - SRLYA 1',
         'Dari GI': 'Suralaya Baru',
+        'Tier Dari GI': 0,
         'Ke GI': 'SRLYA',
+        'Tier Ke GI': 1,
         'Tegangan': '500 kV',
         'Panjang Saluran (km)': 12.5,
         'Jumlah Sirkit': 2,
@@ -1002,7 +1019,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No Kerawanan': '',
         'Nama Penghantar': 'SUTT SRLYA - PENDO 1',
         'Dari GI': 'SRLYA',
+        'Tier Dari GI': 1,
         'Ke GI': 'PENDO',
+        'Tier Ke GI': 2,
         'Tegangan': '150 kV',
         'Panjang Saluran (km)': 18.2,
         'Jumlah Sirkit': 2,
@@ -1022,7 +1041,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         'No Kerawanan': 3,
         'Nama Penghantar': 'SUTT PENI - MTSUI',
         'Dari GI': 'PENI',
+        'Tier Dari GI': 1,
         'Ke GI': 'MTSUI',
+        'Tier Ke GI': 2,
         'Tegangan': '150 kV',
         'Panjang Saluran (km)': 14.8,
         'Jumlah Sirkit': 2,
