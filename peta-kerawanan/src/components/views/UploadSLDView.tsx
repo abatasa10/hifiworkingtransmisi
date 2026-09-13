@@ -42,6 +42,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
+import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import {
   ParsedGINode,
   ParsedTransmissionLine,
@@ -81,6 +82,12 @@ const uploadNodeTypes = {
   custom: UploadCustomNode
 };
 
+const uploadEdgeTypes = {
+  default: TransmissionEdge,
+  transmission: TransmissionEdge,
+  transformer_link: TransmissionEdge
+};
+
 export interface ColumnMapping {
   gi: string;         // Kolom Nama Gardu Induk / Asset
   code: string;       // Kolom Kode Singkatan
@@ -98,6 +105,7 @@ export interface ColumnMapping {
   load: string;       // Kolom Pembebanan Sirkit 1 / Nilai MW
   loadC2: string;     // Kolom Pembebanan Sirkit 2
   circuits: string;   // Kolom Jumlah Sirkit
+  circuitNumber: string; // Kolom No Sirkit (1, 2) untuk 2-Line
   lengthKm: string;   // Kolom Panjang Saluran (km)
   corridor: string;   // Kolom Koridor / Wilayah
   uit: string;        // Kolom UIT (Unit Induk Transmisi)
@@ -182,6 +190,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     load: '',
     loadC2: '',
     circuits: '',
+    circuitNumber: '',
     lengthKm: '',
     corridor: '',
     uit: '',
@@ -500,18 +509,47 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       });
     }
 
+    // Track duplicate pairs to offset parallel 2-line circuits automatically
+    const pairCount: Record<string, number> = {};
+    const pairIndex: Record<string, number> = {};
+
+    lineList.forEach((line) => {
+      const pairKey = [line.sourceId, line.targetId].sort().join('___');
+      pairCount[pairKey] = (pairCount[pairKey] || 0) + 1;
+    });
+
     const calculatedEdges: Edge[] = lineList.map((line) => {
       const isRawan = line.riskStatus !== 'Normal';
       const isMatched = filterRisk === 'Semua' || line.riskStatus === filterRisk;
+      const pairKey = [line.sourceId, line.targetId].sort().join('___');
+      const totalInPair = pairCount[pairKey] || 1;
+      const currentIdx = pairIndex[pairKey] || 0;
+      pairIndex[pairKey] = currentIdx + 1;
+
+      // Detect circuit number: explicit property, or text in line name, or pair index
+      let cNum: number | undefined = line.circuitNumber;
+      if (!cNum) {
+        const lNameLower = line.lineName.toLowerCase();
+        if (lNameLower.includes('sirkit 1') || lNameLower.includes('skt 1') || lNameLower.includes('line 1') || lNameLower.includes('#1')) {
+          cNum = 1;
+        } else if (lNameLower.includes('sirkit 2') || lNameLower.includes('skt 2') || lNameLower.includes('line 2') || lNameLower.includes('#2')) {
+          cNum = 2;
+        } else if (totalInPair > 1) {
+          cNum = currentIdx === 0 ? 1 : 2;
+        }
+      }
+
+      const offsetVal = cNum === 1 ? -14 : cNum === 2 ? 14 : 0;
 
       return {
         id: line.id,
         source: line.sourceId,
         target: line.targetId,
+        type: 'transmission',
         animated: isRawan,
         style: {
           stroke: isRawan ? '#dc2626' : '#0046ad',
-          strokeWidth: isRawan ? 3 : 2,
+          strokeWidth: isRawan ? 3.5 : 2.5,
           opacity: isMatched ? 1 : 0.2
         },
         markerEnd: {
@@ -524,7 +562,33 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         labelStyle: { fill: isRawan ? '#dc2626' : '#475569', fontSize: 10, fontWeight: 700 },
         labelBgPadding: [4, 2],
         labelBgBorderRadius: 4,
-        labelBgStyle: { fill: '#ffffff', color: '#fff', fillOpacity: 0.9 }
+        labelBgStyle: { fill: '#ffffff', color: '#fff', fillOpacity: 0.9 },
+        data: {
+          id: line.id,
+          source: line.sourceId,
+          target: line.targetId,
+          name: line.lineName,
+          voltage: line.voltage || '150 kV',
+          status: isRawan ? 'critical' : 'normal',
+          riskLevel: line.riskStatus,
+          riskId: line.riskNumber,
+          circuitCount: line.circuitCount || (cNum ? 1 : 2),
+          circuitNumber: cNum,
+          offset: offsetVal,
+          isDoubleLine: line.circuitCount === 2 && !cNum,
+          operatingStatus: line.operatingStatus || 'Beroperasi',
+          loading: {
+            circuit1: line.loadingCircuit1 || line.loadingPct,
+            circuit2: line.loadingCircuit2 || line.loadingPct
+          },
+          region: line.region,
+          corridor: line.corridor,
+          uit: line.uit,
+          condition: line.condition,
+          impact: line.impact,
+          mitigation: line.mitigation,
+          solution: line.solution
+        }
       };
     });
 
@@ -563,6 +627,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const loadCol = findHeader(['pembebanansirkit1', 'pembebanan', 'loading', 'bebanmw', 'load', 'beban', 'mw', 'mva', 'arus', 'ampere']);
     const loadC2Col = findHeader(['pembebanansirkit2', 'beban2', 'load2', 'loading2']);
     const circuitsCol = findHeader(['jumlahsirkit', 'sirkit', 'circuits', 'jmlsirkit']);
+    const circuitNumCol = findHeader(['nosirkit', 'nomorsirkit', 'sirkitke', 'circuitno', 'circuitnum', 'linesirkit']);
     const lengthKmCol = findHeader(['panjangsaluran', 'panjangkm', 'panjang', 'length', 'km']);
     const corridorCol = findHeader(['koridor', 'wilayah', 'region', 'lokasi', 'provinsi']);
     const uitCol = findHeader(['uit', 'unitinduktransmisi', 'unitinduk', 'unit']);
@@ -588,6 +653,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       load: loadCol,
       loadC2: loadC2Col,
       circuits: circuitsCol,
+      circuitNumber: circuitNumCol,
       lengthKm: lengthKmCol,
       corridor: corridorCol,
       uit: uitCol,
@@ -670,6 +736,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colLoadIdx = colIdx(mapping.load);
     const colLoadC2Idx = colIdx(mapping.loadC2);
     const colCircuitsIdx = colIdx(mapping.circuits);
+    const colCircuitNumIdx = colIdx(mapping.circuitNumber);
     const colLengthKmIdx = colIdx(mapping.lengthKm);
     const colCorridorIdx = colIdx(mapping.corridor);
     const colUitIdx = colIdx(mapping.uit);
@@ -702,6 +769,20 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const mitigationVal = colMitigationIdx !== -1 && row[colMitigationIdx] ? String(row[colMitigationIdx]).trim() : undefined;
         const solutionVal = colSolutionIdx !== -1 && row[colSolutionIdx] ? String(row[colSolutionIdx]).trim() : undefined;
 
+        let circuitNumVal: number | undefined = undefined;
+        if (colCircuitNumIdx !== -1 && row[colCircuitNumIdx] !== undefined && row[colCircuitNumIdx] !== '') {
+          const cParsed = Number(row[colCircuitNumIdx]);
+          if (!isNaN(cParsed) && cParsed > 0) circuitNumVal = cParsed;
+        }
+        if (!circuitNumVal) {
+          const lLower = lineNameVal.toLowerCase();
+          if (lLower.includes('sirkit 1') || lLower.includes('skt 1') || lLower.includes('line 1') || lLower.includes('#1')) {
+            circuitNumVal = 1;
+          } else if (lLower.includes('sirkit 2') || lLower.includes('skt 2') || lLower.includes('line 2') || lLower.includes('#2')) {
+            circuitNumVal = 2;
+          }
+        }
+
         let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
         const rUpper = riskVal.toUpperCase();
         if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
@@ -720,6 +801,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           lineName: lineNameVal,
           circuit: `${circuitsVal} Sirkit`,
           circuitCount: circuitsVal,
+          circuitNumber: circuitNumVal,
           lengthKm: lengthKmVal,
           loadingPct: loadVal,
           loadingCircuit1: loadVal,
@@ -1054,362 +1136,14 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     reader.readAsArrayBuffer(file);
   };
 
-  // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: Konsep Tier Mulai 0, IBT, Spesifikasi Line, Tab Kerawanan)
+  // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: 2 Line, Tier 0-3, IBT, Pembangkit, Tab Kerawanan)
   const handleDownloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-
-    // Sheet 1: Jalur Transmisi (Penghantar) - Sesuai Gambar 1 & Tab Kerawanan Gambar 2
-    const wsEdgesData = [
-      {
-        'No': 1,
-        'No Kerawanan': 11,
-        'Nama Penghantar': 'SUTET Tambun - Cawang',
-        'Dari GI': 'TMBUN',
-        'Tier Dari GI': 0,
-        'Ke GI': 'CWANG',
-        'Tier Ke GI': 1,
-        'Tegangan': '500 kV',
-        'Panjang Saluran (km)': 21.4,
-        'Jumlah Sirkit': 2,
-        'Status Operasi': 'Beroperasi',
-        'Tingkat Kerawanan': 'Sedang',
-        'Pembebanan Sirkit 1 (%)': 58,
-        'Pembebanan Sirkit 2 (%)': 52,
-        'Koridor / Wilayah': 'Jawa Barat - DKI Jakarta',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'SUTET Gandul-Durkos-Kembangan memasok 2 IBT Durkosambi dan 2 IBT Muarakarang secara radial, dengan pembebanan SUTET Gandul-Durkos mencapai 55%, sedangkan SUTET Kembangan-Durkos mencapai 43%.',
-        'Dampak': '1. Jika terjadi kondisi N-2 SUTET Gandul-Durkos-Kembangan, terjadi pembebanan Konsumen dikarenakan padam IBT Muarakarang dan Durikosambi sebesar 1.700 MW.\n2. Potensi gangguan kestabilan sistem kelistrikan DKI Jakarta.',
-        'Mitigasi': '1. Terpasang Defense Scheme N-2 pada SUTET Gandul-Durkos-Kembangan.\n2. Uji periodik teleproteksi dan transfer trip antar GI.',
-        'Usulan / Solusi': 'Jangka Pendek :\n1. Percepatan pembangunan SUTET Muaratawar - Priok. RUPTL 2025-2034, COD Tahun 2025.'
-      },
-      {
-        'No': 2,
-        'No Kerawanan': 1,
-        'Nama Penghantar': 'SUTET Suralaya Baru - SRLYA 1',
-        'Dari GI': 'Suralaya Baru',
-        'Tier Dari GI': 0,
-        'Ke GI': 'SRLYA',
-        'Tier Ke GI': 1,
-        'Tegangan': '500 kV',
-        'Panjang Saluran (km)': 12.5,
-        'Jumlah Sirkit': 2,
-        'Status Operasi': 'Beroperasi',
-        'Tingkat Kerawanan': 'Sangat Rawan',
-        'Pembebanan Sirkit 1 (%)': 86,
-        'Pembebanan Sirkit 2 (%)': 82,
-        'Koridor / Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Pembebanan sirkit evakuasi PLTU Suralaya Baru mendekati batas termal n-1 saat beban puncak.',
-        'Dampak': '1. Pembatasan evakuasi pembangkit PLTU Suralaya.\n2. Risiko pelepasan beban otomatis OLS.',
-        'Mitigasi': '1. Optimalisasi pola operasi PLTU Suralaya.\n2. Dispatching beban antar GI 500 kV Banten.',
-        'Usulan / Solusi': 'Jangka Pendek :\nRekonfigurasi bay penghantar dan pemeliharaan rutin konduktor.'
-      },
-      {
-        'No': 3,
-        'No Kerawanan': '',
-        'Nama Penghantar': 'SUTT SRLYA - PENDO 1',
-        'Dari GI': 'SRLYA',
-        'Tier Dari GI': 1,
-        'Ke GI': 'PENDO',
-        'Tier Ke GI': 2,
-        'Tegangan': '150 kV',
-        'Panjang Saluran (km)': 18.2,
-        'Jumlah Sirkit': 2,
-        'Status Operasi': 'Beroperasi',
-        'Tingkat Kerawanan': 'Normal',
-        'Pembebanan Sirkit 1 (%)': 55,
-        'Pembebanan Sirkit 2 (%)': 51,
-        'Koridor / Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 4,
-        'No Kerawanan': 3,
-        'Nama Penghantar': 'SUTT PENI - MTSUI',
-        'Dari GI': 'PENI',
-        'Tier Dari GI': 1,
-        'Ke GI': 'MTSUI',
-        'Tier Ke GI': 2,
-        'Tegangan': '150 kV',
-        'Panjang Saluran (km)': 14.8,
-        'Jumlah Sirkit': 2,
-        'Status Operasi': 'Beroperasi',
-        'Tingkat Kerawanan': 'Sedang',
-        'Pembebanan Sirkit 1 (%)': 74,
-        'Pembebanan Sirkit 2 (%)': 69,
-        'Koridor / Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Penyaluran pasokan industri KTT berfluktuasi tinggi pada jam sibuk operasi.',
-        'Dampak': '1. Penurunan tegangan busbar lokal jika terjadi gangguan kontinjensi.',
-        'Mitigasi': '1. Pengaturan tap trafo otomatis OLTC dan kompensasi kapasitor bank.',
-        'Usulan / Solusi': 'Jangka Pendek :\nPemasangan PMT kopel cadangan dan pemantauan realtime SCADA.'
-      }
-    ];
-    const wsEdges = XLSX.utils.json_to_sheet(wsEdgesData);
-    XLSX.utils.book_append_sheet(wb, wsEdges, 'Jalur_Transmisi');
-
-    // Sheet 2: Gardu Induk & Aset - Sesuai Konsep Tier (Mulai 0) & IBT & Tab Kerawanan (Gambar 1 & Gambar 2)
-    const wsNodesData = [
-      {
-        'No': 1,
-        'Nama Asset / GI': 'PLTU Suralaya Unit 3',
-        'Kode Singkatan': 'Unit 3',
-        'Tipe Asset': 'Pembangkit',
-        'Tier (Mulai 0)': 0,
-        'Tegangan': '500 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 2,
-        'Nama Asset / GI': 'Suralaya',
-        'Kode Singkatan': 'SURLYA',
-        'Tipe Asset': 'Pembangkit',
-        'Tier (Mulai 0)': 0,
-        'Tegangan': '500 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 3,
-        'Nama Asset / GI': 'Cilegon Baru',
-        'Kode Singkatan': 'CLG-BARU',
-        'Tipe Asset': 'Busbar GITET',
-        'Tier (Mulai 0)': 0,
-        'Tegangan': '500 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 4,
-        'Nama Asset / GI': 'IBT 2 Suralaya Baru',
-        'Kode Singkatan': 'IBT 2 SRL-BARU',
-        'Tipe Asset': 'IBT 3-Winding',
-        'Tier (Mulai 0)': 1,
-        'Tegangan': '500/150 kV',
-        'No IBT': '2',
-        'Status Kerawanan': 'N-1-2',
-        'No Kerawanan': '1&2',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
-        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
-        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
-        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
-      },
-      {
-        'No': 5,
-        'Nama Asset / GI': 'IBT 1 Suralaya',
-        'Kode Singkatan': 'IBT 1 SURLYA',
-        'Tipe Asset': 'IBT 3-Winding',
-        'Tier (Mulai 0)': 1,
-        'Tegangan': '500/150 kV',
-        'No IBT': '1',
-        'Status Kerawanan': 'N-1-2',
-        'No Kerawanan': '1&2',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
-        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
-        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
-        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
-      },
-      {
-        'No': 6,
-        'Nama Asset / GI': 'SRLYA',
-        'Kode Singkatan': 'SRLYA',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 1,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 7,
-        'Nama Asset / GI': 'CLBRU',
-        'Kode Singkatan': 'CLBRU',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 1,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'N-2',
-        'No Kerawanan': '2',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 8,
-        'Nama Asset / GI': 'SLRDA',
-        'Kode Singkatan': 'SLRDA',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 2,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 9,
-        'Nama Asset / GI': 'PENDO',
-        'Kode Singkatan': 'PENDO',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 2,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 10,
-        'Nama Asset / GI': 'PENI',
-        'Kode Singkatan': 'PENI',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 2,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 11,
-        'Nama Asset / GI': 'MCCI5',
-        'Kode Singkatan': 'MCCI5',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 2,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 12,
-        'Nama Asset / GI': 'CLGON',
-        'Kode Singkatan': 'CLGON',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 2,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      },
-      {
-        'No': 13,
-        'Nama Asset / GI': 'MTSUI',
-        'Kode Singkatan': 'MTSUI',
-        'Tipe Asset': 'Busbar GI',
-        'Tier (Mulai 0)': 3,
-        'Tegangan': '150 kV',
-        'No IBT': '',
-        'Status Kerawanan': 'Normal',
-        'No Kerawanan': '',
-        'Wilayah': 'Banten',
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': '',
-        'Dampak': '',
-        'Mitigasi': '',
-        'Usulan / Solusi': ''
-      }
-    ];
-    const wsNodes = XLSX.utils.json_to_sheet(wsNodesData);
-    XLSX.utils.book_append_sheet(wb, wsNodes, 'Gardu_Induk_dan_Aset');
-
-    // Sheet 3: Data Kerawanan Detail - Persis Tabel Gambar 1 dari Pengguna
-    const wsRiskData = [
-      {
-        'No': 1,
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Pembebanan IBT–1,2 Suralaya tidak memenuhi kriteria N–1 saat PLTU Suralaya unit–3 tidak beroperasi dan IBT–4 Cilegon masuk sub sistem Cilegon.',
-        'Dampak': '1. Pemeliharaan IBT sulit dilakukan.\n2. Pertumbuhan beban menjadi terhambat.\n3. Terjadi pemadaman apabila trip salah satu IBT di Suralaya.',
-        'Mitigasi': '1. Sudah terpasang DS OLS IBT 1,2 Suralaya dengan target total sebesar 102 MW (Berdasarkan buku DS Tahun 2025).\n2. Rencana penambahan target DS OLS SS Suralaya 1,2 dengan total target sebesar 137 MW (Berdasarkan buku DS Tahun 2025).\n3. Pemeliharaan IBT saat beban rendah dan pada saat PLTU Suralaya Unit–3 beroperasi.',
-        'Usulan / Solusi': 'Jangka Pendek :\nUprating IBT–1 & 2 Suralaya dari 250 MVA menjadi 500 MVA. Berdasarkan RUPTL 2025 – 2034, COD di Tahun 2025.'
-      },
-      {
-        'No': 2,
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'Daya Mampu Pasok dan pembebanan SUTET Gandul - Durkos - Kembangan memasok 2 IBT Durkosambi dan 2 IBT Muarakarang secara radial, dengan pembebanan SUTET Gandul-Durkos mencapai 55%, sedangkan SUTET Kembangan-Durkos mencapai 43%.',
-        'Dampak': '1. Ketidakseimbangan pembebanan dan jika terjadi kondisi N-2 SUTET Gandul-Durkos-Kembangan, terjadi pembebanan Konsumen dikarenakan padam IBT Muarakarang dan Durikosambi sebesar 1.700 MW.\n2. Potensi gangguan kestabilan sistem kelistrikan DKI Jakarta.',
-        'Mitigasi': '1. Terpasang Defense Scheme N-2 pada SUTET Gandul-Durkos-Kembangan.\n2. Uji periodik teleproteksi dan transfer trip antar GI.',
-        'Usulan / Solusi': 'Jangka Pendek :\n1. Percepatan pembangunan SUTET Muaratawar - Priok. RUPTL 2025-2034, COD Tahun 2025. COD timeline.'
-      },
-      {
-        'No': 3,
-        'UIT': 'JBB',
-        'Kondisi / Permasalahan': 'SUTET Tambun - Cawang memasok beban sentral DKI Jakarta dengan pembebanan sirkit 1 mencapai 58% dan sirkit 2 mencapai 52%. Memerlukan kontinuitas sistem interkoneksi.',
-        'Dampak': '1. Jika terjadi gangguan kriteria N-1 pada salah satu sirkit, beban sirkit lainnya akan melonjak mendekati kapasitas termal konduktor.\n2. Berpotensi menurunkan keandalan subsistem Cawang.',
-        'Mitigasi': '1. Terpasang Defense Scheme OLS pada koridor Tambun - Cawang.\n2. Uji periodik teleproteksi diferensial dan relai jarak digital.\n3. Monitoring realtime dispatching beban UP2B Jawa Barat.',
-        'Usulan / Solusi': 'Jangka Pendek :\nUprating kapasitas konduktor dan rekonfigurasi sistem proteksi bay penghantar GI Cawang.'
-      }
-    ];
-    const wsRisk = XLSX.utils.json_to_sheet(wsRiskData);
-    XLSX.utils.book_append_sheet(wb, wsRisk, 'Data_Kerawanan_Detail');
-
-    XLSX.writeFile(wb, 'template_sld_subsistem_pln.xlsx');
+    const link = document.createElement('a');
+    link.href = './template_kerawanan_subsistem_suralaya_cilegon.xlsx';
+    link.download = 'template_kerawanan_subsistem_suralaya_cilegon.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Image Upload Handling
@@ -1940,15 +1674,23 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     <span>Template Standar Excel PLN</span>
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed">
-                    Unduh format Excel resmi berisi Gardu Induk & Penghantar agar dikenali otomatis.
+                    Format resmi PLN: Mendukung <strong>2 Line (Double Circuit)</strong>, Tier 0–3, Bay Pembangkit, IBT, dan Laporan Kerawanan Tabel 2.1.
                   </p>
                   <button
                     onClick={handleDownloadTemplate}
-                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                    className="w-full py-1.5 px-3 bg-[#0046ad] hover:bg-[#00388a] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Template (.xlsx)</span>
                   </button>
+                  <a
+                    href="./template_kerawanan_subsistem_suralaya_cilegon.xlsx"
+                    download="template_kerawanan_subsistem_suralaya_cilegon.xlsx"
+                    className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer text-center"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Template Suralaya - Cilegon (Gambar 1 & 2)</span>
+                  </a>
                 </div>
 
                 {/* Filter Kerawanan Graph */}
@@ -2051,6 +1793,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                       nodes={flowNodes}
                       edges={flowEdges}
                       nodeTypes={uploadNodeTypes}
+                      edgeTypes={uploadEdgeTypes}
                       fitView
                       attributionPosition="bottom-left"
                       className="h-full w-full"

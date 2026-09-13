@@ -29,6 +29,7 @@ export interface ParsedTransmissionLine {
   lineName: string;
   circuit: string;
   circuitCount?: number;
+  circuitNumber?: number; // 1 or 2 for parallel multi-circuit / 2-line rendering
   lengthKm: number;
   loadingPct: number;
   loadingCircuit1?: number;

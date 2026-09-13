@@ -28,13 +28,59 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     return null;
   }
 
+  // Check for 2-line (double circuit) or offset multi-circuit lines
+  const isVertical = Math.abs(targetY - sourceY) >= Math.abs(targetX - sourceX);
+  const isDoubleCircuit =
+    Boolean(edgeData?.circuitCount === 2 || (edgeData as any)?.isDoubleLine) &&
+    !id.includes('_1') &&
+    !id.includes('_2');
+
+  const circuitNum =
+    (edgeData as any)?.circuitNumber ??
+    (id.endsWith('_1') || id.includes('_c1') ? 1 : id.endsWith('_2') || id.includes('_c2') ? 2 : undefined);
+
+  const lineOffset =
+    typeof (edgeData as any)?.offset === 'number'
+      ? (edgeData as any).offset
+      : circuitNum === 1
+      ? -14
+      : circuitNum === 2
+      ? 14
+      : 0;
+
+  const effSourceX = isVertical ? sourceX + lineOffset : sourceX;
+  const effSourceY = isVertical ? sourceY : sourceY + lineOffset;
+  const effTargetX = isVertical ? targetX + lineOffset : targetX;
+  const effTargetY = isVertical ? targetY : targetY + lineOffset;
+
   // Smooth step orthogonal routing for single line diagrams
   const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
+    sourceX: effSourceX,
+    sourceY: effSourceY,
     sourcePosition,
-    targetX,
-    targetY,
+    targetX: effTargetX,
+    targetY: effTargetY,
+    targetPosition,
+    borderRadius: 8
+  });
+
+  // Parallel paths for 2-line representation
+  const [path1] = getSmoothStepPath({
+    sourceX: isVertical ? sourceX - 12 : sourceX,
+    sourceY: isVertical ? sourceY : sourceY - 12,
+    sourcePosition,
+    targetX: isVertical ? targetX - 12 : targetX,
+    targetY: isVertical ? targetY : targetY - 12,
+    targetPosition,
+    borderRadius: 8
+  });
+
+  const [path2] = getSmoothStepPath({
+    sourceX: isVertical ? sourceX + 12 : sourceX,
+    sourceY: isVertical ? sourceY : sourceY + 12,
+    sourcePosition,
+    targetX: isVertical ? targetX + 12 : targetX,
+    targetY: isVertical ? targetY : targetY + 12,
     targetPosition,
     borderRadius: 8
   });
@@ -75,31 +121,146 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
         d={edgePath}
         fill="none"
         stroke="transparent"
-        strokeWidth={24}
+        strokeWidth={28}
         className="cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       />
 
-      {/* Actual electrical transmission line */}
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        markerEnd={markerEnd}
-        style={{
-          ...style,
-          stroke: strokeColor,
-          strokeWidth,
-          strokeDasharray: isPlanned ? '6 4' : undefined,
-          opacity: isDimmed ? 0.2 : 1,
-          filter: isHighlighted
-            ? `drop-shadow(0 0 8px ${strokeColor})`
-            : isHovered
-            ? `drop-shadow(0 0 6px ${strokeColor})`
-            : undefined,
-          transition: 'stroke-width 0.2s, stroke 0.2s, opacity 0.2s'
-        }}
-      />
+      {/* Actual electrical transmission line(s) */}
+      {isDoubleCircuit ? (
+        /* 2-LINE (Double Circuit: 2 Jalur Paralel dengan 4 CB PMT) */
+        <g className="transition-all duration-200">
+          {/* Jalur Sirkit 1 */}
+          <path
+            d={path1}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={isPlanned ? '6 4' : undefined}
+            style={{
+              opacity: isDimmed ? 0.2 : 1,
+              filter: isHighlighted ? `drop-shadow(0 0 8px ${strokeColor})` : undefined
+            }}
+          />
+          {/* Jalur Sirkit 2 */}
+          <path
+            d={path2}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={isPlanned ? '6 4' : undefined}
+            style={{
+              opacity: isDimmed ? 0.2 : 1,
+              filter: isHighlighted ? `drop-shadow(0 0 8px ${strokeColor})` : undefined
+            }}
+          />
+
+          {/* PMT CB Breakers Sirkit 1 (Atas & Bawah) */}
+          <rect
+            x={(isVertical ? sourceX - 12 : sourceX) - 4}
+            y={sourceY + (targetY > sourceY ? 6 : -18)}
+            width={8}
+            height={12}
+            rx={1}
+            fill="#ef4444"
+            stroke="#b91c1c"
+            strokeWidth={0.8}
+          >
+            <title>PMT Sirkit 1 Sisi Pengirim</title>
+          </rect>
+          <rect
+            x={(isVertical ? targetX - 12 : targetX) - 4}
+            y={targetY + (targetY > sourceY ? -18 : 6)}
+            width={8}
+            height={12}
+            rx={1}
+            fill="#ef4444"
+            stroke="#b91c1c"
+            strokeWidth={0.8}
+          >
+            <title>PMT Sirkit 1 Sisi Penerima</title>
+          </rect>
+
+          {/* PMT CB Breakers Sirkit 2 (Atas & Bawah) */}
+          <rect
+            x={(isVertical ? sourceX + 12 : sourceX) - 4}
+            y={sourceY + (targetY > sourceY ? 6 : -18)}
+            width={8}
+            height={12}
+            rx={1}
+            fill="#ef4444"
+            stroke="#b91c1c"
+            strokeWidth={0.8}
+          >
+            <title>PMT Sirkit 2 Sisi Pengirim</title>
+          </rect>
+          <rect
+            x={(isVertical ? targetX + 12 : targetX) - 4}
+            y={targetY + (targetY > sourceY ? -18 : 6)}
+            width={8}
+            height={12}
+            rx={1}
+            fill="#ef4444"
+            stroke="#b91c1c"
+            strokeWidth={0.8}
+          >
+            <title>PMT Sirkit 2 Sisi Penerima</title>
+          </rect>
+        </g>
+      ) : (
+        /* SINGLE LINE ATAU OFFSET SIRKIT DENGAN PMT CB */
+        <g className="transition-all duration-200">
+          <BaseEdge
+            id={id}
+            path={edgePath}
+            markerEnd={markerEnd}
+            style={{
+              ...style,
+              stroke: strokeColor,
+              strokeWidth,
+              strokeDasharray: isPlanned ? '6 4' : undefined,
+              opacity: isDimmed ? 0.2 : 1,
+              filter: isHighlighted
+                ? `drop-shadow(0 0 8px ${strokeColor})`
+                : isHovered
+                ? `drop-shadow(0 0 6px ${strokeColor})`
+                : undefined,
+              transition: 'stroke-width 0.2s, stroke 0.2s, opacity 0.2s'
+            }}
+          />
+
+          {/* PMT CB Breakers pada Saluran Transmisi (jika bukan link internal IBT) */}
+          {!isTransformerLink && (
+            <>
+              <rect
+                x={effSourceX - 4}
+                y={sourceY + (targetY > sourceY ? 6 : -18)}
+                width={8}
+                height={12}
+                rx={1}
+                fill="#ef4444"
+                stroke="#b91c1c"
+                strokeWidth={0.8}
+              >
+                <title>PMT Bay Penghantar Sisi Sumber</title>
+              </rect>
+              <rect
+                x={effTargetX - 4}
+                y={targetY + (targetY > sourceY ? -18 : 6)}
+                width={8}
+                height={12}
+                rx={1}
+                fill="#ef4444"
+                stroke="#b91c1c"
+                strokeWidth={0.8}
+              >
+                <title>PMT Bay Penghantar Sisi Tujuan</title>
+              </rect>
+            </>
+          )}
+        </g>
+      )}
 
       {/* Simbol IBT 3 Lingkaran (Persis Gambar Pengguna) di Tengah Garis jika Jalur IBT */}
       {isTransformerLink && (
