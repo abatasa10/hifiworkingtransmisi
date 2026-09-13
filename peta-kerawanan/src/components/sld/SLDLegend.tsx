@@ -29,12 +29,21 @@ export const SLDLegend: React.FC = () => {
           <span className="text-[11px] text-slate-600 font-medium">Gardu Induk (GI/GITET)</span>
         </div>
 
-        {/* Pembangkit */}
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded-full border border-[#0081c9] flex items-center justify-center text-[8px] font-serif leading-none text-[#0081c9]">
-            ~
+        {/* Pembangkit (1. Pembangkit, 2. Trafo, 3. CB) */}
+        <div className="flex items-center gap-1.5" title="Bay Pembangkit: 1. Pembangkit, 2. Trafo Step-Up, 3. CB / PMT">
+          <div className="flex flex-col items-center justify-center -space-y-0.5">
+            <div className="w-2.5 h-2.5 rounded-full border border-[#22c55e] flex items-center justify-center text-[7px] font-serif leading-none text-[#22c55e]">
+              ~
+            </div>
+            <div className="w-0.5 h-1 bg-[#2563eb]" />
+            <div className="flex flex-col -space-y-1">
+              <div className="w-2 h-2 rounded-full border border-[#22c55e]" />
+              <div className="w-2 h-2 rounded-full border border-[#ef4444]" />
+            </div>
+            <div className="w-0.5 h-1 bg-[#ef4444]" />
+            <div className="w-1.5 h-2 bg-[#ef4444] rounded-[1px]" />
           </div>
-          <span className="text-[11px] text-slate-600 font-medium">Pembangkit</span>
+          <span className="text-[11px] text-slate-600 font-medium">Bay Pembangkit (Gen - Trafo - CB)</span>
         </div>
 
         {/* IBT */}

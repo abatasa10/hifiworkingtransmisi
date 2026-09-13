@@ -261,6 +261,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             node.ibtNumber ||
             (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
             '1';
+          const isPembangkitNode =
+            node.assetType === 'pembangkit' ||
+            (node.name || '').toLowerCase().includes('plt') ||
+            (node.name || '').toLowerCase().includes('pembangkit') ||
+            (node.name || '').toLowerCase().includes('unit');
 
           calculatedNodes.push({
             id: node.id,
@@ -298,6 +303,39 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     </svg>
                   </div>
                   <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+                </div>
+              ) : isPembangkitNode ? (
+                /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
+                <div
+                  onClick={() => setSelectedElement({ type: 'node', data: node })}
+                  className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
+                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
+                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
+                      {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
+                    </span>
+                    {isRawan && (
+                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                        {node.riskStatus}
+                      </span>
+                    )}
+                  </div>
+                  {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
+                  <div className="relative flex items-center justify-center my-0.5">
+                    <svg viewBox="0 0 44 98" className="w-11 h-20 filter drop-shadow-md">
+                      <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
+                      <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
+                      <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
+                      <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
+                      <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+                      <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                      <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
+                      <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
                 </div>
               ) : (
                 /* Tampilan Standar GI Simpul */
@@ -352,6 +390,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           node.ibtNumber ||
           (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
           '1';
+        const isPembangkitNode =
+          node.assetType === 'pembangkit' ||
+          (node.name || '').toLowerCase().includes('plt') ||
+          (node.name || '').toLowerCase().includes('pembangkit') ||
+          (node.name || '').toLowerCase().includes('unit');
 
         calculatedNodes.push({
           id: node.id,
@@ -389,6 +432,39 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                   </svg>
                 </div>
                 <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+              </div>
+            ) : isPembangkitNode ? (
+              /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
+              <div
+                onClick={() => setSelectedElement({ type: 'node', data: node })}
+                className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
+                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
+                } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
+                    {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
+                  </span>
+                  {isRawan && (
+                    <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                      {node.riskStatus}
+                    </span>
+                  )}
+                </div>
+                {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
+                <div className="relative flex items-center justify-center my-0.5">
+                  <svg viewBox="0 0 44 98" className="w-11 h-20 filter drop-shadow-md">
+                    <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
+                    <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
+                    <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
+                    <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
+                    <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+                    <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                    <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
+                    <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
               </div>
             ) : (
               /* Tampilan Standar GI Simpul */
@@ -671,6 +747,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             dariVal.toLowerCase().includes('ibt') ||
             dariVal.toLowerCase().includes('trafo') ||
             voltageVal.includes('/');
+          const isGen =
+            dariVal.toLowerCase().includes('plt') ||
+            dariVal.toLowerCase().includes('pembangkit') ||
+            dariVal.toLowerCase().includes('unit');
           const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: sourceNodeId,
@@ -679,9 +759,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : undefined,
+            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : undefined,
             ibtNumber: num,
-            tier: tierFromVal !== undefined ? tierFromVal : (isIBT ? 1 : undefined)
+            tier: tierFromVal !== undefined ? tierFromVal : isIBT ? 1 : isGen ? 0 : undefined
           });
         }
 
@@ -690,6 +770,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             keVal.toLowerCase().includes('ibt') ||
             keVal.toLowerCase().includes('trafo') ||
             voltageVal.includes('/');
+          const isGen =
+            keVal.toLowerCase().includes('plt') ||
+            keVal.toLowerCase().includes('pembangkit') ||
+            keVal.toLowerCase().includes('unit');
           const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: targetNodeId,
@@ -698,9 +782,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : undefined,
+            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : undefined,
             ibtNumber: num,
-            tier: tierToVal !== undefined ? tierToVal : (isIBT ? 1 : undefined)
+            tier: tierToVal !== undefined ? tierToVal : isIBT ? 1 : isGen ? 0 : undefined
           });
         }
       });
@@ -740,6 +824,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           giVal.toLowerCase().includes('trafo') ||
           Boolean(ibtNumVal) ||
           voltageVal.includes('/');
+        const isGen =
+          (assetTypeVal && (assetTypeVal.toLowerCase().includes('pembangkit') || assetTypeVal.toLowerCase().includes('generator'))) ||
+          giVal.toLowerCase().includes('plt') ||
+          giVal.toLowerCase().includes('pembangkit') ||
+          giVal.toLowerCase().includes('unit');
         const resolvedIbtNum =
           ibtNumVal ||
           giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
@@ -754,6 +843,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           if (codeVal) existing.code = codeVal;
           if (riskNumVal) existing.riskNumber = riskNumVal;
           if (isIBT) existing.assetType = 'ibt';
+          else if (isGen) existing.assetType = 'pembangkit';
           else if (assetTypeVal) existing.assetType = assetTypeVal as any;
           if (uitVal) existing.uit = uitVal;
           if (conditionVal) existing.condition = conditionVal;
@@ -766,9 +856,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             id: nodeId,
             name: giVal,
             code: codeVal,
-            tier: tierVal !== undefined ? tierVal : isIBT ? 1 : undefined,
+            tier: tierVal !== undefined ? tierVal : isIBT ? 1 : isGen ? 0 : undefined,
             ibtNumber: resolvedIbtNum,
-            assetType: isIBT ? 'ibt' : (assetTypeVal as any),
+            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : (assetTypeVal as any),
             voltage: voltageVal,
             region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,
@@ -1066,8 +1156,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const wsNodesData = [
       {
         'No': 1,
-        'Nama Asset / GI': 'Suralaya Baru',
-        'Kode Singkatan': 'SRL-BARU',
+        'Nama Asset / GI': 'PLTU Suralaya Unit 3',
+        'Kode Singkatan': 'Unit 3',
         'Tipe Asset': 'Pembangkit',
         'Tier (Mulai 0)': 0,
         'Tegangan': '500 kV',

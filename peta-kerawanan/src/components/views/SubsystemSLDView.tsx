@@ -81,22 +81,38 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
         className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
 
-      {/* 1. PEMBANGKIT / GENERATOR (Gambar 1 & 2 - Circular symbol with ~) */}
+      {/* 1. PEMBANGKIT / GENERATOR BAY (1. Pembangkit, 2. Trafo, 3. CB) */}
       {isGen ? (
         <div className="flex flex-col items-center">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-1 whitespace-nowrap ${
-            selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-amber-300 border-slate-700'
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap ${
+            selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-emerald-300 border-slate-700'
           }`}>
             {data?.code || data?.name}
           </span>
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-            selected
-              ? 'bg-amber-500/30 border-2 border-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.9)] scale-110'
-              : 'bg-slate-900/90 border-2 border-cyan-400 shadow-[0_0_10px_rgba(0,210,211,0.5)] group-hover:border-amber-400'
-          }`}>
-            <span className="text-cyan-300 group-hover:text-amber-300 font-serif font-black text-lg leading-none">~</span>
+          <div className="relative flex items-center justify-center">
+            <svg viewBox="0 0 44 98" className="w-11 h-[96px] filter drop-shadow-sm">
+              {/* 1. Pembangkit: Green circle with ~ */}
+              <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
+              <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">
+                ~
+              </text>
+              {/* Penghubung 1: Generator ke Trafo (Biru) */}
+              <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
+              {/* 2. Trafo: 2 Interlocking circles (Atas Hijau, Bawah Merah) */}
+              <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
+              <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+              {/* Penghubung 2: Trafo ke CB (Merah) */}
+              <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+              {/* 3. CB: PMT Bay (Solid Red Rectangle) */}
+              <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
+              {/* Penghubung 3: CB ke Busbar (Merah) */}
+              <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+            </svg>
+            {isRawan && (
+              <div className="absolute top-1 right-0 w-2 h-2 rounded-full bg-red-500 animate-ping pointer-events-none" />
+            )}
           </div>
-          <span className="text-[9px] font-mono text-cyan-400 mt-1">{data?.voltage || '500 kV'}</span>
+          <span className="text-[9px] font-mono text-cyan-400 mt-0.5">{data?.voltage || '500 kV'}</span>
         </div>
       ) : isIBT ? (
         /* 2. IBT TRANSFORMER (Gambar 2 - 3-Winding Interlocking Rings with PMT and IBT number) */

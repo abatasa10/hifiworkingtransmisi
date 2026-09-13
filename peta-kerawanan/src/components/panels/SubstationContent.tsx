@@ -23,18 +23,24 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
     <div className="flex flex-col h-full bg-white text-slate-800">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 bg-[#f8fafc] flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#eff6ff] border border-[#dbeafe] flex items-center justify-center text-[#0046ad] shrink-0">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+          node.type === 'generator'
+            ? 'bg-[#f0fdf4] border-[#bbf7d0] text-[#16a34a]'
+            : 'bg-[#eff6ff] border-[#dbeafe] text-[#0046ad]'
+        }`}>
           <Network className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-[#0046ad] font-bold">
-            INFORMASI GI / GITET
+          <span className={`text-[11px] font-mono uppercase tracking-wider font-bold ${
+            node.type === 'generator' ? 'text-[#16a34a]' : 'text-[#0046ad]'
+          }`}>
+            {node.type === 'generator' ? 'INFORMASI BAY PEMBANGKIT' : 'INFORMASI GI / GITET'}
           </span>
           <h3 className="font-extrabold text-base text-[#1e293b] mt-0.5 leading-snug">
             {node.name}
           </h3>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            {node.code} • Gardu Induk Tegangan Ekstra Tinggi 500 kV
+            {node.code} • {node.type === 'generator' ? 'Bay Pembangkit (1. Gen, 2. Trafo, 3. CB)' : 'Gardu Induk Tegangan Ekstra Tinggi 500 kV'}
           </div>
         </div>
       </div>
@@ -75,6 +81,29 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Skema Urutan Bay Pembangkit jika tipe generator */}
+        {node.type === 'generator' && (
+          <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-3 space-y-2">
+            <span className="text-[11px] font-bold text-[#16a34a] uppercase tracking-wider flex items-center gap-1.5">
+              <span>⚡</span> Skema Urutan Bay Pembangkit
+            </span>
+            <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+              <div className="bg-white p-2 rounded-lg border border-[#86efac] shadow-xs">
+                <div className="font-extrabold text-[#15803d]">1. Pembangkit</div>
+                <div className="text-slate-500 text-[9px] mt-0.5">Unit Gen (~)</div>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-[#86efac] shadow-xs">
+                <div className="font-extrabold text-[#15803d]">2. Trafo</div>
+                <div className="text-slate-500 text-[9px] mt-0.5">Step-Up GSUT</div>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-[#86efac] shadow-xs">
+                <div className="font-extrabold text-[#dc2626]">3. CB (PMT)</div>
+                <div className="text-slate-500 text-[9px] mt-0.5">Pemutus Tenaga</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Section: TERHUBUNG KE */}
         <div className="space-y-2">
