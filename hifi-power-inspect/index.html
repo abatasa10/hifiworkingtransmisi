@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HiFi Power Inspect | Portal</title>
+    <meta name="description" content="Portal HiFi Power Inspect - Sistem monitoring dan inspeksi aset transmisi tenaga listrik">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --glass-bg: rgba(20, 30, 50, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.07);
+            --primary-color: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --secondary-color: #06b6d4;
+            --accent-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --text-soft: #94a3b8;
+            --hover-bg: rgba(255, 255, 255, 0.05);
+            --active-bg: rgba(59, 130, 246, 0.12);
+            --sidebar-width: 280px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background-image:
+                radial-gradient(ellipse at 10% 0%, rgba(59,130,246,0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 100%, rgba(139,92,246,0.14) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6,182,212,0.06) 0%, transparent 70%);
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: margin-left 0.35s cubic-bezier(0.4,0,0.2,1);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        .sidebar.collapsed { margin-left: calc(-1 * var(--sidebar-width)); }
+        .sidebar-header {
+            padding: 22px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(59,130,246,0.05);
+        }
+        .logo-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700;
+            box-shadow: 0 0 18px var(--primary-glow);
+            flex-shrink: 0;
+        }
+        .logo-text h2 {
+            font-size: 16px; font-weight: 700;
+            background: linear-gradient(90deg, #fff, var(--secondary-color));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .logo-text p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+        .sidebar-menu { padding: 16px 10px; overflow-y: auto; flex: 1; }
+        .sidebar-menu::-webkit-scrollbar { width: 4px; }
+        .sidebar-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .menu-section { margin-bottom: 8px; }
+        .menu-section-title {
+            font-size: 10px; text-transform: uppercase; letter-spacing: 1.8px;
+            color: var(--text-muted); margin-bottom: 6px; padding: 6px 12px 0; font-weight: 600;
+        }
+        .menu-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px;
+            color: var(--text-soft); text-decoration: none; transition: all 0.2s ease;
+            margin-bottom: 2px; cursor: pointer; user-select: none;
+        }
+        .menu-item:hover { background: var(--hover-bg); color: var(--text-main); transform: translateX(3px); }
+        .menu-item.open { background: var(--active-bg); color: var(--primary-color); }
+        .menu-item i { font-size: 17px; flex-shrink: 0; }
+        .menu-item.has-submenu { justify-content: space-between; }
+        .menu-item-left { display: flex; align-items: center; gap: 10px; }
+        .chevron-icon { font-size: 15px !important; transition: transform 0.3s ease; color: var(--text-muted); }
+        .menu-item.open .chevron-icon { transform: rotate(180deg); color: var(--primary-color); }
+        .submenu { display: none; flex-direction: column; gap: 1px; padding-left: 14px; margin-bottom: 2px; }
+        .submenu.open { display: flex; animation: slideDown 0.25s ease; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        .submenu-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px;
+            color: var(--text-muted); text-decoration: none; transition: all 0.2s ease;
+            font-size: 13px; cursor: pointer;
+        }
+        .submenu-item:hover { background: var(--hover-bg); color: var(--text-main); transform: translateX(2px); }
+        .submenu-item.active { color: var(--primary-color); background: rgba(59,130,246,0.08); }
+        .submenu-item .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .sidebar-footer { padding: 16px; border-top: 1px solid var(--glass-border); }
+        .user-card {
+            display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px;
+            background: var(--hover-bg); cursor: pointer; transition: background 0.2s;
+        }
+        .user-card:hover { background: rgba(255,255,255,0.08); }
+        .avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg, #f43f5e, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; flex-shrink: 0;
+        }
+        .user-info p { font-size: 13px; font-weight: 500; }
+        .user-info span { font-size: 11px; color: var(--text-muted); }
+        .main-content { flex:1; display:flex; flex-direction:column; height:100vh; overflow:hidden; min-width:0; }
+        .top-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 24px; background: var(--glass-bg); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border); flex-shrink: 0; z-index: 50;
+        }
+        .nav-left { display: flex; align-items: center; gap: 14px; }
+        .toggle-btn {
+            background: transparent; border: none; color: var(--text-soft); font-size: 22px;
+            cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; transition: all 0.2s;
+        }
+        .toggle-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+        .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+        .breadcrumb .current { color: var(--text-main); font-weight: 500; }
+        .search-bar {
+            display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.25);
+            border: 1px solid var(--glass-border); padding: 8px 14px; border-radius: 10px;
+            width: 260px; transition: border-color 0.2s;
+        }
+        .search-bar:focus-within { border-color: rgba(59,130,246,0.4); }
+        .search-bar input {
+            background: transparent; border: none; color: var(--text-main); outline: none;
+            width: 100%; font-family: 'Outfit',sans-serif; font-size: 13px;
+        }
+        .search-bar input::placeholder { color: var(--text-muted); }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .icon-btn {
+            background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted);
+            width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; font-size: 18px; transition: all 0.2s; position: relative;
+        }
+        .icon-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+        .notif-badge { position: absolute; top:-3px; right:-3px; width:8px; height:8px; background:var(--danger-color); border-radius:50%; border:2px solid var(--bg-color); }
+        .nav-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #f43f5e, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; cursor: pointer;
+            box-shadow: 0 0 0 2px rgba(139,92,246,0.3);
+        }
+        .content-area { flex:1; overflow:hidden; position:relative; }
+        #defaultDashboard { padding: 32px; height: 100%; overflow-y: auto; animation: fadeUp 0.4s ease; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .dashboard-hero { margin-bottom: 32px; }
+        .dashboard-hero h1 {
+            font-size: 30px; font-weight: 700; margin-bottom: 8px;
+            background: linear-gradient(120deg, #fff 30%, var(--secondary-color));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .dashboard-hero p { color: var(--text-muted); font-size: 15px; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 20px; display: flex; align-items: center; gap: 14px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+        .stat-info .val { font-size: 22px; font-weight: 700; }
+        .stat-info .lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 20px; }
+        .module-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 22px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; display: block;
+            text-decoration: none; color: inherit;
+        }
+        .module-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; opacity:0; transition:opacity 0.3s; }
+        .module-card:hover { transform:translateY(-5px); box-shadow:0 12px 36px rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.12); }
+        .module-card:hover::before { opacity:1; }
+        .module-card.blue::before  { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+        .module-card.green::before { background: linear-gradient(90deg, #10b981, #06b6d4); }
+        .module-card.amber::before { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+        .module-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+        .module-card.teal::before  { background: linear-gradient(90deg, #14b8a6, #3b82f6); }
+        .module-card.rose::before  { background: linear-gradient(90deg, #f43f5e, #f59e0b); }
+        .module-card.indigo::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+        .module-icon { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:14px; }
+        .module-card.blue  .module-icon { background:rgba(59,130,246,0.12); color:#3b82f6; }
+        .module-card.green .module-icon { background:rgba(16,185,129,0.12); color:#10b981; }
+        .module-card.amber .module-icon { background:rgba(245,158,11,0.12); color:#f59e0b; }
+        .module-card.purple .module-icon { background:rgba(139,92,246,0.12); color:#8b5cf6; }
+        .module-card.teal  .module-icon { background:rgba(20,184,166,0.12); color:#14b8a6; }
+        .module-card.rose  .module-icon { background:rgba(244,63,94,0.12); color:#f43f5e; }
+        .module-card.indigo .module-icon { background:rgba(99,102,241,0.12); color:#6366f1; }
+        .module-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+        .module-card p { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+        .module-badge { display:inline-flex; align-items:center; gap:4px; margin-top:12px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; background:rgba(16,185,129,0.12); color:#10b981; }
+        .module-badge.wip { background:rgba(245,158,11,0.12); color:#f59e0b; }
+        #contentFrame { width:100%; height:100%; border:none; display:block; }
+        .section-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(59,130,246,0.1); color:var(--primary-color); border:1px solid rgba(59,130,246,0.2); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; margin-bottom:16px; text-transform:uppercase; letter-spacing:0.8px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon"><i class="ri-flashlight-line" style="color:#fff;font-size:20px;"></i></div>
+            <div class="logo-text">
+                <h2>Power Inspect</h2>
+                <p>HiFi Portal v1.0</p>
+            </div>
+        </div>
+        <div class="sidebar-menu" id="sidebarMenu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main</div>
+                <div class="menu-item" id="navHome" onclick="showDashboard()">
+                    <i class="ri-home-4-line"></i><span>Dashboard</span>
+                </div>
+            </div>
+            <div class="menu-section">
+                <div class="menu-section-title">Power Inspect</div>
+                <!-- Dashboard Trend -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuDashboardTrend">
+                    <div class="menu-item-left"><i class="ri-line-chart-line"></i><span>Dashboard Trend</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Dashboard-Trend/trend-enhancement.html" data-page="Dashboard-Trend/trend-enhancement.html" data-label="Trend Enhancement" onclick="loadPage(event,this)"><span class="dot"></span> Trend Enhancement</a>
+                    <a class="submenu-item" href="Dashboard-Trend/dashboard-ahi.html" data-page="Dashboard-Trend/dashboard-ahi.html" data-label="Dashboard AHI" onclick="loadPage(event,this)"><span class="dot"></span> Dashboard AHI</a>
+                </div>
+                <!-- Formulir -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuFormulir">
+                    <div class="menu-item-left"><i class="ri-file-list-3-line"></i><span>Formulir</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Formulir/mainpage-formulir.html" data-page="Formulir/mainpage-formulir.html" data-label="Mainpage Formulir" onclick="loadPage(event,this)"><span class="dot"></span> Mainpage Formulir</a>
+                    <a class="submenu-item" href="Formulir/preview-formulir.html" data-page="Formulir/preview-formulir.html" data-label="Preview Formulir" onclick="loadPage(event,this)"><span class="dot"></span> Preview Formulir</a>
+                    <a class="submenu-item" href="Formulir/tambah-formulir.html" data-page="Formulir/tambah-formulir.html" data-label="Tambah Formulir" onclick="loadPage(event,this)"><span class="dot"></span> Tambah Formulir</a>
+                    <a class="submenu-item" href="Formulir/verifikasi-detail.html" data-page="Formulir/verifikasi-detail.html" data-label="Verifikasi Detail" onclick="loadPage(event,this)"><span class="dot"></span> Verifikasi Detail</a>
+                </div>
+                <!-- Master -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuMaster">
+                    <div class="menu-item-left"><i class="ri-database-2-line"></i><span>Master</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Master/management-user.html" data-page="Master/management-user.html" data-label="Management User" onclick="loadPage(event,this)"><span class="dot"></span> Management User</a>
+                    <a class="submenu-item" href="Master/gruping-asset.html" data-page="Master/gruping-asset.html" data-label="Gruping Asset" onclick="loadPage(event,this)"><span class="dot"></span> Gruping Asset</a>
+                    <a class="submenu-item" href="Master/register-asset.html" data-page="Master/register-asset.html" data-label="Register Asset Health Index" onclick="loadPage(event,this)"><span class="dot"></span> Register Asset Health Index</a>
+                </div>
+                <!-- Mobile -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuMobile">
+                    <div class="menu-item-left"><i class="ri-smartphone-line"></i><span>Mobile</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Mobile/relogin-mobile.html" data-page="Mobile/relogin-mobile.html" data-label="Relogin Mobile" onclick="loadPage(event,this)"><span class="dot"></span> Relogin Mobile</a>
+                </div>
+                <!-- Monitoring -->
+                <div class="menu-item has-submenu open" onclick="toggleSubmenu(this)" id="menuMonitoring">
+                    <div class="menu-item-left"><i class="ri-radar-line"></i><span>Monitoring</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu open">
+                    <a class="submenu-item active" href="Monitoring/monitoring-ahi.html" data-page="Monitoring/monitoring-ahi.html" data-label="Monitoring AHI" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring AHI</a>
+                    <a class="submenu-item" href="Monitoring/monitoring-ahi-detail.html" data-page="Monitoring/monitoring-ahi-detail.html" data-label="Monitoring AHI Detail" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring AHI Detail</a>
+                    <a class="submenu-item" href="Monitoring/monitoring-export.html" data-page="Monitoring/monitoring-export.html" data-label="Monitoring Export" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring Export</a>
+                    <a class="submenu-item" href="Monitoring/monitoring-kelengkapan.html" data-page="Monitoring/monitoring-kelengkapan.html" data-label="Kelengkapan Inspeksi" onclick="loadPage(event,this)"><span class="dot"></span> Kelengkapan Inspeksi</a>
+                </div>
+                <!-- Parameter -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuParameter">
+                    <div class="menu-item-left"><i class="ri-equalizer-2-line"></i><span>Parameter</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Parameter/parameter-inspeksi-transmisi.html" data-page="Parameter/parameter-inspeksi-transmisi.html" data-label="Parameter Inspeksi Transmisi" onclick="loadPage(event,this)"><span class="dot"></span> Parameter Inspeksi Transmisi</a>
+                </div>
+                <!-- Perencanaan Jadwal -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuPerencanaan">
+                    <div class="menu-item-left"><i class="ri-calendar-schedule-line"></i><span>Perencanaan Jadwal</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Perencanaan-Jadwal/tambah-data-pji.html" data-page="Perencanaan-Jadwal/tambah-data-pji.html" data-label="Tambah Data PJI" onclick="loadPage(event,this)"><span class="dot"></span> Tambah Data PJI</a>
+                    <a class="submenu-item" href="Perencanaan-Jadwal/monitoring-jadwal.html" data-page="Perencanaan-Jadwal/monitoring-jadwal.html" data-label="Monitoring Jadwal" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring Jadwal</a>
+                </div>
+                <!-- Peta Risiko -->
+                <div class="menu-item has-submenu" onclick="toggleSubmenu(this)" id="menuPetaRisiko">
+                    <div class="menu-item-left"><i class="ri-map-pin-range-line"></i><span>Peta Risiko</span></div>
+                    <i class="ri-arrow-down-s-line chevron-icon"></i>
+                </div>
+                <div class="submenu">
+                    <a class="submenu-item" href="Peta-Risiko/peta-resiko.html" data-page="Peta-Risiko/peta-resiko.html" data-label="Peta Resiko Tower" onclick="loadPage(event,this)"><span class="dot"></span> Peta Resiko Tower</a>
+                    <a class="submenu-item" href="Peta-Risiko/detail-tower.html" data-page="Peta-Risiko/detail-tower.html" data-label="Detail Peta Tower" onclick="loadPage(event,this)"><span class="dot"></span> Detail Peta Tower</a>
+                    <a class="submenu-item" href="Peta-Risiko/detail-span.html" data-page="Peta-Risiko/detail-span.html" data-label="Detail Peta Span" onclick="loadPage(event,this)"><span class="dot"></span> Detail Peta Span</a>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="avatar">AD</div>
+                <div class="user-info"><p>Admin User</p><span>Power Inspect</span></div>
+                <i class="ri-settings-3-line" style="color:var(--text-muted);margin-left:auto;font-size:16px;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <button class="toggle-btn" onclick="toggleSidebar()"><i class="ri-menu-line"></i></button>
+                <div class="breadcrumb" id="breadcrumb">
+                    <i class="ri-home-4-line"></i>
+                    <i class="ri-arrow-right-s-line"></i>
+                    <span class="current" id="breadcrumbCurrent">Dashboard</span>
+                </div>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line" style="color:var(--text-muted);font-size:15px;"></i>
+                <input type="text" id="searchInput" placeholder="Cari menu..." onkeyup="filterSidebar()">
+            </div>
+            <div class="nav-right">
+                <button class="icon-btn"><i class="ri-notification-3-line"></i><span class="notif-badge"></span></button>
+                <button class="icon-btn" onclick="toggleFullscreen()"><i class="ri-fullscreen-line"></i></button>
+                <div class="nav-avatar">AD</div>
+            </div>
+        </nav>
+        <div class="content-area">
+            <div id="defaultDashboard">
+                <div class="dashboard-hero">
+                    <div class="section-badge"><i class="ri-flashlight-line"></i> HiFi Power Inspect</div>
+                    <h1>Selamat Datang di Portal</h1>
+                    <p>Sistem inspeksi dan monitoring aset transmisi tenaga listrik. Pilih modul dari sidebar untuk memulai.</p>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6;"><i class="ri-survey-line"></i></div>
+                        <div class="stat-info"><div class="val" style="color:#3b82f6;">8</div><div class="lbl">Total Menu</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(16,185,129,0.12);color:#10b981;"><i class="ri-check-double-line"></i></div>
+                        <div class="stat-info"><div class="val" style="color:#10b981;">1</div><div class="lbl">Siap Diakses</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b;"><i class="ri-time-line"></i></div>
+                        <div class="stat-info"><div class="val" style="color:#f59e0b;">7</div><div class="lbl">Dalam Pengembangan</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6;"><i class="ri-flashlight-line"></i></div>
+                        <div class="stat-info"><div class="val" style="color:#8b5cf6;">v1.0</div><div class="lbl">Versi Portal</div></div>
+                    </div>
+                </div>
+                <div class="modules-grid">
+                    <a class="module-card blue" href="Monitoring/monitoring-ahi.html" onclick="openMenu(event,'menuMonitoring','Monitoring/monitoring-ahi.html','Monitoring AHI')">
+                        <div class="module-icon"><i class="ri-radar-line"></i></div>
+                        <h3>Monitoring AHI</h3>
+                        <p>Monitor Asset Health Index seluruh aset transmisi secara real-time dengan visualisasi data lengkap.</p>
+                        <div class="module-badge"><i class="ri-check-line"></i> Tersedia</div>
+                    </a>
+                    <div class="module-card amber" onclick="openMenu(null,'menuDashboardTrend',null,'Dashboard Trend')">
+                        <div class="module-icon"><i class="ri-line-chart-line"></i></div>
+                        <h3>Dashboard Trend</h3>
+                        <p>Analisis tren historis inspeksi dan enhancement performa aset transmisi.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card green" onclick="openMenu(null,'menuFormulir',null,'Formulir')">
+                        <div class="module-icon"><i class="ri-file-list-3-line"></i></div>
+                        <h3>Formulir Inspeksi</h3>
+                        <p>Kelola formulir inspeksi lapangan, preview, dan tambah data inspeksi baru.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card purple" onclick="openMenu(null,'menuParameter',null,'Parameter')">
+                        <div class="module-icon"><i class="ri-equalizer-2-line"></i></div>
+                        <h3>Parameter Inspeksi</h3>
+                        <p>Konfigurasi parameter inspeksi transmisi sesuai standar PLN.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card teal" onclick="openMenu(null,'menuPerencanaan',null,'Perencanaan Jadwal')">
+                        <div class="module-icon"><i class="ri-calendar-schedule-line"></i></div>
+                        <h3>Perencanaan Jadwal</h3>
+                        <p>Rencanakan dan monitor jadwal inspeksi periodik aset transmisi.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card rose" onclick="openMenu(null,'menuPetaRisiko',null,'Peta Risiko')">
+                        <div class="module-icon"><i class="ri-map-pin-range-line"></i></div>
+                        <h3>Peta Risiko</h3>
+                        <p>Visualisasi peta risiko tower dan span transmisi berdasarkan hasil inspeksi.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card indigo" onclick="openMenu(null,'menuMaster',null,'Master')">
+                        <div class="module-icon"><i class="ri-database-2-line"></i></div>
+                        <h3>Master Data</h3>
+                        <p>Kelola data master pengguna, aset, dan konfigurasi sistem Power Inspect.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                    <div class="module-card blue" onclick="openMenu(null,'menuMobile',null,'Mobile')">
+                        <div class="module-icon" style="background:rgba(6,182,212,0.12);color:#06b6d4;"><i class="ri-smartphone-line"></i></div>
+                        <h3>Mobile App</h3>
+                        <p>Akses halaman login dan re-login aplikasi mobile Power Inspect untuk inspektur lapangan.</p>
+                        <div class="module-badge wip"><i class="ri-time-line"></i> Segera Hadir</div>
+                    </div>
+                </div>
+            </div>
+            <iframe id="contentFrame" name="contentFrame" style="display:none;" title="Content Frame"></iframe>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+        function toggleSubmenu(el) {
+            const isOpen = el.classList.contains('open');
+            document.querySelectorAll('.menu-item.has-submenu.open').forEach(item => {
+                if (item !== el) {
+                    item.classList.remove('open');
+                    const sub = item.nextElementSibling;
+                    if (sub && sub.classList.contains('submenu')) sub.classList.remove('open');
+                }
+            });
+            el.classList.toggle('open', !isOpen);
+            const submenu = el.nextElementSibling;
+            if (submenu && submenu.classList.contains('submenu')) submenu.classList.toggle('open', !isOpen);
+        }
+        function loadPage(event, el) {
+            if (event) event.preventDefault();
+            const page = el.dataset.page;
+            const label = el.dataset.label || el.textContent.trim();
+            showPage(page, label);
+            document.querySelectorAll('.submenu-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+        function showPage(src, label) {
+            document.getElementById('defaultDashboard').style.display = 'none';
+            const frame = document.getElementById('contentFrame');
+            frame.style.display = 'block';
+            frame.src = src;
+            document.getElementById('breadcrumbCurrent').textContent = label || src;
+            history.pushState(null, '', '#page=' + encodeURIComponent(src));
+        }
+        function showDashboard() {
+            document.getElementById('defaultDashboard').style.display = 'block';
+            document.getElementById('contentFrame').style.display = 'none';
+            document.getElementById('contentFrame').src = '';
+            document.getElementById('breadcrumbCurrent').textContent = 'Dashboard';
+            document.querySelectorAll('.submenu-item').forEach(i => i.classList.remove('active'));
+            history.pushState(null, '', window.location.pathname);
+        }
+        function openMenu(event, menuId, page, label) {
+            if (event) event.preventDefault();
+            const menu = document.getElementById(menuId);
+            if (menu && !menu.classList.contains('open')) toggleSubmenu(menu);
+            if (page) {
+                showPage(page, label);
+                const link = document.querySelector('[data-page="' + page + '"]');
+                if (link) { document.querySelectorAll('.submenu-item').forEach(i=>i.classList.remove('active')); link.classList.add('active'); }
+            }
+        }
+        function filterSidebar() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const sections = document.querySelectorAll('.menu-section');
+            if (!q) {
+                sections.forEach(s => {
+                    s.style.display = 'block';
+                    s.querySelectorAll('.menu-item,.submenu-item').forEach(i => i.style.display = '');
+                    s.querySelectorAll('.submenu').forEach(i => i.classList.remove('open'));
+                    s.querySelectorAll('.menu-item.has-submenu').forEach(i => i.classList.remove('open'));
+                    const mon = document.getElementById('menuMonitoring');
+                    if (mon) { mon.classList.add('open'); if(mon.nextElementSibling) mon.nextElementSibling.classList.add('open'); }
+                }); return;
+            }
+            sections.forEach(s => {
+                let match = false;
+                s.querySelectorAll('.submenu-item').forEach(item => {
+                    const hit = item.textContent.toLowerCase().includes(q);
+                    item.style.display = hit ? 'flex' : 'none';
+                    if (hit) {
+                        match = true;
+                        const sub = item.closest('.submenu');
+                        if (sub) { sub.classList.add('open'); if(sub.previousElementSibling) sub.previousElementSibling.classList.add('open'); }
+                    }
+                });
+                s.querySelectorAll('.menu-item.has-submenu').forEach(item => {
+                    const txt = item.querySelector('span') ? item.querySelector('span').textContent.toLowerCase() : '';
+                    if (txt.includes(q)) { item.style.display = 'flex'; match = true; }
+                });
+                s.style.display = match ? 'block' : 'none';
+            });
+        }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+        function handleHash() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#page=')) {
+                const page = decodeURIComponent(hash.substring(6));
+                const link = document.querySelector('[data-page="' + page + '"]');
+                if (link) {
+                    const label = link.dataset.label || link.textContent.trim();
+                    document.getElementById('defaultDashboard').style.display = 'none';
+                    const frame = document.getElementById('contentFrame');
+                    frame.style.display = 'block'; frame.src = page;
+                    document.getElementById('breadcrumbCurrent').textContent = label;
+                    document.querySelectorAll('.submenu-item').forEach(i=>i.classList.remove('active'));
+                    link.classList.add('active');
+                    const sub = link.closest('.submenu');
+                    if (sub) { sub.classList.add('open'); if(sub.previousElementSibling) sub.previousElementSibling.classList.add('open'); }
+                }
+            } else { showDashboard(); }
+        }
+        window.addEventListener('popstate', handleHash);
+        handleHash();
+    </script>
+</body>
+</html>
