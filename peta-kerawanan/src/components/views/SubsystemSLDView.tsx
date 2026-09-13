@@ -17,6 +17,7 @@ import { GeneratorNode } from '../sld/nodes/GeneratorNode';
 import { TransformerNode } from '../sld/nodes/TransformerNode';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { TierGuides } from '../sld/TierGuides';
+import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
@@ -279,135 +280,121 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   // Synchronize Nodes and Edges with authentic Tiered SLD Layout (Gambar 1 & Gambar 2)
   useEffect(() => {
     if (customConfig?.type === 'excel' && customConfig.excelData?.giList && customConfig.excelData.giList.length > 0) {
-      // KONSEP TIER PADA SLD: Dimulai dari Tier 0
-      // Tier 0 = asset/source utama yang menjadi titik awal sistem pada SLD.
-      // Tier 1 = asset yang terhubung langsung dari Tier 0.
-      // Tier 2 = asset yang terhubung dari Tier 1.
-      // Tier 3 = asset yang terhubung dari Tier 2.
-      // Tier 4 = asset yang terhubung dari Tier 3.
-      // Dan seterusnya.
-      const tier0Nodes: any[] = [];
-      const tier1Nodes: any[] = [];
-      const tier2Nodes: any[] = [];
-      const tier3Nodes: any[] = [];
-      const tier4Nodes: any[] = [];
-      const tier5Nodes: any[] = [];
+      // Calculate clean, non-overlapping hierarchical coordinates
+      const layoutPositions = computeCleanSLDLayout(
+        customConfig.excelData.giList,
+        customConfig.excelData.lineList || []
+      );
 
-      customConfig.excelData.giList.forEach((gi) => {
-        const n = (gi.name + ' ' + (gi.subsystem || '')).toLowerCase();
-        const v = String(gi.voltage || '');
-        const explicitTier = typeof gi.tier === 'number' ? gi.tier : undefined;
+      const newNodes: Node[] = customConfig.excelData.giList.map((gi) => {
+        const isGen = (gi.name || '').toLowerCase().includes('plt') || (gi.name || '').toLowerCase().includes('pembangkit');
+        const isIBT = (gi.name || '').toLowerCase().includes('ibt') || (gi.name || '').toLowerCase().includes('trafo') || gi.assetType === 'ibt';
+        const pos = layoutPositions[gi.id] || { x: 100, y: 100, tier: gi.tier ?? 2 };
 
-        if (explicitTier !== undefined) {
-          if (explicitTier === 0) tier0Nodes.push(gi);
-          else if (explicitTier === 1) tier1Nodes.push(gi);
-          else if (explicitTier === 2) tier2Nodes.push(gi);
-          else if (explicitTier === 3) tier3Nodes.push(gi);
-          else if (explicitTier === 4) tier4Nodes.push(gi);
-          else tier5Nodes.push(gi);
-        } else {
-          // Automatic hierarchy placement starting from Tier 0
-          if (n.includes('plt') || n.includes('pembangkit') || n.includes('suralaya baru') || n.includes('cilegon baru') || n.includes('muara karang') || n.includes('cirata') || n.includes('saguling') || n.includes('paiton')) {
-            tier0Nodes.push(gi);
-          } else if (n.includes('ibt') || n.includes('trafo') || (v.includes('500') && (n.includes('srlya') || n.includes('clbru')))) {
-            tier1Nodes.push(gi);
-          } else if (v.includes('500') || n.includes('gitet') || n.includes('gandul') || n.includes('cibinong') || n.includes('bekasi') || n.includes('slrda') || n.includes('pendo') || n.includes('peni')) {
-            tier2Nodes.push(gi);
-          } else if (n.includes('mtsui') || n.includes('ktt') || n.includes('mcci5') || n.includes('clgon')) {
-            tier3Nodes.push(gi);
-          } else {
-            tier4Nodes.push(gi);
+        return {
+          id: gi.id,
+          type: isGen ? 'generator' : isIBT ? 'ibt' : 'custom',
+          position: { x: pos.x, y: pos.y },
+          data: {
+            id: gi.id,
+            name: gi.name,
+            code: gi.code || gi.name.replace(/^GITET\s+|^GI\s+/, ''),
+            voltage: gi.voltage || (isIBT ? '500/150 kV' : '500 kV'),
+            primaryVoltage: gi.primaryVoltage || (isIBT ? '500 kV' : undefined),
+            secondaryVoltage: gi.secondaryVoltage || (isIBT ? '150 kV' : undefined),
+            ibtNumber: gi.ibtNumber,
+            capacityMVA: gi.capacityMVA,
+            tier: gi.tier,
+            region: gi.region,
+            riskStatus: gi.riskStatus,
+            riskNumber: gi.riskNumber,
+            subsystem: gi.subsystem || currentSub.name,
+            uit: gi.uit || 'JBB',
+            condition: gi.condition,
+            impact: gi.impact,
+            mitigation: gi.mitigation,
+            solution: gi.solution
           }
-        }
+        };
       });
 
-      const newNodes: Node[] = [];
-      const placeTierNodes = (nodeList: any[], yPos: number, xStart: number, spacing: number) => {
-        nodeList.forEach((gi, i) => {
-          const isGen = (gi.name || '').toLowerCase().includes('plt') || (gi.name || '').toLowerCase().includes('pembangkit');
-          const isIBT = (gi.name || '').toLowerCase().includes('ibt') || (gi.name || '').toLowerCase().includes('trafo') || gi.assetType === 'ibt';
-          newNodes.push({
-            id: gi.id,
-            type: isGen ? 'generator' : isIBT ? 'ibt' : 'custom',
-            position: { x: xStart + i * spacing, y: yPos },
-            data: {
-              id: gi.id,
-              name: gi.name,
-              code: gi.code || gi.name.replace(/^GITET\s+|^GI\s+/, ''),
-              voltage: gi.voltage || (isIBT ? '500/150 kV' : '500 kV'),
-              primaryVoltage: gi.primaryVoltage || (isIBT ? '500 kV' : undefined),
-              secondaryVoltage: gi.secondaryVoltage || (isIBT ? '150 kV' : undefined),
-              ibtNumber: gi.ibtNumber,
-              capacityMVA: gi.capacityMVA,
-              tier: gi.tier,
-              region: gi.region,
-              riskStatus: gi.riskStatus,
-              riskNumber: gi.riskNumber,
-              subsystem: gi.subsystem || currentSub.name,
-              uit: gi.uit || 'JBB',
-              condition: gi.condition,
-              impact: gi.impact,
-              mitigation: gi.mitigation,
-              solution: gi.solution
-            }
-          });
-        });
-      };
+      // Track duplicate node pairs to automatically offset multiple parallel lines
+      const pairCount: Record<string, number> = {};
+      const pairIndex: Record<string, number> = {};
+      (customConfig.excelData.lineList || []).forEach((l) => {
+        const key = [l.sourceId, l.targetId].sort().join('___');
+        pairCount[key] = (pairCount[key] || 0) + 1;
+      });
 
-      // Place along horizontal Tier lines (Mulai Tier 0)
-      placeTierNodes(tier0Nodes, 70, 100, 260);
-      placeTierNodes(tier1Nodes, 240, 80, 240);
-      placeTierNodes(tier2Nodes, 410, 120, 250);
-      placeTierNodes(tier3Nodes, 570, 100, 240);
-      placeTierNodes(tier4Nodes, 720, 100, 240);
-      placeTierNodes(tier5Nodes, 860, 100, 240);
+      const newEdges: Edge[] = (customConfig.excelData.lineList || []).map((l) => {
+        const key = [l.sourceId, l.targetId].sort().join('___');
+        const totalInPair = pairCount[key] || 1;
+        const curIdx = pairIndex[key] || 0;
+        pairIndex[key] = curIdx + 1;
 
-      const newEdges: Edge[] = (customConfig.excelData.lineList || []).map((l) => ({
-        id: l.id,
-        source: l.sourceId,
-        target: l.targetId,
-        type: 'transmission',
-        animated: l.riskStatus !== 'Normal',
-        style: {
-          stroke: l.riskStatus !== 'Normal' ? '#ff4757' : sldTheme === 'classic' ? '#dc2626' : '#00d2d3',
-          strokeWidth: l.riskStatus !== 'Normal' ? 3.5 : 2.5
-        },
-        label: `${l.lineName} (${l.loadingPct}%)`,
-        labelStyle: { fill: l.riskStatus !== 'Normal' ? '#ff4757' : sldTheme === 'classic' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
-        labelBgPadding: [4, 2],
-        labelBgBorderRadius: 4,
-        labelBgStyle: { fill: sldTheme === 'classic' ? '#ffffff' : '#0f172a', color: '#fff', fillOpacity: 0.9 },
-        data: {
+        let cNum: number | undefined = l.circuitNumber;
+        if (!cNum) {
+          const lLower = l.lineName.toLowerCase();
+          if (lLower.includes('sirkit 1') || lLower.includes('skt 1') || lLower.includes('line 1') || lLower.includes('#1')) {
+            cNum = 1;
+          } else if (lLower.includes('sirkit 2') || lLower.includes('skt 2') || lLower.includes('line 2') || lLower.includes('#2')) {
+            cNum = 2;
+          } else if (totalInPair > 1) {
+            cNum = curIdx === 0 ? 1 : 2;
+          }
+        }
+        const offsetVal = cNum === 1 ? -14 : cNum === 2 ? 14 : 0;
+
+        return {
           id: l.id,
           source: l.sourceId,
           target: l.targetId,
-          name: l.lineName,
-          voltage: l.voltage || '500 kV',
-          status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
-          riskLevel: l.riskStatus,
-          riskNumber: l.riskNumber || (l.riskStatus !== 'Normal' ? 11 : undefined),
-          circuitCount: l.circuitCount || 2,
-          lengthKm: l.lengthKm || 21.4,
-          operatingStatus: l.operatingStatus || 'Beroperasi',
-          loading: {
-            circuit1: l.loadingCircuit1 || l.loadingPct,
-            circuit2: l.loadingCircuit2 || Math.round(l.loadingPct * 0.9)
+          type: 'transmission',
+          animated: l.riskStatus !== 'Normal',
+          style: {
+            stroke: l.riskStatus !== 'Normal' ? '#ff4757' : sldTheme === 'classic' ? '#dc2626' : '#00d2d3',
+            strokeWidth: l.riskStatus !== 'Normal' ? 3.5 : 2.5
           },
-          region: l.region || 'Jawa Barat - DKI Jakarta',
-          corridor: l.corridor || 'Koridor Jakarta Barat - Selatan',
-          uit: l.uit || 'JBB',
-          condition: l.condition,
-          impact: l.impact,
-          mitigation: l.mitigation,
-          solution: l.solution
-        }
-      }));
+          label: `${l.lineName} (${l.loadingPct}%)`,
+          labelStyle: { fill: l.riskStatus !== 'Normal' ? '#ff4757' : sldTheme === 'classic' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
+          labelBgPadding: [4, 2],
+          labelBgBorderRadius: 4,
+          labelBgStyle: { fill: sldTheme === 'classic' ? '#ffffff' : '#0f172a', color: '#fff', fillOpacity: 0.9 },
+          data: {
+            id: l.id,
+            source: l.sourceId,
+            target: l.targetId,
+            name: l.lineName,
+            voltage: l.voltage || '150 kV',
+            status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
+            riskLevel: l.riskStatus,
+            riskId: l.riskNumber || (l.riskStatus !== 'Normal' ? 11 : undefined),
+            circuitCount: l.circuitCount || (cNum ? 1 : 2),
+            circuitNumber: cNum,
+            offset: offsetVal,
+            isDoubleLine: l.circuitCount === 2 && !cNum,
+            lengthKm: l.lengthKm || 21.4,
+            operatingStatus: l.operatingStatus || 'Beroperasi',
+            loading: {
+              circuit1: l.loadingCircuit1 || l.loadingPct,
+              circuit2: l.loadingCircuit2 || Math.round(l.loadingPct * 0.9)
+            },
+            region: l.region || 'Banten',
+            corridor: l.corridor || 'Koridor Suralaya - Cilegon',
+            uit: l.uit || 'JBB',
+            condition: l.condition,
+            impact: l.impact,
+            mitigation: l.mitigation,
+            solution: l.solution
+          }
+        };
+      });
 
       setNodes(newNodes as any);
       setEdges(newEdges as any);
 
       const timer = setTimeout(() => {
-        reactFlow.fitView({ padding: 0.25, duration: 400 });
+        reactFlow.fitView({ padding: 0.18, duration: 450 });
       }, 150);
       return () => clearTimeout(timer);
     } else {

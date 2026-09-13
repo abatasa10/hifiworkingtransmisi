@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import {
   ReactFlow,
@@ -9,6 +9,7 @@ import {
   Node,
   Edge,
   ReactFlowProvider,
+  useReactFlow,
   MarkerType,
   Handle,
   Position
@@ -43,6 +44,7 @@ import {
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
+import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import {
   ParsedGINode,
   ParsedTransmissionLine,
@@ -86,6 +88,54 @@ const uploadEdgeTypes = {
   default: TransmissionEdge,
   transmission: TransmissionEdge,
   transformer_link: TransmissionEdge
+};
+
+const UploadSLDCanvas: React.FC<{
+  nodes: Node[];
+  edges: Edge[];
+  uploadNodeTypes: any;
+  uploadEdgeTypes: any;
+}> = ({ nodes, edges, uploadNodeTypes, uploadEdgeTypes }) => {
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fitView({ padding: 0.18, duration: 450 });
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [nodes, edges, fitView]);
+
+  return (
+    <div className="relative w-full h-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={uploadNodeTypes}
+        edgeTypes={uploadEdgeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.18 }}
+        attributionPosition="bottom-left"
+        className="h-full w-full"
+      >
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
+        <Controls />
+        <MiniMap
+          nodeColor={(n) => (n.data?.label ? '#0046ad' : '#94a3b8')}
+          className="rounded-xl border border-slate-200 shadow-md bg-white/90"
+        />
+      </ReactFlow>
+
+      {/* Floating Fit View Quick Action Button */}
+      <button
+        onClick={() => fitView({ padding: 0.18, duration: 350 })}
+        className="absolute top-3 right-3 z-10 px-3 py-1.5 bg-white/95 hover:bg-white text-slate-700 hover:text-[#0046ad] border border-slate-300 rounded-lg shadow-md font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+        title="Pas ke Layar (Fit View)"
+      >
+        <Maximize2 className="w-3.5 h-3.5 text-[#0046ad]" />
+        <span>Fit ke Layar</span>
+      </button>
+    </div>
+  );
 };
 
 export interface ColumnMapping {
@@ -229,285 +279,131 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
   // Auto-layout calculation for React Flow
   const { flowNodes, flowEdges } = useMemo(() => {
-    const regionOrder: Record<string, number> = {
-      'DKI Jakarta & Banten': 0,
-      'Jawa Barat': 1,
-      'Jawa Tengah': 2,
-      'Jawa Timur': 3,
-      'Bali': 4
-    };
+    // Compute optimal, non-overlapping hierarchical coordinates
+    const layoutPositions = computeCleanSLDLayout(giList, lineList);
 
-    const calculatedNodes: Node[] = [];
-    const xBase = 60;
-    const colWidth = 270;
-    const rowHeight = 150;
+    const calculatedNodes: Node[] = giList.map((node) => {
+      const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
+      const isRawan = node.riskStatus !== 'Normal';
+      const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
+      const isIBTNode =
+        node.assetType === 'ibt' ||
+        (node.name || '').toLowerCase().includes('ibt') ||
+        (node.name || '').toLowerCase().includes('trafo') ||
+        Boolean(node.ibtNumber) ||
+        String(node.voltage || '').includes('/');
+      const nodeIbtNum =
+        node.ibtNumber ||
+        (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
+        '1';
+      const isPembangkitNode =
+        node.assetType === 'pembangkit' ||
+        (node.name || '').toLowerCase().includes('plt') ||
+        (node.name || '').toLowerCase().includes('pembangkit') ||
+        (node.name || '').toLowerCase().includes('unit');
 
-    // Check if nodes have regional grouping or general layout
-    const hasMultipleRegions = new Set(giList.map((g) => g.region)).size > 1;
-
-    if (hasMultipleRegions) {
-      const groups: Record<string, ParsedGINode[]> = {};
-      giList.forEach((gi) => {
-        const reg = gi.region || 'Jawa Barat';
-        if (!groups[reg]) groups[reg] = [];
-        groups[reg].push(gi);
-      });
-
-      Object.entries(groups).forEach(([region, nodesInRegion]) => {
-        const colIdx = regionOrder[region] ?? 1;
-        nodesInRegion.forEach((node, rowIdx) => {
-          const x = xBase + colIdx * colWidth + (rowIdx % 2 === 1 ? 25 : -15);
-          const y = 80 + rowIdx * rowHeight;
-          const isRawan = node.riskStatus !== 'Normal';
-          const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
-          const isIBTNode =
-            node.assetType === 'ibt' ||
-            (node.name || '').toLowerCase().includes('ibt') ||
-            (node.name || '').toLowerCase().includes('trafo') ||
-            Boolean(node.ibtNumber) ||
-            String(node.voltage || '').includes('/');
-          const nodeIbtNum =
-            node.ibtNumber ||
-            (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
-            '1';
-          const isPembangkitNode =
-            node.assetType === 'pembangkit' ||
-            (node.name || '').toLowerCase().includes('plt') ||
-            (node.name || '').toLowerCase().includes('pembangkit') ||
-            (node.name || '').toLowerCase().includes('unit');
-
-          calculatedNodes.push({
-            id: node.id,
-            type: 'custom',
-            position: { x, y },
-            data: {
-              label: isIBTNode ? (
-                /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
-                <div
-                  onClick={() => setSelectedElement({ type: 'node', data: node })}
-                  className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
-                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
-                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
-                      {node.name || `IBT ${nodeIbtNum}`}
-                    </span>
-                    {isRawan && (
-                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                        {node.riskStatus}
-                      </span>
-                    )}
-                  </div>
-                  {/* Simbol 3 Lingkaran IBT */}
-                  <div className="relative w-16 h-14 flex items-center justify-center my-0.5">
-                    <svg viewBox="0 0 74 66" className="w-16 h-14 filter drop-shadow-md">
-                      <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
-                      <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
-                      <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
-                      <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
-                      <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
-                        {nodeIbtNum}
-                      </text>
-                    </svg>
-                  </div>
-                  <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
-                </div>
-              ) : isPembangkitNode ? (
-                /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
-                <div
-                  onClick={() => setSelectedElement({ type: 'node', data: node })}
-                  className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
-                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
-                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
-                      {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
-                    </span>
-                    {isRawan && (
-                      <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                        {node.riskStatus}
-                      </span>
-                    )}
-                  </div>
-                  {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
-                  <div className="relative flex items-center justify-center my-0.5">
-                    <svg viewBox="0 0 44 98" className="w-11 h-20 filter drop-shadow-md">
-                      <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
-                      <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
-                      <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
-                      <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
-                      <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
-                      <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                      <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
-                      <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
-                </div>
-              ) : (
-                /* Tampilan Standar GI Simpul */
-                <div
-                  onClick={() => setSelectedElement({ type: 'node', data: node })}
-                  className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
-                    node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
-                  } ${
-                    isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
-                  } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-                >
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
-                      <span className="text-[10px] font-mono font-bold text-slate-300">{node.voltage}</span>
-                    </div>
-                    {isRawan ? (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#dc2626] text-white">
-                        {node.riskStatus}
-                      </span>
-                    ) : (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-[#16a34a]/20 text-[#16a34a]">
-                        Normal
-                      </span>
-                    )}
-                  </div>
-                  <div className="font-bold text-xs truncate">{node.name}</div>
-                  <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.region || node.subsystem || 'Unit Transmisi'}</div>
-                </div>
-              )
-            }
-          });
-        });
-      });
-    } else {
-      // Single grid layout (e.g. Subsistem layout 3-4 columns)
-      const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(giList.length))));
-      giList.forEach((node, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const x = xBase + col * 280;
-        const y = 80 + row * 150;
-        const isRawan = node.riskStatus !== 'Normal';
-        const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
-        const isIBTNode =
-          node.assetType === 'ibt' ||
-          (node.name || '').toLowerCase().includes('ibt') ||
-          (node.name || '').toLowerCase().includes('trafo') ||
-          Boolean(node.ibtNumber) ||
-          String(node.voltage || '').includes('/');
-        const nodeIbtNum =
-          node.ibtNumber ||
-          (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
-          '1';
-        const isPembangkitNode =
-          node.assetType === 'pembangkit' ||
-          (node.name || '').toLowerCase().includes('plt') ||
-          (node.name || '').toLowerCase().includes('pembangkit') ||
-          (node.name || '').toLowerCase().includes('unit');
-
-        calculatedNodes.push({
-          id: node.id,
-          type: 'custom',
-          position: { x, y },
-          data: {
-            label: isIBTNode ? (
-              /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
-              <div
-                onClick={() => setSelectedElement({ type: 'node', data: node })}
-                className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
-                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
-                } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
-                    {node.name || `IBT ${nodeIbtNum}`}
+      return {
+        id: node.id,
+        type: 'custom',
+        position: { x: pos.x, y: pos.y },
+        data: {
+          label: isIBTNode ? (
+            /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
+            <div
+              onClick={() => setSelectedElement({ type: 'node', data: node })}
+              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[140px] ${
+                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
+              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
+                  {node.name || `IBT ${nodeIbtNum}`}
+                </span>
+                {isRawan && (
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                    {node.riskStatus}
                   </span>
-                  {isRawan && (
-                    <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                      {node.riskStatus}
-                    </span>
-                  )}
-                </div>
-                {/* Simbol 3 Lingkaran IBT */}
-                <div className="relative w-16 h-14 flex items-center justify-center my-0.5">
-                  <svg viewBox="0 0 74 66" className="w-16 h-14 filter drop-shadow-md">
-                    <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
-                    <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
-                    <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
-                    <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
-                    <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
-                      {nodeIbtNum}
-                    </text>
-                  </svg>
-                </div>
-                <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+                )}
               </div>
-            ) : isPembangkitNode ? (
-              /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
-              <div
-                onClick={() => setSelectedElement({ type: 'node', data: node })}
-                className={`flex flex-col items-center cursor-pointer group p-2.5 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[150px] ${
-                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
-                } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
-                    {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
+              {/* Simbol 3 Lingkaran IBT */}
+              <div className="relative w-14 h-12 flex items-center justify-center my-0.5">
+                <svg viewBox="0 0 74 66" className="w-14 h-12 filter drop-shadow-md">
+                  <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
+                  <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
+                  <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
+                  <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
+                  <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
+                    {nodeIbtNum}
+                  </text>
+                </svg>
+              </div>
+              <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
+            </div>
+          ) : isPembangkitNode ? (
+            /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
+            <div
+              onClick={() => setSelectedElement({ type: 'node', data: node })}
+              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[130px] ${
+                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
+              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
+                  {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
+                </span>
+                {isRawan && (
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                    {node.riskStatus}
                   </span>
-                  {isRawan && (
-                    <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                      {node.riskStatus}
-                    </span>
-                  )}
-                </div>
-                {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
-                <div className="relative flex items-center justify-center my-0.5">
-                  <svg viewBox="0 0 44 98" className="w-11 h-20 filter drop-shadow-md">
-                    <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
-                    <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
-                    <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
-                    <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
-                    <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
-                    <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                    <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
-                    <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
+                )}
               </div>
-            ) : (
-              /* Tampilan Standar GI Simpul */
-              <div
-                onClick={() => setSelectedElement({ type: 'node', data: node })}
-                className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[190px] ${
-                  node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
-                } ${
-                  isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
-                } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
-                    <span className="text-[10px] font-mono font-bold text-slate-400">{node.voltage}</span>
-                  </div>
-                  {isRawan ? (
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#dc2626] text-white">
-                      {node.riskStatus}
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-[#16a34a]/20 text-[#16a34a]">
-                      Normal
-                    </span>
-                  )}
-                </div>
-                <div className="font-bold text-xs truncate">{node.name}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.subsystem || node.region || 'Subsistem'}</div>
+              {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
+              <div className="relative flex items-center justify-center my-0.5">
+                <svg viewBox="0 0 44 98" className="w-10 h-18 filter drop-shadow-md">
+                  <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
+                  <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
+                  <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
+                  <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
+                  <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+                  <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                  <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
+                  <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
+                </svg>
               </div>
-            )
-          }
-        });
-      });
-    }
+              <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
+            </div>
+          ) : (
+            /* Tampilan Standar GI Simpul */
+            <div
+              onClick={() => setSelectedElement({ type: 'node', data: node })}
+              className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[150px] max-w-[200px] ${
+                node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
+              } ${
+                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
+              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+            >
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <div className="flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
+                  <span className="text-[10px] font-mono font-bold text-slate-400">{node.voltage}</span>
+                </div>
+                {isRawan ? (
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
+                    {node.riskStatus}
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-semibold bg-[#16a34a]/20 text-[#16a34a]">
+                    Normal
+                  </span>
+                )}
+              </div>
+              <div className="font-bold text-xs truncate" title={node.name}>{node.name}</div>
+              <div className="text-[9px] text-slate-400 truncate mt-0.5">{node.subsystem || node.region || 'Subsistem'}</div>
+            </div>
+          )
+        }
+      };
+    });
 
     // Track duplicate pairs to offset parallel 2-line circuits automatically
     const pairCount: Record<string, number> = {};
@@ -1789,24 +1685,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               {excelViewMode === 'graph' && (
                 <div className="flex-1 relative w-full h-full">
                   <ReactFlowProvider>
-                    <ReactFlow
+                    <UploadSLDCanvas
                       nodes={flowNodes}
                       edges={flowEdges}
-                      nodeTypes={uploadNodeTypes}
-                      edgeTypes={uploadEdgeTypes}
-                      fitView
-                      attributionPosition="bottom-left"
-                      className="h-full w-full"
-                    >
-                      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-                      <Controls />
-                      <MiniMap
-                        nodeColor={(n) => {
-                          return n.data?.label ? '#0046ad' : '#94a3b8';
-                        }}
-                        className="rounded-xl border border-slate-200 shadow-md bg-white/90"
-                      />
-                    </ReactFlow>
+                      uploadNodeTypes={uploadNodeTypes}
+                      uploadEdgeTypes={uploadEdgeTypes}
+                    />
                   </ReactFlowProvider>
                 </div>
               )}
