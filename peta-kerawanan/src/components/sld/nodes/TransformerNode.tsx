@@ -173,23 +173,33 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
             )}
           </div>
         ) : isBeban ? (
-          /* B. BEBAN / KONSUMEN INDUSTRI KTT */
-          <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-900/90 border border-slate-700 shadow-md my-1">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-sm">🏭</span>
-              <span className="text-[10px] font-bold text-amber-300">{nodeData.capacityMVA || 60} MVA</span>
+          /* B. BEBAN / KONSUMEN INDUSTRI KTT (Standar PLN: Segitiga Terbalik dengan bulatan koneksi di atas) */
+          <div className="flex flex-col items-center justify-center my-0.5">
+            <div className="w-2 h-2 rounded-full border border-amber-400 bg-slate-950 -mb-1 z-10 shadow-xs" />
+            <svg viewBox="0 0 36 36" className="w-8 h-8 filter drop-shadow-sm">
+              <polygon
+                points="4,8 32,8 18,32"
+                fill="rgba(245, 158, 11, 0.15)"
+                stroke="#f59e0b"
+                strokeWidth="2.8"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900/90 border border-amber-500/40 shadow-xs mt-1">
+              <span className="text-[9px] font-bold text-amber-300 font-mono">{nodeData.capacityMVA || 60} MVA</span>
             </div>
-            <div className="w-12 h-1 bg-gradient-to-r from-amber-500 to-red-500 rounded-full" />
           </div>
         ) : (
-          /* C. STANDARD 2-WINDING TRANSFORMER (Trafo Distribusi 150/20 kV) */
-          <div className="relative w-12 h-14 flex items-center justify-center">
+          /* C. STANDARD 2-WINDING TRANSFORMER (Trafo Distribusi 150/20 kV dengan terminal bulatan) */
+          <div className="relative flex flex-col items-center justify-center my-0.5">
+            <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
             <svg viewBox="0 0 40 50" className="w-10 h-12 filter drop-shadow-md">
               {/* Lingkaran Atas: Sisi Primer 150 kV (Merah) */}
               <circle cx="20" cy="18" r="13" fill="none" stroke="#ef4444" strokeWidth="3" />
               {/* Lingkaran Bawah: Sisi Sekunder 20 kV (Hijau) */}
               <circle cx="20" cy="32" r="13" fill="none" stroke="#22c55e" strokeWidth="3" />
             </svg>
+            <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
           </div>
         )}
       </div>

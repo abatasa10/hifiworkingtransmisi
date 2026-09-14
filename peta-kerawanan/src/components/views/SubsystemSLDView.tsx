@@ -17,6 +17,7 @@ import { GeneratorNode } from '../sld/nodes/GeneratorNode';
 import { TransformerNode } from '../sld/nodes/TransformerNode';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { TierGuides } from '../sld/TierGuides';
+import { SLDLegendModal } from '../sld/SLDLegendModal';
 import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
@@ -139,6 +140,8 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
             {data?.code || data?.name}
           </span>
           <div className="relative flex flex-col items-center justify-center">
+            {/* Terminal Connection Node */}
+            <div className="w-2 h-2 rounded-full border border-emerald-400 bg-slate-950 -mb-1 z-10 shadow-xs" />
             <div className="relative flex items-center justify-center">
               <svg viewBox="0 0 44 44" className="w-11 h-11 filter drop-shadow-md">
                 <circle
@@ -216,28 +219,42 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
           <span className="text-[9px] font-mono text-cyan-400 mt-0.5">{data?.voltage || '500/150 kV'}</span>
         </div>
       ) : isBeban ? (
-        /* 3. KONSUMEN INDUSTRI KTT / BEBAN */
+        /* 3. KONSUMEN INDUSTRI KTT / BEBAN (Standar Resmi PLN: Segitiga Terbalik dengan bulatan koneksi) */
         <div className="flex flex-col items-center">
           <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-1">
             {data?.code || data?.name}
           </span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-amber-500/40 shadow-sm">
-            <span className="text-xs">🏭</span>
-            <span className="text-[10px] font-bold text-amber-300">{data?.capacityMVA || 60} MVA</span>
+          <div className="relative flex flex-col items-center justify-center my-0.5">
+            {/* Terminal Connection Node */}
+            <div className="w-2 h-2 rounded-full border border-amber-400 bg-slate-950 -mb-1 z-10 shadow-xs" />
+            <svg viewBox="0 0 36 36" className="w-8 h-8 filter drop-shadow-sm">
+              <polygon
+                points="4,8 32,8 18,32"
+                fill="rgba(245, 158, 11, 0.15)"
+                stroke="#f59e0b"
+                strokeWidth="2.8"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900/90 border border-amber-500/40 shadow-xs mt-1">
+            <span className="text-[9.5px] font-bold text-amber-300 font-mono">{data?.capacityMVA || 60} MVA</span>
           </div>
           <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '20 kV'}</span>
         </div>
       ) : isTrafo ? (
-        /* 4. TRAFO DISTRIBUSI 150/20 kV (2 Interlocking Rings) */
+        /* 4. TRAFO DISTRIBUSI 150/20 kV (Standar PLN: 2 Interlocking Rings dengan bulatan terminal) */
         <div className="flex flex-col items-center">
           <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-0.5">
             {data?.code || data?.name}
           </span>
-          <div className="relative w-10 h-12 flex items-center justify-center my-0.5">
+          <div className="relative flex flex-col items-center justify-center my-0.5">
+            <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
             <svg viewBox="0 0 40 48" className="w-9 h-11 filter drop-shadow-sm">
               <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
               <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
             </svg>
+            <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
           </div>
           <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '150/20 kV'}</span>
         </div>
@@ -368,6 +385,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   const [activeTab, setActiveTab] = useState<'500kv' | '150kv'>('500kv');
   const [viewMode, setViewMode] = useState<'sld' | 'list-kerawanan'>('sld');
   const [showSubsystemInfoOverlay, setShowSubsystemInfoOverlay] = useState(false);
+  const [showLegendModal, setShowLegendModal] = useState(false);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(subsystemBogorNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(subsystemBogorEdges);
@@ -968,6 +986,16 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                     </button>
                   </div>
 
+                  {/* Tombol Buka Legend Simbol SLD Resmi */}
+                  <button
+                    onClick={() => setShowLegendModal(true)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 hover:scale-105 shadow-xs cursor-pointer"
+                    title="Buka Legend Simbol Standar PLN (Peralatan, Switching, Penghubung)"
+                  >
+                    <span>📖</span>
+                    <span>Legend Simbol</span>
+                  </button>
+
                   <div className="text-xs font-mono font-bold text-slate-700 mr-80 hidden xl:block">
                     SLD 500 kV — SUBSISTEM {currentSub.name.toUpperCase()}
                   </div>
@@ -1189,6 +1217,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Legend Simbol SLD Standar PLN */}
+      <SLDLegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} />
     </div>
   );
 };

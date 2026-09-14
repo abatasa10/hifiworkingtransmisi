@@ -9,6 +9,8 @@ export interface ParsedGINode {
   primaryVoltage?: string; // e.g. '500 kV' or '275 kV'
   secondaryVoltage?: string; // e.g. '150 kV'
   capacityMVA?: number;
+  isWideBusbar?: boolean;
+  busbarWidth?: number;
   region: string;
   riskStatus: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan';
   riskNumber?: string | number;

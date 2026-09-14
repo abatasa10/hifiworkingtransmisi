@@ -45,6 +45,7 @@ import {
 import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
   ParsedGINode,
   ParsedTransmissionLine,
@@ -144,7 +145,9 @@ export interface ColumnMapping {
   tier: string;       // Kolom Tier (Mulai 0) - untuk Sheet 2 (GI)
   tierFrom: string;   // Kolom Tier Dari GI - untuk Sheet 1 (Jalur Transmisi)
   tierTo: string;     // Kolom Tier Ke GI - untuk Sheet 1 (Jalur Transmisi)
-  assetType: string;  // Kolom Tipe Asset
+  assetType: string;  // Kolom Tipe Simbol SLD / Tipe Asset
+  busbarShape: string; // Kolom Bentuk Busbar (Normal / Panjang)
+  capacity: string;   // Kolom Kapasitas (MVA / MW)
   ibtNumber: string;  // Kolom No IBT (1, 2, 4, dll)
   from: string;       // Kolom Dari GI
   to: string;         // Kolom Ke GI
@@ -230,6 +233,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     tierFrom: '',
     tierTo: '',
     assetType: '',
+    busbarShape: '',
+    capacity: '',
     ibtNumber: '',
     from: '',
     to: '',
@@ -249,6 +254,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     mitigation: '',
     solution: ''
   });
+
+  const [showLegendModal, setShowLegendModal] = useState(false);
 
   // Image mode states
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -392,34 +399,49 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               <span className="text-[9px] font-mono text-emerald-400 mt-0.5">{node.voltage || '500 kV'}</span>
             </div>
           ) : isBebanNode ? (
-            /* Tampilan Konsumen Beban KTT */
+            /* Tampilan Konsumen Beban KTT (Standar PLN: Segitiga Terbalik dengan bulatan koneksi) */
             <div
               onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[130px] bg-slate-900 text-white ${
+              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-900 text-white flex flex-col items-center ${
                 isRawan ? 'border-red-500 shadow-red-500/20' : 'border-amber-500/50 shadow-amber-500/10'
               } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-xs">🏭</span>
-                <span className="text-[10px] font-mono font-bold text-amber-300">{node.voltage || '20 kV'}</span>
+              <div className="font-bold text-xs truncate mb-1 text-center w-full" title={node.name}>
+                {node.code || node.name}
               </div>
-              <div className="font-bold text-xs truncate" title={node.name}>{node.code || node.name}</div>
-              <div className="text-[9px] text-amber-400 font-mono mt-0.5">{node.capacityMVA || 60} MVA</div>
+              <div className="relative flex flex-col items-center justify-center my-0.5">
+                <div className="w-2 h-2 rounded-full border border-amber-400 bg-slate-950 -mb-1 z-10 shadow-xs" />
+                <svg viewBox="0 0 36 36" className="w-8 h-8">
+                  <polygon
+                    points="4,8 32,8 18,32"
+                    fill="rgba(245, 158, 11, 0.15)"
+                    stroke="#f59e0b"
+                    strokeWidth="2.8"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800/80 border border-amber-500/30 mt-1">
+                <span className="text-[9.5px] text-amber-300 font-mono font-bold">{node.capacityMVA || 60} MVA</span>
+              </div>
+              <div className="text-[8.5px] font-mono text-slate-400 mt-0.5">{node.voltage || '20 kV'}</div>
             </div>
           ) : isTrafoNode ? (
-            /* Tampilan Trafo Distribusi 150/20 kV */
+            /* Tampilan Trafo Distribusi 150/20 kV (Standar PLN: 2 Interlocking Rings dengan bulatan terminal) */
             <div
               onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-950 text-white ${
+              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-950 text-white flex flex-col items-center ${
                 isRawan ? 'border-red-500' : 'border-blue-500/60'
               } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
             >
-              <div className="font-bold text-xs truncate mb-1" title={node.name}>{node.code || node.name}</div>
-              <div className="flex justify-center my-0.5">
+              <div className="font-bold text-xs truncate mb-1 text-center w-full" title={node.name}>{node.code || node.name}</div>
+              <div className="relative flex flex-col items-center justify-center my-0.5">
+                <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
                 <svg viewBox="0 0 40 48" className="w-8 h-10">
                   <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
                   <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
                 </svg>
+                <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
               </div>
               <div className="text-[9px] text-slate-400 font-mono text-center">{node.voltage || '150/20 kV'}</div>
             </div>
@@ -606,7 +628,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const tierCol = findHeader(['tiermulai0', 'tier', 'leveltier', 'hirarki', 'hierarchy', 'level']);
     const tierFromCol = findHeader(['tierdarigi', 'tierdari', 'tierfrom', 'tiersumber', 'tierasal']);
     const tierToCol = findHeader(['tierkegi', 'tierke', 'tierto', 'tiertujuan', 'tierujung']);
-    const assetTypeCol = findHeader(['tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
+    const assetTypeCol = findHeader(['tipesimbolsld', 'tipesimbol', 'jenissimbol', 'tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
+    const busbarShapeCol = findHeader(['bentukbusbar', 'bentukrel', 'busbarshape', 'tipebusbar']);
+    const capacityCol = findHeader(['kapasitasmva', 'kapasitasmw', 'kapasitas', 'capacity', 'mva', 'mw']);
     const ibtNumCol = findHeader(['noibt', 'nomoribt', 'nomeribt', 'ibt', 'unitibt']);
     const voltageCol = findHeader(['tegangan', 'kv', 'voltage', 'level']);
     const riskCol = findHeader(['tingkatkerawanan', 'statuskerawanan', 'kerawanan', 'statusasset', 'status', 'kategori', 'risk']);
@@ -630,6 +654,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       tierFrom: tierFromCol,
       tierTo: tierToCol,
       assetType: assetTypeCol,
+      busbarShape: busbarShapeCol,
+      capacity: capacityCol,
       ibtNumber: ibtNumCol,
       from: fromCol,
       to: toCol,
@@ -716,6 +742,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colTierFromIdx = colIdx(mapping.tierFrom);
     const colTierToIdx = colIdx(mapping.tierTo);
     const colAssetTypeIdx = colIdx(mapping.assetType);
+    const colBusbarShapeIdx = colIdx(mapping.busbarShape);
+    const colCapacityIdx = colIdx(mapping.capacity);
     const colIbtNumIdx = colIdx(mapping.ibtNumber);
     const colVoltageIdx = colIdx(mapping.voltage);
     const colRiskIdx = colIdx(mapping.risk);
@@ -879,6 +907,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const tierVal = colTierIdx !== -1 && !isNaN(Number(row[colTierIdx])) ? Number(row[colTierIdx]) : undefined;
         const ibtNumVal = colIbtNumIdx !== -1 && row[colIbtNumIdx] ? String(row[colIbtNumIdx]).trim() : undefined;
         const assetTypeVal = colAssetTypeIdx !== -1 && row[colAssetTypeIdx] ? String(row[colAssetTypeIdx]).trim() : undefined;
+        const busbarShapeVal = colBusbarShapeIdx !== -1 && row[colBusbarShapeIdx] ? String(row[colBusbarShapeIdx]).trim() : '';
+        const capacityVal = colCapacityIdx !== -1 && !isNaN(Number(row[colCapacityIdx])) ? Number(row[colCapacityIdx]) : undefined;
         const codeVal = colCodeIdx !== -1 && row[colCodeIdx] ? String(row[colCodeIdx]).trim() : undefined;
         const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
         const uitVal = colUitIdx !== -1 && row[colUitIdx] ? String(row[colUitIdx]).trim() : undefined;
@@ -897,6 +927,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
         const valLower = giVal.toLowerCase();
         const assetLower = (assetTypeVal || '').toLowerCase();
+        const shapeLower = busbarShapeVal.toLowerCase();
         const isBeban =
           assetLower.includes('beban') ||
           assetLower.includes('ktt') ||
@@ -926,6 +957,13 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           ? 'beban'
           : 'busbar';
 
+        const isWide =
+          shapeLower.includes('panjang') ||
+          shapeLower.includes('wide') ||
+          assetLower.includes('wide') ||
+          valLower.includes('busbar 500') ||
+          valLower.includes('rel 500');
+
         const resolvedIbtNum =
           ibtNumVal ||
           giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
@@ -940,6 +978,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           if (codeVal) existing.code = codeVal;
           if (riskNumVal) existing.riskNumber = riskNumVal;
           existing.assetType = resolvedAssetType;
+          if (capacityVal !== undefined) existing.capacityMVA = capacityVal;
+          if (isWide) {
+            existing.isWideBusbar = true;
+            existing.busbarWidth = 420;
+          }
           if (uitVal) existing.uit = uitVal;
           if (conditionVal) existing.condition = conditionVal;
           if (impactVal) existing.impact = impactVal;
@@ -954,6 +997,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             tier: tierVal !== undefined ? tierVal : isIBT ? 1 : isGen ? 0 : undefined,
             ibtNumber: resolvedIbtNum,
             assetType: resolvedAssetType,
+            capacityMVA: capacityVal,
+            isWideBusbar: isWide ? true : undefined,
+            busbarWidth: isWide ? 420 : undefined,
             voltage: voltageVal,
             region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,
@@ -1540,6 +1586,57 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                           </select>
                         </div>
 
+                        {/* Tipe Simbol SLD Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Tipe Simbol SLD (Pembangkit/Busbar/Trafo/Beban):
+                          </label>
+                          <select
+                            value={colMapping.assetType}
+                            onChange={(e) => handleMappingChange('assetType', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Berdasarkan Nama / Tipe] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Bentuk Busbar Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Bentuk Busbar (Normal / Panjang):
+                          </label>
+                          <select
+                            value={colMapping.busbarShape}
+                            onChange={(e) => handleMappingChange('busbarShape', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Normal / Sesuai Cabang] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Kapasitas MVA/MW Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Kapasitas (MVA / MW):
+                          </label>
+                          <select
+                            value={colMapping.capacity}
+                            onChange={(e) => handleMappingChange('capacity', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Opsional: MVA / MW] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
                         {/* Status Kerawanan Column */}
                         <div>
                           <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
@@ -1704,6 +1801,13 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Template Suralaya - Cilegon (Gambar 1 & 2)</span>
                   </a>
+                  <button
+                    onClick={() => setShowLegendModal(true)}
+                    className="w-full py-1.5 px-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  >
+                    <span>📖</span>
+                    <span>Lihat Legend Simbol SLD PLN</span>
+                  </button>
                 </div>
 
                 {/* Filter Kerawanan Graph */}
@@ -2341,6 +2445,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           </div>
         </div>
       )}
+      {/* Modal Legend Simbol SLD Standar PLN */}
+      <SLDLegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} />
     </div>
   );
 };
