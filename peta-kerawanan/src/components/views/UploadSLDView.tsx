@@ -146,6 +146,8 @@ export interface ColumnMapping {
   tierFrom: string;   // Kolom Tier Dari GI - untuk Sheet 1 (Jalur Transmisi)
   tierTo: string;     // Kolom Tier Ke GI - untuk Sheet 1 (Jalur Transmisi)
   assetType: string;  // Kolom Tipe Simbol SLD / Tipe Asset
+  symbolFrom: string; // Kolom Tipe Simbol Dari GI (Sheet 1)
+  symbolTo: string;   // Kolom Tipe Simbol Ke GI (Sheet 1)
   busbarShape: string; // Kolom Bentuk Busbar (Normal / Panjang)
   capacity: string;   // Kolom Kapasitas (MVA / MW)
   ibtNumber: string;  // Kolom No IBT (1, 2, 4, dll)
@@ -233,6 +235,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     tierFrom: '',
     tierTo: '',
     assetType: '',
+    symbolFrom: '',
+    symbolTo: '',
     busbarShape: '',
     capacity: '',
     ibtNumber: '',
@@ -631,6 +635,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const tierFromCol = findHeader(['tierdarigi', 'tierdari', 'tierfrom', 'tiersumber', 'tierasal']);
     const tierToCol = findHeader(['tierkegi', 'tierke', 'tierto', 'tiertujuan', 'tierujung']);
     const assetTypeCol = findHeader(['tipesimbolsld', 'tipesimbol', 'jenissimbol', 'tipeasset', 'tipe', 'jenisasi', 'jenis', 'type']);
+    const symbolFromCol = findHeader(['tipesimboldarigi', 'tipesimboldari', 'simboldarigi', 'simboldari', 'tipedarigi', 'tipedari']);
+    const symbolToCol = findHeader(['tipesimbolkegi', 'tipesimbolke', 'simbolkegi', 'simbolke', 'tipekegi', 'tipeke']);
     const busbarShapeCol = findHeader(['bentukbusbar', 'bentukrel', 'busbarshape', 'tipebusbar']);
     const capacityCol = findHeader(['kapasitasmva', 'kapasitasmw', 'kapasitas', 'capacity', 'mva', 'mw']);
     const ibtNumCol = findHeader(['noibt', 'nomoribt', 'nomeribt', 'ibt', 'unitibt']);
@@ -656,6 +662,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       tierFrom: tierFromCol,
       tierTo: tierToCol,
       assetType: assetTypeCol,
+      symbolFrom: symbolFromCol,
+      symbolTo: symbolToCol,
       busbarShape: busbarShapeCol,
       capacity: capacityCol,
       ibtNumber: ibtNumCol,
@@ -744,6 +752,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colTierFromIdx = colIdx(mapping.tierFrom);
     const colTierToIdx = colIdx(mapping.tierTo);
     const colAssetTypeIdx = colIdx(mapping.assetType);
+    const colSymbolFromIdx = colIdx(mapping.symbolFrom);
+    const colSymbolToIdx = colIdx(mapping.symbolTo);
     const colBusbarShapeIdx = colIdx(mapping.busbarShape);
     const colCapacityIdx = colIdx(mapping.capacity);
     const colIbtNumIdx = colIdx(mapping.ibtNumber);
@@ -761,6 +771,27 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const colImpactIdx = colIdx(mapping.impact);
     const colMitigationIdx = colIdx(mapping.mitigation);
     const colSolutionIdx = colIdx(mapping.solution);
+
+    const resolveAssetType = (
+      sym: string,
+      name: string,
+      volt: string
+    ): 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' => {
+      const sL = (sym || '').toLowerCase();
+      const nL = (name || '').toLowerCase();
+      if (sL.includes('pembangkit') || sL.includes('generator') || sL.includes('plt') || sL.includes('unit')) return 'pembangkit';
+      if (sL === 'trafo' || sL.includes('trafo_distribusi') || sL.includes('trafo_generator') || (sL.includes('trafo') && !sL.includes('ibt'))) return 'trafo';
+      if (sL.includes('ibt') || (sL.includes('500/150') && !sL.includes('trafo'))) return 'ibt';
+      if (sL.includes('beban') || sL.includes('ktt') || sL.includes('konsumen')) return 'beban';
+      if (sL.includes('busbar') || sL.includes('rel')) return 'busbar';
+
+      // Fallback heuristics based on name and voltage
+      if (nL.includes('ktt') || nL.includes('konsumen')) return 'beban';
+      if (nL.includes('plt') || nL.includes('pembangkit') || nL.includes('unit')) return 'pembangkit';
+      if ((nL.includes('ibt') || volt.includes('500/150') || volt.includes('275/150')) && !nL.includes('trafo')) return 'ibt';
+      if (nL.includes('trafo')) return 'trafo';
+      return 'busbar';
+    };
 
     const parsedNodes: ParsedGINode[] = [];
     const parsedLines: ParsedTransmissionLine[] = [];
@@ -841,20 +872,21 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const tierFromVal = colTierFromIdx !== -1 && row[colTierFromIdx] !== undefined && row[colTierFromIdx] !== '' ? Number(row[colTierFromIdx]) : undefined;
         const tierToVal   = colTierToIdx   !== -1 && row[colTierToIdx]   !== undefined && row[colTierToIdx]   !== '' ? Number(row[colTierToIdx])   : undefined;
 
-        if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
-          const dLower = dariVal.toLowerCase();
-          const isBeban = dLower.includes('ktt') || dLower.includes('konsumen');
-          const isGen =
-            dLower.includes('plt') ||
-            dLower.includes('pembangkit') ||
-            dLower.includes('unit');
-          const isIBT =
-            !isBeban &&
-            (dLower.includes('ibt') ||
-              voltageVal.includes('500/150') ||
-              voltageVal.includes('275/150'));
-          const isTrafo = !isBeban && !isIBT && dLower.includes('trafo');
-          const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
+        // Baca Tipe Simbol Dari GI dan Ke GI (Sheet 1)
+        const symbolFromVal = colSymbolFromIdx !== -1 && row[colSymbolFromIdx] ? String(row[colSymbolFromIdx]).trim() : '';
+        const symbolToVal   = colSymbolToIdx   !== -1 && row[colSymbolToIdx]   ? String(row[colSymbolToIdx]).trim()   : '';
+
+        const existingSource = parsedNodes.find((n) => n.id === sourceNodeId);
+        if (existingSource) {
+          if (symbolFromVal) {
+            existingSource.assetType = resolveAssetType(symbolFromVal, dariVal, voltageVal);
+          }
+          if (tierFromVal !== undefined) {
+            existingSource.tier = tierFromVal;
+          }
+        } else {
+          const resType = resolveAssetType(symbolFromVal, dariVal, voltageVal);
+          const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (resType === 'ibt' ? '1' : undefined);
           parsedNodes.push({
             id: sourceNodeId,
             name: dariVal,
@@ -862,26 +894,23 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
+            assetType: resType,
             ibtNumber: num,
-            tier: tierFromVal !== undefined ? tierFromVal : isIBT ? 1 : isGen ? 0 : undefined
+            tier: tierFromVal !== undefined ? tierFromVal : resType === 'ibt' ? 1 : resType === 'pembangkit' ? 0 : undefined
           });
         }
 
-        if (!parsedNodes.some((n) => n.id === targetNodeId)) {
-          const kLower = keVal.toLowerCase();
-          const isBeban = kLower.includes('ktt') || kLower.includes('konsumen');
-          const isGen =
-            kLower.includes('plt') ||
-            kLower.includes('pembangkit') ||
-            kLower.includes('unit');
-          const isIBT =
-            !isBeban &&
-            (kLower.includes('ibt') ||
-              voltageVal.includes('500/150') ||
-              voltageVal.includes('275/150'));
-          const isTrafo = !isBeban && !isIBT && kLower.includes('trafo');
-          const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
+        const existingTarget = parsedNodes.find((n) => n.id === targetNodeId);
+        if (existingTarget) {
+          if (symbolToVal) {
+            existingTarget.assetType = resolveAssetType(symbolToVal, keVal, voltageVal);
+          }
+          if (tierToVal !== undefined) {
+            existingTarget.tier = tierToVal;
+          }
+        } else {
+          const resType = resolveAssetType(symbolToVal, keVal, voltageVal);
+          const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (resType === 'ibt' ? '1' : undefined);
           parsedNodes.push({
             id: targetNodeId,
             name: keVal,
@@ -889,9 +918,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
+            assetType: resType,
             ibtNumber: num,
-            tier: tierToVal !== undefined ? tierToVal : isIBT ? 1 : isGen ? 0 : undefined
+            tier: tierToVal !== undefined ? tierToVal : resType === 'ibt' ? 1 : resType === 'pembangkit' ? 0 : undefined
           });
         }
       });
@@ -1601,6 +1630,40 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                             className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
                           >
                             <option value="">-- [Auto: Berdasarkan Nama / Tipe] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tipe Simbol Dari GI Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Tipe Simbol Dari GI (Sheet 1):
+                          </label>
+                          <select
+                            value={colMapping.symbolFrom}
+                            onChange={(e) => handleMappingChange('symbolFrom', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Tipe Simbol Dari GI] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tipe Simbol Ke GI Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Tipe Simbol Ke GI (Sheet 1):
+                          </label>
+                          <select
+                            value={colMapping.symbolTo}
+                            onChange={(e) => handleMappingChange('symbolTo', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Tipe Simbol Ke GI] --</option>
                             {rawHeaders.map((h) => (
                               <option key={h} value={h}>{h}</option>
                             ))}
