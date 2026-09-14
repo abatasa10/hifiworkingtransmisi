@@ -551,6 +551,27 @@ export const defaultSuralayaCilegonLines: ParsedTransmissionLine[] = [
     "solution": "Jangka Menengah :\nUsulan Double phi pada ruas Suralaya s.d Cilegon Lama (Kajian belum ada). Diusulkan COD Tahun 2030."
   },
   {
+    "id": "LINE_13B_SUTT_150_kV_MTSUI_-_CLGON_(Ruas_Mitsui_-_Cilegon)_CLGON",
+    "sourceId": "GI_MTSUI",
+    "targetId": "GI_CLGON",
+    "lineName": "SUTT 150 kV MTSUI - CLGON (Ruas Mitsui - Cilegon)",
+    "circuit": "1 Sirkit",
+    "circuitCount": 1,
+    "lengthKm": 10.5,
+    "loadingPct": 62,
+    "voltage": "150 kV",
+    "riskStatus": "N-1",
+    "region": "Banten - Cilegon",
+    "corridor": "Banten - Cilegon",
+    "uit": "JBB",
+    "circuitNumber": 1,
+    "riskNumber": "3",
+    "condition": "Ruas Penghantar Suralaya\u2013Peni\u2013Mitsui\u2013Cilegon masih single phi.",
+    "impact": "1. Pemeliharaan Penghantar menjadi sulit dilakukan.\n2. Terjadi pemadaman apabila terdapat gangguan N\u20131\u20131.",
+    "mitigation": "Pengaturan konfigurasi jaringan sistem Banten.",
+    "solution": "Jangka Menengah :\nUsulan Double phi pada ruas Suralaya s.d Cilegon Lama. Diusulkan COD Tahun 2030."
+  },
+  {
     "id": "LINE_14_Feeder_Trafo_SLRDA_ke_KTT_SLFDO-1_KTT_SLFDO-1",
     "sourceId": "GI_SLRDA",
     "targetId": "GI_KTT_SLFDO-1",
