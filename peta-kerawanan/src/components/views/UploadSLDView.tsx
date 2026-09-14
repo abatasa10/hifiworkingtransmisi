@@ -302,13 +302,15 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         nameL.includes('ktt') ||
         nameL.includes('konsumen');
 
+      const isTrafoExplicitNode = typeL === 'trafo';
       const isIBTNode =
         !isBebanNode &&
+        !isTrafoExplicitNode &&
         (typeL === 'ibt' ||
           (nameL.includes('ibt') && !nameL.includes('ktt')) ||
-          String(node.voltage || '').includes('500/150'));
+          (String(node.voltage || '').includes('500/150') && !nameL.includes('trafo')));
 
-      const isTrafoNode = !isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo'));
+      const isTrafoNode = isTrafoExplicitNode || (!isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo')));
 
       const isPembangkitNode =
         typeL === 'pembangkit' ||
@@ -939,14 +941,16 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           valLower.includes('plt') ||
           valLower.includes('pembangkit') ||
           valLower.includes('unit');
+        const isTrafoExplicit = assetLower === 'trafo';
         const isIBT =
           !isBeban &&
+          !isTrafoExplicit &&
           (assetLower.includes('ibt') ||
             (valLower.includes('ibt') && !valLower.includes('ktt')) ||
             Boolean(ibtNumVal) ||
-            voltageVal.includes('500/150') ||
-            voltageVal.includes('275/150'));
-        const isTrafo = !isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo'));
+            (voltageVal.includes('500/150') && !valLower.includes('trafo')) ||
+            (voltageVal.includes('275/150') && !valLower.includes('trafo')));
+        const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo')));
         const resolvedAssetType: 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' = isGen
           ? 'pembangkit'
           : isIBT

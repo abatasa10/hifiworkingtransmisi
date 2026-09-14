@@ -70,13 +70,15 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
     nLower.includes('ktt') ||
     nLower.includes('konsumen');
 
+  const isTrafoExplicit = typeL === 'trafo';
   const isIBT =
     !isBeban &&
+    !isTrafoExplicit &&
     (typeL === 'ibt' ||
       (nLower.includes('ibt') && !nLower.includes('ktt')) ||
-      String(data?.voltage || '').includes('500/150'));
+      (String(data?.voltage || '').includes('500/150') && !nLower.includes('trafo')));
 
-  const isTrafo = !isBeban && !isIBT && (typeL === 'trafo' || nLower.includes('trafo'));
+  const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (typeL === 'trafo' || nLower.includes('trafo')));
   const isWide = Boolean(data?.isWideBusbar || (typeof data?.busbarWidth === 'number' && data.busbarWidth > 180));
   const busbarWidth = typeof data?.busbarWidth === 'number' ? data.busbarWidth : 144;
   const taps = (data?.taps as any[]) || [];
@@ -434,13 +436,15 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           nameL.includes('ktt') ||
           nameL.includes('konsumen');
 
+        const isTrafoExplicit = typeL === 'trafo';
         const isIBT =
           !isBeban &&
+          !isTrafoExplicit &&
           (typeL === 'ibt' ||
             (nameL.includes('ibt') && !nameL.includes('ktt')) ||
-            String(gi.voltage || '').includes('500/150'));
+            (String(gi.voltage || '').includes('500/150') && !nameL.includes('trafo')));
 
-        const isTrafo = !isBeban && !isIBT && (typeL === 'trafo' || nameL.includes('trafo'));
+        const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (typeL === 'trafo' || nameL.includes('trafo')));
         const pos = layoutPositions[gi.id] || { x: 100, y: 100, tier: gi.tier ?? 2 };
         const isWide = Boolean(pos.isWideBusbar || (typeof pos.busbarWidth === 'number' && pos.busbarWidth > 180));
 

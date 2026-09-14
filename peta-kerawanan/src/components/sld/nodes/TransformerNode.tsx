@@ -14,13 +14,15 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
   const typeL = String(nodeData.assetType || nodeData.type || '').toLowerCase();
 
   const isBeban = typeL.includes('beban') || typeL.includes('ktt') || nameL.includes('ktt') || nameL.includes('konsumen');
+  const isTrafoExplicit = typeL === 'trafo';
   const isIBT =
     !isBeban &&
+    !isTrafoExplicit &&
     (typeL === 'ibt' ||
       (nameL.includes('ibt') && !nameL.includes('ktt')) ||
-      voltageStr.includes('500/150') ||
-      voltageStr.includes('275/150'));
-  const isTrafo = !isBeban && !isIBT;
+      (voltageStr.includes('500/150') && !nameL.includes('trafo')) ||
+      (voltageStr.includes('275/150') && !nameL.includes('trafo')));
+  const isTrafo = isTrafoExplicit || (!isBeban && !isIBT);
 
   const is500to150 = voltageStr.includes('500') || !voltageStr.includes('275');
   const primaryColor = is500to150 ? '#2563eb' : '#9333ea'; // Blue for 500 kV, Purple for 275 kV

@@ -394,7 +394,7 @@ export function computeCleanSLDLayout(
     const t = nodeTierMap[n.id] ?? 2;
     const isIBT =
       n.assetType === 'ibt' ||
-      (n.name || '').toLowerCase().includes('ibt');
+      (n.assetType !== 'trafo' && (n.name || '').toLowerCase().includes('ibt'));
 
     // Place IBT halfway between Tier 0 and Tier 1 if marked as Tier 1
     const finalY =
