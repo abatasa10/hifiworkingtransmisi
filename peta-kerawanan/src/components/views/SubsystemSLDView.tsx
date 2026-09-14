@@ -70,15 +70,25 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
     nLower.includes('ktt') ||
     nLower.includes('konsumen');
 
+  const isBusbarExplicit =
+    typeL === 'busbar' ||
+    typeL === 'gitet' ||
+    typeL === 'gi' ||
+    nLower.includes('busbar') ||
+    nLower.includes('rel') ||
+    nLower.includes('suralaya baru') ||
+    nLower.includes('cilegon baru') ||
+    nLower === 'suralaya';
+
   const isTrafoExplicit = typeL === 'trafo';
   const isIBT =
+    !isBusbarExplicit &&
     !isBeban &&
     !isTrafoExplicit &&
     (typeL === 'ibt' ||
-      (nLower.includes('ibt') && !nLower.includes('ktt')) ||
-      (String(data?.voltage || '').includes('500/150') && !nLower.includes('trafo')));
+      (nLower.startsWith('ibt') || (nLower.includes('ibt') && !nLower.includes('bay') && !nLower.includes('ktt'))));
 
-  const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (typeL === 'trafo' || nLower.includes('trafo')));
+  const isTrafo = isTrafoExplicit || (!isBusbarExplicit && !isBeban && !isIBT && (typeL === 'trafo' || nLower.includes('trafo')));
   const isWide = Boolean(data?.isWideBusbar || (typeof data?.busbarWidth === 'number' && data.busbarWidth > 180));
   const busbarWidth = typeof data?.busbarWidth === 'number' ? data.busbarWidth : 144;
   const taps = (data?.taps as any[]) || [];
@@ -443,24 +453,34 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           nameL.includes('ktt') ||
           nameL.includes('konsumen');
 
+        const isBusbarExplicit =
+          typeL === 'busbar' ||
+          typeL === 'gitet' ||
+          typeL === 'gi' ||
+          nameL.includes('busbar') ||
+          nameL.includes('rel') ||
+          nameL.includes('suralaya baru') ||
+          nameL.includes('cilegon baru') ||
+          nameL === 'suralaya';
+
         const isTrafoExplicit = typeL === 'trafo';
         const isIBT =
+          !isBusbarExplicit &&
           !isBeban &&
           !isTrafoExplicit &&
           (typeL === 'ibt' ||
-            (nameL.includes('ibt') && !nameL.includes('ktt')) ||
-            (String(gi.voltage || '').includes('500/150') && !nameL.includes('trafo')));
+            (nameL.startsWith('ibt') || (nameL.includes('ibt') && !nameL.includes('bay') && !nameL.includes('ktt'))));
 
-        const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (typeL === 'trafo' || nameL.includes('trafo')));
+        const isTrafo = isTrafoExplicit || (!isBusbarExplicit && !isBeban && !isIBT && (typeL === 'trafo' || nameL.includes('trafo')));
         const pos = layoutPositions[gi.id] || { x: 100, y: 100, tier: gi.tier ?? 2 };
         const isWide = Boolean(pos.isWideBusbar || (typeof pos.busbarWidth === 'number' && pos.busbarWidth > 180));
 
         let nodeType = 'busbar';
         if (isGen) nodeType = 'generator';
+        else if (isBusbarExplicit || isWide) nodeType = 'busbar';
         else if (isIBT) nodeType = 'ibt';
         else if (isTrafo) nodeType = 'trafo';
         else if (isBeban) nodeType = 'custom';
-        else if (isWide) nodeType = 'busbar';
 
         return {
           id: gi.id,

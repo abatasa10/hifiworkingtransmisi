@@ -94,7 +94,23 @@ export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
   try {
     const key = `${STORAGE_PREFIX}${targetId}`;
     const data = localStorage.getItem(key);
-    if (data) return JSON.parse(data) as CustomSLDConfig;
+    if (data) {
+      try {
+        const parsed = JSON.parse(data) as CustomSLDConfig;
+        const hasPhantomNodes = parsed.excelData?.giList?.some(
+          (g) =>
+            (g.id || '').toLowerCase().includes('trafodistribusisrlya') ||
+            (g.name || '').toLowerCase().includes('trafo distribusi srlya') ||
+            (g.name || '').toLowerCase().includes('trafo distribusi clbru')
+        );
+        if (!hasPhantomNodes) {
+          return parsed;
+        }
+        localStorage.removeItem(key);
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
 
     // Default authentic configuration for Subsistem Suralaya - Cilegon
     if (targetId === 'sub-suralaya-cilegon' || targetId === 'sub-bogor') {

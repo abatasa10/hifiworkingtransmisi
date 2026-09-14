@@ -192,20 +192,48 @@ export function computeCleanSLDLayout(
       const cleanName = (n.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const cleanCode = (n.code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-      // Direct key match (highest priority)
+      // Direct exact match
       let match = knownCoords[clean] || knownCoords[rawClean] || knownCoords[cleanCode] || knownCoords[cleanName];
 
-      // Substring matching: longest keys first
+      // Exact GI prefix match (e.g. "gi_srlya" -> "srlya", "gitesrlya" -> "srlya")
       if (!match) {
-        const sortedKeys = Object.keys(knownCoords).sort((a, b) => b.length - a.length);
-        for (const k of sortedKeys) {
+        for (const [k, coord] of Object.entries(knownCoords)) {
           if (
             clean === k ||
             rawClean === k ||
             cleanCode === k ||
-            clean.includes(k) ||
-            cleanName.includes(k) ||
-            cleanCode.includes(k)
+            cleanName === k ||
+            clean === `gi${k}` ||
+            rawClean === `gi${k}` ||
+            clean === `gitet${k}` ||
+            rawClean === `gitet${k}` ||
+            clean === `garduinduk${k}` ||
+            cleanName === `garduinduk${k}` ||
+            cleanName === `gitet${k}` ||
+            cleanName === `gi${k}`
+          ) {
+            match = coord;
+            break;
+          }
+        }
+      }
+
+      // Safe prefix/suffix fallback only if not a different asset category
+      if (!match) {
+        const sortedKeys = Object.keys(knownCoords).sort((a, b) => b.length - a.length);
+        for (const k of sortedKeys) {
+          const isKBusbar = k === 'srlya' || k === 'clbru' || k === 'suralaya' || k === 'suralayabaru' || k === 'cilegonbaru';
+          // Prevent trafo/feeder/ktt nodes from stealing busbars
+          if (isKBusbar && (cleanName.includes('trafo') || cleanName.includes('feeder') || cleanName.includes('ktt'))) {
+            continue;
+          }
+          if (
+            clean.startsWith(k) ||
+            clean.endsWith(k) ||
+            cleanCode.startsWith(k) ||
+            cleanCode.endsWith(k) ||
+            cleanName.startsWith(k) ||
+            cleanName.endsWith(k)
           ) {
             match = knownCoords[k];
             break;

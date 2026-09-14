@@ -94,17 +94,29 @@ export const GeneratorNode: React.FC<NodeProps> = memo(({ data, selected }) => {
           )}
         </div>
 
-        {/* Garis Feeder Bay & PMT Pemutus Tenaga Menghubungkan ke Busbar Bawah */}
+        {/* Sequence: 1. Pembangkit -> 2. Trafo Step-Up (GSUT) -> 3. CB / PMT */}
         <div className="flex flex-col items-center">
-          {/* Garis penghubung atas PMT */}
-          <div className="w-[2.5px] h-2.5 bg-red-500" />
-          {/* PMT Circuit Breaker (Kotak Solid Merah) */}
+          {/* Garis penghubung Generator ke Trafo GSUT */}
+          <div className="w-[2px] h-1.5 bg-emerald-500" />
+          
+          {/* 2. Trafo GSUT (2 Interlocking Circles: Atas Hijau Pembangkit, Bawah Merah GI) */}
+          <div className="relative flex flex-col items-center justify-center my-0.5" title="2. Trafo Step-Up Generator (GSUT)">
+            <svg viewBox="0 0 32 38" className="w-6 h-7 filter drop-shadow-sm">
+              <circle cx="16" cy="13" r="9.5" fill="none" stroke="#22c55e" strokeWidth="2.4" />
+              <circle cx="16" cy="25" r="9.5" fill="none" stroke="#ef4444" strokeWidth="2.4" />
+            </svg>
+          </div>
+
+          {/* Garis penghubung Trafo ke PMT */}
+          <div className="w-[2px] h-1 bg-red-500" />
+
+          {/* 3. PMT Circuit Breaker (Kotak Solid Merah) */}
           <div
             className="w-2.5 h-3.5 bg-red-600 rounded-[1px] border border-red-800 shadow-xs transition-colors"
-            title="PMT / Pemutus Tenaga Bay Generator"
+            title="3. PMT / Pemutus Tenaga Bay Generator"
           />
           {/* Garis penghubung bawah PMT ke busbar */}
-          <div className="w-[2.5px] h-2.5 bg-red-500" />
+          <div className="w-[2px] h-2 bg-red-500" />
         </div>
       </div>
 

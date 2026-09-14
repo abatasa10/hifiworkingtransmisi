@@ -306,15 +306,25 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         nameL.includes('ktt') ||
         nameL.includes('konsumen');
 
+      const isBusbarExplicitNode =
+        typeL === 'busbar' ||
+        typeL === 'gitet' ||
+        typeL === 'gi' ||
+        nameL.includes('busbar') ||
+        nameL.includes('rel') ||
+        nameL.includes('suralaya baru') ||
+        nameL.includes('cilegon baru') ||
+        nameL === 'suralaya';
+
       const isTrafoExplicitNode = typeL === 'trafo';
       const isIBTNode =
+        !isBusbarExplicitNode &&
         !isBebanNode &&
         !isTrafoExplicitNode &&
         (typeL === 'ibt' ||
-          (nameL.includes('ibt') && !nameL.includes('ktt')) ||
-          (String(node.voltage || '').includes('500/150') && !nameL.includes('trafo')));
+          (nameL.startsWith('ibt') || (nameL.includes('ibt') && !nameL.includes('bay') && !nameL.includes('ktt'))));
 
-      const isTrafoNode = isTrafoExplicitNode || (!isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo')));
+      const isTrafoNode = isTrafoExplicitNode || (!isBusbarExplicitNode && !isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo')));
 
       const isPembangkitNode =
         typeL === 'pembangkit' ||
@@ -788,7 +798,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       // Fallback heuristics based on name and voltage
       if (nL.includes('ktt') || nL.includes('konsumen')) return 'beban';
       if (nL.includes('plt') || nL.includes('pembangkit') || nL.includes('unit')) return 'pembangkit';
-      if ((nL.includes('ibt') || volt.includes('500/150') || volt.includes('275/150')) && !nL.includes('trafo')) return 'ibt';
+      if (sL.includes('busbar') || nL.includes('busbar') || nL.includes('rel') || nL.includes('suralaya baru') || nL.includes('cilegon baru') || nL === 'suralaya') return 'busbar';
+      if (sL === 'ibt' || nL.startsWith('ibt') || (nL.includes('ibt') && !nL.includes('bay') && !nL.includes('ktt'))) return 'ibt';
       if (nL.includes('trafo')) return 'trafo';
       return 'busbar';
     };
@@ -970,16 +981,26 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           valLower.includes('plt') ||
           valLower.includes('pembangkit') ||
           valLower.includes('unit');
+        const isBusbarExplicit =
+          assetLower.includes('busbar') ||
+          assetLower.includes('rel') ||
+          assetLower === 'gitet' ||
+          assetLower === 'gi' ||
+          valLower.includes('busbar') ||
+          valLower.includes('rel') ||
+          valLower.includes('suralaya baru') ||
+          valLower.includes('cilegon baru') ||
+          valLower === 'suralaya';
+
         const isTrafoExplicit = assetLower === 'trafo';
         const isIBT =
+          !isBusbarExplicit &&
           !isBeban &&
           !isTrafoExplicit &&
           (assetLower.includes('ibt') ||
-            (valLower.includes('ibt') && !valLower.includes('ktt')) ||
-            Boolean(ibtNumVal) ||
-            (voltageVal.includes('500/150') && !valLower.includes('trafo')) ||
-            (voltageVal.includes('275/150') && !valLower.includes('trafo')));
-        const isTrafo = isTrafoExplicit || (!isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo')));
+            (valLower.startsWith('ibt') || (valLower.includes('ibt') && !valLower.includes('bay') && !valLower.includes('ktt'))));
+
+        const isTrafo = isTrafoExplicit || (!isBusbarExplicit && !isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo')));
         const resolvedAssetType: 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' = isGen
           ? 'pembangkit'
           : isIBT

@@ -108,6 +108,12 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
   const isTransformerLink =
     edgeData?.type === 'transformer_link' && id.includes('INTERNAL_IBT');
 
+  const isDistributionTrafo =
+    String(edgeData?.voltage || '').includes('150/20') ||
+    String(edgeData?.name || '').toLowerCase().includes('feeder trafo') ||
+    String(id).toLowerCase().includes('feeder_trafo') ||
+    String((edgeData as any)?.lineName || '').toLowerCase().includes('feeder trafo');
+
   const edgeIbtNum =
     String(edgeData?.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
     id.match(/ibt\s*([0-9&]+)/i)?.[1] ||
@@ -285,6 +291,32 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
                 {edgeIbtNum}
               </text>
             </svg>
+          </div>
+        </EdgeLabelRenderer>
+      )}
+
+      {/* Simbol Trafo Distribusi 150/20 kV (2 Lingkaran Interlocking: Atas Merah 150 kV, Bawah Kuning 20 kV) */}
+      {isDistributionTrafo && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all'
+            }}
+            className="z-20 cursor-pointer group flex flex-col items-center select-none"
+            title={`${edgeData?.name || 'Trafo Distribusi'} (150/20 kV)`}
+          >
+            <div className="relative flex flex-col items-center justify-center filter drop-shadow-md transition-transform group-hover:scale-115">
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mb-1 z-10 border border-red-500" />
+              <svg viewBox="0 0 36 44" className="w-7 h-9">
+                {/* Lingkaran Atas: Merah 150 kV */}
+                <circle cx="18" cy="15" r="11" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+                {/* Lingkaran Bawah: Kuning 20 kV */}
+                <circle cx="18" cy="27" r="11" fill="none" stroke="#f59e0b" strokeWidth="2.6" />
+              </svg>
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mt-1 z-10 border border-amber-400" />
+            </div>
           </div>
         </EdgeLabelRenderer>
       )}
