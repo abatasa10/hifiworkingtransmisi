@@ -8,12 +8,19 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
   const isHighlighted = nodeData.highlighted || selected;
   const loading = nodeData.loading ?? 50;
 
-  // Detect if this is an IBT (500/150 kV or 275/150 kV) or standard transformer
+  // Detect asset type: IBT (500/150 kV) vs Trafo (150/20 kV) vs Beban
   const voltageStr = String(nodeData.voltage || '');
+  const nameL = String(nodeData.name || '').toLowerCase();
+  const typeL = String(nodeData.assetType || nodeData.type || '').toLowerCase();
+
+  const isBeban = typeL.includes('beban') || typeL.includes('ktt') || nameL.includes('ktt') || nameL.includes('konsumen');
   const isIBT =
-    nodeData.type === 'ibt' ||
-    voltageStr.includes('/') ||
-    String(nodeData.name || '').toLowerCase().includes('ibt');
+    !isBeban &&
+    (typeL === 'ibt' ||
+      (nameL.includes('ibt') && !nameL.includes('ktt')) ||
+      voltageStr.includes('500/150') ||
+      voltageStr.includes('275/150'));
+  const isTrafo = !isBeban && !isIBT;
 
   const is500to150 = voltageStr.includes('500') || !voltageStr.includes('275');
   const primaryColor = is500to150 ? '#2563eb' : '#9333ea'; // Blue for 500 kV, Purple for 275 kV
@@ -61,27 +68,29 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
               : 'bg-slate-900/90 text-cyan-300 border-slate-700/80 group-hover:border-cyan-400'
           }`}
         >
-          {nodeData.name || `IBT ${ibtNumber}`}
+          {nodeData.name || (isIBT ? `IBT ${ibtNumber}` : isBeban ? 'Konsumen KTT' : 'Trafo Distribusi')}
         </span>
         <span className="text-[8px] font-mono text-slate-400 mt-0.5">
-          {nodeData.voltage || '500/150 kV'}
+          {nodeData.voltage || (isIBT ? '500/150 kV' : isBeban ? '20 kV' : '150/20 kV')}
         </span>
       </div>
 
-      {/* 2. PMT (Circuit Breaker) Rectangle Block (Gambar 2) */}
-      <div
-        className="w-2.5 h-4 rounded-xs border shadow-xs my-0.5 transition-colors"
-        style={{
-          backgroundColor: primaryColor,
-          borderColor: isHighlighted ? '#ffffff' : primaryColor
-        }}
-        title="PMT / Pemutus Tenaga Bay IBT"
-      />
+      {/* 2. PMT (Circuit Breaker) Rectangle Block (jika IBT atau Trafo) */}
+      {!isBeban && (
+        <div
+          className="w-2.5 h-3.5 rounded-[1px] border shadow-xs my-0.5 transition-colors"
+          style={{
+            backgroundColor: primaryColor,
+            borderColor: isHighlighted ? '#ffffff' : primaryColor
+          }}
+          title="PMT / Pemutus Tenaga Bay Trafo"
+        />
+      )}
 
-      {/* 3. Authentic 3-Winding Interlocking Circles (Persis Gambar Pengguna) with IBT Number Badge */}
-      <div className="relative flex items-center justify-center my-1">
+      {/* 3. Authentic Symbols */}
+      <div className="relative flex items-center justify-center my-0.5">
         {isIBT ? (
-          /* 3-WINDING IBT (Lingkaran Interlocking Biru, Merah, Kuning + Badge Nomor IBT) */
+          /* A. 3-WINDING IBT (Lingkaran Interlocking Biru, Merah, Kuning + Badge Nomor IBT) */
           <div className="relative w-18 h-16 flex items-center justify-center">
             <svg
               viewBox="0 0 74 66"
@@ -127,7 +136,7 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
                 className="transition-colors"
               />
 
-              {/* Badge Nomor IBT (Persis Gambar: Rounded Box Semi-Transparan Putih / Abu Muda di Sebelah Kanan) */}
+              {/* Badge Nomor IBT */}
               <rect
                 x="47"
                 y="14"
@@ -153,7 +162,7 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
               </text>
             </svg>
 
-            {/* Status Kerawanan Pill (Jika Rawan, diletakkan elegan di pojok kiri atas tanpa menutupi 3 lingkaran) */}
+            {/* Status Kerawanan Pill */}
             {isRawan && (
               <div className="absolute -top-1.5 -left-3 z-20 animate-pulse pointer-events-none">
                 <span className="px-1.5 py-0.5 rounded-full bg-red-600/95 text-white font-black text-[9px] border border-red-300 shadow-md flex items-center gap-0.5">
@@ -163,17 +172,24 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
               </div>
             )}
           </div>
+        ) : isBeban ? (
+          /* B. BEBAN / KONSUMEN INDUSTRI KTT */
+          <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-900/90 border border-slate-700 shadow-md my-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-sm">🏭</span>
+              <span className="text-[10px] font-bold text-amber-300">{nodeData.capacityMVA || 60} MVA</span>
+            </div>
+            <div className="w-12 h-1 bg-gradient-to-r from-amber-500 to-red-500 rounded-full" />
+          </div>
         ) : (
-          /* STANDARD 2-WINDING TRANSFORMER */
-          <div className="relative w-8 h-12 flex flex-col items-center justify-center">
-            <div
-              className="w-6 h-6 rounded-full border-2 absolute top-0"
-              style={{ borderColor: secondaryColor, backgroundColor: 'rgba(15, 23, 42, 0.6)' }}
-            />
-            <div
-              className="w-6 h-6 rounded-full border-2 absolute bottom-0"
-              style={{ borderColor: tertiaryColor, backgroundColor: 'rgba(15, 23, 42, 0.6)' }}
-            />
+          /* C. STANDARD 2-WINDING TRANSFORMER (Trafo Distribusi 150/20 kV) */
+          <div className="relative w-12 h-14 flex items-center justify-center">
+            <svg viewBox="0 0 40 50" className="w-10 h-12 filter drop-shadow-md">
+              {/* Lingkaran Atas: Sisi Primer 150 kV (Merah) */}
+              <circle cx="20" cy="18" r="13" fill="none" stroke="#ef4444" strokeWidth="3" />
+              {/* Lingkaran Bawah: Sisi Sekunder 20 kV (Hijau) */}
+              <circle cx="20" cy="32" r="13" fill="none" stroke="#22c55e" strokeWidth="3" />
+            </svg>
           </div>
         )}
       </div>

@@ -86,12 +86,29 @@ export const saveCustomSLD = (config: CustomSLDConfig): void => {
   }
 };
 
+import { defaultSuralayaCilegonGIs, defaultSuralayaCilegonLines } from './defaultSuralayaCilegonData';
+
 export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
   try {
     const key = `${STORAGE_PREFIX}${targetId}`;
     const data = localStorage.getItem(key);
-    if (!data) return null;
-    return JSON.parse(data) as CustomSLDConfig;
+    if (data) return JSON.parse(data) as CustomSLDConfig;
+
+    // Default authentic configuration for Subsistem Suralaya - Cilegon
+    if (targetId === 'sub-suralaya-cilegon' || targetId === 'sub-bogor') {
+      return {
+        targetId,
+        targetName: 'Subsistem Suralaya Unit #3 - Suralaya 1,2 – Cilegon 4',
+        type: 'excel',
+        updatedAt: new Date().toISOString(),
+        excelData: {
+          giList: defaultSuralayaCilegonGIs,
+          lineList: defaultSuralayaCilegonLines
+        }
+      };
+    }
+
+    return null;
   } catch (err) {
     console.error('Failed to read custom SLD from localStorage', err);
     return null;
@@ -109,8 +126,9 @@ export const removeCustomSLD = (targetId: string): void => {
 };
 
 export const defaultTargetOptions = [
-  { id: 'sld-500kv', name: 'Sistem Backbone 500 kV (JAMALI)', parent: 'UIP2B Jamali' },
+  { id: 'sub-suralaya-cilegon', name: 'Subsistem Suralaya - Cilegon', parent: 'P2B Jakban (Jakarta & Banten)' },
   { id: 'sub-bogor', name: 'Subsistem Bogor', parent: 'UP2B Jawa Barat' },
+  { id: 'sld-500kv', name: 'Sistem Backbone 500 kV (JAMALI)', parent: 'UIP2B Jamali' },
   { id: 'sub-depok', name: 'Subsistem Depok', parent: 'UP2B Jawa Barat' },
   { id: 'sub-cileungsi', name: 'Subsistem Cileungsi', parent: 'UP2B Jawa Barat' },
   { id: 'sub-krian-gresik', name: 'Subsistem Krian - Gresik', parent: 'UP2B Jawa Timur' }

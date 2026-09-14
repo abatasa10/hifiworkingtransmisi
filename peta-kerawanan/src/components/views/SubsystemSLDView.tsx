@@ -53,90 +53,148 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
   const isRawan = Boolean(data?.riskStatus && data?.riskStatus !== 'Normal');
   const is500 = String(data?.voltage || '').includes('500');
   const nLower = String(data?.name || '').toLowerCase();
-  const isGen = nLower.includes('plt') || nLower.includes('pembangkit') || nLower.includes('evakuasi');
-  const isIBT = nLower.includes('ibt') || nLower.includes('trafo');
+  const typeL = String(data?.assetType || data?.type || '').toLowerCase();
+
+  const isGen =
+    typeL === 'pembangkit' ||
+    typeL === 'generator' ||
+    nLower.includes('plt') ||
+    nLower.includes('pembangkit') ||
+    nLower.includes('unit') ||
+    nLower.startsWith('g_');
+
+  const isBeban =
+    typeL.includes('beban') ||
+    typeL.includes('ktt') ||
+    nLower.includes('ktt') ||
+    nLower.includes('konsumen');
+
+  const isIBT =
+    !isBeban &&
+    (typeL === 'ibt' ||
+      (nLower.includes('ibt') && !nLower.includes('ktt')) ||
+      String(data?.voltage || '').includes('500/150'));
+
+  const isTrafo = !isBeban && !isIBT && (typeL === 'trafo' || nLower.includes('trafo'));
+  const isWide = Boolean(data?.isWideBusbar || (typeof data?.busbarWidth === 'number' && data.busbarWidth > 180));
+  const busbarWidth = typeof data?.busbarWidth === 'number' ? data.busbarWidth : 144;
+  const taps = (data?.taps as any[]) || [];
 
   return (
-    <div className="relative group cursor-pointer flex flex-col items-center">
-      {/* Default handles without explicit IDs for seamless edge routing */}
+    <div
+      style={isWide ? { width: `${busbarWidth}px` } : undefined}
+      className={`relative group cursor-pointer flex flex-col items-center select-none ${
+        selected ? 'z-30' : 'z-10'
+      }`}
+    >
+      {/* Default fallback handles */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
       />
 
-      {/* 1. PEMBANGKIT / GENERATOR BAY (1. Pembangkit, 2. Trafo, 3. CB) */}
+      {/* Distributed top taps for wide busbars */}
+      {isWide &&
+        taps
+          .filter((t) => t.position === 'top')
+          .map((tap) => (
+            <Handle
+              key={tap.id}
+              type="target"
+              position={Position.Top}
+              id={tap.id}
+              style={{ left: `${tap.x}px`, position: 'absolute' }}
+              className="!w-2.5 !h-2.5 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          ))}
+
+      {/* 1. PEMBANGKIT / GENERATOR (Gambar 2: Lingkaran Hijau dengan Gelombang AC ~) */}
       {isGen ? (
         <div className="flex flex-col items-center">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap ${
-            selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-emerald-300 border-slate-700'
-          }`}>
+          <span
+            className={`text-[11px] font-bold px-2 py-0.5 rounded shadow-xs border mb-1 whitespace-nowrap transition-colors ${
+              selected
+                ? 'bg-amber-400 text-slate-950 font-black shadow-[0_0_10px_rgba(251,191,36,0.8)] border-amber-300'
+                : 'bg-slate-900/90 text-emerald-300 border-slate-700/80'
+            }`}
+          >
             {data?.code || data?.name}
           </span>
-          <div className="relative flex items-center justify-center">
-            <svg viewBox="0 0 44 98" className="w-11 h-[96px] filter drop-shadow-sm">
-              {/* 1. Pembangkit: Green circle with ~ */}
-              <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
-              <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">
-                ~
-              </text>
-              {/* Penghubung 1: Generator ke Trafo (Biru) */}
-              <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
-              {/* 2. Trafo: 2 Interlocking circles (Atas Hijau, Bawah Merah) */}
-              <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
-              <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
-              {/* Penghubung 2: Trafo ke CB (Merah) */}
-              <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-              {/* 3. CB: PMT Bay (Solid Red Rectangle) */}
-              <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
-              {/* Penghubung 3: CB ke Busbar (Merah) */}
-              <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-            </svg>
-            {isRawan && (
-              <div className="absolute top-1 right-0 w-2 h-2 rounded-full bg-red-500 animate-ping pointer-events-none" />
-            )}
+          <div className="relative flex flex-col items-center justify-center">
+            <div className="relative flex items-center justify-center">
+              <svg viewBox="0 0 44 44" className="w-11 h-11 filter drop-shadow-md">
+                <circle
+                  cx="22"
+                  cy="22"
+                  r="18"
+                  fill="rgba(34, 197, 94, 0.12)"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                />
+                <text
+                  x="22"
+                  y="22"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="#22c55e"
+                  fontSize="24"
+                  fontFamily="sans-serif"
+                  fontWeight="900"
+                >
+                  ~
+                </text>
+              </svg>
+              {isRawan && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-ping pointer-events-none" />
+              )}
+            </div>
+            {/* Feeder line & PMT breaker block to connect downward */}
+            <div className="flex flex-col items-center">
+              <div className="w-[2.5px] h-2 bg-red-500" />
+              <div className="w-2.5 h-3.5 bg-red-600 rounded-[1px] border border-red-800 shadow-xs" title="PMT Bay Generator" />
+              <div className="w-[2.5px] h-2 bg-red-500" />
+            </div>
           </div>
-          <span className="text-[9px] font-mono text-cyan-400 mt-0.5">{data?.voltage || '500 kV'}</span>
+          <span className="text-[8.5px] font-mono text-emerald-400 mt-0.5">{data?.voltage || '500 kV'}</span>
         </div>
       ) : isIBT ? (
-        /* 2. IBT TRANSFORMER (Gambar 2 - 3-Winding Interlocking Rings with PMT and IBT number) */
+        /* 2. IBT TRANSFORMER (Gambar 2: 3 Interlocking Circles - Biru, Merah, Kuning + Badge Nomor) */
         <div className="flex flex-col items-center">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap transition-colors ${
-            selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-cyan-300 border-slate-700'
-          }`}>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border mb-0.5 whitespace-nowrap transition-colors ${
+              selected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900/90 text-cyan-300 border-slate-700'
+            }`}
+          >
             {data?.code || data?.name}
           </span>
-          {/* PMT Breaker Block (Gambar 2) */}
-          <div className="w-2.5 h-3.5 bg-blue-600 rounded-xs mb-0.5 shadow-xs" title="PMT / Pemutus Tenaga Bay IBT" />
-          {/* 3 Interlocking Circles (Primary Blue, Secondary Red, Tertiary Yellow) */}
-          <div className="relative w-13 h-13 flex items-center justify-center my-0.5">
-            <svg viewBox="0 0 60 60" className="w-13 h-13 filter drop-shadow-sm">
+          <div className="w-2.5 h-3.5 bg-blue-600 rounded-[1px] mb-0.5 shadow-xs" title="PMT Bay IBT" />
+          <div className="relative w-14 h-14 flex items-center justify-center my-0.5">
+            <svg viewBox="0 0 60 60" className="w-14 h-14 filter drop-shadow-sm">
               <circle cx="30" cy="19" r="13" fill="none" stroke="#2563eb" strokeWidth="2.8" />
               <circle cx="21" cy="35" r="13" fill="none" stroke="#dc2626" strokeWidth="2.8" />
               <circle cx="39" cy="35" r="13" fill="none" stroke="#eab308" strokeWidth="2.8" />
             </svg>
-            {/* IBT Number next to circles */}
             <span className="absolute right-0 top-2 font-black text-[11px] text-slate-900 bg-white/90 px-1 rounded shadow-xs border border-slate-300 pointer-events-none">
               {data?.ibtNumber || (data?.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] || '1'}
             </span>
-            {/* Starburst Risk Badge */}
             {isRawan && (
               <div className="absolute inset-0 flex items-center justify-center animate-pulse pointer-events-none z-20">
                 <div className="relative w-12 h-12 flex items-center justify-center">
@@ -157,11 +215,36 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
           </div>
           <span className="text-[9px] font-mono text-cyan-400 mt-0.5">{data?.voltage || '500/150 kV'}</span>
         </div>
-      ) : (
-        /* 3. ELECTRICAL BUSBAR (GI / GITET - Gambar 1 & Gambar 2 authentic SLD) */
+      ) : isBeban ? (
+        /* 3. KONSUMEN INDUSTRI KTT / BEBAN */
         <div className="flex flex-col items-center">
-          {/* Substation Label with Starburst Risk Badge */}
-          <div className="flex flex-col items-center mb-1.5 relative">
+          <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-1">
+            {data?.code || data?.name}
+          </span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-amber-500/40 shadow-sm">
+            <span className="text-xs">🏭</span>
+            <span className="text-[10px] font-bold text-amber-300">{data?.capacityMVA || 60} MVA</span>
+          </div>
+          <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '20 kV'}</span>
+        </div>
+      ) : isTrafo ? (
+        /* 4. TRAFO DISTRIBUSI 150/20 kV (2 Interlocking Rings) */
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-0.5">
+            {data?.code || data?.name}
+          </span>
+          <div className="relative w-10 h-12 flex items-center justify-center my-0.5">
+            <svg viewBox="0 0 40 48" className="w-9 h-11 filter drop-shadow-sm">
+              <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
+              <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
+            </svg>
+          </div>
+          <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '150/20 kV'}</span>
+        </div>
+      ) : (
+        /* 5. ELECTRICAL BUSBAR (GI / GITET - Termasuk Wide Busbar) */
+        <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center mb-1 relative">
             {isRawan && (
               <div className="absolute -top-3.5 -right-4 z-30 flex items-center justify-center w-7 h-7 animate-risk-pulse">
                 <svg viewBox="0 0 100 100" className="w-7 h-7 filter drop-shadow-md">
@@ -189,13 +272,14 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
               {data?.code || data?.name}
             </span>
             <span className={`text-[9px] font-mono scale-90 ${is500 ? 'text-cyan-400' : 'text-blue-300'}`}>
-              {data?.voltage || '500 kV'}
+              {data?.voltage || '150 kV'}
             </span>
           </div>
 
           {/* Thick Horizontal Busbar with Bay Connection Points */}
           <div
-            className={`w-36 h-2.5 rounded-full transition-all duration-300 relative ${
+            style={{ width: `${busbarWidth}px` }}
+            className={`h-3 rounded-full transition-all duration-300 relative ${
               isRawan
                 ? 'bg-gradient-to-r from-red-500 via-amber-400 to-red-500 shadow-[0_0_14px_rgba(239,68,68,0.9)] ring-2 ring-red-400'
                 : selected
@@ -205,13 +289,40 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
                 : 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-[0_0_8px_rgba(59,130,246,0.6)] group-hover:brightness-125'
             }`}
           >
-            {/* Bay connection points (dots) */}
-            <div className="absolute left-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
-            <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
-            <div className="absolute right-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+            {isWide && taps.length > 0 ? (
+              taps.map((tap) => (
+                <div
+                  key={`dot-${tap.id}`}
+                  className="absolute -translate-x-1/2 top-0.5 w-2 h-2 rounded-full bg-slate-950 border border-cyan-300 shadow-xs"
+                  style={{ left: `${tap.x}px` }}
+                  title={tap.label || `Bay ${tap.id}`}
+                />
+              ))
+            ) : (
+              <>
+                <div className="absolute left-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+                <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+                <div className="absolute right-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+              </>
+            )}
           </div>
         </div>
       )}
+
+      {/* Distributed bottom taps for wide busbars */}
+      {isWide &&
+        taps
+          .filter((t) => t.position === 'bottom')
+          .map((tap) => (
+            <Handle
+              key={tap.id}
+              type="source"
+              position={Position.Bottom}
+              id={tap.id}
+              style={{ left: `${tap.x}px`, position: 'absolute' }}
+              className="!w-2.5 !h-2.5 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          ))}
     </div>
   );
 };
@@ -223,6 +334,7 @@ const nodeTypes = {
   busbar: BusbarNode,
   generator: GeneratorNode,
   ibt: TransformerNode,
+  trafo: TransformerNode,
   gitet: BusbarNode,
   gi: BusbarNode,
   bay: BusbarNode
@@ -287,21 +399,52 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
       );
 
       const newNodes: Node[] = customConfig.excelData.giList.map((gi) => {
-        const isGen = (gi.name || '').toLowerCase().includes('plt') || (gi.name || '').toLowerCase().includes('pembangkit');
-        const isIBT = (gi.name || '').toLowerCase().includes('ibt') || (gi.name || '').toLowerCase().includes('trafo') || gi.assetType === 'ibt';
+        const nameL = (gi.name || '').toLowerCase();
+        const typeL = String(gi.assetType || '').toLowerCase();
+
+        const isGen =
+          typeL === 'pembangkit' ||
+          typeL === 'generator' ||
+          nameL.includes('plt') ||
+          nameL.includes('pembangkit') ||
+          nameL.includes('unit') ||
+          nameL.startsWith('g_');
+
+        const isBeban =
+          typeL.includes('beban') ||
+          typeL.includes('ktt') ||
+          nameL.includes('ktt') ||
+          nameL.includes('konsumen');
+
+        const isIBT =
+          !isBeban &&
+          (typeL === 'ibt' ||
+            (nameL.includes('ibt') && !nameL.includes('ktt')) ||
+            String(gi.voltage || '').includes('500/150'));
+
+        const isTrafo = !isBeban && !isIBT && (typeL === 'trafo' || nameL.includes('trafo'));
         const pos = layoutPositions[gi.id] || { x: 100, y: 100, tier: gi.tier ?? 2 };
+        const isWide = Boolean(pos.isWideBusbar || (typeof pos.busbarWidth === 'number' && pos.busbarWidth > 180));
+
+        let nodeType = 'busbar';
+        if (isGen) nodeType = 'generator';
+        else if (isIBT) nodeType = 'ibt';
+        else if (isTrafo) nodeType = 'trafo';
+        else if (isBeban) nodeType = 'custom';
+        else if (isWide) nodeType = 'busbar';
 
         return {
           id: gi.id,
-          type: isGen ? 'generator' : isIBT ? 'ibt' : 'custom',
+          type: nodeType,
           position: { x: pos.x, y: pos.y },
           data: {
             id: gi.id,
             name: gi.name,
             code: gi.code || gi.name.replace(/^GITET\s+|^GI\s+/, ''),
-            voltage: gi.voltage || (isIBT ? '500/150 kV' : '500 kV'),
+            voltage: gi.voltage || (isIBT ? '500/150 kV' : isGen ? '500 kV' : isBeban ? '20 kV' : '150 kV'),
             primaryVoltage: gi.primaryVoltage || (isIBT ? '500 kV' : undefined),
             secondaryVoltage: gi.secondaryVoltage || (isIBT ? '150 kV' : undefined),
+            assetType: isGen ? 'pembangkit' : isIBT ? 'ibt' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
             ibtNumber: gi.ibtNumber,
             capacityMVA: gi.capacityMVA,
             tier: gi.tier,
@@ -313,7 +456,10 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             condition: gi.condition,
             impact: gi.impact,
             mitigation: gi.mitigation,
-            solution: gi.solution
+            solution: gi.solution,
+            isWideBusbar: pos.isWideBusbar,
+            busbarWidth: pos.busbarWidth,
+            taps: pos.taps
           }
         };
       });
@@ -345,10 +491,58 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         }
         const offsetVal = cNum === 1 ? -14 : cNum === 2 ? 14 : 0;
 
+        // Resolve dedicated tap handles on wide busbars for orthogonal straight vertical connections
+        const targetPos = layoutPositions[l.targetId];
+        const sourcePos = layoutPositions[l.sourceId];
+        let targetHandleId: string | undefined = undefined;
+        let sourceHandleId: string | undefined = undefined;
+
+        if (targetPos?.isWideBusbar && targetPos.taps) {
+          const cleanSrc = l.sourceId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
+          const lineL = (l.lineName || '').toLowerCase();
+          const foundTap = targetPos.taps.find((t) => {
+            const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return (
+              cleanSrc.includes(cleanConn) ||
+              cleanConn.includes(cleanSrc) ||
+              (lineL.includes('ibt 2') && t.id.includes('ibt2')) ||
+              (lineL.includes('ibt 1') && t.id.includes('ibt1')) ||
+              (lineL.includes('unit 3') && t.id.includes('unit3')) ||
+              (lineL.includes('ibt 4') && t.id.includes('ibt4')) ||
+              (cleanSrc.includes('suralayabaru') && t.id.includes('ibt2')) ||
+              (cleanSrc === 'suralaya' && t.id.includes('ibt1')) ||
+              (cleanSrc.includes('cilegonbaru') && t.id.includes('ibt4'))
+            );
+          });
+          if (foundTap) targetHandleId = foundTap.id;
+        }
+
+        if (sourcePos?.isWideBusbar && sourcePos.taps) {
+          const cleanTgt = l.targetId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
+          const lineL = (l.lineName || '').toLowerCase();
+          const foundTap = sourcePos.taps.find((t) => {
+            const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return (
+              cleanTgt.includes(cleanConn) ||
+              cleanConn.includes(cleanTgt) ||
+              (lineL.includes('slrda') && t.id.includes('slrda')) ||
+              (lineL.includes('pendo') && t.id.includes('pendo')) ||
+              (lineL.includes('peni') && t.id.includes('peni')) ||
+              (lineL.includes('mcci') && t.id.includes('mcci5')) ||
+              (lineL.includes('clgon') && t.id.includes('clgon')) ||
+              (lineL.includes('kstel') && t.id.includes('kstel')) ||
+              (lineL.includes('posco') && t.id.includes('posco'))
+            );
+          });
+          if (foundTap) sourceHandleId = foundTap.id;
+        }
+
         return {
           id: l.id,
           source: l.sourceId,
           target: l.targetId,
+          sourceHandle: sourceHandleId,
+          targetHandle: targetHandleId,
           type: 'transmission',
           animated: l.riskStatus !== 'Normal',
           style: {

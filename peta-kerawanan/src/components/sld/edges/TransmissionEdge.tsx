@@ -106,8 +106,7 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
   const strokeWidth = isHighlighted || isHovered ? 4.5 : isPlanned ? 2 : 2.5;
 
   const isTransformerLink =
-    edgeData?.type === 'transformer_link' ||
-    (String(edgeData?.name || '').toLowerCase().includes('bay ibt') && !id.includes('EDGE_IBT'));
+    edgeData?.type === 'transformer_link' && id.includes('INTERNAL_IBT');
 
   const edgeIbtNum =
     String(edgeData?.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||

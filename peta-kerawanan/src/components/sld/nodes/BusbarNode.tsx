@@ -10,33 +10,46 @@ export const BusbarNode: React.FC<NodeProps> = memo(({ data, selected }) => {
   const isRawan = Boolean(nodeData.riskStatus && nodeData.riskStatus !== 'Normal');
   const is500kV = String(nodeData.voltage || '').includes('500');
 
+  const isWide = Boolean(nodeData.isWideBusbar || (typeof nodeData.busbarWidth === 'number' && nodeData.busbarWidth > 180));
+  const busbarWidth = typeof nodeData.busbarWidth === 'number' ? nodeData.busbarWidth : 144;
+  const taps = (nodeData.taps as any[]) || [];
+
   return (
     <div
-      className={`relative group transition-all duration-200 cursor-pointer ${
+      style={isWide ? { width: `${busbarWidth}px` } : undefined}
+      className={`relative group transition-all duration-200 cursor-pointer flex flex-col items-center ${
         isDimmed ? 'opacity-25' : 'opacity-100'
       } ${isHighlighted ? 'scale-105 z-30' : 'z-10'}`}
     >
-      {/* Default target handle */}
+      {/* Default fallback handles */}
       <Handle
         type="target"
         position={Position.Top}
         className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
-      {/* Top handles */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top-src"
-        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
 
-      {/* Node label with Starburst Risk Badge if rawan (Gambar 1 & Gambar 2) */}
+      {/* Distributed top tap handles for wide busbars */}
+      {isWide &&
+        taps
+          .filter((t) => t.position === 'top')
+          .map((tap) => (
+            <Handle
+              key={tap.id}
+              type="target"
+              position={Position.Top}
+              id={tap.id}
+              style={{ left: `${tap.x}px`, position: 'absolute' }}
+              className="!w-2.5 !h-2.5 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          ))}
+
+      {/* Substation label with Starburst Risk Badge if rawan */}
       <div className="flex flex-col items-center mb-1 relative">
         {isRawan && (
           <div className="absolute -top-3 -right-4 z-30 flex items-center justify-center w-7 h-7 animate-risk-pulse">
@@ -66,14 +79,15 @@ export const BusbarNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         </span>
         {isSubstation && (
           <span className={`text-[9px] font-mono scale-90 ${is500kV ? 'text-cyan-400' : 'text-blue-300'}`}>
-            {nodeData.voltage || '500 kV'}
+            {nodeData.voltage || '150 kV'}
           </span>
         )}
       </div>
 
-      {/* Busbar thick horizontal line (Physical SLD representation matching Gambar 1 & Gambar 2) */}
+      {/* Busbar thick horizontal line (Physical SLD representation) */}
       <div
-        className={`w-36 h-2.5 rounded-full transition-all duration-300 relative ${
+        style={{ width: `${busbarWidth}px` }}
+        className={`h-3 rounded-full transition-all duration-300 relative ${
           isRawan
             ? 'bg-gradient-to-r from-red-500 via-amber-400 to-red-500 shadow-[0_0_14px_rgba(239,68,68,0.9)] ring-2 ring-red-400'
             : isHighlighted
@@ -83,10 +97,24 @@ export const BusbarNode: React.FC<NodeProps> = memo(({ data, selected }) => {
             : 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-[0_0_8px_rgba(59,130,246,0.6)] group-hover:brightness-125'
         }`}
       >
-        {/* Substation connection points dots (Bay ports) */}
-        <div className="absolute left-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
-        <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
-        <div className="absolute right-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+        {/* Bay tap markers on wide busbars */}
+        {isWide && taps.length > 0 ? (
+          taps.map((tap) => (
+            <div
+              key={`dot-${tap.id}`}
+              className="absolute -translate-x-1/2 top-0.5 w-2 h-2 rounded-full bg-slate-950 border border-cyan-300 shadow-xs"
+              style={{ left: `${tap.x}px` }}
+              title={tap.label || `Bay ${tap.id}`}
+            />
+          ))
+        ) : (
+          /* Default standard 3 connection dots */
+          <>
+            <div className="absolute left-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+            <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+            <div className="absolute right-3 top-0.5 w-1.5 h-1.5 rounded-full bg-slate-950" />
+          </>
+        )}
       </div>
 
       {/* Default bottom source handle */}
@@ -95,19 +123,27 @@ export const BusbarNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         position={Position.Bottom}
         className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
-      {/* Bottom handles */}
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-2 !h-2 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="!w-2 !h-2 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"
       />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        id="bottom-tgt"
-        className="!w-2 !h-2 !bg-cyan-400 opacity-0"
-      />
+
+      {/* Distributed bottom tap handles for wide busbars */}
+      {isWide &&
+        taps
+          .filter((t) => t.position === 'bottom')
+          .map((tap) => (
+            <Handle
+              key={tap.id}
+              type="source"
+              position={Position.Bottom}
+              id={tap.id}
+              style={{ left: `${tap.x}px`, position: 'absolute' }}
+              className="!w-2.5 !h-2.5 !bg-cyan-400 !border !border-navy-900 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          ))}
 
       {/* Left/Right handles for horizontal links */}
       <Handle

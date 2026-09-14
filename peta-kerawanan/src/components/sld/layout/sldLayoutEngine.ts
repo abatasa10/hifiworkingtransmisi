@@ -1,9 +1,20 @@
 import { ParsedGINode, ParsedTransmissionLine } from '../../../data/customSLDStore';
 
+export interface BusbarTap {
+  id: string; // e.g. 'tap-unit3', 'tap-slrda'
+  connectedNodeId: string;
+  x: number; // offset in px from left edge of busbar
+  position: 'top' | 'bottom';
+  label?: string;
+}
+
 export interface NodePosition {
   x: number;
   y: number;
   tier: number;
+  isWideBusbar?: boolean;
+  busbarWidth?: number;
+  taps?: BusbarTap[];
 }
 
 /**
@@ -13,8 +24,8 @@ export interface NodePosition {
  * -> Tier 2 (150 kV Substation Distribution) -> Tier 3 (KTT Feeder Loads / Branch Substations)
  * -> Tier 4 (Secondary KTT Feeder Loads).
  *
- * Uses Parent-Child Barycentric Alignment so child nodes stay directly underneath
- * their feeding busbars without crossing lines, and enforces minGap so nodes NEVER collide.
+ * Supports Wide Busbars for multi-connected hub GIs (e.g. SRLYA, CLBRU)
+ * with distributed bay taps so incoming/outgoing lines connect vertically without entanglement.
  */
 export function computeCleanSLDLayout(
   nodes: ParsedGINode[],
@@ -24,85 +35,209 @@ export function computeCleanSLDLayout(
   if (!nodes || nodes.length === 0) return positions;
 
   // 1. Identify specific landmark nodes from Suralaya - Cilegon topology if present
-  const isSuralayaCilegonSubsystem = nodes.some(
-    (n) =>
-      n.id.includes('srlya') ||
-      n.id.includes('suralaya') ||
-      n.id.includes('clbru') ||
-      n.id.includes('clgon')
-  );
+  const isSuralayaCilegonSubsystem = nodes.some((n) => {
+    const idL = (n.id || '').toLowerCase();
+    const nameL = (n.name || '').toLowerCase();
+    const codeL = (n.code || '').toLowerCase();
+    return (
+      idL.includes('srlya') ||
+      idL.includes('suralaya') ||
+      idL.includes('clbru') ||
+      idL.includes('clgon') ||
+      nameL.includes('srlya') ||
+      nameL.includes('suralaya') ||
+      nameL.includes('clbru') ||
+      nameL.includes('cilegon') ||
+      codeL.includes('srlya') ||
+      codeL.includes('clbru')
+    );
+  });
 
-  // Exact coordinated blueprint alignment for Suralaya - Cilegon matching Gambar 1
+  // Exact coordinated blueprint alignment for Suralaya - Cilegon matching authentic SLD
   if (isSuralayaCilegonSubsystem) {
-    const knownCoords: Record<string, { x: number; y: number; tier: number }> = {
-      // Tier 0: 500 kV Grid & Generator Bay
-      'unit3': { x: 70, y: 60, tier: 0 },
-      'pltusuralayaunit3': { x: 70, y: 60, tier: 0 },
-      'suralayabaru': { x: 230, y: 60, tier: 0 },
+    const knownCoords: Record<string, NodePosition> = {
+      // Tier 0: 500 kV Grid & Generator Bay (Matching Gambar 2: Unit 3 green circle generator)
+      'unit3': { x: 100, y: 60, tier: 0 },
+      'pltusuralayaunit3': { x: 100, y: 60, tier: 0 },
+      'suralayabaru': { x: 260, y: 60, tier: 0 },
       'suralaya': { x: 480, y: 60, tier: 0 },
       'cilegonbaru': { x: 920, y: 60, tier: 0 },
 
-      // Tier 0.5: IBTs (500/150 kV inter-bus transformers)
-      'ibt2': { x: 250, y: 195, tier: 1 },
-      'ibt2suralayabaru': { x: 250, y: 195, tier: 1 },
+      // Tier 0.5: IBTs (500/150 kV inter-bus transformers with 3-winding rings)
+      'ibt2': { x: 260, y: 195, tier: 1 },
+      'ibt2srlbaru': { x: 260, y: 195, tier: 1 },
+      'ibt2suralayabaru': { x: 260, y: 195, tier: 1 },
       'ibt1': { x: 480, y: 195, tier: 1 },
+      'ibt1srlya': { x: 480, y: 195, tier: 1 },
       'ibt1suralaya': { x: 480, y: 195, tier: 1 },
       'ibt4': { x: 920, y: 195, tier: 1 },
+      'ibt4clbru': { x: 920, y: 195, tier: 1 },
       'ibt4cilegonbaru': { x: 920, y: 195, tier: 1 },
 
       // Tier 1: 150 kV Main Busbars
-      'srlya': { x: 380, y: 320, tier: 1 },
-      'gitesrlya': { x: 380, y: 320, tier: 1 },
-      'clbru': { x: 920, y: 320, tier: 1 },
-      'giteclbru': { x: 920, y: 320, tier: 1 },
+      // SRLYA: Long horizontal busbar spanning from under Unit 3 to MCCI5 (width 670px)
+      'srlya': {
+        x: 60,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 670,
+        taps: [
+          // Top bay taps from Tier 0 & Tier 0.5 (Incoming)
+          { id: 'tap-unit3', connectedNodeId: 'unit3', x: 40, position: 'top', label: 'Bay Unit 3' },
+          { id: 'tap-ibt2', connectedNodeId: 'ibt2', x: 200, position: 'top', label: 'Bay IBT 2' },
+          { id: 'tap-ibt1', connectedNodeId: 'ibt1', x: 420, position: 'top', label: 'Bay IBT 1' },
+          // Bottom bay taps to Tier 2 (Outgoing Distribution)
+          { id: 'tap-slrda', connectedNodeId: 'slrda', x: 60, position: 'bottom', label: 'Bay SLRDA' },
+          { id: 'tap-pendo', connectedNodeId: 'pendo', x: 220, position: 'bottom', label: 'Bay PENDO' },
+          { id: 'tap-peni', connectedNodeId: 'peni', x: 420, position: 'bottom', label: 'Bay PENI' },
+          { id: 'tap-mcci5', connectedNodeId: 'mcci5', x: 630, position: 'bottom', label: 'Bay MCCI5' }
+        ]
+      },
+      'garduinduksrlya': {
+        x: 60,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 670
+      },
+      'garduinduksrlya150kv': {
+        x: 60,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 670
+      },
+      'gitesrlya': {
+        x: 60,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 670
+      },
+
+      // CLBRU: Long horizontal busbar spanning across KSTEL, CLGON, and POSCO
+      'clbru': {
+        x: 820,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 230,
+        taps: [
+          // Top incoming from IBT 4
+          { id: 'tap-ibt4', connectedNodeId: 'ibt4', x: 100, position: 'top', label: 'Bay IBT 4' },
+          // Bottom outgoing to CLGON, KSTEL, POSCO
+          { id: 'tap-kstel', connectedNodeId: 'kstel', x: 40, position: 'bottom', label: 'Bay KSTEL' },
+          { id: 'tap-kstelclgon', connectedNodeId: 'kstelclgon', x: 40, position: 'bottom', label: 'Bay KSTEL' },
+          { id: 'tap-clgon', connectedNodeId: 'clgon', x: 100, position: 'bottom', label: 'Bay CLGON' },
+          { id: 'tap-posco', connectedNodeId: 'posco', x: 160, position: 'bottom', label: 'Bay POSCO' }
+        ]
+      },
+      'garduindukclbru': {
+        x: 820,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 230
+      },
+      'garduindukclbru150kv': {
+        x: 820,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 230
+      },
+      'giteclbru': {
+        x: 820,
+        y: 330,
+        tier: 1,
+        isWideBusbar: true,
+        busbarWidth: 230
+      },
 
       // Tier 2: 150 kV Substation Distribution Busbars
-      'slrda': { x: 120, y: 470, tier: 2 },
-      'pendo': { x: 280, y: 470, tier: 2 },
-      'peni': { x: 480, y: 470, tier: 2 },
-      'mcci5': { x: 690, y: 470, tier: 2 },
-      'clgon': { x: 920, y: 470, tier: 2 },
+      'slrda': { x: 120, y: 480, tier: 2 },
+      'garduindukslrda150kv': { x: 120, y: 480, tier: 2 },
+      'pendo': { x: 280, y: 480, tier: 2 },
+      'garduindukpendo150kv': { x: 280, y: 480, tier: 2 },
+      'peni': { x: 480, y: 480, tier: 2 },
+      'garduindukpeni150kv': { x: 480, y: 480, tier: 2 },
+      'mcci5': { x: 690, y: 480, tier: 2 },
+      'garduindukmcci5150kv': { x: 690, y: 480, tier: 2 },
+      'clgon': { x: 920, y: 480, tier: 2 },
+      'garduindukclgon150kv': { x: 920, y: 480, tier: 2 },
 
       // Tier 3: Industrial KTT Loads & Substation MTSUI
-      'kttslfdo1': { x: 60, y: 630, tier: 3 },
-      'kttslfdo2': { x: 180, y: 630, tier: 3 },
-      'kttpendo': { x: 280, y: 630, tier: 3 },
-      'kttpeni': { x: 400, y: 630, tier: 3 },
-      'mtsui': { x: 480, y: 630, tier: 3 },
-      'kttlci': { x: 570, y: 630, tier: 3 },
-      'kttmcci': { x: 690, y: 630, tier: 3 },
-      'kstel': { x: 860, y: 630, tier: 3 },
-      'kstelclgon': { x: 860, y: 630, tier: 3 },
-      'kstelclbru': { x: 920, y: 630, tier: 3 },
-      'posco': { x: 980, y: 630, tier: 3 },
+      'kttslfdo1': { x: 60, y: 640, tier: 3 },
+      'kttslfdo2': { x: 180, y: 640, tier: 3 },
+      'kttpendo': { x: 280, y: 640, tier: 3 },
+      'kttpeni': { x: 400, y: 640, tier: 3 },
+      'mtsui': { x: 480, y: 640, tier: 3 },
+      'garduindukmtsui150kv': { x: 480, y: 640, tier: 3 },
+      'kttlci': { x: 570, y: 640, tier: 3 },
+      'kttmcci': { x: 690, y: 640, tier: 3 },
+      'kstel': { x: 860, y: 640, tier: 3 },
+      'kstelclgon': { x: 860, y: 640, tier: 3 },
+      'kstelclbru': { x: 860, y: 640, tier: 3 },
+      'posco': { x: 980, y: 640, tier: 3 },
 
       // Tier 4: Customer under MTSUI
-      'kttmtsui': { x: 480, y: 790, tier: 4 }
+      'kttmtsui': { x: 480, y: 800, tier: 4 }
     };
 
-    let allMatched = true;
+    let matchedCount = 0;
     nodes.forEach((n) => {
       const clean = n.id.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
-      const cleanName = n.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const rawClean = n.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanName = (n.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanCode = (n.code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-      let match = knownCoords[clean] || knownCoords[cleanName];
+      // Direct key match (highest priority)
+      let match = knownCoords[clean] || knownCoords[rawClean] || knownCoords[cleanCode] || knownCoords[cleanName];
+
+      // Substring matching: longest keys first
       if (!match) {
-        for (const [k, coord] of Object.entries(knownCoords)) {
-          if (clean.includes(k) || cleanName.includes(k)) {
-            match = coord;
+        const sortedKeys = Object.keys(knownCoords).sort((a, b) => b.length - a.length);
+        for (const k of sortedKeys) {
+          if (
+            clean === k ||
+            rawClean === k ||
+            cleanCode === k ||
+            clean.includes(k) ||
+            cleanName.includes(k) ||
+            cleanCode.includes(k)
+          ) {
+            match = knownCoords[k];
             break;
           }
         }
       }
 
       if (match) {
-        positions[n.id] = { x: match.x, y: match.y, tier: match.tier };
-      } else {
-        allMatched = false;
+        matchedCount++;
+        positions[n.id] = {
+          x: match.x,
+          y: match.y,
+          tier: match.tier,
+          isWideBusbar: match.isWideBusbar,
+          busbarWidth: match.busbarWidth,
+          taps: match.taps
+        };
       }
     });
 
-    if (allMatched && Object.keys(positions).length === nodes.length) {
+    // If all or the vast majority (>= 80% or >= 8 nodes) matched known coordinates
+    if (matchedCount >= Math.min(nodes.length, 8)) {
+      // For any extra nodes, place them safely to the right
+      nodes.forEach((n, idx) => {
+        if (!positions[n.id]) {
+          positions[n.id] = {
+            x: 1050 + idx * 160,
+            y: 480,
+            tier: n.tier ?? 2
+          };
+        }
+      });
       return positions;
     }
   }
@@ -254,13 +389,12 @@ export function computeCleanSLDLayout(
     }
   });
 
-  // Step F: Finalize Output Coordinates
+  // Step F: Finalize Output Coordinates with Dynamic Wide Busbar Detection
   nodes.forEach((n) => {
     const t = nodeTierMap[n.id] ?? 2;
     const isIBT =
       n.assetType === 'ibt' ||
-      (n.name || '').toLowerCase().includes('ibt') ||
-      String(n.voltage || '').includes('/');
+      (n.name || '').toLowerCase().includes('ibt');
 
     // Place IBT halfway between Tier 0 and Tier 1 if marked as Tier 1
     const finalY =
@@ -268,10 +402,57 @@ export function computeCleanSLDLayout(
         ? 190
         : tierYMap[t] ?? (70 + t * 180);
 
+    const parents = parentsOf[n.id] || [];
+    const children = childrenOf[n.id] || [];
+    const totalConns = parents.length + children.length;
+    const isBusbarLike = !isIBT && !n.name.toLowerCase().includes('plt') && !n.name.toLowerCase().includes('unit');
+
+    let isWide = false;
+    let widthVal = 144;
+    let nodeTaps: BusbarTap[] | undefined = undefined;
+
+    // If node connects to 3 or more lines, make it a wide busbar spanning its connections
+    if (totalConns >= 3 && isBusbarLike) {
+      isWide = true;
+      const connectedIds = [...parents, ...children];
+      const connXs = connectedIds.map((cId) => xOffsetMap[cId]).filter((v) => typeof v === 'number');
+
+      if (connXs.length > 0) {
+        const minConnX = Math.min(...connXs);
+        const maxConnX = Math.max(...connXs);
+        const startX = Math.min(xOffsetMap[n.id] ?? minConnX, minConnX) - 30;
+        widthVal = Math.max(220, (Math.max(xOffsetMap[n.id] ?? maxConnX, maxConnX) - startX) + 50);
+        xOffsetMap[n.id] = startX;
+
+        nodeTaps = [];
+        parents.forEach((pId) => {
+          const pX = xOffsetMap[pId] ?? (startX + 40);
+          nodeTaps?.push({
+            id: `tap-${pId}`,
+            connectedNodeId: pId,
+            x: Math.max(20, pX - startX),
+            position: 'top'
+          });
+        });
+        children.forEach((cId) => {
+          const cX = xOffsetMap[cId] ?? (startX + 60);
+          nodeTaps?.push({
+            id: `tap-${cId}`,
+            connectedNodeId: cId,
+            x: Math.max(20, cX - startX),
+            position: 'bottom'
+          });
+        });
+      }
+    }
+
     positions[n.id] = {
       x: Math.round(xOffsetMap[n.id] ?? 100),
       y: Math.round(finalY),
-      tier: t
+      tier: t,
+      isWideBusbar: isWide,
+      busbarWidth: widthVal,
+      taps: nodeTaps
     };
   });
 

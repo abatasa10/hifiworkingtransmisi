@@ -286,21 +286,39 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
       const isRawan = node.riskStatus !== 'Normal';
       const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
+      const nameL = (node.name || '').toLowerCase();
+      const typeL = String(node.assetType || '').toLowerCase();
+
+      const isBebanNode =
+        typeL.includes('beban') ||
+        typeL.includes('ktt') ||
+        nameL.includes('ktt') ||
+        nameL.includes('konsumen');
+
       const isIBTNode =
-        node.assetType === 'ibt' ||
-        (node.name || '').toLowerCase().includes('ibt') ||
-        (node.name || '').toLowerCase().includes('trafo') ||
-        Boolean(node.ibtNumber) ||
-        String(node.voltage || '').includes('/');
+        !isBebanNode &&
+        (typeL === 'ibt' ||
+          (nameL.includes('ibt') && !nameL.includes('ktt')) ||
+          String(node.voltage || '').includes('500/150'));
+
+      const isTrafoNode = !isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo'));
+
+      const isPembangkitNode =
+        typeL === 'pembangkit' ||
+        typeL === 'generator' ||
+        nameL.includes('plt') ||
+        nameL.includes('pembangkit') ||
+        nameL.includes('unit') ||
+        nameL.startsWith('g_');
+
       const nodeIbtNum =
         node.ibtNumber ||
         (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
         '1';
-      const isPembangkitNode =
-        node.assetType === 'pembangkit' ||
-        (node.name || '').toLowerCase().includes('plt') ||
-        (node.name || '').toLowerCase().includes('pembangkit') ||
-        (node.name || '').toLowerCase().includes('unit');
+
+      const isWide = Boolean(pos.isWideBusbar || (typeof pos.busbarWidth === 'number' && pos.busbarWidth > 180));
+      const busbarWidth = typeof pos.busbarWidth === 'number' ? pos.busbarWidth : 150;
+      const taps = pos.taps || [];
 
       return {
         id: node.id,
@@ -340,10 +358,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
             </div>
           ) : isPembangkitNode ? (
-            /* Tampilan Khusus Bay Pembangkit pada Preview Canvas (1. Pembangkit, 2. Trafo, 3. CB) */
+            /* Tampilan Khusus Pembangkit (Gambar 2: Lingkaran Hijau dengan Gelombang AC ~) */
             <div
               onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[130px] ${
+              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[120px] ${
                 isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
               } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
             >
@@ -357,26 +375,60 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                   </span>
                 )}
               </div>
-              {/* Simbol Bay 1. Pembangkit -> 2. Trafo -> 3. CB */}
-              <div className="relative flex items-center justify-center my-0.5">
-                <svg viewBox="0 0 44 98" className="w-10 h-18 filter drop-shadow-md">
-                  <circle cx="22" cy="14" r="11" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" strokeWidth="2.6" />
-                  <text x="22" y="14" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="16" fontFamily="serif" fontWeight="900">~</text>
-                  <line x1="22" y1="25" x2="22" y2="34" stroke="#2563eb" strokeWidth="2.6" strokeLinecap="round" />
-                  <circle cx="22" cy="42" r="8.5" fill="none" stroke="#22c55e" strokeWidth="2.6" />
-                  <circle cx="22" cy="52" r="8.5" fill="none" stroke="#ef4444" strokeWidth="2.6" />
-                  <line x1="22" y1="60.5" x2="22" y2="69" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                  <rect x="17" y="69" width="10" height="14" rx="1" fill="#ef4444" stroke="#b91c1c" strokeWidth="0.8" />
-                  <line x1="22" y1="83" x2="22" y2="96" stroke="#ef4444" strokeWidth="2.6" strokeLinecap="round" />
-                </svg>
+              {/* Lingkaran Hijau Generator dengan ~ */}
+              <div className="relative flex flex-col items-center justify-center my-0.5">
+                <div className="relative flex items-center justify-center">
+                  <svg viewBox="0 0 44 44" className="w-10 h-10 filter drop-shadow-md">
+                    <circle cx="22" cy="22" r="18" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" strokeWidth="3" />
+                    <text x="22" y="22" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="24" fontFamily="sans-serif" fontWeight="900">~</text>
+                  </svg>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-[2px] h-1.5 bg-red-500" />
+                  <div className="w-2.5 h-3 bg-red-600 rounded-[1px] border border-red-800" />
+                  <div className="w-[2px] h-1.5 bg-red-500" />
+                </div>
               </div>
-              <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500 kV'}</span>
+              <span className="text-[9px] font-mono text-emerald-400 mt-0.5">{node.voltage || '500 kV'}</span>
             </div>
-          ) : (
-            /* Tampilan Standar GI Simpul */
+          ) : isBebanNode ? (
+            /* Tampilan Konsumen Beban KTT */
             <div
               onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[150px] max-w-[200px] ${
+              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[130px] bg-slate-900 text-white ${
+                isRawan ? 'border-red-500 shadow-red-500/20' : 'border-amber-500/50 shadow-amber-500/10'
+              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+            >
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <span className="text-xs">🏭</span>
+                <span className="text-[10px] font-mono font-bold text-amber-300">{node.voltage || '20 kV'}</span>
+              </div>
+              <div className="font-bold text-xs truncate" title={node.name}>{node.code || node.name}</div>
+              <div className="text-[9px] text-amber-400 font-mono mt-0.5">{node.capacityMVA || 60} MVA</div>
+            </div>
+          ) : isTrafoNode ? (
+            /* Tampilan Trafo Distribusi 150/20 kV */
+            <div
+              onClick={() => setSelectedElement({ type: 'node', data: node })}
+              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-950 text-white ${
+                isRawan ? 'border-red-500' : 'border-blue-500/60'
+              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
+            >
+              <div className="font-bold text-xs truncate mb-1" title={node.name}>{node.code || node.name}</div>
+              <div className="flex justify-center my-0.5">
+                <svg viewBox="0 0 40 48" className="w-8 h-10">
+                  <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
+                  <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
+                </svg>
+              </div>
+              <div className="text-[9px] text-slate-400 font-mono text-center">{node.voltage || '150/20 kV'}</div>
+            </div>
+          ) : (
+            /* Tampilan Standar GI Simpul / Wide Busbar */
+            <div
+              onClick={() => setSelectedElement({ type: 'node', data: node })}
+              style={isWide ? { width: `${busbarWidth}px` } : undefined}
+              className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[150px] ${
                 node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
               } ${
                 isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
@@ -399,6 +451,19 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
               </div>
               <div className="font-bold text-xs truncate" title={node.name}>{node.name}</div>
               <div className="text-[9px] text-slate-400 truncate mt-0.5">{node.subsystem || node.region || 'Subsistem'}</div>
+              {/* Visual horizontal busbar line inside wide GI preview */}
+              {isWide && (
+                <div className="mt-2 w-full h-2 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 relative">
+                  {taps.map((t) => (
+                    <div
+                      key={`preview-dot-${t.id}`}
+                      className="absolute -translate-x-1/2 top-0 w-2 h-2 rounded-full bg-slate-950 border border-cyan-300"
+                      style={{ left: `${t.x}px` }}
+                      title={t.label || t.id}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )
         }
@@ -437,10 +502,36 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
       const offsetVal = cNum === 1 ? -14 : cNum === 2 ? 14 : 0;
 
+      // Resolve taps on wide busbars
+      const targetPos = layoutPositions[line.targetId];
+      const sourcePos = layoutPositions[line.sourceId];
+      let targetHandleId: string | undefined = undefined;
+      let sourceHandleId: string | undefined = undefined;
+
+      if (targetPos?.isWideBusbar && targetPos.taps) {
+        const cleanSrc = line.sourceId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
+        const foundTap = targetPos.taps.find((t) => {
+          const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return cleanSrc.includes(cleanConn) || cleanConn.includes(cleanSrc);
+        });
+        if (foundTap) targetHandleId = foundTap.id;
+      }
+
+      if (sourcePos?.isWideBusbar && sourcePos.taps) {
+        const cleanTgt = line.targetId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
+        const foundTap = sourcePos.taps.find((t) => {
+          const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return cleanTgt.includes(cleanConn) || cleanConn.includes(cleanTgt);
+        });
+        if (foundTap) sourceHandleId = foundTap.id;
+      }
+
       return {
         id: line.id,
         source: line.sourceId,
         target: line.targetId,
+        sourceHandle: sourceHandleId,
+        targetHandle: targetHandleId,
         type: 'transmission',
         animated: isRawan,
         style: {
@@ -721,14 +812,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const tierToVal   = colTierToIdx   !== -1 && row[colTierToIdx]   !== undefined && row[colTierToIdx]   !== '' ? Number(row[colTierToIdx])   : undefined;
 
         if (!parsedNodes.some((n) => n.id === sourceNodeId)) {
-          const isIBT =
-            dariVal.toLowerCase().includes('ibt') ||
-            dariVal.toLowerCase().includes('trafo') ||
-            voltageVal.includes('/');
+          const dLower = dariVal.toLowerCase();
+          const isBeban = dLower.includes('ktt') || dLower.includes('konsumen');
           const isGen =
-            dariVal.toLowerCase().includes('plt') ||
-            dariVal.toLowerCase().includes('pembangkit') ||
-            dariVal.toLowerCase().includes('unit');
+            dLower.includes('plt') ||
+            dLower.includes('pembangkit') ||
+            dLower.includes('unit');
+          const isIBT =
+            !isBeban &&
+            (dLower.includes('ibt') ||
+              voltageVal.includes('500/150') ||
+              voltageVal.includes('275/150'));
+          const isTrafo = !isBeban && !isIBT && dLower.includes('trafo');
           const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: sourceNodeId,
@@ -737,21 +832,25 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: normalizedRisk !== 'Normal' ? normalizedRisk : 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : undefined,
+            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
             ibtNumber: num,
             tier: tierFromVal !== undefined ? tierFromVal : isIBT ? 1 : isGen ? 0 : undefined
           });
         }
 
         if (!parsedNodes.some((n) => n.id === targetNodeId)) {
-          const isIBT =
-            keVal.toLowerCase().includes('ibt') ||
-            keVal.toLowerCase().includes('trafo') ||
-            voltageVal.includes('/');
+          const kLower = keVal.toLowerCase();
+          const isBeban = kLower.includes('ktt') || kLower.includes('konsumen');
           const isGen =
-            keVal.toLowerCase().includes('plt') ||
-            keVal.toLowerCase().includes('pembangkit') ||
-            keVal.toLowerCase().includes('unit');
+            kLower.includes('plt') ||
+            kLower.includes('pembangkit') ||
+            kLower.includes('unit');
+          const isIBT =
+            !isBeban &&
+            (kLower.includes('ibt') ||
+              voltageVal.includes('500/150') ||
+              voltageVal.includes('275/150'));
+          const isTrafo = !isBeban && !isIBT && kLower.includes('trafo');
           const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (isIBT ? '1' : undefined);
           parsedNodes.push({
             id: targetNodeId,
@@ -760,7 +859,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             region: currentTargetName,
             riskStatus: 'Normal',
             subsystem: currentTargetName,
-            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : undefined,
+            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
             ibtNumber: num,
             tier: tierToVal !== undefined ? tierToVal : isIBT ? 1 : isGen ? 0 : undefined
           });
@@ -796,17 +895,37 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
         else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
 
-        const isIBT =
-          (assetTypeVal && assetTypeVal.toLowerCase().includes('ibt')) ||
-          giVal.toLowerCase().includes('ibt') ||
-          giVal.toLowerCase().includes('trafo') ||
-          Boolean(ibtNumVal) ||
-          voltageVal.includes('/');
+        const valLower = giVal.toLowerCase();
+        const assetLower = (assetTypeVal || '').toLowerCase();
+        const isBeban =
+          assetLower.includes('beban') ||
+          assetLower.includes('ktt') ||
+          valLower.includes('ktt') ||
+          valLower.includes('konsumen');
         const isGen =
-          (assetTypeVal && (assetTypeVal.toLowerCase().includes('pembangkit') || assetTypeVal.toLowerCase().includes('generator'))) ||
-          giVal.toLowerCase().includes('plt') ||
-          giVal.toLowerCase().includes('pembangkit') ||
-          giVal.toLowerCase().includes('unit');
+          assetLower.includes('pembangkit') ||
+          assetLower.includes('generator') ||
+          valLower.includes('plt') ||
+          valLower.includes('pembangkit') ||
+          valLower.includes('unit');
+        const isIBT =
+          !isBeban &&
+          (assetLower.includes('ibt') ||
+            (valLower.includes('ibt') && !valLower.includes('ktt')) ||
+            Boolean(ibtNumVal) ||
+            voltageVal.includes('500/150') ||
+            voltageVal.includes('275/150'));
+        const isTrafo = !isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo'));
+        const resolvedAssetType: 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' = isGen
+          ? 'pembangkit'
+          : isIBT
+          ? 'ibt'
+          : isTrafo
+          ? 'trafo'
+          : isBeban
+          ? 'beban'
+          : 'busbar';
+
         const resolvedIbtNum =
           ibtNumVal ||
           giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
@@ -820,9 +939,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           if (resolvedIbtNum) existing.ibtNumber = resolvedIbtNum;
           if (codeVal) existing.code = codeVal;
           if (riskNumVal) existing.riskNumber = riskNumVal;
-          if (isIBT) existing.assetType = 'ibt';
-          else if (isGen) existing.assetType = 'pembangkit';
-          else if (assetTypeVal) existing.assetType = assetTypeVal as any;
+          existing.assetType = resolvedAssetType;
           if (uitVal) existing.uit = uitVal;
           if (conditionVal) existing.condition = conditionVal;
           if (impactVal) existing.impact = impactVal;
@@ -836,7 +953,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             code: codeVal,
             tier: tierVal !== undefined ? tierVal : isIBT ? 1 : isGen ? 0 : undefined,
             ibtNumber: resolvedIbtNum,
-            assetType: isIBT ? 'ibt' : isGen ? 'pembangkit' : (assetTypeVal as any),
+            assetType: resolvedAssetType,
             voltage: voltageVal,
             region: corridorVal || currentTargetName,
             riskStatus: normalizedRisk,

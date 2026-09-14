@@ -65,6 +65,21 @@ export const subsystems: Subsystem[] = [
 
   // P2B Jakban (Jakarta & Banten)
   {
+    id: 'sub-suralaya-cilegon',
+    upbId: 'upb-jakarta',
+    name: 'Subsistem Suralaya Unit #3 - Suralaya 1,2 – Cilegon 4',
+    giCount: 16,
+    ibtCount: 3,
+    riskLevel: 'Sangat Rawan',
+    riskCount: 4,
+    risksN1: 2,
+    risksN2: 1,
+    risksN12: 1,
+    transformerCount: 18,
+    peakLoadMW: 1850,
+    description: 'Evakuasi daya PLTU Suralaya Unit 3, IBT 1 & 2 Suralaya, dan IBT 4 Cilegon Baru melayani kawasan industri Cilegon (Tabel 2.1 Kerawanan Sistem).'
+  },
+  {
     id: 'sub-durkos-mkrng',
     upbId: 'upb-jakarta',
     name: 'Subsistem Duri Kosambi - Muara Karang',
