@@ -55,60 +55,106 @@ export const SLDLegendModal: React.FC<SLDLegendModalProps> = ({ isOpen, onClose 
                 <span className="text-[11px] text-slate-400">Komponen Utama Penyaluran Tenaga Listrik</span>
               </div>
               <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-800/60">
-                5
+                7
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-              {/* Busbar */}
-              <div className="flex flex-col items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
-                <div className="h-14 flex items-center justify-center w-full px-2">
-                  <div className="w-full h-2.5 bg-slate-300 rounded-full shadow-xs" />
-                </div>
-                <div className="text-center mt-2">
-                  <span className="text-xs font-bold text-slate-200 block">Busbar</span>
-                  <span className="text-[10px] text-slate-400">Batang Rel GI</span>
-                </div>
-              </div>
-
-              {/* Trafo */}
-              <div className="flex flex-col items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
-                <div className="h-14 flex items-center justify-center">
-                  <div className="flex flex-col items-center -space-y-2">
-                    <div className="w-1.5 h-1.5 rounded-full border border-slate-300 bg-slate-900" />
-                    <div className="w-7 h-7 rounded-full border-2 border-slate-200" />
-                    <div className="w-7 h-7 rounded-full border-2 border-slate-200" />
-                    <div className="w-1.5 h-1.5 rounded-full border border-slate-300 bg-slate-900" />
-                  </div>
-                </div>
-                <div className="text-center mt-2">
-                  <span className="text-xs font-bold text-slate-200 block">Trafo</span>
-                  <span className="text-[10px] text-slate-400">2-Winding / Step-down</span>
-                </div>
-              </div>
-
-              {/* Generator */}
-              <div className="flex flex-col items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              {/* 1. Generator / Pembangkit */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-emerald-500/50 transition-colors">
                 <div className="h-14 flex items-center justify-center">
                   <div className="flex flex-col items-center">
-                    <div className="w-2 h-2 rounded-full border border-emerald-400 bg-slate-900 -mb-1 z-10" />
-                    <div className="w-9 h-9 rounded-full border-2 border-emerald-400 bg-emerald-500/10 flex items-center justify-center">
-                      <span className="text-emerald-400 font-bold text-lg leading-none">~</span>
+                    <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mb-0.5 z-10" />
+                    <div className="w-8 h-8 rounded-full border-2 border-emerald-400 bg-emerald-500/10 flex items-center justify-center shadow-xs">
+                      <span className="text-emerald-400 font-bold text-base leading-none">~</span>
                     </div>
                   </div>
                 </div>
-                <div className="text-center mt-2">
-                  <span className="text-xs font-bold text-slate-200 block">Generator</span>
-                  <span className="text-[10px] text-emerald-400">Pembangkit (PLTU/PLTA)</span>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-emerald-300 block">Generator</span>
+                  <span className="text-[9px] text-slate-400">Pembangkit Listrik</span>
                 </div>
               </div>
 
-              {/* Beban (Inverted Triangle) */}
-              <div className="flex flex-col items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
+              {/* 2. Trafo Pembangkit (GSUT) */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-emerald-500/50 transition-colors">
+                <div className="h-14 flex items-center justify-center">
+                  <div className="relative flex flex-col items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mb-1 z-10" />
+                    <svg viewBox="0 0 36 44" className="w-7 h-9 filter drop-shadow-xs">
+                      {/* Atas: Hijau (Sisi Generator) */}
+                      <circle cx="18" cy="15" r="11" fill="none" stroke="#22c55e" strokeWidth="2.8" />
+                      {/* Bawah: Merah (Sisi GI 150 kV) */}
+                      <circle cx="18" cy="29" r="11" fill="none" stroke="#ef4444" strokeWidth="2.8" />
+                    </svg>
+                    <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mt-1 z-10" />
+                  </div>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-slate-200 block">Trafo Generator</span>
+                  <span className="text-[9px] text-slate-400">Pembangkit ke GI</span>
+                </div>
+              </div>
+
+              {/* 3. IBT (500/150 kV) */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-blue-500/50 transition-colors">
+                <div className="h-14 flex items-center justify-center">
+                  <div className="relative flex flex-col items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full border border-blue-400 bg-slate-900 -mb-1 z-10" />
+                    <svg viewBox="0 0 46 44" className="w-9 h-9 filter drop-shadow-xs">
+                      {/* Atas: Biru (500 kV) */}
+                      <circle cx="23" cy="15" r="10" fill="none" stroke="#2563eb" strokeWidth="2.6" />
+                      {/* Bawah Kiri: Merah (150 kV) */}
+                      <circle cx="15" cy="28" r="10" fill="none" stroke="#ef4444" strokeWidth="2.6" />
+                      {/* Bawah Kanan: Kuning (33 kV) */}
+                      <circle cx="31" cy="28" r="10" fill="none" stroke="#f59e0b" strokeWidth="2.6" />
+                    </svg>
+                    <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mt-1 z-10" />
+                  </div>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-cyan-300 block">IBT</span>
+                  <span className="text-[9px] text-slate-400">500/150 kV (3 Belitan)</span>
+                </div>
+              </div>
+
+              {/* 4. Trafo Distribusi (150/20 kV) */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-amber-500/50 transition-colors">
+                <div className="h-14 flex items-center justify-center">
+                  <div className="relative flex flex-col items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
+                    <svg viewBox="0 0 36 44" className="w-7 h-9 filter drop-shadow-xs">
+                      {/* Atas: Merah (150 kV) */}
+                      <circle cx="18" cy="15" r="11" fill="none" stroke="#ef4444" strokeWidth="2.8" />
+                      {/* Bawah: Kuning (20 kV / 70 kV) */}
+                      <circle cx="18" cy="29" r="11" fill="none" stroke="#f59e0b" strokeWidth="2.8" />
+                    </svg>
+                    <div className="w-1.5 h-1.5 rounded-full border border-amber-400 bg-slate-900 -mt-1 z-10" />
+                  </div>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-slate-200 block">Trafo Distribusi</span>
+                  <span className="text-[9px] text-slate-400">150/20 kV atau 70 kV</span>
+                </div>
+              </div>
+
+              {/* 5. Busbar */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
+                <div className="h-14 flex items-center justify-center w-full px-2">
+                  <div className="w-full h-2.5 bg-slate-200 rounded-full shadow-xs" />
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-slate-200 block">Busbar</span>
+                  <span className="text-[9px] text-slate-400">Batang Rel GI</span>
+                </div>
+              </div>
+
+              {/* 6. Beban (Inverted Triangle) */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-amber-500/50 transition-colors">
                 <div className="h-14 flex items-center justify-center">
                   <div className="flex flex-col items-center">
-                    <div className="w-2 h-2 rounded-full border border-amber-400 bg-slate-900 -mb-1 z-10" />
-                    <svg viewBox="0 0 36 36" className="w-8 h-8">
+                    <div className="w-1.5 h-1.5 rounded-full border border-amber-400 bg-slate-900 -mb-0.5 z-10" />
+                    <svg viewBox="0 0 36 36" className="w-7 h-7">
                       <polygon
                         points="4,8 32,8 18,32"
                         fill="rgba(245, 158, 11, 0.15)"
@@ -119,23 +165,23 @@ export const SLDLegendModal: React.FC<SLDLegendModalProps> = ({ isOpen, onClose 
                     </svg>
                   </div>
                 </div>
-                <div className="text-center mt-2">
-                  <span className="text-xs font-bold text-slate-200 block">Beban</span>
-                  <span className="text-[10px] text-amber-400">Konsumen KTT / Feeder</span>
+                <div className="text-center mt-1">
+                  <span className="text-xs font-bold text-amber-300 block">Beban</span>
+                  <span className="text-[9px] text-slate-400">Konsumen KTT / Feeder</span>
                 </div>
               </div>
 
-              {/* PHT (Penghantar) */}
-              <div className="flex flex-col items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
+              {/* 7. PHT (Penghantar) */}
+              <div className="flex flex-col items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/50 transition-colors">
                 <div className="h-14 flex items-center justify-center">
-                  <div className="w-3.5 h-11 rounded-full border-2 border-slate-300 flex flex-col justify-between items-center py-1">
+                  <div className="w-3.5 h-10 rounded-full border-2 border-slate-300 flex flex-col justify-between items-center py-0.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   </div>
                 </div>
-                <div className="text-center mt-2">
+                <div className="text-center mt-1">
                   <span className="text-xs font-bold text-slate-200 block">PHT</span>
-                  <span className="text-[10px] text-slate-400">Saluran Transmisi</span>
+                  <span className="text-[9px] text-slate-400">Saluran Transmisi</span>
                 </div>
               </div>
             </div>
@@ -156,23 +202,29 @@ export const SLDLegendModal: React.FC<SLDLegendModalProps> = ({ isOpen, onClose 
             </div>
 
             <div className="grid grid-cols-2 gap-3.5 max-w-md">
-              {/* PMT (Pemutus Tenaga) */}
-              <div className="flex items-center gap-4 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-amber-500/50 transition-colors">
-                <div className="w-12 h-14 flex items-center justify-center shrink-0">
-                  <svg viewBox="0 0 32 44" className="w-7 h-11 stroke-slate-200" fill="none" strokeWidth="2.2" strokeLinecap="round">
-                    <circle cx="16" cy="6" r="2.5" fill="#e2e8f0" />
+              {/* PMT / CB (Circuit Breaker) */}
+              <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-red-500/50 transition-colors">
+                <div className="w-14 h-14 flex items-center justify-center gap-2 shrink-0">
+                  {/* Blok Merah SLD Sesuai Gambar 3 */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-0.5 h-2 bg-red-500" />
+                    <div className="w-3.5 h-6 bg-red-600 rounded-[1px] shadow-sm border border-red-400" />
+                    <div className="w-0.5 h-2 bg-red-500" />
+                  </div>
+                  {/* Simbol Skematik Saklar PMT */}
+                  <svg viewBox="0 0 32 44" className="w-6 h-10 stroke-slate-200" fill="none" strokeWidth="2" strokeLinecap="round">
+                    <circle cx="16" cy="6" r="2" fill="#e2e8f0" />
                     <line x1="16" y1="9" x2="16" y2="15" />
-                    {/* Open switch lever with cross X */}
                     <line x1="16" y1="15" x2="8" y2="27" />
                     <line x1="12" y1="30" x2="20" y2="38" />
                     <line x1="20" y1="30" x2="12" y2="38" />
-                    <circle cx="16" cy="40" r="2.5" fill="#e2e8f0" />
+                    <circle cx="16" cy="40" r="2" fill="#e2e8f0" />
                   </svg>
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-100 block">PMT (Pemutus Tenaga)</span>
+                  <span className="text-xs font-bold text-slate-100 block">CB / PMT (Pemutus Tenaga)</span>
                   <span className="text-[11px] text-slate-400 leading-tight block mt-0.5">
-                    Circuit Breaker: memutus arus beban dan arus gangguan hubung singkat secara aman.
+                    Circuit Breaker di bay GI pengirim & penerima: memutus arus beban dan gangguan hubung singkat.
                   </span>
                 </div>
               </div>

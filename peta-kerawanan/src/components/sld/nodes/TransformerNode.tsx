@@ -192,17 +192,24 @@ export const TransformerNode: React.FC<NodeProps> = memo(({ data, selected }) =>
             </div>
           </div>
         ) : (
-          /* C. STANDARD 2-WINDING TRANSFORMER (Trafo Distribusi 150/20 kV dengan terminal bulatan) */
-          <div className="relative flex flex-col items-center justify-center my-0.5">
-            <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
-            <svg viewBox="0 0 40 50" className="w-10 h-12 filter drop-shadow-md">
-              {/* Lingkaran Atas: Sisi Primer 150 kV (Merah) */}
-              <circle cx="20" cy="18" r="13" fill="none" stroke="#ef4444" strokeWidth="3" />
-              {/* Lingkaran Bawah: Sisi Sekunder 20 kV (Hijau) */}
-              <circle cx="20" cy="32" r="13" fill="none" stroke="#22c55e" strokeWidth="3" />
-            </svg>
-            <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
-          </div>
+          /* C. STANDARD 2-WINDING TRANSFORMER */
+          (() => {
+            const isGSUT = nameL.includes('gsut') || nameL.includes('pembangkit') || nameL.includes('unit') || voltageStr.includes('15/500') || voltageStr.includes('20/500') || voltageStr.includes('15/150');
+            const topColor = isGSUT ? '#22c55e' : '#ef4444'; // Hijau jika GSUT (Gambar 2), Merah jika 150 kV (Gambar 5)
+            const bottomColor = isGSUT ? '#ef4444' : '#f59e0b'; // Merah jika GSUT, Kuning jika 20/70 kV (Gambar 5)
+            return (
+              <div className="relative flex flex-col items-center justify-center my-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mb-1 z-10" style={{ borderColor: topColor, borderWidth: '1.5px' }} />
+                <svg viewBox="0 0 40 50" className="w-10 h-12 filter drop-shadow-md">
+                  {/* Lingkaran Atas */}
+                  <circle cx="20" cy="18" r="13" fill="none" stroke={topColor} strokeWidth="3" />
+                  {/* Lingkaran Bawah */}
+                  <circle cx="20" cy="32" r="13" fill="none" stroke={bottomColor} strokeWidth="3" />
+                </svg>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mt-1 z-10" style={{ borderColor: bottomColor, borderWidth: '1.5px' }} />
+              </div>
+            );
+          })()
         )}
       </div>
 

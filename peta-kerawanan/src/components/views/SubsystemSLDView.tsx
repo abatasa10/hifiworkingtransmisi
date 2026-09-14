@@ -245,21 +245,28 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
           <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '20 kV'}</span>
         </div>
       ) : isTrafo ? (
-        /* 4. TRAFO DISTRIBUSI 150/20 kV (Standar PLN: 2 Interlocking Rings dengan bulatan terminal) */
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-0.5">
-            {data?.code || data?.name}
-          </span>
-          <div className="relative flex flex-col items-center justify-center my-0.5">
-            <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
-            <svg viewBox="0 0 40 48" className="w-9 h-11 filter drop-shadow-sm">
-              <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
-              <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
-            </svg>
-            <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
-          </div>
-          <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || '150/20 kV'}</span>
-        </div>
+        /* 4. TRAFO 2-WINDING (Gambar 2 & 5 Sesuai Standar PLN) */
+        (() => {
+          const isGSUT = nLower.includes('gsut') || nLower.includes('pembangkit') || nLower.includes('unit') || String(data?.voltage || '').includes('15/500') || String(data?.voltage || '').includes('20/500');
+          const topColor = isGSUT ? '#22c55e' : '#ef4444'; // Hijau jika GSUT (Gambar 2), Merah jika 150 kV (Gambar 5)
+          const bottomColor = isGSUT ? '#ef4444' : '#f59e0b'; // Merah jika GSUT, Kuning jika 20/70 kV (Gambar 5)
+          return (
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700 mb-0.5">
+                {data?.code || data?.name}
+              </span>
+              <div className="relative flex flex-col items-center justify-center my-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mb-1 z-10" style={{ borderColor: topColor, borderWidth: '1.5px' }} />
+                <svg viewBox="0 0 40 48" className="w-9 h-11 filter drop-shadow-sm">
+                  <circle cx="20" cy="17" r="12" fill="none" stroke={topColor} strokeWidth="2.8" />
+                  <circle cx="20" cy="31" r="12" fill="none" stroke={bottomColor} strokeWidth="2.8" />
+                </svg>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-900 -mt-1 z-10" style={{ borderColor: bottomColor, borderWidth: '1.5px' }} />
+              </div>
+              <span className="text-[8.5px] font-mono text-slate-400 mt-0.5">{data?.voltage || (isGSUT ? '15/500 kV' : '150/20 kV')}</span>
+            </div>
+          );
+        })()
       ) : (
         /* 5. ELECTRICAL BUSBAR (GI / GITET - Termasuk Wide Busbar) */
         <div className="flex flex-col items-center">
