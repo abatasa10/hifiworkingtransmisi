@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Map,
-  Compass,
-  Layers,
-  Network,
-  Activity,
-  FileText,
+  Server,
   ShieldAlert,
   ChevronRight,
-  User,
-  UploadCloud
+  RefreshCw,
+  Mail,
+  ShieldCheck
 } from 'lucide-react';
 
 export type ActiveView =
@@ -34,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onOpenSystemRiskSummary
 }) => {
-  const [timeStr, setTimeStr] = useState('30 Juni 2026 10:24 WIB');
+  const [timeStr, setTimeStr] = useState('');
 
   useEffect(() => {
     const updateTime = () => {
@@ -45,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
         timeZone: 'Asia/Jakarta'
       }).format(now);
       setTimeStr(`${formatted} WIB`);
@@ -55,96 +52,128 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const navItems: { id: ActiveView; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'national', label: 'Peta Nasional', icon: Map },
-    { id: 'jamali-system', label: 'Sistem JAMALI', icon: Compass },
-    { id: 'sld-500kv', label: 'SLD 500 kV', icon: Network },
-    { id: 'upb-view', label: 'UPB / P2B', icon: Layers },
-    { id: 'subsystem-view', label: 'Subsistem', icon: Activity },
-    { id: 'ibt-view', label: 'Daftar IBT', icon: Layers },
-    { id: 'upload-sld', label: 'Upload SLD', icon: UploadCloud },
-    { id: 'report-view', label: 'Laporan', icon: FileText }
-  ];
+  // Title and breadcrumb mapping according to Power Inspect standards
+  const getViewMeta = () => {
+    switch (currentView) {
+      case 'national':
+        return {
+          title: 'Dashboard Peta Kerawanan Nasional',
+          crumbs: ['Dashboard', 'Transmisi', 'Peta Kerawanan Nasional']
+        };
+      case 'jamali-system':
+        return {
+          title: 'Sistem Kelistrikan Jawa-Madura-Bali (JAMALI)',
+          crumbs: ['Dashboard', 'Sistem JAMALI', 'Peta Kerawanan']
+        };
+      case 'sld-500kv':
+        return {
+          title: 'Single Line Diagram (SLD) 500 kV',
+          crumbs: ['Dashboard', 'SLD Transmisi', 'Grid 500 kV & Interkoneksi']
+        };
+      case 'upb-view':
+        return {
+          title: 'Unit Pengatur Beban (UP2B / P2B)',
+          crumbs: ['Dashboard', 'Hierarki Wilayah', 'Unit Pengatur Beban']
+        };
+      case 'subsystem-view':
+      case 'subsystem-sld':
+        return {
+          title: 'Subsistem & Gardu Induk',
+          crumbs: ['Dashboard', 'Sistem Transmisi', 'Subsistem & Bay Aset']
+        };
+      case 'ibt-view':
+        return {
+          title: 'Daftar Interbus Transformer (IBT)',
+          crumbs: ['Dashboard', 'Aset Kritis', 'Trafo & IBT']
+        };
+      case 'upload-sld':
+        return {
+          title: 'Kelola & Konfigurasi SLD',
+          crumbs: ['Pengaturan', 'Manajemen Aset', 'Upload SLD']
+        };
+      case 'report-view':
+        return {
+          title: 'Laporan & Analisis Kerawanan',
+          crumbs: ['Laporan', 'Rekapitulasi Kerawanan Sistem']
+        };
+      default:
+        return {
+          title: 'Power Inspect - Peta Kerawanan',
+          crumbs: ['Dashboard', 'Peta Kerawanan']
+        };
+    }
+  };
+
+  const meta = getViewMeta();
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-5 flex items-center justify-between text-xs text-slate-700 select-none z-30 shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-      {/* Left: MANTAPS PLN Brand + Logo */}
-      <div className="flex items-center gap-4">
-        <div
-          onClick={() => onNavigate('national')}
-          className="flex items-center gap-2.5 cursor-pointer group"
-        >
-          {/* PLN Brand Icon */}
-          <div className="w-8 h-8 rounded-lg bg-[#00368a] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-            <svg viewBox="0 0 24 24" className="w-4.5 h-4.5 text-[#ffc61a] fill-current">
-              <path d="M13 2L3 14h8l-2 8 12-14h-8l2-6z" />
-            </svg>
-          </div>
-
-          {/* Brand Logo Text matching MANTAPS Power Inspect */}
-          <div className="flex flex-col leading-none">
-            <span className="text-[8px] font-extrabold tracking-[1.5px] text-slate-400 uppercase">
-              POWER INSPECT
-            </span>
-            <div className="text-[17px] font-black tracking-tight text-[#00368a]">
-              MANTAPS <span className="text-[#009ce0]">PLN</span>
-            </div>
-          </div>
+    <header className="h-14 bg-white border-b border-slate-200 px-5 flex items-center justify-between text-xs text-slate-700 select-none z-30 shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      {/* Left: Server Badge + Page Title & Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        {/* Environment Badge: Matches Power Inspect 'Server Training' */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[11px] shadow-2xs">
+          <Server className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Server Training</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
         </div>
 
-        {/* Separator */}
-        <div className="h-6 w-px bg-slate-200 ml-1 hidden md:block" />
+        {/* Divider */}
+        <div className="h-5 w-px bg-slate-200" />
 
-        {/* MANTAPS Nav Menu with exact pill indicator */}
-        <nav className="hidden xl:flex items-center gap-1.5 ml-1">
-          {navItems.map((item) => {
-            const active = currentView === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  active
-                    ? 'text-[#0046ad] bg-[#eff6ff] border border-[#dbeafe] shadow-xs'
-                    : 'text-slate-600 hover:text-[#0046ad] hover:bg-[#f8fafc] border border-transparent'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${active ? 'text-[#0046ad]' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Title & Breadcrumb */}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-sm font-bold text-slate-800 tracking-tight leading-tight">
+            {meta.title}
+          </h1>
+          <nav className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5" aria-label="Breadcrumb">
+            {meta.crumbs.map((crumb, idx) => (
+              <React.Fragment key={idx}>
+                {idx > 0 && <ChevronRight className="w-3 h-3 text-slate-300 shrink-0" />}
+                <span className={idx === meta.crumbs.length - 1 ? 'font-semibold text-[#00529C]' : 'hover:text-slate-700'}>
+                  {crumb}
+                </span>
+              </React.Fragment>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      {/* Right: Last Update, Kerawanan Button, User Profile */}
-      <div className="flex items-center gap-3">
-        {/* Live Timestamp */}
-        <div className="text-right hidden sm:block">
-          <div className="text-[11px] font-medium text-slate-500">
-            Terakhir Diperbarui: <strong className="text-slate-700 font-semibold">{timeStr}</strong>
-          </div>
-          <div className="text-[9px] text-[#00a65a] font-bold flex items-center justify-end gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00a65a] animate-pulse" />
-            SISTEM NORMAL & MONITORING AKTIF
+      {/* Right: Contact Support Notice + Time + Risk Action Button */}
+      <div className="flex items-center gap-4">
+        {/* Power Inspect Official Contact Helpdesk */}
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-500 font-medium">
+          <Mail className="w-3.5 h-3.5 text-slate-400" />
+          <span>
+            Contact us : <strong className="text-[#00529C] font-semibold">helpdesk.pi@iconpln.co.id</strong>
+          </span>
+          <span className="text-slate-300">|</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span>
+            Security Issue : <strong className="text-slate-700 font-semibold">soc@pln.co.id</strong>
+          </span>
+        </div>
+
+        {/* Timestamp */}
+        <div className="hidden sm:flex flex-col text-right">
+          <div className="text-[11px] font-medium text-slate-600">{timeStr}</div>
+          <div className="text-[9px] font-bold text-emerald-600 flex items-center justify-end gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            LIVE TELEMETRI AKTIF
           </div>
         </div>
 
-        {/* MANTAPS Red/Orange Kerawanan Sistem Badge Button */}
+        {/* Power Inspect Matriks Kerawanan Button */}
         <button
           onClick={onOpenSystemRiskSummary}
-          className="flex items-center gap-1.5 bg-[#fee2e2] hover:bg-[#fecaca] text-[#dc2626] border border-[#fca5a5] font-bold text-xs px-3 py-1.5 rounded-lg shadow-xs transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-bold text-xs shadow-2xs transition-all cursor-pointer"
+          title="Buka Ringkasan Kerawanan Sistem & Subsistem"
         >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Peta Kerawanan</span>
-          <ChevronRight className="w-3 h-3" />
+          <ShieldAlert className="w-4 h-4 text-red-600" />
+          <span className="hidden md:inline">Matriks Kerawanan</span>
+          <span className="bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+            7
+          </span>
         </button>
-
-        {/* Profile Avatar button */}
-        <div className="w-8 h-8 rounded-full bg-[#f1f5f9] border border-slate-300 text-[#00368a] flex items-center justify-center font-bold text-xs shadow-xs hover:bg-[#e2e8f0] cursor-pointer transition-colors">
-          <User className="w-4 h-4" />
-        </div>
       </div>
     </header>
   );

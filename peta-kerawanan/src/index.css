@@ -2,11 +2,13 @@
 @import "@xyflow/react/dist/style.css";
 
 :root {
-  --font-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --pln-blue: #0046ad;
-  --pln-blue-hover: #003380;
-  --pln-blue-light: #eff6ff;
-  --pln-blue-border: #dbeafe;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --pln-blue: #00529C;
+  --pln-blue-hover: #003e75;
+  --pln-blue-light: #e3f2fd;
+  --pln-blue-border: #bbdefb;
+  --pln-yellow: #FFD100;
+  --pln-yellow-hover: #f5c800;
   
   --bg-app: #f4f7fa;
   --bg-card: #ffffff;

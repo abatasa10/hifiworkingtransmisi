@@ -41,7 +41,7 @@ export const SystemRiskModal: React.FC<SystemRiskModalProps> = ({
                 Daftar Peta Kerawanan Sistem Tenaga Listrik 2026
               </h2>
               <div className="text-xs text-slate-500">
-                Buku Kerawanan Sistem & Subsistem Jawa, Madura dan Bali — MANTAPS PLN
+                Buku Kerawanan Sistem & Subsistem Transmisi — Power Inspect PT PLN (Persero)
               </div>
             </div>
           </div>
@@ -63,7 +63,7 @@ export const SystemRiskModal: React.FC<SystemRiskModalProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nomor atau nama kerawanan..."
-              className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0046ad]"
+              className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00529C]"
             />
           </div>
 
@@ -75,7 +75,7 @@ export const SystemRiskModal: React.FC<SystemRiskModalProps> = ({
                 onClick={() => setLevelFilter(lvl)}
                 className={`px-2.5 py-1 rounded-lg transition-colors font-semibold text-xs ${
                   levelFilter === lvl
-                    ? 'bg-[#0046ad] text-white shadow-xs'
+                    ? 'bg-[#00529C] text-white shadow-xs'
                     : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
               >

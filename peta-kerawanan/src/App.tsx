@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Header, ActiveView } from './components/layout/Header';
+import { Sidebar } from './components/layout/Sidebar';
 import { NationalMapView } from './components/views/NationalMapView';
 import { JamaliSystemView } from './components/views/JamaliSystemView';
 import { SLD500kVView } from './components/views/SLD500kVView';
@@ -50,16 +51,25 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[#f4f7fa] text-slate-800 overflow-hidden font-sans antialiased select-none">
-      {/* Universal Enterprise Header */}
-      <Header
+    <div className="w-full h-screen flex bg-[#f4f7fa] text-slate-800 overflow-hidden font-sans antialiased select-none">
+      {/* Power Inspect Left Slim Sidebar */}
+      <Sidebar
         currentView={currentView}
         onNavigate={setCurrentView}
         onOpenSystemRiskSummary={() => setIsRiskModalOpen(true)}
       />
 
-      {/* Main View Container */}
-      <main className="flex-1 flex flex-col w-full h-full overflow-hidden relative bg-[#f4f7fa]">
+      {/* Main Column: Header + View Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+        {/* Universal Enterprise Header */}
+        <Header
+          currentView={currentView}
+          onNavigate={setCurrentView}
+          onOpenSystemRiskSummary={() => setIsRiskModalOpen(true)}
+        />
+
+        {/* Main View Container */}
+        <main className="flex-1 flex flex-col w-full h-full overflow-hidden relative bg-[#f4f7fa]">
         {currentView === 'national' && (
           <NationalMapView
             onSelectSystem={handleSelectSystem}
@@ -132,6 +142,7 @@ export const App: React.FC = () => {
           />
         )}
       </main>
+      </div>
 
       {/* Global System Risk Summary Modal */}
       <SystemRiskModal
