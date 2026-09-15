@@ -64,21 +64,30 @@ const CustomExcelNode: React.FC<any> = ({ data, selected }) => {
     nLower.includes('unit') ||
     nLower.startsWith('g_');
 
-  const isBeban =
-    typeL.includes('beban') ||
-    typeL.includes('ktt') ||
-    nLower.includes('ktt') ||
-    nLower.includes('konsumen');
-
   const isBusbarExplicit =
     typeL === 'busbar' ||
+    typeL.includes('busbar') ||
     typeL === 'gitet' ||
     typeL === 'gi' ||
     nLower.includes('busbar') ||
     nLower.includes('rel') ||
-    nLower.includes('suralaya baru') ||
-    nLower.includes('cilegon baru') ||
-    nLower === 'suralaya';
+    nLower.includes('suralaya') ||
+    nLower.includes('cilegon') ||
+    nLower.includes('slrda') ||
+    nLower.includes('pendo') ||
+    nLower.includes('peni') ||
+    nLower.includes('mcci') ||
+    nLower.includes('mtsui') ||
+    nLower.includes('kstel') ||
+    nLower.includes('posco');
+
+  const isBeban =
+    !isBusbarExplicit &&
+    typeL !== 'busbar' &&
+    (typeL.includes('beban') ||
+      typeL.includes('ktt') ||
+      nLower.includes('ktt') ||
+      nLower.includes('konsumen'));
 
   const isTrafoExplicit = typeL === 'trafo';
   const isIBT =
@@ -447,21 +456,30 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           nameL.includes('unit') ||
           nameL.startsWith('g_');
 
-        const isBeban =
-          typeL.includes('beban') ||
-          typeL.includes('ktt') ||
-          nameL.includes('ktt') ||
-          nameL.includes('konsumen');
-
         const isBusbarExplicit =
           typeL === 'busbar' ||
+          typeL.includes('busbar') ||
           typeL === 'gitet' ||
           typeL === 'gi' ||
           nameL.includes('busbar') ||
           nameL.includes('rel') ||
-          nameL.includes('suralaya baru') ||
-          nameL.includes('cilegon baru') ||
-          nameL === 'suralaya';
+          nameL.includes('suralaya') ||
+          nameL.includes('cilegon') ||
+          nameL.includes('slrda') ||
+          nameL.includes('pendo') ||
+          nameL.includes('peni') ||
+          nameL.includes('mcci') ||
+          nameL.includes('mtsui') ||
+          nameL.includes('kstel') ||
+          nameL.includes('posco');
+
+        const isBeban =
+          !isBusbarExplicit &&
+          typeL !== 'busbar' &&
+          (typeL.includes('beban') ||
+            typeL.includes('ktt') ||
+            nameL.includes('ktt') ||
+            nameL.includes('konsumen'));
 
         const isTrafoExplicit = typeL === 'trafo';
         const isIBT =
@@ -477,7 +495,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
         let nodeType = 'busbar';
         if (isGen) nodeType = 'generator';
-        else if (isBusbarExplicit || isWide) nodeType = 'busbar';
+        else if (isBusbarExplicit || isWide || typeL === 'busbar') nodeType = 'busbar';
         else if (isIBT) nodeType = 'ibt';
         else if (isTrafo) nodeType = 'trafo';
         else if (isBeban) nodeType = 'custom';

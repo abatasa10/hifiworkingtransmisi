@@ -300,21 +300,30 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       const nameL = (node.name || '').toLowerCase();
       const typeL = String(node.assetType || '').toLowerCase();
 
-      const isBebanNode =
-        typeL.includes('beban') ||
-        typeL.includes('ktt') ||
-        nameL.includes('ktt') ||
-        nameL.includes('konsumen');
-
       const isBusbarExplicitNode =
         typeL === 'busbar' ||
+        typeL.includes('busbar') ||
         typeL === 'gitet' ||
         typeL === 'gi' ||
         nameL.includes('busbar') ||
         nameL.includes('rel') ||
-        nameL.includes('suralaya baru') ||
-        nameL.includes('cilegon baru') ||
-        nameL === 'suralaya';
+        nameL.includes('suralaya') ||
+        nameL.includes('cilegon') ||
+        nameL.includes('slrda') ||
+        nameL.includes('pendo') ||
+        nameL.includes('peni') ||
+        nameL.includes('mcci') ||
+        nameL.includes('mtsui') ||
+        nameL.includes('kstel') ||
+        nameL.includes('posco');
+
+      const isBebanNode =
+        !isBusbarExplicitNode &&
+        typeL !== 'busbar' &&
+        (typeL.includes('beban') ||
+          typeL.includes('ktt') ||
+          nameL.includes('ktt') ||
+          nameL.includes('konsumen'));
 
       const isTrafoExplicitNode = typeL === 'trafo';
       const isIBTNode =
@@ -627,19 +636,24 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       colMap[cleanKey(h)] = h;
     });
 
-    const findHeader = (patterns: string[]): string => {
+    const findHeader = (patterns: string[], exclude: string[] = []): string => {
       for (const p of patterns) {
         for (const [k, originalHeader] of Object.entries(colMap)) {
-          if (k.includes(p)) return originalHeader;
+          if (exclude.includes(originalHeader)) continue;
+          if (k === p || k.includes(p)) return originalHeader;
         }
       }
       return '';
     };
 
     const fromCol = findHeader(['darigi', 'dari', 'from', 'asal', 'bus1', 'source', 'pangkal']);
-    const toCol = findHeader(['kegi', 'ke', 'to', 'tujuan', 'bus2', 'target', 'ujung']);
-    const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'bay']);
-    const giCol = findHeader(['namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc', 'namaasset', 'gi', 'nama', 'gardu']);
+    const toCol = findHeader(['kegi', 'ke', 'to', 'tujuan', 'bus2', 'target', 'ujung'], [fromCol]);
+    const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'bay'], [fromCol, toCol]);
+    const isLineSheet = Boolean(fromCol && toCol);
+    const giCol = findHeader(
+      ['namaasset', 'namagarduinduk', 'namagi', 'garduinduk', 'namagardu', 'functlocgarduinduk', 'substation', 'functloc'],
+      [fromCol, toCol, lineNameCol]
+    ) || (isLineSheet ? '' : findHeader(['gi', 'gardu', 'nama'], [fromCol, toCol, lineNameCol]));
     const codeCol = findHeader(['kodesingkatan', 'kodesingkat', 'kode', 'code', 'singkatan']);
     const tierCol = findHeader(['tiermulai0', 'tier', 'leveltier', 'hirarki', 'hierarchy', 'level']);
     const tierFromCol = findHeader(['tierdarigi', 'tierdari', 'tierfrom', 'tiersumber', 'tierasal']);
@@ -701,7 +715,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const executeParsingWithMapping = (
     sheet: XLSX.WorkSheet,
     mapping: ColumnMapping,
-    currentTargetName: string
+    currentTargetName: string,
+    workbookOpt?: XLSX.WorkBook
   ) => {
     const rawGrid: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     if (!rawGrid || rawGrid.length === 0) {
@@ -792,13 +807,26 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       if (sL.includes('pembangkit') || sL.includes('generator') || sL.includes('plt') || sL.includes('unit')) return 'pembangkit';
       if (sL === 'trafo' || sL.includes('trafo_distribusi') || sL.includes('trafo_generator') || (sL.includes('trafo') && !sL.includes('ibt'))) return 'trafo';
       if (sL.includes('ibt') || (sL.includes('500/150') && !sL.includes('trafo'))) return 'ibt';
-      if (sL.includes('beban') || sL.includes('ktt') || sL.includes('konsumen')) return 'beban';
       if (sL.includes('busbar') || sL.includes('rel')) return 'busbar';
+      if (sL.includes('beban') || sL.includes('ktt') || sL.includes('konsumen')) return 'beban';
 
       // Fallback heuristics based on name and voltage
+      if (
+        nL.includes('busbar') ||
+        nL.includes('rel') ||
+        nL.includes('suralaya') ||
+        nL.includes('cilegon') ||
+        nL.includes('slrda') ||
+        nL.includes('pendo') ||
+        nL.includes('peni') ||
+        nL.includes('mcci') ||
+        nL.includes('mtsui') ||
+        nL.includes('kstel') ||
+        nL.includes('posco')
+      )
+        return 'busbar';
       if (nL.includes('ktt') || nL.includes('konsumen')) return 'beban';
       if (nL.includes('plt') || nL.includes('pembangkit') || nL.includes('unit')) return 'pembangkit';
-      if (sL.includes('busbar') || nL.includes('busbar') || nL.includes('rel') || nL.includes('suralaya baru') || nL.includes('cilegon baru') || nL === 'suralaya') return 'busbar';
       if (sL === 'ibt' || nL.startsWith('ibt') || (nL.includes('ibt') && !nL.includes('bay') && !nL.includes('ktt'))) return 'ibt';
       if (nL.includes('trafo')) return 'trafo';
       return 'busbar';
@@ -886,17 +914,22 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         // Baca Tipe Simbol Dari GI dan Ke GI (Sheet 1)
         const symbolFromVal = colSymbolFromIdx !== -1 && row[colSymbolFromIdx] ? String(row[colSymbolFromIdx]).trim() : '';
         const symbolToVal   = colSymbolToIdx   !== -1 && row[colSymbolToIdx]   ? String(row[colSymbolToIdx]).trim()   : '';
+        const assetTypeVal  = colAssetTypeIdx  !== -1 && row[colAssetTypeIdx]  ? String(row[colAssetTypeIdx]).trim()  : '';
 
-        const existingSource = parsedNodes.find((n) => n.id === sourceNodeId);
+        // Route assetTypeVal appropriately on line rows: "Beban" NEVER applies to the feeding substation (dariVal)!
+        const effectiveFromSymbol = symbolFromVal || (assetTypeVal && !assetTypeVal.toLowerCase().includes('beban') ? assetTypeVal : '');
+        const effectiveToSymbol = symbolToVal || (assetTypeVal && (keVal.toLowerCase().includes('ktt') || keVal.toLowerCase().includes('konsumen') || assetTypeVal.toLowerCase().includes('beban')) ? assetTypeVal : '');
+
+        const existingSource = parsedNodes.find((n) => n.id === sourceNodeId || cleanKey(n.name) === cleanKey(dariVal));
         if (existingSource) {
-          if (symbolFromVal) {
-            existingSource.assetType = resolveAssetType(symbolFromVal, dariVal, voltageVal);
+          if (effectiveFromSymbol) {
+            existingSource.assetType = resolveAssetType(effectiveFromSymbol, dariVal, voltageVal);
           }
           if (tierFromVal !== undefined) {
             existingSource.tier = tierFromVal;
           }
         } else {
-          const resType = resolveAssetType(symbolFromVal, dariVal, voltageVal);
+          const resType = resolveAssetType(effectiveFromSymbol, dariVal, voltageVal);
           const num = dariVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (resType === 'ibt' ? '1' : undefined);
           parsedNodes.push({
             id: sourceNodeId,
@@ -911,16 +944,16 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           });
         }
 
-        const existingTarget = parsedNodes.find((n) => n.id === targetNodeId);
+        const existingTarget = parsedNodes.find((n) => n.id === targetNodeId || cleanKey(n.name) === cleanKey(keVal));
         if (existingTarget) {
-          if (symbolToVal) {
-            existingTarget.assetType = resolveAssetType(symbolToVal, keVal, voltageVal);
+          if (effectiveToSymbol) {
+            existingTarget.assetType = resolveAssetType(effectiveToSymbol, keVal, voltageVal);
           }
           if (tierToVal !== undefined) {
             existingTarget.tier = tierToVal;
           }
         } else {
-          const resType = resolveAssetType(symbolToVal, keVal, voltageVal);
+          const resType = resolveAssetType(effectiveToSymbol, keVal, voltageVal);
           const num = keVal.match(/ibt\s*([0-9&]+)/i)?.[1] || (resType === 'ibt' ? '1' : undefined);
           parsedNodes.push({
             id: targetNodeId,
@@ -937,136 +970,258 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       });
     }
 
+    // Helper function to merge or add a GI master node
+    const mergeGINode = (
+      giVal: string,
+      codeVal?: string,
+      assetTypeVal?: string,
+      busbarShapeVal?: string,
+      capacityVal?: number,
+      voltageVal: string = '150 kV',
+      tierVal?: number,
+      ibtNumVal?: string,
+      riskVal: string = 'Normal',
+      riskNumVal?: string,
+      corridorVal?: string,
+      uitVal?: string,
+      conditionVal?: string,
+      impactVal?: string,
+      mitigationVal?: string,
+      solutionVal?: string
+    ) => {
+      let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
+      const rUpper = riskVal.toUpperCase();
+      if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
+      else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
+      else if (rUpper.includes('SANGAT RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'Sangat Rawan';
+      else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
+      else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
+
+      const valLower = giVal.toLowerCase();
+      const assetLower = (assetTypeVal || '').toLowerCase();
+      const shapeLower = (busbarShapeVal || '').toLowerCase();
+
+      const isBusbarExplicit =
+        assetLower === 'busbar' ||
+        assetLower.includes('busbar') ||
+        assetLower.includes('rel') ||
+        assetLower === 'gitet' ||
+        assetLower === 'gi' ||
+        valLower.includes('busbar') ||
+        valLower.includes('rel') ||
+        valLower.includes('suralaya') ||
+        valLower.includes('cilegon') ||
+        valLower.includes('slrda') ||
+        valLower.includes('pendo') ||
+        valLower.includes('peni') ||
+        valLower.includes('mcci') ||
+        valLower.includes('mtsui') ||
+        valLower.includes('kstel') ||
+        valLower.includes('posco');
+
+      const isBeban =
+        !isBusbarExplicit &&
+        assetLower !== 'busbar' &&
+        (assetLower.includes('beban') ||
+          assetLower.includes('ktt') ||
+          valLower.includes('ktt') ||
+          valLower.includes('konsumen'));
+
+      const isGen =
+        assetLower.includes('pembangkit') ||
+        assetLower.includes('generator') ||
+        valLower.includes('plt') ||
+        valLower.includes('pembangkit') ||
+        valLower.includes('unit');
+
+      const isTrafoExplicit = assetLower === 'trafo';
+      const isIBT =
+        !isBusbarExplicit &&
+        !isBeban &&
+        !isTrafoExplicit &&
+        (assetLower.includes('ibt') ||
+          (valLower.startsWith('ibt') || (valLower.includes('ibt') && !valLower.includes('bay') && !valLower.includes('ktt'))));
+
+      const isTrafo = isTrafoExplicit || (!isBusbarExplicit && !isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo')));
+      const resolvedAssetType: 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' = isGen
+        ? 'pembangkit'
+        : isIBT
+        ? 'ibt'
+        : isTrafo
+        ? 'trafo'
+        : isBeban
+        ? 'beban'
+        : 'busbar';
+
+      const isWide =
+        shapeLower.includes('panjang') ||
+        shapeLower.includes('wide') ||
+        assetLower.includes('wide') ||
+        valLower.includes('busbar 500') ||
+        valLower.includes('rel 500');
+
+      const resolvedIbtNum =
+        ibtNumVal ||
+        giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
+        (isIBT ? '1' : undefined);
+
+      const nodeId = `GI_${cleanKey(giVal)}`;
+
+      // Robust matching: match by id, code, or name
+      const existing = parsedNodes.find((n) => {
+        const nIdClean = cleanKey(n.id);
+        const nNameClean = cleanKey(n.name);
+        const nCodeClean = cleanKey(n.code);
+        const giClean = cleanKey(giVal);
+        const codeClean = cleanKey(codeVal);
+
+        return (
+          nIdClean === cleanKey(nodeId) ||
+          nIdClean === `gi${giClean}` ||
+          (codeClean && (nIdClean === `gi${codeClean}` || nIdClean === codeClean)) ||
+          nNameClean === giClean ||
+          (codeClean && (nNameClean === codeClean || nCodeClean === codeClean)) ||
+          (giClean && (nNameClean.includes(giClean) || giClean.includes(nNameClean))) ||
+          (codeClean && nNameClean.includes(codeClean))
+        );
+      });
+
+      if (existing) {
+        if (voltageVal) existing.voltage = voltageVal;
+        if (tierVal !== undefined) existing.tier = tierVal;
+        if (resolvedIbtNum) existing.ibtNumber = resolvedIbtNum;
+        if (codeVal) existing.code = codeVal;
+        if (riskNumVal) existing.riskNumber = riskNumVal;
+        existing.assetType = resolvedAssetType;
+        if (capacityVal !== undefined) existing.capacityMVA = capacityVal;
+        if (isWide) {
+          existing.isWideBusbar = true;
+          existing.busbarWidth = 420;
+        }
+        if (uitVal) existing.uit = uitVal;
+        if (conditionVal) existing.condition = conditionVal;
+        if (impactVal) existing.impact = impactVal;
+        if (mitigationVal) existing.mitigation = mitigationVal;
+        if (solutionVal) existing.solution = solutionVal;
+        if (normalizedRisk !== 'Normal') existing.riskStatus = normalizedRisk;
+      } else {
+        parsedNodes.push({
+          id: nodeId,
+          name: giVal,
+          code: codeVal,
+          tier: tierVal !== undefined ? tierVal : isIBT ? 1 : isGen ? 0 : undefined,
+          ibtNumber: resolvedIbtNum,
+          assetType: resolvedAssetType,
+          capacityMVA: capacityVal,
+          isWideBusbar: isWide ? true : undefined,
+          busbarWidth: isWide ? 420 : undefined,
+          voltage: voltageVal,
+          region: corridorVal || currentTargetName,
+          riskStatus: normalizedRisk,
+          riskNumber: riskNumVal,
+          subsystem: currentTargetName,
+          uit: uitVal,
+          condition: conditionVal,
+          impact: impactVal,
+          mitigation: mitigationVal,
+          solution: solutionVal
+        });
+      }
+    };
+
     // 2. Process / Merge Gardu Induk (GI) Simpul Nodes if GI column is specified
-    if (colGiIdx !== -1) {
-      dataRows.forEach((row, rIdx) => {
+    // Only run on current sheet if it is a GI master sheet or has a distinct GI column
+    if (colGiIdx !== -1 && (colFromIdx === -1 || colGiIdx !== colFromIdx)) {
+      dataRows.forEach((row) => {
         const giVal = String(row[colGiIdx] || '').trim();
         if (!giVal) return;
 
-        const voltageVal = colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV';
-        const riskVal = colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal';
-        const riskNumVal = colRiskNumIdx !== -1 && row[colRiskNumIdx] ? String(row[colRiskNumIdx]).trim() : '';
-        const tierVal = colTierIdx !== -1 && !isNaN(Number(row[colTierIdx])) ? Number(row[colTierIdx]) : undefined;
-        const ibtNumVal = colIbtNumIdx !== -1 && row[colIbtNumIdx] ? String(row[colIbtNumIdx]).trim() : undefined;
-        const assetTypeVal = colAssetTypeIdx !== -1 && row[colAssetTypeIdx] ? String(row[colAssetTypeIdx]).trim() : undefined;
-        const busbarShapeVal = colBusbarShapeIdx !== -1 && row[colBusbarShapeIdx] ? String(row[colBusbarShapeIdx]).trim() : '';
-        const capacityVal = colCapacityIdx !== -1 && !isNaN(Number(row[colCapacityIdx])) ? Number(row[colCapacityIdx]) : undefined;
-        const codeVal = colCodeIdx !== -1 && row[colCodeIdx] ? String(row[colCodeIdx]).trim() : undefined;
-        const corridorVal = colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : '';
-        const uitVal = colUitIdx !== -1 && row[colUitIdx] ? String(row[colUitIdx]).trim() : undefined;
-        const conditionVal = colConditionIdx !== -1 && row[colConditionIdx] ? String(row[colConditionIdx]).trim() : undefined;
-        const impactVal = colImpactIdx !== -1 && row[colImpactIdx] ? String(row[colImpactIdx]).trim() : undefined;
-        const mitigationVal = colMitigationIdx !== -1 && row[colMitigationIdx] ? String(row[colMitigationIdx]).trim() : undefined;
-        const solutionVal = colSolutionIdx !== -1 && row[colSolutionIdx] ? String(row[colSolutionIdx]).trim() : undefined;
-
-        let normalizedRisk: 'Normal' | 'N-1' | 'N-2' | 'N-1-2' | 'Sedang' | 'Sangat Rawan' = 'Normal';
-        const rUpper = riskVal.toUpperCase();
-        if (rUpper.includes('N-1-2') || rUpper.includes('N12')) normalizedRisk = 'N-1-2';
-        else if (rUpper.includes('N-2') || rUpper.includes('N2')) normalizedRisk = 'N-2';
-        else if (rUpper.includes('SANGAT RAWAN') || rUpper.includes('KRITIS')) normalizedRisk = 'Sangat Rawan';
-        else if (rUpper.includes('SEDANG')) normalizedRisk = 'Sedang';
-        else if (rUpper.includes('N-1') || rUpper.includes('N1') || rUpper.includes('RAWAN')) normalizedRisk = 'N-1';
-
-        const valLower = giVal.toLowerCase();
-        const assetLower = (assetTypeVal || '').toLowerCase();
-        const shapeLower = busbarShapeVal.toLowerCase();
-        const isBeban =
-          assetLower.includes('beban') ||
-          assetLower.includes('ktt') ||
-          valLower.includes('ktt') ||
-          valLower.includes('konsumen');
-        const isGen =
-          assetLower.includes('pembangkit') ||
-          assetLower.includes('generator') ||
-          valLower.includes('plt') ||
-          valLower.includes('pembangkit') ||
-          valLower.includes('unit');
-        const isBusbarExplicit =
-          assetLower.includes('busbar') ||
-          assetLower.includes('rel') ||
-          assetLower === 'gitet' ||
-          assetLower === 'gi' ||
-          valLower.includes('busbar') ||
-          valLower.includes('rel') ||
-          valLower.includes('suralaya baru') ||
-          valLower.includes('cilegon baru') ||
-          valLower === 'suralaya';
-
-        const isTrafoExplicit = assetLower === 'trafo';
-        const isIBT =
-          !isBusbarExplicit &&
-          !isBeban &&
-          !isTrafoExplicit &&
-          (assetLower.includes('ibt') ||
-            (valLower.startsWith('ibt') || (valLower.includes('ibt') && !valLower.includes('bay') && !valLower.includes('ktt'))));
-
-        const isTrafo = isTrafoExplicit || (!isBusbarExplicit && !isBeban && !isIBT && (assetLower.includes('trafo') || valLower.includes('trafo')));
-        const resolvedAssetType: 'pembangkit' | 'ibt' | 'trafo' | 'beban' | 'busbar' = isGen
-          ? 'pembangkit'
-          : isIBT
-          ? 'ibt'
-          : isTrafo
-          ? 'trafo'
-          : isBeban
-          ? 'beban'
-          : 'busbar';
-
-        const isWide =
-          shapeLower.includes('panjang') ||
-          shapeLower.includes('wide') ||
-          assetLower.includes('wide') ||
-          valLower.includes('busbar 500') ||
-          valLower.includes('rel 500');
-
-        const resolvedIbtNum =
-          ibtNumVal ||
-          giVal.match(/ibt\s*([0-9&]+)/i)?.[1] ||
-          (isIBT ? '1' : undefined);
-
-        const nodeId = `GI_${cleanKey(giVal)}`;
-        const existing = parsedNodes.find((n) => n.id === nodeId);
-        if (existing) {
-          if (voltageVal) existing.voltage = voltageVal;
-          if (tierVal !== undefined) existing.tier = tierVal;
-          if (resolvedIbtNum) existing.ibtNumber = resolvedIbtNum;
-          if (codeVal) existing.code = codeVal;
-          if (riskNumVal) existing.riskNumber = riskNumVal;
-          existing.assetType = resolvedAssetType;
-          if (capacityVal !== undefined) existing.capacityMVA = capacityVal;
-          if (isWide) {
-            existing.isWideBusbar = true;
-            existing.busbarWidth = 420;
-          }
-          if (uitVal) existing.uit = uitVal;
-          if (conditionVal) existing.condition = conditionVal;
-          if (impactVal) existing.impact = impactVal;
-          if (mitigationVal) existing.mitigation = mitigationVal;
-          if (solutionVal) existing.solution = solutionVal;
-          if (normalizedRisk !== 'Normal') existing.riskStatus = normalizedRisk;
-        } else {
-          parsedNodes.push({
-            id: nodeId,
-            name: giVal,
-            code: codeVal,
-            tier: tierVal !== undefined ? tierVal : isIBT ? 1 : isGen ? 0 : undefined,
-            ibtNumber: resolvedIbtNum,
-            assetType: resolvedAssetType,
-            capacityMVA: capacityVal,
-            isWideBusbar: isWide ? true : undefined,
-            busbarWidth: isWide ? 420 : undefined,
-            voltage: voltageVal,
-            region: corridorVal || currentTargetName,
-            riskStatus: normalizedRisk,
-            riskNumber: riskNumVal,
-            subsystem: currentTargetName,
-            uit: uitVal,
-            condition: conditionVal,
-            impact: impactVal,
-            mitigation: mitigationVal,
-            solution: solutionVal
-          });
-        }
+        mergeGINode(
+          giVal,
+          colCodeIdx !== -1 && row[colCodeIdx] ? String(row[colCodeIdx]).trim() : undefined,
+          colAssetTypeIdx !== -1 && row[colAssetTypeIdx] ? String(row[colAssetTypeIdx]).trim() : undefined,
+          colBusbarShapeIdx !== -1 && row[colBusbarShapeIdx] ? String(row[colBusbarShapeIdx]).trim() : undefined,
+          colCapacityIdx !== -1 && !isNaN(Number(row[colCapacityIdx])) ? Number(row[colCapacityIdx]) : undefined,
+          colVoltageIdx !== -1 && row[colVoltageIdx] ? String(row[colVoltageIdx]) : '150 kV',
+          colTierIdx !== -1 && !isNaN(Number(row[colTierIdx])) ? Number(row[colTierIdx]) : undefined,
+          colIbtNumIdx !== -1 && row[colIbtNumIdx] ? String(row[colIbtNumIdx]).trim() : undefined,
+          colRiskIdx !== -1 && row[colRiskIdx] ? String(row[colRiskIdx]).trim() : 'Normal',
+          colRiskNumIdx !== -1 && row[colRiskNumIdx] ? String(row[colRiskNumIdx]).trim() : undefined,
+          colCorridorIdx !== -1 && row[colCorridorIdx] ? String(row[colCorridorIdx]).trim() : undefined,
+          colUitIdx !== -1 && row[colUitIdx] ? String(row[colUitIdx]).trim() : undefined,
+          colConditionIdx !== -1 && row[colConditionIdx] ? String(row[colConditionIdx]).trim() : undefined,
+          colImpactIdx !== -1 && row[colImpactIdx] ? String(row[colImpactIdx]).trim() : undefined,
+          colMitigationIdx !== -1 && row[colMitigationIdx] ? String(row[colMitigationIdx]).trim() : undefined,
+          colSolutionIdx !== -1 && row[colSolutionIdx] ? String(row[colSolutionIdx]).trim() : undefined
+        );
       });
+    }
+
+    // 3. Companion Sheet Auto-Merge: If workbook has a companion Gardu Induk sheet, merge it automatically!
+    const activeWb = workbookOpt || rawWorkbook;
+    if (activeWb && activeWb.SheetNames && activeWb.SheetNames.length > 1) {
+      const companionSheetName = activeWb.SheetNames.find(
+        (s) => s !== activeSheetName && (cleanKey(s).includes('gardu') || cleanKey(s).includes('asset') || cleanKey(s).includes('gi'))
+      );
+      if (companionSheetName && activeWb.Sheets[companionSheetName]) {
+        const cWorksheet = activeWb.Sheets[companionSheetName];
+        const cGrid: any[][] = XLSX.utils.sheet_to_json(cWorksheet, { header: 1 });
+        if (cGrid.length > 0) {
+          let cHeaderIdx = 0;
+          for (let r = 0; r < Math.min(10, cGrid.length); r++) {
+            if (Array.isArray(cGrid[r]) && cGrid[r].some((c) => cleanKey(c).includes('nama') || cleanKey(c).includes('gi') || cleanKey(c).includes('asset'))) {
+              cHeaderIdx = r;
+              break;
+            }
+          }
+          const cHeaders: string[] = (cGrid[cHeaderIdx] || []).map((h) => String(h || '').trim()).filter(Boolean);
+          const cMapping = autoDetectMapping(cHeaders);
+          const cColIdx = (headerName: string) => (headerName ? cHeaders.indexOf(headerName) : -1);
+
+          const cGiIdx = cColIdx(cMapping.gi);
+          const cCodeIdx = cColIdx(cMapping.code);
+          const cAssetTypeIdx = cColIdx(cMapping.assetType);
+          const cBusbarShapeIdx = cColIdx(cMapping.busbarShape);
+          const cCapacityIdx = cColIdx(cMapping.capacity);
+          const cTierIdx = cColIdx(cMapping.tier);
+          const cIbtNumIdx = cColIdx(cMapping.ibtNumber);
+          const cVoltageIdx = cColIdx(cMapping.voltage);
+          const cRiskIdx = cColIdx(cMapping.risk);
+          const cRiskNumIdx = cColIdx(cMapping.riskNumber);
+          const cCorridorIdx = cColIdx(cMapping.corridor);
+          const cUitIdx = cColIdx(cMapping.uit);
+          const cConditionIdx = cColIdx(cMapping.condition);
+          const cImpactIdx = cColIdx(cMapping.impact);
+          const cMitigationIdx = cColIdx(cMapping.mitigation);
+          const cSolutionIdx = cColIdx(cMapping.solution);
+
+          if (cGiIdx !== -1) {
+            const cDataRows = cGrid.slice(cHeaderIdx + 1).filter((r) => Array.isArray(r) && r.some((c) => c !== undefined && c !== null && String(c).trim() !== ''));
+            cDataRows.forEach((row) => {
+              const giVal = String(row[cGiIdx] || '').trim();
+              if (!giVal) return;
+              mergeGINode(
+                giVal,
+                cCodeIdx !== -1 && row[cCodeIdx] ? String(row[cCodeIdx]).trim() : undefined,
+                cAssetTypeIdx !== -1 && row[cAssetTypeIdx] ? String(row[cAssetTypeIdx]).trim() : undefined,
+                cBusbarShapeIdx !== -1 && row[cBusbarShapeIdx] ? String(row[cBusbarShapeIdx]).trim() : undefined,
+                cCapacityIdx !== -1 && !isNaN(Number(row[cCapacityIdx])) ? Number(row[cCapacityIdx]) : undefined,
+                cVoltageIdx !== -1 && row[cVoltageIdx] ? String(row[cVoltageIdx]) : '150 kV',
+                cTierIdx !== -1 && !isNaN(Number(row[cTierIdx])) ? Number(row[cTierIdx]) : undefined,
+                cIbtNumIdx !== -1 && row[cIbtNumIdx] ? String(row[cIbtNumIdx]).trim() : undefined,
+                cRiskIdx !== -1 && row[cRiskIdx] ? String(row[cRiskIdx]).trim() : 'Normal',
+                cRiskNumIdx !== -1 && row[cRiskNumIdx] ? String(row[cRiskNumIdx]).trim() : undefined,
+                cCorridorIdx !== -1 && row[cCorridorIdx] ? String(row[cCorridorIdx]).trim() : undefined,
+                cUitIdx !== -1 && row[cUitIdx] ? String(row[cUitIdx]).trim() : undefined,
+                cConditionIdx !== -1 && row[cConditionIdx] ? String(row[cConditionIdx]).trim() : undefined,
+                cImpactIdx !== -1 && row[cImpactIdx] ? String(row[cImpactIdx]).trim() : undefined,
+                cMitigationIdx !== -1 && row[cMitigationIdx] ? String(row[cMitigationIdx]).trim() : undefined,
+                cSolutionIdx !== -1 && row[cSolutionIdx] ? String(row[cSolutionIdx]).trim() : undefined
+              );
+            });
+          }
+        }
+      }
     }
 
     setGiList(parsedNodes);
@@ -1147,7 +1302,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       const initialMapping = autoDetectMapping(headers);
       setColMapping(initialMapping);
 
-      executeParsingWithMapping(worksheet, initialMapping, currentTargetObj.name);
+      executeParsingWithMapping(worksheet, initialMapping, currentTargetObj.name, workbook);
     } catch (err: any) {
       console.error(err);
       setUploadStatusMsg({
@@ -1196,7 +1351,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim()).filter(Boolean);
     const newMapping = autoDetectMapping(headers);
     setColMapping(newMapping);
-    executeParsingWithMapping(worksheet, newMapping, currentTargetObj.name);
+    executeParsingWithMapping(worksheet, newMapping, currentTargetObj.name, rawWorkbook);
   };
 
   // Handler when user customizes column mapping dropdowns
@@ -1206,7 +1361,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     if (rawWorkbook && activeSheetName) {
       const worksheet = rawWorkbook.Sheets[activeSheetName];
       if (worksheet) {
-        executeParsingWithMapping(worksheet, updatedMapping, currentTargetObj.name);
+        executeParsingWithMapping(worksheet, updatedMapping, currentTargetObj.name, rawWorkbook);
       }
     }
   };

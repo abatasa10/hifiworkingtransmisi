@@ -103,7 +103,18 @@ export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
             (g.name || '').toLowerCase().includes('trafo distribusi srlya') ||
             (g.name || '').toLowerCase().includes('trafo distribusi clbru')
         );
-        if (!hasPhantomNodes) {
+        const hasCorruptedBebanGIs = parsed.excelData?.giList?.some(
+          (g) =>
+            ((g.id || '').toLowerCase().includes('slrda') ||
+              (g.code || '').toLowerCase() === 'slrda' ||
+              (g.name || '').toLowerCase().includes('slrda') ||
+              (g.id || '').toLowerCase().includes('pendo') ||
+              (g.id || '').toLowerCase().includes('peni') ||
+              (g.id || '').toLowerCase().includes('mcci5') ||
+              (g.id || '').toLowerCase().includes('mtsui')) &&
+            g.assetType === 'beban'
+        );
+        if (!hasPhantomNodes && !hasCorruptedBebanGIs) {
           return parsed;
         }
         localStorage.removeItem(key);

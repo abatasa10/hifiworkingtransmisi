@@ -6,7 +6,12 @@ export const BusbarNode: React.FC<NodeProps> = memo(({ data, selected }) => {
   const nodeData = data as unknown as SLDNodeData;
   const isDimmed = nodeData.dimmed;
   const isHighlighted = nodeData.highlighted || selected;
-  const isSubstation = nodeData.type === 'gitet' || nodeData.type === 'gi';
+  const isSubstation =
+    nodeData.type === 'gitet' ||
+    nodeData.type === 'gi' ||
+    nodeData.type === 'busbar' ||
+    (nodeData as any).assetType === 'busbar' ||
+    Boolean(nodeData.voltage);
   const isRawan = Boolean(nodeData.riskStatus && nodeData.riskStatus !== 'Normal');
   const is500kV = String(nodeData.voltage || '').includes('500');
 
