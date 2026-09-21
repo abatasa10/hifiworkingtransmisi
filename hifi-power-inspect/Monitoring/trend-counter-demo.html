@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solusi Tren Parameter Kombinasi (Kondisi & Pencatatan Counter) - Power Inspect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #F4F7FA; color: #1E293B; font-size: 13px; line-height: 1.5; padding: 24px; }
+    
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    .header-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title { font-size: 18px; font-weight: 800; color: #00529C; display: flex; align-items: center; gap: 10px; }
+    .header-subtitle { font-size: 12px; color: #64748B; margin-top: 4px; }
+    .badge-tag {
+      background: #E3F2FD;
+      color: #00529C;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #BBDEFB;
+    }
+
+    .info-card {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .info-icon {
+      width: 36px; height: 36px;
+      background: #00529C;
+      color: white;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; flex-shrink: 0;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .kpi-label { font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 22px; font-weight: 800; color: #1E293B; margin-top: 6px; font-family: monospace; }
+    .kpi-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+
+    .main-chart-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #F1F5F9;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .chart-title { font-size: 15px; font-weight: 700; color: #1E293B; }
+    .toolbar-actions { display: flex; align-items: center; gap: 10px; }
+
+    .toggle-group {
+      display: flex;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748B;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .toggle-btn.active {
+      background: #FFFFFF;
+      color: #00529C;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .fasa-checkboxes {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .canvas-wrapper { height: 320px; width: 100%; position: relative; }
+
+    /* Timeline Matrix Strip */
+    .timeline-strip-section {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #F1F5F9;
+    }
+    .strip-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .strip-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; }
+    .strip-table th { background: #F8FAFC; padding: 8px; border: 1px solid #E2E8F0; color: #64748B; font-weight: 600; }
+    .strip-table td { padding: 8px; border: 1px solid #E2E8F0; font-weight: 500; }
+
+    .badge-normal { background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #BBF7D0; }
+    .badge-pecah { background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-weight: 800; border: 1px solid #FECACA; animation: pulse 1.5s infinite; }
+
+    .table-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .data-table th { background: #F8FAFC; padding: 10px 14px; border-bottom: 2px solid #E2E8F0; color: #475569; font-weight: 600; }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid #F1F5F9; color: #1E293B; }
+    .data-table tr:hover { background: #F8FAFC; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Card -->
+    <div class="header-card">
+      <div>
+        <div class="header-title">
+          <span>Solusi Visualisasi Tren: Kondisi & Pencatatan Counter</span>
+          <span class="badge-tag">Power Inspect PLN</span>
+        </div>
+        <div class="header-subtitle">
+          Peralatan: <strong>Lightning Arrester (LA 150 kV Bay TRF#1 - GI Mampang)</strong> | Form Inspeksi Level 1 (Harian/Mingguan)
+        </div>
+      </div>
+      <div>
+        <span style="font-size: 11px; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; padding: 6px 12px; border-radius: 8px; font-weight: 700;">
+          Status Aset: Operasi Normal
+        </span>
+      </div>
+    </div>
+
+    <!-- Explanation Box -->
+    <div class="info-card">
+      <div class="info-icon">i</div>
+      <div>
+        <strong style="color: #00529C; font-size: 13px; display: block; margin-bottom: 4px;">
+          Bagaimana Cara Menampilkan Trend Parameter dengan 2 Jenis Input Berbeda?
+        </strong>
+        <p style="color: #334155; font-size: 12px; line-height: 1.6;">
+          Pada form inspeksi terdapat <strong>Kondisi Fisik</strong> (Radio: <em>Normal, Pecah, Rusak, Tidak Ada, Tidak Terbaca</em>) dan <strong>Pencatatan Counter</strong> (Input Angka: <em>Nilai Sambaran Petir</em>).<br>
+          <strong>Solusi Terbaik:</strong> Kita gunakan <strong>Grafik Garis (Line Chart)</strong> untuk merekam kenaikan angka counter dari waktu ke waktu, sedangkan kondisi fisik ditampilkan langsung pada <strong>titik (point marker)</strong> dan <strong>Matriks Strip Status</strong> di bawahnya. Jika pada suatu tanggal terjadi anomali (misal kaca <em>Pecah</em> pada 15 Agustus), titik grafik otomatis ditandai merah ⚠️ dengan status anomali lengkap pada tooltip!
+        </p>
+      </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Pencatatan Terkini (R / S / T)</div>
+        <div class="kpi-value" style="color: #00529C;">
+          <span style="color: #DC2626;">28</span> / <span style="color: #D97706;">22</span> / <span style="color: #2563EB;">19</span>
+        </div>
+        <div class="kpi-sub">Total Sambaran Terserap: 69 kali</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Aktivitas Sambaran Baru (Δ)</div>
+        <div class="kpi-value" style="color: #059669;">+14 Sambaran</div>
+        <div class="kpi-sub">Dalam rentang 6 bulan terakhir</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Kondisi Fisik Terkini</div>
+        <div class="kpi-value" style="color: #10B981; font-size: 18px;">Normal Semua Fasa</div>
+        <div class="kpi-sub">Fasa S pulih setelah penggantian unit</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Riwayat Anomali Fisik</div>
+        <div class="kpi-value" style="color: #DC2626; font-size: 18px;">1 Anomali Tercatat</div>
+        <div class="kpi-sub">Kaca Fasa S Pecah (15 Agu 2026)</div>
+      </div>
+    </div>
+
+    <!-- Main Chart Section -->
+    <div class="main-chart-card">
+      <div class="chart-toolbar">
+        <div>
+          <div class="chart-title">Grafik Pertambahan Counter & Status Fisik</div>
+          <div style="font-size: 11px; color: #64748B;">Arahkan kursor pada titik grafik untuk melihat rincian inspeksi</div>
+        </div>
+
+        <div class="toolbar-actions">
+          <!-- Toggle Mode -->
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btnModeSplit" onclick="setMode('RST_SPLIT')">Mode: R / S / T (3 Fasa)</button>
+            <button class="toggle-btn" id="btnModeCombined" onclick="setMode('RST_COMBINED')">Mode: RST (Gabungan)</button>
+          </div>
+
+          <!-- Checkboxes Fasa -->
+          <div class="fasa-checkboxes" id="fasaFilters">
+            <label style="color: #DC2626; cursor: pointer;">
+              <input type="checkbox" id="chkR" checked onchange="updateChart()"> Fasa R
+            </label>
+            <span style="color: #CBD5E1;">|</span>
+            <label style="color: #D97706; cursor: pointer;">
+              <input type="checkbox" id="chkS" checked onchange="updateChart()"> Fasa S
+            </label>
+            <span style="color: #CBD5E1;">|</span>
+            <label style="color: #2563EB; cursor: pointer;">
+              <input type="checkbox" id="chkT" checked onchange="updateChart()"> Fasa T
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Canvas -->
+      <div class="canvas-wrapper">
+        <canvas id="counterTrendChart"></canvas>
+      </div>
+
+      <!-- Timeline Matrix Strip -->
+      <div class="timeline-strip-section">
+        <div class="strip-title">
+          <span>Matriks Riwayat Kondisi Fisik per Tanggal Inspeksi (Timeline Strip):</span>
+          <span style="color: #94A3B8;">Sinkron dengan sumbu tanggal di atas</span>
+        </div>
+        <table class="strip-table">
+          <thead>
+            <tr>
+              <th style="text-align: left; width: 100px;">Fasa</th>
+              <th>15 Mei</th>
+              <th>01 Jun</th>
+              <th>18 Jun</th>
+              <th>05 Jul</th>
+              <th>24 Jul</th>
+              <th>15 Agu</th>
+              <th>02 Sep</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="stripRowR">
+              <td style="text-align: left; font-weight: 700; color: #DC2626; background: #FEF2F2;">Fasa R</td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+            </tr>
+            <tr id="stripRowS">
+              <td style="text-align: left; font-weight: 700; color: #D97706; background: #FFFBEB;">Fasa S</td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-pecah">Pecah ⚠️</span></td>
+              <td><span class="badge-normal">Normal (Ganti)</span></td>
+            </tr>
+            <tr id="stripRowT">
+              <td style="text-align: left; font-weight: 700; color: #2563EB; background: #EFF6FF;">Fasa T</td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+              <td><span class="badge-normal">Normal</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historical Data Table -->
+    <div class="table-card">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: 700; color: #1E293B;">
+          Data Mentah Hasil Inspeksi (Tabel Power Inspect)
+        </div>
+        <div style="font-size: 11px; color: #64748B;">Total: 7 Data Inspeksi</div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>No. Inspeksi</th>
+            <th>Fasa R (Angka / Fisik)</th>
+            <th>Fasa S (Angka / Fisik)</th>
+            <th>Fasa T (Angka / Fisik)</th>
+            <th>Status Anomali</th>
+            <th>Petugas Pelaksana</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight: 600;">15 Mei 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026051501</td>
+            <td><strong>14</strong> | Normal</td>
+            <td><strong>11</strong> | Normal</td>
+            <td><strong>10</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Ahmad Fauzi (UPT Cawang)</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600;">01 Jun 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026060104</td>
+            <td><strong>16</strong> | Normal</td>
+            <td><strong>12</strong> | Normal</td>
+            <td><strong>11</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Ismail Hasan (UPT Cawang)</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600;">18 Jun 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026061809</td>
+            <td><strong>19</strong> | Normal</td>
+            <td><strong>15</strong> | Normal</td>
+            <td><strong>13</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Ahmad Fauzi (UPT Cawang)</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600;">05 Jul 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026070503</td>
+            <td><strong>22</strong> | Normal</td>
+            <td><strong>18</strong> | Normal</td>
+            <td><strong>15</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Doni Pratama (ULTG Mampang)</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600;">24 Jul 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026072411</td>
+            <td><strong>25</strong> | Normal</td>
+            <td><strong>20</strong> | Normal</td>
+            <td><strong>16</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Ismail Hasan (UPT Cawang)</td>
+          </tr>
+          <tr style="background: #FEF2F2;">
+            <td style="font-weight: 700; color: #991B1B;">15 Agu 2026</td>
+            <td style="font-family: monospace; color: #DC2626; font-weight: 700;">INS2026081502</td>
+            <td><strong>27</strong> | Normal</td>
+            <td><strong style="color: #DC2626;">20</strong> | <span style="color: #DC2626; font-weight: 700;">Pecah ⚠️</span></td>
+            <td><strong>18</strong> | Normal</td>
+            <td><span class="badge-pecah">Anomali Mayor</span></td>
+            <td>Doni Pratama (ULTG Mampang)</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600;">02 Sep 2026</td>
+            <td style="font-family: monospace; color: #00529C; font-weight: 600;">INS2026090208</td>
+            <td><strong>28</strong> | Normal</td>
+            <td><strong>22</strong> | Normal (Ganti Unit)</td>
+            <td><strong>19</strong> | Normal</td>
+            <td><span class="badge-normal">Normal</span></td>
+            <td>Ahmad Fauzi (UPT Cawang)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const labels = ['15 Mei', '01 Jun', '18 Jun', '05 Jul', '24 Jul', '15 Agu', '02 Sep'];
+    const dataR = [14, 16, 19, 22, 25, 27, 28];
+    const dataS = [11, 12, 15, 18, 20, 20, 22]; // Stagnant at 20 on 15 Aug due to broken glass!
+    const dataT = [10, 11, 13, 15, 16, 18, 19];
+    const dataCombined = [35, 39, 47, 55, 61, 65, 69];
+
+    let currentMode = 'RST_SPLIT';
+    let chart;
+
+    function initChart() {
+      const ctx = document.getElementById('counterTrendChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: getChartData(),
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { family: "'Inter', sans-serif" } } },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              padding: 12,
+              titleFont: { family: "'Inter', sans-serif", size: 13, weight: 'bold' },
+              bodyFont: { family: "'Inter', sans-serif", size: 12 },
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${context.parsed.y} Sambaran`;
+                },
+                afterBody: function(contexts) {
+                  const idx = contexts[0].dataIndex;
+                  if (idx === 5) {
+                    return [
+                      '-----------------------------',
+                      '⚠️ PERINGATAN ANOMALI FISIK:',
+                      '• Fasa S: Kondisi PECAH pada kaca counter!',
+                      '• Tindak Lanjut: Diterbitkan WO Penggantian'
+                    ];
+                  }
+                  return [
+                    '-----------------------------',
+                    '• Kondisi Fisik Semua Fasa: Normal'
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: 'Akumulasi Sambaran Counter', font: { family: "'Inter', sans-serif", size: 11, weight: 'bold' } },
+              grid: { color: '#F1F5F9' },
+              ticks: { stepSize: 5 }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function getChartData() {
+      if (currentMode === 'RST_SPLIT') {
+        const datasets = [];
+        if (document.getElementById('chkR').checked) {
+          datasets.push({
+            label: 'Pencatatan Counter - Fasa R',
+            data: dataR,
+            borderColor: '#EF4444',
+            backgroundColor: '#EF4444',
+            borderWidth: 2.5,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          });
+        }
+        if (document.getElementById('chkS').checked) {
+          datasets.push({
+            label: 'Pencatatan Counter - Fasa S',
+            data: dataS,
+            borderColor: '#F59E0B',
+            backgroundColor: '#F59E0B',
+            borderWidth: 2.5,
+            pointRadius: [6, 6, 6, 6, 6, 10, 6],
+            pointBackgroundColor: ['#F59E0B', '#F59E0B', '#F59E0B', '#F59E0B', '#F59E0B', '#DC2626', '#F59E0B'],
+            pointBorderColor: ['#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FEF2F2', '#FFFFFF'],
+            pointBorderWidth: [2, 2, 2, 2, 2, 3, 2],
+            pointHoverRadius: 12
+          });
+        }
+        if (document.getElementById('chkT').checked) {
+          datasets.push({
+            label: 'Pencatatan Counter - Fasa T',
+            data: dataT,
+            borderColor: '#00529C',
+            backgroundColor: '#00529C',
+            borderWidth: 2.5,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          });
+        }
+        return { labels, datasets };
+      } else {
+        return {
+          labels,
+          datasets: [{
+            label: 'Pencatatan Counter Gabungan (RST)',
+            data: dataCombined,
+            borderColor: '#059669',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            borderWidth: 3,
+            pointRadius: 7,
+            pointHoverRadius: 10
+          }]
+        };
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('btnModeSplit').classList.toggle('active', mode === 'RST_SPLIT');
+      document.getElementById('btnModeCombined').classList.toggle('active', mode === 'RST_COMBINED');
+      document.getElementById('fasaFilters').style.display = mode === 'RST_SPLIT' ? 'flex' : 'none';
+      document.getElementById('stripRowR').style.display = mode === 'RST_SPLIT' ? '' : 'none';
+      document.getElementById('stripRowS').style.display = mode === 'RST_SPLIT' ? '' : 'none';
+      document.getElementById('stripRowT').style.display = mode === 'RST_SPLIT' ? '' : 'none';
+      updateChart();
+    }
+
+    function updateChart() {
+      chart.data = getChartData();
+      chart.update();
+    }
+
+    window.onload = initChart;
+  </script>
+</body>
+</html>

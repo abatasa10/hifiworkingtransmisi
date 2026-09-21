@@ -275,6 +275,7 @@
                 </div>
                 <div class="submenu open">
                     <a class="submenu-item active" href="Monitoring/monitoring-ahi.html" data-page="Monitoring/monitoring-ahi.html" data-label="Monitoring AHI" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring AHI</a>
+                    <a class="submenu-item" href="Monitoring/trend-counter-demo.html" data-page="Monitoring/trend-counter-demo.html" data-label="Demo Tren 2 Tipe Input (Counter)" onclick="loadPage(event,this)"><span class="dot"></span> Demo Tren 2 Tipe Input (Counter)</a>
                     <a class="submenu-item" href="Monitoring/monitoring-ahi-detail.html" data-page="Monitoring/monitoring-ahi-detail.html" data-label="Monitoring AHI Detail" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring AHI Detail</a>
                     <a class="submenu-item" href="Monitoring/monitoring-export.html" data-page="Monitoring/monitoring-export.html" data-label="Monitoring Export" onclick="loadPage(event,this)"><span class="dot"></span> Monitoring Export</a>
                     <a class="submenu-item" href="Monitoring/monitoring-kelengkapan.html" data-page="Monitoring/monitoring-kelengkapan.html" data-label="Kelengkapan Inspeksi" onclick="loadPage(event,this)"><span class="dot"></span> Kelengkapan Inspeksi</a>
@@ -446,7 +447,8 @@
             document.getElementById('defaultDashboard').style.display = 'none';
             const frame = document.getElementById('contentFrame');
             frame.style.display = 'block';
-            frame.src = src;
+            const cacheBuster = (src.includes('?') ? '&' : '?') + 't=' + Date.now();
+            frame.src = src + cacheBuster;
             document.getElementById('breadcrumbCurrent').textContent = label || src;
             history.pushState(null, '', '#page=' + encodeURIComponent(src));
         }
@@ -512,7 +514,9 @@
                     const label = link.dataset.label || link.textContent.trim();
                     document.getElementById('defaultDashboard').style.display = 'none';
                     const frame = document.getElementById('contentFrame');
-                    frame.style.display = 'block'; frame.src = page;
+                    frame.style.display = 'block';
+                    const cacheBuster = (page.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    frame.src = page + cacheBuster;
                     document.getElementById('breadcrumbCurrent').textContent = label;
                     document.querySelectorAll('.submenu-item').forEach(i=>i.classList.remove('active'));
                     link.classList.add('active');
