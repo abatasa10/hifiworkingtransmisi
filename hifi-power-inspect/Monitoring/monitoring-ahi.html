@@ -1034,6 +1034,214 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- Parameter 4: Kondisi & Pencatatan Counter (Contoh 2 Jenis Data Berbeda) -->
+                    <div style="margin-top: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">4. Trend: Kondisi & Pencatatan Counter (Lightning Arrester)</h3>
+                                <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-equalizer-line"></i> 2 Tipe Input: Kualitatif (Fisik) + Kuantitatif (Angka)
+                                </span>
+                                <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-heart-pulse-line"></i> Mempengaruhi AHI & Keandalan
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'counter', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'counter', 'bar')">Bar</button>
+                                </div>
+                                <span class="badge-good">Status Terakhir: 2 - Good (R:28, S:22, T:19) <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- Explanatory Callout Box -->
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #1e40af; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
+                            <i class="ri-information-fill" style="font-size: 18px; color: #2563eb; margin-top: 1px;"></i>
+                            <div>
+                                <strong>Studi Kasus Parameter 2 Jenis Input:</strong> Parameter inspeksi ini memiliki 2 input:
+                                <strong>(1) Kondisi Fisik</strong> (Pilihan Radio: <em>Normal, Pecah, Rusak, Tidak Ada Counter, Tidak Terbaca</em>), dan
+                                <strong>(2) Pencatatan Counter</strong> (Input Angka Sambaran Kumulatif).<br>
+                                <strong>Solusi Visualisasi:</strong> Grafik garis memplot angka sambaran (Fasa R, S, T), sedangkan kondisi fisik tercermin langsung pada <strong>titik grafik (point marker)</strong> dan <strong>Matriks Strip Status Fisik</strong>. Pada tanggal 15 Agu 2026, terjadi anomali kaca Fasa S <strong>Pecah</strong> sehingga titik grafik ditandai merah menyala ⚠️ dan angka counter tidak bertambah.
+                            </div>
+                        </div>
+
+                        <!-- Controls: Mode Toggle & Fasa Checkboxes -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Mode Tampilan:</span>
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" id="btnCounterSplit" onclick="setCounterDisplayMode('RST_SPLIT')">R / S / T (3 Fasa)</button>
+                                    <button class="chart-toggle-btn" id="btnCounterCombined" onclick="setCounterDisplayMode('RST_COMBINED')">RST (Gabungan)</button>
+                                </div>
+                            </div>
+                            <div id="counterFasaCheckboxes" style="display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 600; background: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                                <label style="color: #ef4444; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterR" checked onchange="updateCounterChart()"> Fasa R
+                                </label>
+                                <span style="color: #cbd5e1;">|</span>
+                                <label style="color: #f59e0b; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterS" checked onchange="updateCounterChart()"> Fasa S
+                                </label>
+                                <span style="color: #cbd5e1;">|</span>
+                                <label style="color: #2563eb; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterT" checked onchange="updateCounterChart()"> Fasa T
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Chart -->
+                        <div class="chart-container"><canvas id="trendChartCounter"></canvas></div>
+
+                        <!-- Timeline Matrix Strip: Status Fisik -->
+                        <div style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                <span><i class="ri-pulse-line"></i> Matriks Riwayat Kondisi Fisik per Tanggal Inspeksi:</span>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;">Sinkron dengan sumbu tanggal di atas</span>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 11px;">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th style="text-align: left; width: 100px;">Fasa</th>
+                                            <th>15 Mei</th>
+                                            <th>01 Jun</th>
+                                            <th>18 Jun</th>
+                                            <th>05 Jul</th>
+                                            <th>24 Jul</th>
+                                            <th>15 Agu</th>
+                                            <th>02 Sep</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr id="matrixRowR">
+                                            <td style="text-align: left; font-weight: 700; color: #ef4444; background: #fef2f2;">Fasa R</td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                        </tr>
+                                        <tr id="matrixRowS">
+                                            <td style="text-align: left; font-weight: 700; color: #f59e0b; background: #fffbeb;">Fasa S</td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-critical" style="padding: 2px 6px; font-size: 10px;">Pecah ⚠️</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal (Ganti Unit)</span></td>
+                                        </tr>
+                                        <tr id="matrixRowT">
+                                            <td style="text-align: left; font-weight: 700; color: #2563eb; background: #eff6ff;">Fasa T</td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                        </tr>
+                                        <tr id="matrixRowCombined" style="display: none;">
+                                            <td style="text-align: left; font-weight: 700; color: #10b981; background: #ecfdf5;">Gabungan RST</td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class="badge-critical" style="padding: 2px 6px; font-size: 10px;">Anomali Fasa S</span></td>
+                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Data Table of Counter Inspections -->
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Fasa R (Counter & Fisik)</th>
+                                        <th>Fasa S (Counter & Fisik)</th>
+                                        <th>Fasa T (Counter & Fisik)</th>
+                                        <th>Status Anomali</th>
+                                        <th>Petugas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS2026051501</td>
+                                        <td>15 Mei 2026</td>
+                                        <td><strong>14</strong> | Normal</td>
+                                        <td><strong>11</strong> | Normal</td>
+                                        <td><strong>10</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026060104</td>
+                                        <td>01 Juni 2026</td>
+                                        <td><strong>16</strong> | Normal</td>
+                                        <td><strong>12</strong> | Normal</td>
+                                        <td><strong>11</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ismail Hasan</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026061809</td>
+                                        <td>18 Juni 2026</td>
+                                        <td><strong>19</strong> | Normal</td>
+                                        <td><strong>15</strong> | Normal</td>
+                                        <td><strong>13</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026070503</td>
+                                        <td>05 Juli 2026</td>
+                                        <td><strong>22</strong> | Normal</td>
+                                        <td><strong>18</strong> | Normal</td>
+                                        <td><strong>15</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Doni Pratama</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026072411</td>
+                                        <td>24 Juli 2026</td>
+                                        <td><strong>25</strong> | Normal</td>
+                                        <td><strong>20</strong> | Normal</td>
+                                        <td><strong>16</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ismail Hasan</td>
+                                    </tr>
+                                    <tr style="background: #fef2f2;">
+                                        <td style="color: #991b1b; font-weight: 700;">INS2026081502</td>
+                                        <td style="color: #991b1b; font-weight: 700;">15 Agustus 2026</td>
+                                        <td><strong>27</strong> | Normal</td>
+                                        <td><strong style="color: #ef4444;">20</strong> | <span style="color: #ef4444; font-weight: 700;">Pecah ⚠️</span></td>
+                                        <td><strong>18</strong> | Normal</td>
+                                        <td><span class="badge-critical">Anomali Mayor (Pecah) <i class="ri-error-warning-line badge-icon"></i></span></td>
+                                        <td>Doni Pratama</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026090208</td>
+                                        <td>02 September 2026</td>
+                                        <td><strong>28</strong> | Normal</td>
+                                        <td><strong>22</strong> | Normal (Ganti Unit)</td>
+                                        <td><strong>19</strong> | Normal</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="table-container" id="table-ahi" style="display: none;">
@@ -1088,6 +1296,18 @@
                                 <td>100.0%</td>
                                 <td>100%</td>
                                 <td><button class="btn-icon"><i class="ri-external-link-line"></i></button></td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>Surge Arrester</td>
+                                <td>Kondisi & Pencatatan Counter (2 Tipe Input)</td>
+                                <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                <td><a href="#" class="link-text" onclick="switchTab(0); return false;">INS2026090208</a></td>
+                                <td>02 Sep 2026 09:15:00</td>
+                                <td>100%</td>
+                                <td>100.0%</td>
+                                <td>100%</td>
+                                <td><button class="btn-icon" onclick="switchTab(0)" title="Lihat Trend Visualisasi Dual-Input"><i class="ri-line-chart-line"></i></button></td>
                             </tr>
                             <tr class="max-ahi-row">
                                 <td colspan="3">MAX AHI</td>
@@ -1214,6 +1434,22 @@
                                 <td>100</td>
                                 <td>100</td>
                                 <td><button class="btn-icon"><i class="ri-external-link-line"></i></button></td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td>Surge Arrester</td>
+                                <td>Kondisi & Pencatatan Counter LA (Kualitatif + Kuantitatif)</td>
+                                <td>Inspeksi Level 1 / Rutin</td>
+                                <td>Bulanan</td>
+                                <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                <td>Normal / R:28, S:22, T:19</td>
+                                <td>Sambaran</td>
+                                <td><a href="#" class="link-text" onclick="switchTab(0); return false;">INS2026090208</a></td>
+                                <td>02 Sep 2026 09:15:00</td>
+                                <td>100</td>
+                                <td>100</td>
+                                <td>100</td>
+                                <td><button class="btn-icon" onclick="switchTab(0)" title="Lihat Trend Visualisasi Dual-Input"><i class="ri-line-chart-line"></i></button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1420,6 +1656,155 @@
                         }
                     }
                 });
+            }
+
+            // 4. Kondisi & Pencatatan Counter Chart (Dual Input)
+            if (!charts.counter && document.getElementById('trendChartCounter')) {
+                const ctx4 = document.getElementById('trendChartCounter').getContext('2d');
+                charts.counter = new Chart(ctx4, {
+                    type: 'line',
+                    data: getCounterChartData(),
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` ${context.dataset.label}: ${context.parsed.y} Sambaran`;
+                                    },
+                                    afterBody: function(contexts) {
+                                        const idx = contexts[0].dataIndex;
+                                        if (idx === 5) {
+                                            return [
+                                                '---------------------------------------',
+                                                '⚠️ PERINGATAN ANOMALI FISIK:',
+                                                '• Kondisi Fisik Fasa S: PECAH!',
+                                                '• Tindak Lanjut: Diterbitkan WO Penggantian',
+                                                '• Petugas: Doni Pratama (ULTG Mampang)'
+                                            ];
+                                        }
+                                        return [
+                                            '---------------------------------------',
+                                            '• Kondisi Fisik: Normal Semua Fasa'
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: { display: true, text: 'Akumulasi Sambaran Counter (Kali)' },
+                                grid: { color: '#e2e8f0' },
+                                ticks: { stepSize: 5 }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Helper logic for Parameter 4: Kondisi & Pencatatan Counter
+        let counterDisplayMode = 'RST_SPLIT';
+        const counterLabels = ['15 Mei', '01 Jun', '18 Jun', '05 Jul', '24 Jul', '15 Agu', '02 Sep'];
+        const counterDataR = [14, 16, 19, 22, 25, 27, 28];
+        const counterDataS = [11, 12, 15, 18, 20, 20, 22]; // Stagnant at 20 on 15 Aug due to Pecah
+        const counterDataT = [10, 11, 13, 15, 16, 18, 19];
+        const counterDataCombined = [35, 39, 47, 55, 61, 65, 69];
+
+        function getCounterChartData() {
+            if (counterDisplayMode === 'RST_SPLIT') {
+                const datasets = [];
+                const chkR = document.getElementById('chkCounterR');
+                const chkS = document.getElementById('chkCounterS');
+                const chkT = document.getElementById('chkCounterT');
+
+                if (!chkR || chkR.checked) {
+                    datasets.push({
+                        label: 'Pencatatan Counter - Fasa R',
+                        data: counterDataR,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        borderWidth: 2.5,
+                        pointRadius: 5,
+                        tension: 0.25
+                    });
+                }
+                if (!chkS || chkS.checked) {
+                    datasets.push({
+                        label: 'Pencatatan Counter - Fasa S',
+                        data: counterDataS,
+                        borderColor: '#f59e0b',
+                        backgroundColor: '#f59e0b',
+                        borderWidth: 2.5,
+                        pointRadius: [5, 5, 5, 5, 5, 9, 5],
+                        pointBackgroundColor: ['#f59e0b', '#f59e0b', '#f59e0b', '#f59e0b', '#f59e0b', '#ef4444', '#f59e0b'],
+                        pointBorderColor: ['#fff', '#fff', '#fff', '#fff', '#fff', '#fee2e2', '#fff'],
+                        pointBorderWidth: [2, 2, 2, 2, 2, 3, 2],
+                        pointHoverRadius: 11,
+                        tension: 0.25
+                    });
+                }
+                if (!chkT || chkT.checked) {
+                    datasets.push({
+                        label: 'Pencatatan Counter - Fasa T',
+                        data: counterDataT,
+                        borderColor: '#2563eb',
+                        backgroundColor: '#2563eb',
+                        borderWidth: 2.5,
+                        pointRadius: 5,
+                        tension: 0.25
+                    });
+                }
+                return { labels: counterLabels, datasets };
+            } else {
+                return {
+                    labels: counterLabels,
+                    datasets: [{
+                        label: 'Pencatatan Counter Gabungan (RST)',
+                        data: counterDataCombined,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 9,
+                        tension: 0.25
+                    }]
+                };
+            }
+        }
+
+        function setCounterDisplayMode(mode) {
+            counterDisplayMode = mode;
+            const btnSplit = document.getElementById('btnCounterSplit');
+            const btnCombined = document.getElementById('btnCounterCombined');
+            const fasaCheckboxes = document.getElementById('counterFasaCheckboxes');
+            const rowR = document.getElementById('matrixRowR');
+            const rowS = document.getElementById('matrixRowS');
+            const rowT = document.getElementById('matrixRowT');
+            const rowCombined = document.getElementById('matrixRowCombined');
+
+            if (btnSplit) btnSplit.classList.toggle('active', mode === 'RST_SPLIT');
+            if (btnCombined) btnCombined.classList.toggle('active', mode === 'RST_COMBINED');
+            if (fasaCheckboxes) fasaCheckboxes.style.display = mode === 'RST_SPLIT' ? 'flex' : 'none';
+            if (rowR) rowR.style.display = mode === 'RST_SPLIT' ? '' : 'none';
+            if (rowS) rowS.style.display = mode === 'RST_SPLIT' ? '' : 'none';
+            if (rowT) rowT.style.display = mode === 'RST_SPLIT' ? '' : 'none';
+            if (rowCombined) rowCombined.style.display = mode === 'RST_COMBINED' ? '' : 'none';
+
+            updateCounterChart();
+        }
+
+        function updateCounterChart() {
+            if (charts.counter) {
+                charts.counter.data = getCounterChartData();
+                charts.counter.update();
             }
         }
 
