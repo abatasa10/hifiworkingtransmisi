@@ -4,6 +4,7 @@ import PowerInspectHeader from './components/layout/PowerInspectHeader.vue';
 import NationalMapView from './components/views/NationalMapView.vue';
 import JamaliSystemView from './components/views/JamaliSystemView.vue';
 import SLD500kVView from './components/views/SLD500kVView.vue';
+import TrendCounterView from './components/views/TrendCounterView.vue';
 import SystemRiskDialog from './components/views/SystemRiskDialog.vue';
 import { useKerawananStore } from './stores/kerawananStore';
 
@@ -25,6 +26,7 @@ const store = useKerawananStore();
         <NationalMapView v-if="store.currentView === 'national'" />
         <JamaliSystemView v-else-if="store.currentView === 'jamali-system' || store.currentView === 'upb-view'" />
         <SLD500kVView v-else-if="store.currentView === 'sld-500kv' || store.currentView === 'subsystem-sld'" />
+        <TrendCounterView v-else-if="store.currentView === 'trend-counter'" />
         <!-- Fallback to National -->
         <NationalMapView v-else />
       </main>

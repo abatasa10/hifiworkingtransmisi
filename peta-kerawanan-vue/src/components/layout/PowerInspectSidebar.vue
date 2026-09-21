@@ -10,9 +10,9 @@ import {
   FileText,
   Bell,
   LogOut,
-  HelpCircle
+  TrendingUp
 } from 'lucide-vue-next';
-import { useKerawananStore, ActiveView } from '../../stores/kerawananStore';
+import { useKerawananStore, type ActiveView } from '../../stores/kerawananStore';
 
 const store = useKerawananStore();
 
@@ -24,6 +24,7 @@ const menuItems = [
   { id: 'subsystem-view' as ActiveView, title: 'Subsistem & Gardu Induk', icon: Activity },
   { id: 'ibt-view' as ActiveView, title: 'Daftar Interbus Transformer (IBT)', icon: Server },
   { id: 'upload-sld' as ActiveView, title: 'Upload & Kelola SLD', icon: UploadCloud },
+  { id: 'trend-counter' as ActiveView, title: 'Tren Parameter (Kondisi & Nilai Counter)', icon: TrendingUp },
   { id: 'report-view' as ActiveView, title: 'Laporan & Rekapitulasi', icon: FileText }
 ];
 

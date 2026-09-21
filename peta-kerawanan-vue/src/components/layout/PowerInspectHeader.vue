@@ -78,6 +78,11 @@ const meta = computed(() => {
         title: 'Laporan & Analisis Kerawanan',
         crumbs: ['Laporan', 'Rekapitulasi Kerawanan Sistem']
       };
+    case 'trend-counter':
+      return {
+        title: 'Monitoring Tren Parameter (Kondisi & Pencatatan Counter)',
+        crumbs: ['Dashboard', 'Parameter Inspeksi', 'Tren Counter Kombinasi']
+      };
     default:
       return {
         title: 'Power Inspect - Peta Kerawanan',

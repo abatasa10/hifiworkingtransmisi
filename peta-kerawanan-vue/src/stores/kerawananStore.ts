@@ -14,7 +14,8 @@ export type ActiveView =
   | 'subsystem-sld'
   | 'ibt-view'
   | 'report-view'
-  | 'upload-sld';
+  | 'upload-sld'
+  | 'trend-counter';
 
 export const useKerawananStore = defineStore('kerawanan', () => {
   const currentView = ref<ActiveView>('national');
