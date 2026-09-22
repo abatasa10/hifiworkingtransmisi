@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi Tren Parameter Kompleks (18 Isian Uraian) - Power Inspect</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #00529c;
+      --primary-hover: #003e75;
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+    }
+
+    .header-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bushing-mode-btn {
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .bushing-mode-btn.active {
+      background: #00529c;
+      color: #ffffff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .chart-toggle-btn {
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .chart-toggle-btn.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .range-selector-group {
+      display: inline-flex;
+      gap: 2px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      padding: 2px;
+      border: 1px solid #e2e8f0;
+    }
+    .range-btn {
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #64748b;
+    }
+    .range-btn.active {
+      background: #00529c;
+      color: #ffffff;
+    }
+
+    /* STICKY MATRIX & BOTTOM SCROLLBAR */
+    .sticky-matrix-wrapper {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      position: relative !important;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+      margin-top: 12px;
+      margin-bottom: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: #00529c #f1f5f9;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sticky-matrix-wrapper::-webkit-scrollbar {
+      height: 12px !important;
+      display: block !important;
+    }
+    .sticky-matrix-wrapper::-webkit-scrollbar-track {
+      background: #f1f5f9 !important;
+      border-radius: 6px !important;
+      border-top: 1px solid #e2e8f0 !important;
+    }
+    .sticky-matrix-wrapper::-webkit-scrollbar-thumb {
+      background: #00529c !important;
+      border-radius: 6px !important;
+      border: 2px solid #f1f5f9 !important;
+    }
+    .sticky-matrix-wrapper::-webkit-scrollbar-thumb:hover {
+      background: #003e75 !important;
+    }
+
+    .sticky-matrix-table {
+      width: max-content !important;
+      min-width: 100% !important;
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
+      font-size: 11px !important;
+      text-align: center !important;
+      margin: 0 !important;
+    }
+    .sticky-matrix-table th, .sticky-matrix-table td {
+      padding: 8px 12px !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      white-space: nowrap !important;
+      font-size: 11px !important;
+      line-height: 1.4 !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+      min-width: 82px !important;
+      box-sizing: border-box !important;
+    }
+    .sticky-matrix-table thead th {
+      background: #f8fafc !important;
+      font-weight: 700 !important;
+      color: #334155 !important;
+      border-top: none !important;
+      padding: 10px 12px !important;
+    }
+    .sticky-matrix-table th.col-sticky, .sticky-matrix-table td.col-sticky {
+      position: sticky !important;
+      left: 0 !important;
+      z-index: 10 !important;
+      min-width: 250px !important;
+      width: 250px !important;
+      max-width: 250px !important;
+      text-align: left !important;
+      font-weight: 700 !important;
+      box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.12) !important;
+      border-right: 2px solid #cbd5e1 !important;
+    }
+    .sticky-matrix-table th.col-sticky {
+      z-index: 20 !important;
+      background: #f1f5f9 !important;
+      color: #1e293b !important;
+    }
+    .sticky-matrix-table tr:hover td:not(.col-sticky) {
+      background-color: #f8fafc;
+    }
+
+    .badge-count-pill {
+      background: #ecfdf5;
+      color: #047857;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      border: 1px solid #a7f3d0;
+      display: inline-flex;
+      align-items: center;
+    }
+    .badge-poor {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 4px;
+      font-weight: 600;
+      padding: 2px 6px;
+    }
+    .badge-verygood {
+      background: #dcfce7;
+      color: #15803d;
+      border-radius: 4px;
+      font-weight: 600;
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Header -->
+    <div class="header-card">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <a href="monitoring-ahi.html" style="color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 600;">
+            <i class="ri-arrow-left-line"></i> Kembali ke Monitoring AHI
+          </a>
+          <span style="color: #94a3b8;">/</span>
+          <span style="font-size: 13px; color: #64748b;">Demo Studi Kasus Parameter Banyak Isian</span>
+        </div>
+        <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+          <i class="ri-pulse-line" style="color: #059669;"></i> Tan Delta dan Kapasitansi Bushing Trafo
+        </h1>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+          Simulasi visualisasi tren &amp; matriks untuk parameter dengan <strong>18 data isian</strong> (Level 3 - Pengujian Offline Gardu Induk).
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <span class="badge-tag" style="background: #e0f2fe; color: #0369a1;">
+          <i class="ri-server-line"></i> Sub-Sistem: Bushing Trafo
+        </span>
+        <span class="badge-tag" style="background: #f3e8ff; color: #7e22ce;">
+          <i class="ri-function-line"></i> 18 Uraian Parameter
+        </span>
+        <span class="badge-tag" style="background: #dcfce7; color: #15803d;">
+          <i class="ri-history-line"></i> 30 Titik Inspeksi
+        </span>
+      </div>
+    </div>
+
+    <!-- Chart Card -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div class="card-title">
+          <i class="ri-line-chart-line" style="color: #059669;"></i>
+          Grafik Tren Multidimensi
+        </div>
+
+        <!-- Controls -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <!-- View Mode -->
+          <div style="display: flex; gap: 2px; background: #f1f5f9; border-radius: 6px; padding: 2px; border: 1px solid #e2e8f0;">
+            <button class="bushing-mode-btn active" id="btnModeTD" onclick="setBushingMode('tandelta', this)">1. Tan Delta (%)</button>
+            <button class="bushing-mode-btn" id="btnModeDev" onclick="setBushingMode('deviation', this)">2. Deviasi Kapasitansi (%)</button>
+            <button class="bushing-mode-btn" id="btnModeCap" onclick="setBushingMode('capacitance', this)">3. Kapasitansi Aktual (pF)</button>
+          </div>
+
+          <!-- Line / Bar -->
+          <div style="display: flex; gap: 2px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+            <button class="chart-toggle-btn active" onclick="changeChartType(this, 'line')">Line</button>
+            <button class="chart-toggle-btn" onclick="changeChartType(this, 'bar')">Bar</button>
+          </div>
+
+          <!-- Range 30 / 15 / 7 -->
+          <div class="range-selector-group">
+            <button class="range-btn active" onclick="setChartRange(30, this)">30 (Semua)</button>
+            <button class="range-btn" onclick="setChartRange(15, this)">15 Terakhir</button>
+            <button class="range-btn" onclick="setChartRange(7, this)">7 Terakhir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Callout Explanation -->
+      <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #059669; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 12px; line-height: 1.6; color: #334155;">
+        <strong style="color: #0f172a; font-size: 13px;"><i class="ri-lightbulb-line" style="color: #059669;"></i> Konsep Visualisasi Parameter Banyak Isian:</strong><br>
+        Ketika 1 parameter memiliki 18 isian dengan satuan berbeda (<strong>Persen %</strong> vs <strong>Pico Farad pF</strong> vs <strong>Flag Norma Logika</strong>), memplot semua 18 garis dalam 1 grafik akan membuat grafik kacau (<em>spaghetti chart</em>).<br>
+        <strong>Solusi Solutif:</strong>
+        1. <strong>Segmented Mode View:</strong> Pengguna dapat memilih fokus analisis: kurva degradasi isolasi (<em>Tan Delta %</em>), deviasi penuaan kapasitansi (<em>Deviasi %</em>), atau nilai pengukuran murni (<em>Kapasitansi pF</em>).<br>
+        2. <strong>Matriks Terkelompok (Grouped Ribbon Matrix):</strong> Seluruh 18 uraian dipetakan secara lengkap ke dalam 3 kelompok di bawah ini dengan scrollbar bawah 12px anti-overlapping dan kolom uraian terkunci di kiri.
+      </div>
+
+      <!-- Threshold Toggle -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <strong>Kurva Fasa:</strong>
+          <span style="display: inline-flex; align-items: center; gap: 4px; color: #ef4444; font-weight: 600;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span> Fasa R</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; color: #f59e0b; font-weight: 600;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span> Fasa S</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 600;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #2563eb; display: inline-block;"></span> Fasa T</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-weight: 500;">
+          <input type="checkbox" id="chkThresholds" checked onchange="toggleThresholds(this.checked)" style="accent-color: var(--primary);"> Tampilkan Garis Batas Norma Standar (Warning &amp; Kritis)
+        </label>
+      </div>
+
+      <!-- Canvas -->
+      <div style="position: relative; height: 340px; width: 100%;">
+        <canvas id="bushingChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Grouped Matrix Table Card -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div class="card-title">
+          <i class="ri-table-line" style="color: #059669;"></i> Matriks Lengkap 18 Uraian Parameter (30 Inspeksi Terakhir)
+          <span class="badge-count-pill">18 Uraian &bull; 30 Data</span>
+        </div>
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Gunakan scrollbar bawah untuk melihat seluruh 30 inspeksi historis</span>
+      </div>
+
+      <div class="sticky-matrix-wrapper">
+        <table class="sticky-matrix-table">
+          <thead>
+            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+              <th class="col-sticky" style="width: 250px;">Uraian Parameter (18 Item)</th>
+              <th style='min-width: 75px;'>10 Jan 25</th><th style='min-width: 75px;'>24 Jan 25</th><th style='min-width: 75px;'>07 Feb 25</th><th style='min-width: 75px;'>21 Feb 25</th><th style='min-width: 75px;'>07 Mar 25</th><th style='min-width: 75px;'>21 Mar 25</th><th style='min-width: 75px;'>04 Apr 25</th><th style='min-width: 75px;'>18 Apr 25</th><th style='min-width: 75px;'>02 Mei 25</th><th style='min-width: 75px;'>16 Mei 25</th><th style='min-width: 75px;'>30 Mei 25</th><th style='min-width: 75px;'>13 Jun 25</th><th style='min-width: 75px;'>27 Jun 25</th><th style='min-width: 75px;'>11 Jul 25</th><th style='min-width: 75px;'>25 Jul 25</th><th style='min-width: 75px;'>08 Agu 25</th><th style='min-width: 75px;'>22 Agu 25</th><th style='min-width: 75px;'>05 Sep 25</th><th style='min-width: 75px;'>19 Sep 25</th><th style='min-width: 75px;'>03 Okt 25</th><th style='min-width: 75px;'>17 Okt 25</th><th style='min-width: 75px;'>31 Okt 25</th><th style='min-width: 75px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 75px;'>28 Nov 25</th><th style='min-width: 75px;'>12 Des 25</th><th style='min-width: 75px;'>26 Des 25</th><th style='min-width: 75px;'>09 Jan 26</th><th style='min-width: 75px;'>23 Jan 26</th><th style='min-width: 75px;'>06 Feb 26</th><th style='min-width: 75px;'>20 Feb 26</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- GRUP 1: TAN DELTA BUSHING (%) -->
+            <tr style="background: #f0fdf4;">
+              <td class="col-sticky" style="background: #dcfce7; color: #166534; font-weight: 800;" colspan="1">
+                <i class="ri-percent-line"></i> GRUP 1: PENGUJIAN TAN DELTA (%)
+              </td>
+              <td colspan="30" style="background: #f0fdf4; color: #166534; text-align: left; font-weight: 600; padding-left: 14px;">
+                Standar IEEE/PLN: Normal &le; 0.5% &bull; Warning 0.5 - 1.0% &bull; Critical &gt; 1.0%
+              </td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#ef4444; font-weight:bold;">&bull;</span> [TDBR15] Tan Delta Bushing R (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#f59e0b; font-weight:bold;">&bull;</span> [TDBS16] Tan Delta Bushing S (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#f59e0b;'>0.68%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>1.18%</strong></td><td style=''><strong style='color:#f59e0b;'>0.85%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#2563eb; font-weight:bold;">&bull;</span> [TDBT17] Tan Delta Bushing T (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.41%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
+                <i class="ri-calculator-line" style="color:#059669;"></i> [ETDB18] Evaluasi Tan Delta (MAX)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#f59e0b;'>0.68%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>1.18%</strong></td><td style=''><strong style='color:#f59e0b;'>0.85%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td>
+            </tr>
+
+            <!-- GRUP 2: HASIL UJI KAPASITANSI (pF) -->
+            <tr style="background: #fefce8;">
+              <td class="col-sticky" style="background: #fef9c3; color: #854d0e; font-weight: 800;" colspan="1">
+                <i class="ri-sound-module-line"></i> GRUP 2: KAPASITANSI AKTUAL (pF)
+              </td>
+              <td colspan="30" style="background: #fefce8; color: #854d0e; text-align: left; font-weight: 600; padding-left: 14px;">
+                Nameplate: R=345 pF &bull; S=348 pF &bull; T=342 pF
+              </td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#ef4444; font-weight:bold;">&bull;</span> [HUBR2] Hasil Uji Bushing R (pF)
+              </td>
+              <td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style='background:#fef2f2;'><span>348.2 pF</span></td><td style=''><span>347.5 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#f59e0b; font-weight:bold;">&bull;</span> [HUBS4] Hasil Uji Bushing S (pF)
+              </td>
+              <td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>368.0 pF</span></td><td style='background:#fef2f2;'><span>391.2 pF</span></td><td style=''><span>378.0 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <span style="color:#2563eb; font-weight:bold;">&bull;</span> [HUBT6] Hasil Uji Bushing T (pF)
+              </td>
+              <td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style='background:#fef2f2;'><span>346.0 pF</span></td><td style=''><span>345.5 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td>
+            </tr>
+
+            <!-- GRUP 3: DEVIASI KAPASITANSI & RUMUS NORMA -->
+            <tr style="background: #faf5ff;">
+              <td class="col-sticky" style="background: #f3e8ff; color: #6b21a8; font-weight: 800;" colspan="1">
+                <i class="ri-function-line"></i> GRUP 3: DEVIASI &amp; RUMUS NORMA
+              </td>
+              <td colspan="30" style="background: #faf5ff; color: #6b21a8; text-align: left; font-weight: 600; padding-left: 14px;">
+                Rumus Deviasi: |(Nameplate - Uji) / Nameplate| &times; 100% (Batas Aman &le; 5.0%)
+              </td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <i class="ri-equalizer-line"></i> [DR7] Deviasi Fasa R (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.93%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <i class="ri-equalizer-line"></i> [DS8] Deviasi Fasa S (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #ffffff; color: #334155;">
+                <i class="ri-equalizer-line"></i> [DT9] Deviasi Fasa T (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>1.17%</strong></td><td style=''><strong style='color:#10b981;'>1.02%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
+                <i class="ri-arrow-up-circle-line" style="color:#ef4444;"></i> [MD11] Max Deviasi (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
+                <i class="ri-arrow-down-circle-line" style="color:#0284c7;"></i> [MD10] Min Deviasi (%)
+              </td>
+              <td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.93%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td>
+            </tr>
+            <tr>
+              <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
+                <i class="ri-shield-check-line" style="color:#059669;"></i> [EK14] Evaluasi Kapasitansi
+              </td>
+              <td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style='background:#fef2f2;'><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style=''><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const historyData = [
+  {
+    "index": 0,
+    "tanggal": "10 Jan 25",
+    "wo": "WO-BSH-202501",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 349.5,
+    "cap_t": 343.0,
+    "td_r": 0.32,
+    "td_s": 0.35,
+    "td_t": 0.33,
+    "eval_td": 0.35,
+    "dev_r": 0.35,
+    "dev_s": 0.43,
+    "dev_t": 0.29,
+    "max_dev": 0.43,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 1,
+    "tanggal": "24 Jan 25",
+    "wo": "WO-BSH-202502",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 350.0,
+    "cap_t": 343.3,
+    "td_r": 0.335,
+    "td_s": 0.368,
+    "td_t": 0.344,
+    "eval_td": 0.368,
+    "dev_r": 0.46,
+    "dev_s": 0.57,
+    "dev_t": 0.38,
+    "max_dev": 0.57,
+    "min_dev": 0.38,
+    "eval_cap": 0
+  },
+  {
+    "index": 2,
+    "tanggal": "07 Feb 25",
+    "wo": "WO-BSH-202503",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.0,
+    "cap_s": 350.5,
+    "cap_t": 343.6,
+    "td_r": 0.35,
+    "td_s": 0.386,
+    "td_t": 0.358,
+    "eval_td": 0.386,
+    "dev_r": 0.58,
+    "dev_s": 0.72,
+    "dev_t": 0.47,
+    "max_dev": 0.72,
+    "min_dev": 0.47,
+    "eval_cap": 0
+  },
+  {
+    "index": 3,
+    "tanggal": "21 Feb 25",
+    "wo": "WO-BSH-202504",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.4,
+    "cap_s": 351.0,
+    "cap_t": 343.0,
+    "td_r": 0.365,
+    "td_s": 0.404,
+    "td_t": 0.372,
+    "eval_td": 0.404,
+    "dev_r": 0.7,
+    "dev_s": 0.86,
+    "dev_t": 0.29,
+    "max_dev": 0.86,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 4,
+    "tanggal": "07 Mar 25",
+    "wo": "WO-BSH-202505",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 351.5,
+    "cap_t": 343.3,
+    "td_r": 0.38,
+    "td_s": 0.422,
+    "td_t": 0.33,
+    "eval_td": 0.422,
+    "dev_r": 0.35,
+    "dev_s": 1.01,
+    "dev_t": 0.38,
+    "max_dev": 1.01,
+    "min_dev": 0.35,
+    "eval_cap": 0
+  },
+  {
+    "index": 5,
+    "tanggal": "21 Mar 25",
+    "wo": "WO-BSH-202506",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 349.5,
+    "cap_t": 343.6,
+    "td_r": 0.32,
+    "td_s": 0.44,
+    "td_t": 0.344,
+    "eval_td": 0.44,
+    "dev_r": 0.46,
+    "dev_s": 0.43,
+    "dev_t": 0.47,
+    "max_dev": 0.47,
+    "min_dev": 0.43,
+    "eval_cap": 0
+  },
+  {
+    "index": 6,
+    "tanggal": "04 Apr 25",
+    "wo": "WO-BSH-202507",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.0,
+    "cap_s": 350.0,
+    "cap_t": 343.0,
+    "td_r": 0.335,
+    "td_s": 0.35,
+    "td_t": 0.358,
+    "eval_td": 0.358,
+    "dev_r": 0.58,
+    "dev_s": 0.57,
+    "dev_t": 0.29,
+    "max_dev": 0.58,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 7,
+    "tanggal": "18 Apr 25",
+    "wo": "WO-BSH-202508",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.4,
+    "cap_s": 350.5,
+    "cap_t": 343.3,
+    "td_r": 0.35,
+    "td_s": 0.368,
+    "td_t": 0.372,
+    "eval_td": 0.372,
+    "dev_r": 0.7,
+    "dev_s": 0.72,
+    "dev_t": 0.38,
+    "max_dev": 0.72,
+    "min_dev": 0.38,
+    "eval_cap": 0
+  },
+  {
+    "index": 8,
+    "tanggal": "02 Mei 25",
+    "wo": "WO-BSH-202509",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 351.0,
+    "cap_t": 343.6,
+    "td_r": 0.365,
+    "td_s": 0.386,
+    "td_t": 0.33,
+    "eval_td": 0.386,
+    "dev_r": 0.35,
+    "dev_s": 0.86,
+    "dev_t": 0.47,
+    "max_dev": 0.86,
+    "min_dev": 0.35,
+    "eval_cap": 0
+  },
+  {
+    "index": 9,
+    "tanggal": "16 Mei 25",
+    "wo": "WO-BSH-202510",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 351.5,
+    "cap_t": 343.0,
+    "td_r": 0.38,
+    "td_s": 0.404,
+    "td_t": 0.344,
+    "eval_td": 0.404,
+    "dev_r": 0.46,
+    "dev_s": 1.01,
+    "dev_t": 0.29,
+    "max_dev": 1.01,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 10,
+    "tanggal": "30 Mei 25",
+    "wo": "WO-BSH-202511",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.0,
+    "cap_s": 349.5,
+    "cap_t": 343.3,
+    "td_r": 0.32,
+    "td_s": 0.422,
+    "td_t": 0.358,
+    "eval_td": 0.422,
+    "dev_r": 0.58,
+    "dev_s": 0.43,
+    "dev_t": 0.38,
+    "max_dev": 0.58,
+    "min_dev": 0.38,
+    "eval_cap": 0
+  },
+  {
+    "index": 11,
+    "tanggal": "13 Jun 25",
+    "wo": "WO-BSH-202512",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.4,
+    "cap_s": 350.0,
+    "cap_t": 343.6,
+    "td_r": 0.335,
+    "td_s": 0.44,
+    "td_t": 0.372,
+    "eval_td": 0.44,
+    "dev_r": 0.7,
+    "dev_s": 0.57,
+    "dev_t": 0.47,
+    "max_dev": 0.7,
+    "min_dev": 0.47,
+    "eval_cap": 0
+  },
+  {
+    "index": 12,
+    "tanggal": "27 Jun 25",
+    "wo": "WO-BSH-202513",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 350.5,
+    "cap_t": 343.0,
+    "td_r": 0.35,
+    "td_s": 0.35,
+    "td_t": 0.33,
+    "eval_td": 0.35,
+    "dev_r": 0.35,
+    "dev_s": 0.72,
+    "dev_t": 0.29,
+    "max_dev": 0.72,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 13,
+    "tanggal": "11 Jul 25",
+    "wo": "WO-BSH-202514",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 351.0,
+    "cap_t": 343.3,
+    "td_r": 0.365,
+    "td_s": 0.368,
+    "td_t": 0.344,
+    "eval_td": 0.368,
+    "dev_r": 0.46,
+    "dev_s": 0.86,
+    "dev_t": 0.38,
+    "max_dev": 0.86,
+    "min_dev": 0.38,
+    "eval_cap": 0
+  },
+  {
+    "index": 14,
+    "tanggal": "25 Jul 25",
+    "wo": "WO-BSH-202515",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.0,
+    "cap_s": 351.5,
+    "cap_t": 343.6,
+    "td_r": 0.38,
+    "td_s": 0.386,
+    "td_t": 0.358,
+    "eval_td": 0.386,
+    "dev_r": 0.58,
+    "dev_s": 1.01,
+    "dev_t": 0.47,
+    "max_dev": 1.01,
+    "min_dev": 0.47,
+    "eval_cap": 0
+  },
+  {
+    "index": 15,
+    "tanggal": "08 Agu 25",
+    "wo": "WO-BSH-202516",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.4,
+    "cap_s": 349.5,
+    "cap_t": 343.0,
+    "td_r": 0.32,
+    "td_s": 0.404,
+    "td_t": 0.372,
+    "eval_td": 0.404,
+    "dev_r": 0.7,
+    "dev_s": 0.43,
+    "dev_t": 0.29,
+    "max_dev": 0.7,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 16,
+    "tanggal": "22 Agu 25",
+    "wo": "WO-BSH-202517",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 350.0,
+    "cap_t": 343.3,
+    "td_r": 0.335,
+    "td_s": 0.422,
+    "td_t": 0.33,
+    "eval_td": 0.422,
+    "dev_r": 0.35,
+    "dev_s": 0.57,
+    "dev_t": 0.38,
+    "max_dev": 0.57,
+    "min_dev": 0.35,
+    "eval_cap": 0
+  },
+  {
+    "index": 17,
+    "tanggal": "05 Sep 25",
+    "wo": "WO-BSH-202518",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 350.5,
+    "cap_t": 343.6,
+    "td_r": 0.35,
+    "td_s": 0.44,
+    "td_t": 0.344,
+    "eval_td": 0.44,
+    "dev_r": 0.46,
+    "dev_s": 0.72,
+    "dev_t": 0.47,
+    "max_dev": 0.72,
+    "min_dev": 0.46,
+    "eval_cap": 0
+  },
+  {
+    "index": 18,
+    "tanggal": "19 Sep 25",
+    "wo": "WO-BSH-202519",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.0,
+    "cap_s": 351.0,
+    "cap_t": 343.0,
+    "td_r": 0.365,
+    "td_s": 0.35,
+    "td_t": 0.358,
+    "eval_td": 0.365,
+    "dev_r": 0.58,
+    "dev_s": 0.86,
+    "dev_t": 0.29,
+    "max_dev": 0.86,
+    "min_dev": 0.29,
+    "eval_cap": 0
+  },
+  {
+    "index": 19,
+    "tanggal": "03 Okt 25",
+    "wo": "WO-BSH-202520",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.4,
+    "cap_s": 351.5,
+    "cap_t": 343.3,
+    "td_r": 0.38,
+    "td_s": 0.368,
+    "td_t": 0.372,
+    "eval_td": 0.38,
+    "dev_r": 0.7,
+    "dev_s": 1.01,
+    "dev_t": 0.38,
+    "max_dev": 1.01,
+    "min_dev": 0.38,
+    "eval_cap": 0
+  },
+  {
+    "index": 20,
+    "tanggal": "17 Okt 25",
+    "wo": "WO-BSH-202521",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.2,
+    "cap_s": 349.5,
+    "cap_t": 343.6,
+    "td_r": 0.32,
+    "td_s": 0.386,
+    "td_t": 0.33,
+    "eval_td": 0.386,
+    "dev_r": 0.35,
+    "dev_s": 0.43,
+    "dev_t": 0.47,
+    "max_dev": 0.47,
+    "min_dev": 0.35,
+    "eval_cap": 0
+  },
+  {
+    "index": 21,
+    "tanggal": "31 Okt 25",
+    "wo": "WO-BSH-202522",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.6,
+    "cap_s": 368.0,
+    "cap_t": 343.0,
+    "td_r": 0.335,
+    "td_s": 0.68,
+    "td_t": 0.344,
+    "eval_td": 0.68,
+    "dev_r": 0.46,
+    "dev_s": 5.75,
+    "dev_t": 0.29,
+    "max_dev": 5.75,
+    "min_dev": 0.29,
+    "eval_cap": 1
+  },
+  {
+    "index": 22,
+    "tanggal": "14 Nov 25",
+    "wo": "WO-BSH-202523",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 348.2,
+    "cap_s": 391.2,
+    "cap_t": 346.0,
+    "td_r": 0.38,
+    "td_s": 1.18,
+    "td_t": 0.41,
+    "eval_td": 1.18,
+    "dev_r": 0.93,
+    "dev_s": 12.41,
+    "dev_t": 1.17,
+    "max_dev": 12.41,
+    "min_dev": 0.93,
+    "eval_cap": 1
+  },
+  {
+    "index": 23,
+    "tanggal": "28 Nov 25",
+    "wo": "WO-BSH-202524",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 347.5,
+    "cap_s": 378.0,
+    "cap_t": 345.5,
+    "td_r": 0.37,
+    "td_s": 0.85,
+    "td_t": 0.4,
+    "eval_td": 0.85,
+    "dev_r": 0.72,
+    "dev_s": 8.62,
+    "dev_t": 1.02,
+    "max_dev": 8.62,
+    "min_dev": 0.72,
+    "eval_cap": 1
+  },
+  {
+    "index": 24,
+    "tanggal": "12 Des 25",
+    "wo": "WO-BSH-202525",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  },
+  {
+    "index": 25,
+    "tanggal": "26 Des 25",
+    "wo": "WO-BSH-202526",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  },
+  {
+    "index": 26,
+    "tanggal": "09 Jan 26",
+    "wo": "WO-BSH-202527",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  },
+  {
+    "index": 27,
+    "tanggal": "23 Jan 26",
+    "wo": "WO-BSH-202528",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  },
+  {
+    "index": 28,
+    "tanggal": "06 Feb 26",
+    "wo": "WO-BSH-202529",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  },
+  {
+    "index": 29,
+    "tanggal": "20 Feb 26",
+    "wo": "WO-BSH-202530",
+    "np_r": 345.0,
+    "np_s": 348.0,
+    "np_t": 342.0,
+    "cap_r": 346.1,
+    "cap_s": 349.5,
+    "cap_t": 343.8,
+    "td_r": 0.34,
+    "td_s": 0.39,
+    "td_t": 0.36,
+    "eval_td": 0.39,
+    "dev_r": 0.32,
+    "dev_s": 0.43,
+    "dev_t": 0.53,
+    "max_dev": 0.53,
+    "min_dev": 0.32,
+    "eval_cap": 0
+  }
+];
+    let currentMode = 'tandelta';
+    let currentType = 'line';
+    let currentRange = 30;
+    let showThresholds = true;
+    let chartInstance = null;
+
+    function getChartDatasets(count) {
+      const slice = historyData.slice(30 - count);
+      const labels = slice.map(d => d.tanggal);
+
+      if (currentMode === 'tandelta') {
+        const datasets = [
+          {
+            label: 'Tan Delta Fasa R (%)',
+            data: slice.map(d => d.td_r),
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            pointRadius: slice.map(d => d.td_r > 1.0 ? 8 : 3),
+            tension: 0.3
+          },
+          {
+            label: 'Tan Delta Fasa S (%)',
+            data: slice.map(d => d.td_s),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2.5,
+            pointRadius: slice.map(d => d.td_s > 1.0 ? 9 : 3),
+            pointBackgroundColor: slice.map(d => d.td_s > 1.0 ? '#ef4444' : '#f59e0b'),
+            tension: 0.3
+          },
+          {
+            label: 'Tan Delta Fasa T (%)',
+            data: slice.map(d => d.td_t),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            pointRadius: slice.map(d => d.td_t > 1.0 ? 8 : 3),
+            tension: 0.3
+          }
+        ];
+
+        if (showThresholds) {
+          datasets.push({
+            label: 'Batas Warning (0.5%)',
+            data: Array(count).fill(0.5),
+            borderColor: 'rgba(245, 158, 11, 0.8)',
+            borderWidth: 1.5,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            fill: false
+          });
+          datasets.push({
+            label: 'Batas Kritis (> 1.0%)',
+            data: Array(count).fill(1.0),
+            borderColor: 'rgba(239, 68, 68, 0.8)',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            fill: false
+          });
+        }
+        return { labels, datasets, yTitle: 'Tan Delta (%)' };
+      } else if (currentMode === 'deviation') {
+        const datasets = [
+          {
+            label: 'Deviasi Fasa R (%)',
+            data: slice.map(d => d.dev_r),
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            pointRadius: slice.map(d => d.dev_r > 10 ? 8 : 3),
+            tension: 0.3
+          },
+          {
+            label: 'Deviasi Fasa S (%)',
+            data: slice.map(d => d.dev_s),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2.5,
+            pointRadius: slice.map(d => d.dev_s > 10 ? 9 : 3),
+            pointBackgroundColor: slice.map(d => d.dev_s > 10 ? '#ef4444' : '#f59e0b'),
+            tension: 0.3
+          },
+          {
+            label: 'Deviasi Fasa T (%)',
+            data: slice.map(d => d.dev_t),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            pointRadius: slice.map(d => d.dev_t > 10 ? 8 : 3),
+            tension: 0.3
+          }
+        ];
+
+        if (showThresholds) {
+          datasets.push({
+            label: 'Batas Warning (5%)',
+            data: Array(count).fill(5.0),
+            borderColor: 'rgba(245, 158, 11, 0.8)',
+            borderWidth: 1.5,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            fill: false
+          });
+          datasets.push({
+            label: 'Batas Anomali (10%)',
+            data: Array(count).fill(10.0),
+            borderColor: 'rgba(239, 68, 68, 0.8)',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            fill: false
+          });
+        }
+        return { labels, datasets, yTitle: 'Deviasi Kapasitansi (%)' };
+      } else {
+        return {
+          labels,
+          datasets: [
+            { label: 'Hasil Uji R (pF)', data: slice.map(d => d.cap_r), borderColor: '#ef4444', borderWidth: 2, tension: 0.2 },
+            { label: 'Hasil Uji S (pF)', data: slice.map(d => d.cap_s), borderColor: '#f59e0b', borderWidth: 2.5, tension: 0.2 },
+            { label: 'Hasil Uji T (pF)', data: slice.map(d => d.cap_t), borderColor: '#2563eb', borderWidth: 2, tension: 0.2 }
+          ],
+          yTitle: 'Kapasitansi (Pico Farad - pF)'
+        };
+      }
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('bushingChart').getContext('2d');
+      const cfg = getChartDatasets(currentRange);
+
+      chartInstance = new Chart(ctx, {
+        type: currentType,
+        data: { labels: cfg.labels, datasets: cfg.datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                afterBody: function(items) {
+                  const idx = items[0].dataIndex;
+                  const total = items[0].chart.data.labels.length;
+                  const actualIdx = 30 - total + idx;
+                  const item = historyData[actualIdx];
+                  if (!item) return '';
+                  return [
+                    '-----------------------',
+                    'Max Dev: ' + item.max_dev + '%',
+                    'Min Dev: ' + item.min_dev + '%',
+                    'Eval TD: ' + item.eval_td + '%',
+                    'Status: ' + (item.eval_cap === 1 ? 'Anomali Deviasi' : 'Normal')
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: cfg.yTitle, font: { size: 11, weight: 'bold' } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10 }, maxRotation: 45 }
+            }
+          }
+        }
+      });
+    }
+
+    function setBushingMode(mode, btn) {
+      currentMode = mode;
+      document.querySelectorAll('.bushing-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cfg = getChartDatasets(currentRange);
+      chartInstance.data.labels = cfg.labels;
+      chartInstance.data.datasets = cfg.datasets;
+      chartInstance.options.scales.y.title.text = cfg.yTitle;
+      chartInstance.update();
+    }
+
+    function changeChartType(btn, type) {
+      currentType = type;
+      document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      chartInstance.destroy();
+      initChart();
+    }
+
+    function setChartRange(count, btn) {
+      currentRange = count;
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cfg = getChartDatasets(count);
+      chartInstance.data.labels = cfg.labels;
+      chartInstance.data.datasets = cfg.datasets;
+      chartInstance.update();
+    }
+
+    function toggleThresholds(checked) {
+      showThresholds = checked;
+      const cfg = getChartDatasets(currentRange);
+      chartInstance.data.datasets = cfg.datasets;
+      chartInstance.update();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initChart();
+    });
+  </script>
+</body>
+</html>
