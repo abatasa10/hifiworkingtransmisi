@@ -563,6 +563,134 @@
             justify-content: flex-end;
             gap: 8px;
         }
+
+        /* Range Selector Toggle */
+        .range-selector-group {
+            display: inline-flex;
+            gap: 2px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 2px;
+            border: 1px solid #e2e8f0;
+        }
+        .range-btn {
+            border: none;
+            background: transparent;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.15s ease;
+        }
+        .range-btn:hover {
+            color: #0f172a;
+        }
+        .range-btn.active {
+            background: #00529c;
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .badge-count-pill {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid #bae6fd;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* Matrix Table & Horizontal Scrollbar (30 Inspeksi Anti-Overlapping) */
+        .sticky-matrix-wrapper {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            position: relative !important;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+            margin-top: 12px;
+            margin-bottom: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #00529c #f1f5f9;
+            -webkit-overflow-scrolling: touch;
+        }
+        .sticky-matrix-wrapper::-webkit-scrollbar {
+            height: 12px !important;
+            display: block !important;
+        }
+        .sticky-matrix-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9 !important;
+            border-radius: 6px !important;
+            border-top: 1px solid #e2e8f0 !important;
+        }
+        .sticky-matrix-wrapper::-webkit-scrollbar-thumb {
+            background: #00529c !important;
+            border-radius: 6px !important;
+            border: 2px solid #f1f5f9 !important;
+        }
+        .sticky-matrix-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #003e75 !important;
+        }
+
+        .sticky-matrix-table {
+            width: max-content !important;
+            min-width: 100% !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            font-size: 11px !important;
+            text-align: center !important;
+            margin: 0 !important;
+        }
+        .sticky-matrix-table th, 
+        .sticky-matrix-table td {
+            padding: 8px 12px !important;
+            border-right: 1px solid #e2e8f0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            white-space: nowrap !important;
+            font-size: 11px !important;
+            line-height: 1.4 !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            min-width: 82px !important;
+            box-sizing: border-box !important;
+        }
+        .sticky-matrix-table thead th {
+            background: #f8fafc !important;
+            font-weight: 700 !important;
+            color: #334155 !important;
+            border-top: none !important;
+            padding: 10px 12px !important;
+        }
+        .sticky-matrix-table th.col-sticky, 
+        .sticky-matrix-table td.col-sticky {
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 10 !important;
+            min-width: 210px !important;
+            width: 210px !important;
+            max-width: 210px !important;
+            text-align: left !important;
+            font-weight: 700 !important;
+            box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.12) !important;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+        .sticky-matrix-table th.col-sticky {
+            z-index: 20 !important;
+            background: #f1f5f9 !important;
+            color: #1e293b !important;
+        }
+        .sticky-matrix-table tr:hover td:not(.col-sticky) {
+            background-color: #f8fafc;
+        }
     </style>
 <script src="chrome-extension://mooikfkahbdckldjjndioackbalphokd/assets/prompt.js"></script></head>
 <body>
