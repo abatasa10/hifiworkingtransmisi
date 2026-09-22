@@ -166,6 +166,71 @@
       width: 100%;
       margin: 16px 0;
     }
+  
+        /* 30 Inspections Range Selector & Sticky Matrix Table Styles */
+        .range-selector-group {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 2px;
+            margin-left: 8px;
+        }
+        .range-btn {
+            border: none;
+            background: transparent;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .range-btn.active {
+            background: #00529c;
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .sticky-matrix-wrapper {
+            overflow-x: auto;
+            position: relative;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .sticky-matrix-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: center;
+        }
+        .sticky-matrix-table th, .sticky-matrix-table td {
+            padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .sticky-matrix-table th.col-sticky, .sticky-matrix-table td.col-sticky {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: #f8fafc;
+            font-weight: 700;
+            text-align: left;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+        .badge-count-pill {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid #bae6fd;
+        }
+
   </style>
 </head>
 <body>

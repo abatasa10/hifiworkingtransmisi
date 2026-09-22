@@ -873,6 +873,11 @@
                                     <button class="chart-toggle-btn active" onclick="changeChartType(this, 'thermovisi', 'line')">Line</button>
                                     <button class="chart-toggle-btn" onclick="changeChartType(this, 'thermovisi', 'bar')">Bar</button>
                                 </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('thermovisi', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('thermovisi', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('thermovisi', 7, this)">7 Terakhir</button>
+                                </div>
                                 <span class="badge-good">Status Terakhir: 2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span>
                             </div>
                         </div>
@@ -935,6 +940,11 @@
                                     <button class="chart-toggle-btn active" onclick="changeChartType(this, 'resistance', 'line')">Line</button>
                                     <button class="chart-toggle-btn" onclick="changeChartType(this, 'resistance', 'bar')">Bar</button>
                                 </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('resistance', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('resistance', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('resistance', 7, this)">7 Terakhir</button>
+                                </div>
                                 <span class="badge-verygood">Status Terakhir: 1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span>
                             </div>
                         </div>
@@ -992,6 +1002,11 @@
                                 <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
                                     <button class="chart-toggle-btn active" onclick="changeChartType(this, 'sf6', 'line')">Line</button>
                                     <button class="chart-toggle-btn" onclick="changeChartType(this, 'sf6', 'bar')">Bar</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('sf6', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('sf6', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('sf6', 7, this)">7 Terakhir</button>
                                 </div>
                                 <span class="badge-verygood">Status Terakhir: 1 - Very Good (6.2 Bar) <i class="ri-checkbox-circle-line badge-icon"></i></span>
                             </div>
@@ -1052,6 +1067,11 @@
                                     <button class="chart-toggle-btn active" onclick="changeChartType(this, 'counter', 'line')">Line</button>
                                     <button class="chart-toggle-btn" onclick="changeChartType(this, 'counter', 'bar')">Bar</button>
                                 </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('counter', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('counter', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('counter', 7, this)">7 Terakhir</button>
+                                </div>
                                 <span class="badge-good">Status Terakhir: 2 - Good (R:28, S:22, T:19) <i class="ri-checkbox-circle-line badge-icon"></i></span>
                             </div>
                         </div>
@@ -1094,66 +1114,35 @@
                         <!-- Canvas Chart -->
                         <div class="chart-container"><canvas id="trendChartCounter"></canvas></div>
 
-                        <!-- Timeline Matrix Strip: Status Fisik -->
+                                                <!-- Timeline Matrix Strip: Status Fisik (30 Inspeksi) -->
                         <div style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                                <span><i class="ri-pulse-line"></i> Matriks Riwayat Kondisi Fisik per Tanggal Inspeksi:</span>
-                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;">Sinkron dengan sumbu tanggal di atas</span>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span><i class="ri-pulse-line" style="color: #2563eb;"></i> Matriks Riwayat Kondisi Fisik (30 Inspeksi Terakhir):</span>
+                                    <span class="badge-count-pill">30 Titik Data</span>
+                                </div>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Scroll horizontal untuk melihat semua tanggal (Kolom Fasa terkunci di kiri)</span>
                             </div>
-                            <div style="overflow-x: auto;">
-                                <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 11px;">
+                            <div class="sticky-matrix-wrapper">
+                                <table class="sticky-matrix-table">
                                     <thead>
                                         <tr style="background: #f8fafc;">
-                                            <th style="text-align: left; width: 100px;">Fasa</th>
-                                            <th>15 Mei</th>
-                                            <th>01 Jun</th>
-                                            <th>18 Jun</th>
-                                            <th>05 Jul</th>
-                                            <th>24 Jul</th>
-                                            <th>15 Agu</th>
-                                            <th>02 Sep</th>
+                                            <th class="col-sticky" style="width: 120px;">Fasa / Item</th>
+                                            <th style='min-width: 65px;'>10 Jan 25</th><th style='min-width: 65px;'>24 Jan 25</th><th style='min-width: 65px;'>07 Feb 25</th><th style='min-width: 65px;'>21 Feb 25</th><th style='min-width: 65px;'>07 Mar 25</th><th style='min-width: 65px;'>21 Mar 25</th><th style='min-width: 65px;'>04 Apr 25</th><th style='min-width: 65px;'>18 Apr 25</th><th style='min-width: 65px;'>02 Mei 25</th><th style='min-width: 65px;'>16 Mei 25</th><th style='min-width: 65px;'>30 Mei 25</th><th style='min-width: 65px;'>13 Jun 25</th><th style='min-width: 65px;'>27 Jun 25</th><th style='min-width: 65px;'>11 Jul 25</th><th style='min-width: 65px;'>25 Jul 25</th><th style='min-width: 65px;'>08 Agu 25</th><th style='min-width: 65px;'>22 Agu 25</th><th style='min-width: 65px;'>05 Sep 25</th><th style='min-width: 65px;'>19 Sep 25</th><th style='min-width: 65px;'>03 Okt 25</th><th style='min-width: 65px;'>17 Okt 25</th><th style='min-width: 65px;background:#fef2f2;color:#991b1b;'>31 Okt 25</th><th style='min-width: 65px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 65px;'>28 Nov 25</th><th style='min-width: 65px;'>12 Des 25</th><th style='min-width: 65px;'>26 Des 25</th><th style='min-width: 65px;'>09 Jan 26</th><th style='min-width: 65px;'>23 Jan 26</th><th style='min-width: 65px;'>06 Feb 26</th><th style='min-width: 65px;'>20 Feb 26</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr id="matrixRowR">
-                                            <td style="text-align: left; font-weight: 700; color: #ef4444; background: #fef2f2;">Fasa R</td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td class="col-sticky" style="color: #ef4444; background: #fef2f2;">Fasa R</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
                                         </tr>
                                         <tr id="matrixRowS">
-                                            <td style="text-align: left; font-weight: 700; color: #f59e0b; background: #fffbeb;">Fasa S</td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-critical" style="padding: 2px 6px; font-size: 10px;">Pecah ⚠️</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal (Ganti Unit)</span></td>
+                                            <td class="col-sticky" style="color: #f59e0b; background: #fffbeb;">Fasa S</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Pecah ⚠️</span></td><td><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Pecah ⚠️</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Ganti Unit</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
                                         </tr>
                                         <tr id="matrixRowT">
-                                            <td style="text-align: left; font-weight: 700; color: #2563eb; background: #eff6ff;">Fasa T</td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                        </tr>
-                                        <tr id="matrixRowCombined" style="display: none;">
-                                            <td style="text-align: left; font-weight: 700; color: #10b981; background: #ecfdf5;">Gabungan RST</td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-critical" style="padding: 2px 6px; font-size: 10px;">Anomali Fasa S</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td class="col-sticky" style="color: #2563eb; background: #eff6ff;">Fasa T</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1260,6 +1249,11 @@
                                     <button class="chart-toggle-btn active" onclick="changeChartType(this, 'pms', 'line')">Line</button>
                                     <button class="chart-toggle-btn" onclick="changeChartType(this, 'pms', 'bar')">Bar</button>
                                 </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('pms', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('pms', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('pms', 7, this)">7 Terakhir</button>
+                                </div>
                                 <span class="badge-verygood">Status Terakhir: 1 - Very Good (96%) <i class="ri-checkbox-circle-line badge-icon"></i></span>
                             </div>
                         </div>
@@ -1301,86 +1295,53 @@
                         <!-- Canvas Chart -->
                         <div class="chart-container" style="height: 320px;"><canvas id="trendChartPMS"></canvas></div>
 
-                        <!-- Timeline Matrix Strip: 4 Jenis Input -->
+                                                <!-- Timeline Matrix Strip: 4 Jenis Input (30 Inspeksi) -->
                         <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <span><i class="ri-table-line" style="color: #9333ea;"></i> Matriks Riwayat Multi-Tipe Input per Tanggal Inspeksi:</span>
-                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;">Hover atau klik ikon catatan untuk membaca teks laporan lapangan</span>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span><i class="ri-table-line" style="color: #9333ea;"></i> Matriks Riwayat Multi-Tipe Input (30 Inspeksi Terakhir):</span>
+                                    <span class="badge-count-pill" style="background:#faf5ff;color:#7e22ce;border-color:#e9d5ff;">30 Titik Data</span>
+                                </div>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Scroll horizontal untuk melihat semua tanggal (Kolom Item terkunci di kiri)</span>
                             </div>
-                            <div style="overflow-x: auto;">
-                                <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; border: 1px solid #e2e8f0;">
+                            <div class="sticky-matrix-wrapper">
+                                <table class="sticky-matrix-table">
                                     <thead>
                                         <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
-                                            <th style="text-align: left; width: 200px; padding: 8px 10px;">Item / Tipe Input</th>
-                                            <th>15 Mei</th>
-                                            <th>01 Jun</th>
-                                            <th>18 Jun</th>
-                                            <th>05 Jul</th>
-                                            <th>24 Jul</th>
-                                            <th style="background: #fef2f2; color: #b91c1c;">15 Agu (Anomali)</th>
-                                            <th>02 Sep (Normal)</th>
+                                            <th class="col-sticky" style="width: 190px;">Item / Tipe Input</th>
+                                            <th style='min-width: 75px;'>10 Jan 25</th><th style='min-width: 75px;'>24 Jan 25</th><th style='min-width: 75px;'>07 Feb 25</th><th style='min-width: 75px;'>21 Feb 25</th><th style='min-width: 75px;'>07 Mar 25</th><th style='min-width: 75px;'>21 Mar 25</th><th style='min-width: 75px;'>04 Apr 25</th><th style='min-width: 75px;'>18 Apr 25</th><th style='min-width: 75px;'>02 Mei 25</th><th style='min-width: 75px;'>16 Mei 25</th><th style='min-width: 75px;'>30 Mei 25</th><th style='min-width: 75px;'>13 Jun 25</th><th style='min-width: 75px;'>27 Jun 25</th><th style='min-width: 75px;'>11 Jul 25</th><th style='min-width: 75px;'>25 Jul 25</th><th style='min-width: 75px;'>08 Agu 25</th><th style='min-width: 75px;'>22 Agu 25</th><th style='min-width: 75px;'>05 Sep 25</th><th style='min-width: 75px;'>19 Sep 25</th><th style='min-width: 75px;'>03 Okt 25</th><th style='min-width: 75px;'>17 Okt 25</th><th style='min-width: 75px;'>31 Okt 25</th><th style='min-width: 75px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 75px;'>28 Nov 25</th><th style='min-width: 75px;'>12 Des 25</th><th style='min-width: 75px;'>26 Des 25</th><th style='min-width: 75px;'>09 Jan 26</th><th style='min-width: 75px;'>23 Jan 26</th><th style='min-width: 75px;'>06 Feb 26</th><th style='min-width: 75px;'>20 Feb 26</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td style="text-align: left; font-weight: 600; background: #faf5ff; color: #6b21a8; padding: 8px 10px;">
-                                                <i class="ri-radio-button-line"></i> 1. Fisik PMS Outer (Radio)
+                                            <td class="col-sticky" style="background: #faf5ff; color: #6b21a8;">
+                                                <i class="ri-radio-button-line"></i> 1. Fisik PMS (Radio)
                                             </td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td style="background: #fef2f2;"><span class="badge-poor" style="padding: 2px 6px; font-size: 10px;">Tidak normal ⚠️</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style='background:#fef2f2;'><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Tidak normal ⚠️</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Perbaikan</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left; font-weight: 600; background: #eff6ff; color: #1e40af; padding: 8px 10px;">
-                                                <i class="ri-arrow-down-circle-line"></i> 2. Grounding PMS (Dropdown)
+                                            <td class="col-sticky" style="background: #eff6ff; color: #1e40af;">
+                                                <i class="ri-arrow-down-circle-line"></i> 2. Grounding (Dropdown)
                                             </td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal</span></td>
-                                            <td><span class="badge-fair" style="padding: 2px 6px; font-size: 10px;">Korosi Mur &amp; Baut</span></td>
-                                            <td style="background: #fef2f2;"><span class="badge-critical" style="padding: 2px 6px; font-size: 10px;">Lepas ⚠️</span></td>
-                                            <td><span class="badge-verygood" style="padding: 2px 6px; font-size: 10px;">Normal (Perbaikan)</span></td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Korosi Mur</span></td><td style='background:#fef2f2;'><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Lepas ⚠️</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Re-klem</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left; font-weight: 600; background: #f0fdf4; color: #166534; padding: 8px 10px;">
+                                            <td class="col-sticky" style="background: #f0fdf4; color: #166534;">
                                                 <i class="ri-percent-line"></i> 3. Kesehatan Aset (Number)
                                             </td>
-                                            <td><strong style="color: #10b981;">95.0%</strong></td>
-                                            <td><strong style="color: #10b981;">94.0%</strong></td>
-                                            <td><strong style="color: #10b981;">92.5%</strong></td>
-                                            <td><strong style="color: #10b981;">91.0%</strong></td>
-                                            <td><strong style="color: #f59e0b;">90.0%</strong></td>
-                                            <td style="background: #fef2f2;"><strong style="color: #ef4444; font-size: 12px;">35.0% 🔴</strong></td>
-                                            <td><strong style="color: #10b981;">96.0%</strong></td>
+                                            <td style=''><strong style='color:#10b981;'>98.0%</strong></td><td style=''><strong style='color:#10b981;'>97.5%</strong></td><td style=''><strong style='color:#10b981;'>97.0%</strong></td><td style=''><strong style='color:#10b981;'>96.5%</strong></td><td style=''><strong style='color:#10b981;'>96.0%</strong></td><td style=''><strong style='color:#10b981;'>95.5%</strong></td><td style=''><strong style='color:#10b981;'>95.0%</strong></td><td style=''><strong style='color:#10b981;'>94.5%</strong></td><td style=''><strong style='color:#10b981;'>94.0%</strong></td><td style=''><strong style='color:#10b981;'>93.5%</strong></td><td style=''><strong style='color:#10b981;'>93.0%</strong></td><td style=''><strong style='color:#10b981;'>92.5%</strong></td><td style=''><strong style='color:#10b981;'>92.0%</strong></td><td style=''><strong style='color:#10b981;'>91.5%</strong></td><td style=''><strong style='color:#10b981;'>91.0%</strong></td><td style=''><strong style='color:#10b981;'>90.5%</strong></td><td style=''><strong style='color:#10b981;'>90.0%</strong></td><td style=''><strong style='color:#10b981;'>89.0%</strong></td><td style=''><strong style='color:#10b981;'>88.0%</strong></td><td style=''><strong style='color:#10b981;'>86.5%</strong></td><td style=''><strong style='color:#10b981;'>84.0%</strong></td><td style=''><strong style='color:#f59e0b;'>78.0%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>35.0%</strong></td><td style=''><strong style='color:#ef4444;'>55.0%</strong></td><td style=''><strong style='color:#10b981;'>92.0%</strong></td><td style=''><strong style='color:#10b981;'>94.0%</strong></td><td style=''><strong style='color:#10b981;'>95.5%</strong></td><td style=''><strong style='color:#10b981;'>96.0%</strong></td><td style=''><strong style='color:#10b981;'>96.5%</strong></td><td style=''><strong style='color:#10b981;'>97.0%</strong></td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left; font-weight: 600; background: #f8fafc; color: var(--text-main); padding: 8px 10px;">
+                                            <td class="col-sticky" style="background: #f8fafc; color: var(--text-main);">
                                                 <i class="ri-heart-pulse-line"></i> Skor AHI Sistem
                                             </td>
-                                            <td><span class="badge-verygood" style="font-size: 10px;">1 - Very Good</span></td>
-                                            <td><span class="badge-verygood" style="font-size: 10px;">1 - Very Good</span></td>
-                                            <td><span class="badge-verygood" style="font-size: 10px;">1 - Very Good</span></td>
-                                            <td><span class="badge-verygood" style="font-size: 10px;">1 - Very Good</span></td>
-                                            <td><span class="badge-good" style="font-size: 10px;">2 - Good</span></td>
-                                            <td style="background: #fef2f2;"><span class="badge-poor" style="font-size: 10px; font-weight: 800;">4 - Poor</span></td>
-                                            <td><span class="badge-verygood" style="font-size: 10px;">1 - Very Good</span></td>
+                                            <td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-good' style='font-size:10px;'>2 - Good</span></td><td style=''><span class='badge-good' style='font-size:10px;'>2 - Good</span></td><td style=''><span class='badge-good' style='font-size:10px;'>2 - Good</span></td><td style=''><span class='badge-good' style='font-size:10px;'>2 - Good</span></td><td style=''><span class='badge-fair' style='font-size:10px;'>3 - Fair</span></td><td style='background:#fef2f2;'><span class='badge-poor' style='font-size:10px;font-weight:800;'>4 - Poor</span></td><td style=''><span class='badge-poor' style='font-size:10px;font-weight:800;'>4 - Poor</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td><td style=''><span class='badge-verygood' style='font-size:10px;'>1 - VGood</span></td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: left; font-weight: 600; background: #fffbeb; color: #92400e; padding: 8px 10px;">
-                                                <i class="ri-chat-quote-line"></i> 4. Catatan Tambahan (Text)
+                                            <td class="col-sticky" style="background: #fffbeb; color: #92400e;">
+                                                <i class="ri-chat-quote-line"></i> 4. Catatan Petugas (Text)
                                             </td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(0)" title="Baca Catatan"><i class="ri-file-text-line"></i></button></td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(1)" title="Baca Catatan"><i class="ri-file-text-line"></i></button></td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(2)" title="Baca Catatan"><i class="ri-file-text-line"></i></button></td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(3)" title="Baca Catatan"><i class="ri-file-text-line"></i></button></td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(4)" title="Baca Catatan"><i class="ri-file-text-line"></i></button></td>
-                                            <td style="background: #fef2f2;"><button class="btn-icon" onclick="openPmsNoteModal(5)" title="Baca Catatan Anomali" style="color: #ef4444;"><i class="ri-error-warning-fill" style="font-size: 16px;"></i></button></td>
-                                            <td><button class="btn-icon" onclick="openPmsNoteModal(6)" title="Baca Catatan Perbaikan"><i class="ri-checkbox-circle-line" style="color: #10b981; font-size: 16px;"></i></button></td>
+                                            <td style=''><button class='btn-icon' onclick='openPmsNoteModal(0)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(1)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(2)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(3)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(4)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(5)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(6)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(7)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(8)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(9)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(10)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(11)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(12)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(13)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(14)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(15)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(16)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(17)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(18)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(19)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(20)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(21)' style='color:#f59e0b;' title='Catatan Korosi'><i class='ri-file-warning-line' style='font-size:14px;'></i></button></td><td style='background:#fef2f2;'><button class='btn-icon' onclick='openPmsNoteModal(22)' style='color:#ef4444;' title='Anomali Kritis (Lepas)'><i class='ri-error-warning-fill' style='font-size:15px;'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(23)' style='color:#10b981;' title='Catatan Perbaikan'><i class='ri-tools-line' style='font-size:14px;'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(24)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(25)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(26)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(27)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(28)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td><td style=''><button class='btn-icon' onclick='openPmsNoteModal(29)' title='Baca Catatan'><i class='ri-file-text-line'></i></button></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1698,10 +1659,44 @@
         </div>
     </main>
 
+    
+    
     <script>
         let charts = {};
-        
-        // Initialize charts when page loads
+        let rawData30 = {
+            labels: ["10 Jan 25", "24 Jan 25", "07 Feb 25", "21 Feb 25", "07 Mar 25", "21 Mar 25", "04 Apr 25", "18 Apr 25", "02 Mei 25", "16 Mei 25", "30 Mei 25", "13 Jun 25", "27 Jun 25", "11 Jul 25", "25 Jul 25", "08 Agu 25", "22 Agu 25", "05 Sep 25", "19 Sep 25", "03 Okt 25", "17 Okt 25", "31 Okt 25", "14 Nov 25", "28 Nov 25", "12 Des 25", "26 Des 25", "09 Jan 26", "23 Jan 26", "06 Feb 26", "20 Feb 26"],
+            thermovisi: {
+                r: [34.2, 34.5, 34.4, 34.8, 35.0, 35.1, 35.3, 35.0, 35.2, 35.5, 35.4, 35.6, 35.8, 36.0, 35.9, 36.1, 36.3, 36.0, 36.2, 36.4, 36.5, 36.8, 37.0, 37.2, 36.5, 36.0, 35.8, 35.5, 35.4, 35.2],
+                s: [34.8, 35.0, 35.2, 35.5, 35.6, 35.8, 36.0, 36.2, 36.5, 36.7, 36.9, 37.2, 37.5, 37.8, 38.2, 38.8, 39.5, 40.2, 41.5, 43.0, 45.2, 48.0, 51.5, 46.0, 38.5, 36.8, 36.2, 35.9, 35.6, 35.4],
+                t: [34.1, 34.3, 34.5, 34.7, 34.8, 35.0, 35.2, 35.1, 35.3, 35.4, 35.5, 35.7, 35.8, 36.0, 36.1, 36.2, 36.4, 36.3, 36.5, 36.6, 36.7, 36.8, 37.0, 36.9, 36.4, 36.1, 35.7, 35.5, 35.3, 35.1],
+                delta: [0.7, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 1.2, 1.3, 1.3, 1.5, 1.6, 1.7, 1.8, 2.3, 2.7, 3.2, 4.2, 5.3, 6.6, 8.7, 11.2, 14.5, 9.1, 2.1, 0.8, 0.5, 0.4, 0.3, 0.3]
+            },
+            sf6: [6.6, 6.6, 6.5, 6.5, 6.5, 6.4, 6.4, 6.4, 6.3, 6.3, 6.3, 6.2, 6.2, 6.2, 6.1, 6.1, 6.1, 6.0, 6.0, 5.9, 5.8, 5.7, 6.6, 6.6, 6.5, 6.5, 6.5, 6.4, 6.4, 6.4],
+            resistance: {
+                r: [29.5, 29.8, 29.6, 30.1, 30.2, 30.0, 30.4, 30.5, 30.8, 31.0, 31.2, 31.5, 31.8, 32.0, 32.5, 33.0, 34.2, 35.5, 37.0, 39.5, 42.8, 47.5, 48.2, 38.0, 30.5, 30.0, 29.8, 29.7, 29.5, 29.4],
+                s: [28.8, 29.0, 29.2, 29.1, 29.4, 29.5, 29.3, 29.6, 29.8, 30.0, 29.9, 30.2, 30.4, 30.5, 30.7, 30.9, 31.0, 31.2, 31.4, 31.5, 31.8, 32.0, 32.2, 31.5, 30.2, 29.8, 29.5, 29.3, 29.1, 29.0],
+                t: [28.5, 28.7, 28.9, 29.0, 29.2, 29.3, 29.5, 29.4, 29.7, 29.8, 30.1, 30.0, 30.3, 30.5, 30.6, 30.8, 31.0, 31.1, 31.3, 31.5, 31.6, 31.8, 32.0, 31.0, 30.0, 29.6, 29.4, 29.2, 29.0, 28.8]
+            },
+            counter: {
+                r: [2, 4, 5, 7, 8, 10, 12, 13, 15, 16, 18, 19, 21, 22, 24, 25, 26, 28, 29, 31, 32, 33, 34, 34, 35, 36, 37, 38, 39, 40],
+                s: [1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 27, 27, 27, 28, 29, 30, 31, 32, 33],
+                t: [1, 2, 3, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 31, 32],
+                combined: [4, 8, 12, 17, 21, 25, 31, 34, 40, 43, 48, 51, 55, 59, 63, 66, 69, 73, 76, 80, 83, 85, 87, 88, 91, 94, 97, 100, 102, 105]
+            },
+            pms: {
+                health: [98.0, 97.5, 97.0, 96.5, 96.0, 95.5, 95.0, 94.5, 94.0, 93.5, 93.0, 92.5, 92.0, 91.5, 91.0, 90.5, 90.0, 89.0, 88.0, 86.5, 84.0, 78.0, 35.0, 55.0, 92.0, 94.0, 95.5, 96.0, 96.5, 97.0],
+                history: [{"wo": "INS20250001", "tanggal": "10 Jan 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 98.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-1. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250002", "tanggal": "24 Jan 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 97.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-2. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250003", "tanggal": "07 Feb 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 97.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-3. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250004", "tanggal": "21 Feb 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 96.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-4. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250005", "tanggal": "07 Mar 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 96.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-5. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250006", "tanggal": "21 Mar 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 95.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-6. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250007", "tanggal": "04 Apr 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 95.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-7. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250008", "tanggal": "18 Apr 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 94.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-8. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250009", "tanggal": "02 Mei 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 94.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-9. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250010", "tanggal": "16 Mei 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 93.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-10. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250011", "tanggal": "30 Mei 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 93.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-11. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250012", "tanggal": "13 Jun 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 92.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-12. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250013", "tanggal": "27 Jun 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 92.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-13. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250014", "tanggal": "11 Jul 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 91.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-14. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250015", "tanggal": "25 Jul 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 91.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-15. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250016", "tanggal": "08 Agu 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 90.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-16. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250017", "tanggal": "22 Agu 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 90.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-17. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250018", "tanggal": "05 Sep 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 89.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-18. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250019", "tanggal": "19 Sep 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 88.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-19. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250020", "tanggal": "03 Okt 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 86.5, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-20. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250021", "tanggal": "17 Okt 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 84.0, "statusAhi": "1 - Very Good", "catatan": "Pemeriksaan berkala inspeksi ke-21. Kondisi visual PMS, kontak pisau, isolator penopang, dan klem grounding dalam batas aman normal.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250022", "tanggal": "31 Okt 25", "fisik": "Normal", "grounding": "Korosi pada Mur dan Baut", "kesehatan": 78.0, "statusAhi": "3 - Fair", "catatan": "Ditemukan korosi ringan pada mur klem grounding rangka. Dianjurkan pembersihan dan pelumasan anti-korosi.", "petugas": "Ismail Hasan (ULTG Gandul)"}, {"wo": "INS20250023", "tanggal": "14 Nov 25", "fisik": "Tidak normal", "grounding": "Lepas", "kesehatan": 35.0, "statusAhi": "4 - Poor", "catatan": "ANOMALI MAYOR: Kabel grounding terlepas dari sepatu klem; kontak pisau PMS kotor berdebu tebal dan terindikasi kendor. Diterbitkan SPK perbaikan darurat.", "petugas": "Doni Pratama (ULTG Gandul)"}, {"wo": "INS20250024", "tanggal": "28 Nov 25", "fisik": "Normal", "grounding": "Perbaikan / Re-klem", "kesehatan": 55.0, "statusAhi": "2 - Good", "catatan": "Telah dilaksanakan pengencangan baut grounding darurat dan pembersihan pisau PMS tahap awal. Monitoring intensif 1x24 jam.", "petugas": "Tim Har ULTG Gandul"}, {"wo": "INS20250025", "tanggal": "12 Des 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 92.0, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20250026", "tanggal": "26 Des 25", "fisik": "Normal", "grounding": "Normal", "kesehatan": 94.0, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20260001", "tanggal": "09 Jan 26", "fisik": "Normal", "grounding": "Normal", "kesehatan": 95.5, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20260002", "tanggal": "23 Jan 26", "fisik": "Normal", "grounding": "Normal", "kesehatan": 96.0, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20260003", "tanggal": "06 Feb 26", "fisik": "Normal", "grounding": "Normal", "kesehatan": 96.5, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}, {"wo": "INS20260004", "tanggal": "20 Feb 26", "fisik": "Normal", "grounding": "Normal", "kesehatan": 97.0, "statusAhi": "1 - Very Good", "catatan": "Penggantian sepatu kabel grounding dan torsi baut selesai tuntas. Hasil pengujian isolasi dan mekanik sempurna.", "petugas": "Ahmad Fauzi (ULTG Gandul)"}]
+            }
+        };
+
+        let activeRanges = {
+            thermovisi: 30,
+            sf6: 30,
+            resistance: 30,
+            counter: 30,
+            pms: 30
+        };
+
         window.onload = function() {
             initCharts();
         };
@@ -1709,11 +1704,8 @@
         function switchTab(tabIndex) {
             const tabs = document.querySelectorAll('.tab-item');
             tabs.forEach((tab, index) => {
-                if (index === tabIndex) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
+                if (index === tabIndex) tab.classList.add('active');
+                else tab.classList.remove('active');
             });
 
             document.getElementById('table-trending').style.display = 'none';
@@ -1723,7 +1715,7 @@
 
             if (tabIndex === 0) {
                 document.getElementById('table-trending').style.display = 'block';
-                document.getElementById('table-toolbar').style.display = 'none'; // hide search for trend
+                document.getElementById('table-toolbar').style.display = 'none';
             } else if (tabIndex === 1) {
                 document.getElementById('table-ahi').style.display = 'block';
             } else {
@@ -1731,64 +1723,43 @@
             }
         }
 
-        function initCharts() {
-            const labels = ['13 Jun', '14 Jun', '15 Jun', '16 Jun', '17 Jun'];
+        function getSliceData(arr, count) {
+            return count >= arr.length ? arr : arr.slice(-count);
+        }
 
-            // 1. Thermovisi Chart
+        function initCharts() {
+            const l30 = rawData30.labels;
+
+            // 1. Thermovisi Chart (30 Points)
             if (!charts.thermovisi && document.getElementById('trendChartThermovisi')) {
                 const ctx1 = document.getElementById('trendChartThermovisi').getContext('2d');
                 charts.thermovisi = new Chart(ctx1, {
                     type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Suhu Fasa R',
-                                kondisiData: ['1 - Very Good', '1 - Very Good', '1 - Very Good', '1 - Very Good', '1 - Very Good'],
-                                data: [34.5, 34.8, 35.2, 36.0, 37.1],
-                                borderColor: '#ef4444',
-                                backgroundColor: '#ef4444',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Suhu Fasa S',
-                                data: [35.0, 35.5, 36.1, 37.5, 40.2],
-                                borderColor: '#f59e0b',
-                                backgroundColor: '#f59e0b',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Suhu Fasa T',
-                                data: [34.2, 35.0, 35.8, 36.8, 38.0],
-                                borderColor: '#2563eb',
-                                backgroundColor: '#2563eb',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Selisih Suhu (ΔT)',
-                                data: [0.8, 0.7, 0.9, 1.5, 3.1],
-                                borderColor: '#64748b',
-                                backgroundColor: '#64748b',
-                                kondisiData: ['2 - Good', '2 - Good', '2 - Good', '2 - Good', '3 - Fair'],
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                pointRadius: 5,
-                                tension: 0.3
-                            }
-                        ]
-                    },
+                    data: getThermovisiChartData(30),
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true } }
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: function(contexts) {
+                                        const idx = contexts[0].dataIndex;
+                                        const count = activeRanges.thermovisi;
+                                        const fullIdx = (count >= 30) ? idx : (30 - count + idx);
+                                        if (fullIdx === 22) {
+                                            return [
+                                                '-----------------------------------',
+                                                '⚠️ HOTSPOT DETECTED (ΔT > 14°C):',
+                                                '• Titik Terpanas: Fasa S (51.5°C)',
+                                                '• Status Rekomendasi: Investigasi Darurat'
+                                            ];
+                                        }
+                                        return [];
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             y: { title: { display: true, text: 'Suhu (°C)' }, grid: { color: '#e2e8f0' } },
@@ -1798,80 +1769,43 @@
                 });
             }
 
-            // 2. SF6 Gas Pressure Chart
+            // 2. SF6 Gas Pressure Chart (30 Points)
             if (!charts.sf6 && document.getElementById('trendChartSF6')) {
                 const ctx2 = document.getElementById('trendChartSF6').getContext('2d');
                 charts.sf6 = new Chart(ctx2, {
                     type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Tekanan Gas SF6',
-                            data: [6.6, 6.5, 6.5, 6.3, 6.2],
-                            borderColor: '#10b981',
-                            backgroundColor: '#10b981',
-                            borderWidth: 2,
-                            pointRadius: 5,
-                            tension: 0.2
-                        }]
-                    },
+                    data: getSf6ChartData(30),
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true } }
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
                         },
                         scales: {
-                            y: { title: { display: true, text: 'Tekanan (Bar)' }, grid: { color: '#e2e8f0' }, min: 5.0, max: 7.0 },
+                            y: {
+                                min: 5.5, max: 7.0,
+                                title: { display: true, text: 'Tekanan Gas (Bar)' },
+                                grid: { color: '#e2e8f0' }
+                            },
                             x: { grid: { display: false } }
                         }
                     }
                 });
             }
 
-            // 3. Contact Resistance Chart
+            // 3. Contact Resistance Chart (30 Points)
             if (!charts.resistance && document.getElementById('trendChartResistance')) {
                 const ctx3 = document.getElementById('trendChartResistance').getContext('2d');
                 charts.resistance = new Chart(ctx3, {
                     type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Fasa R',
-                                data: [42, 44, 45, 46, 48],
-                                borderColor: '#ef4444',
-                                backgroundColor: '#ef4444',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Fasa S',
-                                data: [43, 45, 46, 48, 50],
-                                borderColor: '#f59e0b',
-                                backgroundColor: '#f59e0b',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Fasa T',
-                                data: [41, 43, 44, 45, 47],
-                                borderColor: '#2563eb',
-                                backgroundColor: '#2563eb',
-                                borderWidth: 2,
-                                pointRadius: 5,
-                                tension: 0.3
-                            }
-                        ]
-                    },
+                    data: getResistanceChartData(30),
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true } }
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
                         },
                         scales: {
                             y: { title: { display: true, text: 'Hambatan (µΩ)' }, grid: { color: '#e2e8f0' } },
@@ -1881,22 +1815,12 @@
                 });
             }
 
-            // 5. [Training/TST] Kondisi Aset (PMS/DS) - Outer (4 Tipe Input)
-            if (!charts.pms && document.getElementById('trendChartPMS')) {
-                const ctx5 = document.getElementById('trendChartPMS').getContext('2d');
-                charts.pms = new Chart(ctx5, {
-                    type: 'line',
-                    data: getPmsChartData(),
-                    options: getPmsChartOptions()
-                });
-            }
-
-            // 4. Kondisi & Pencatatan Counter Chart (Dual Input)
+            // 4. Counter LA Chart (30 Points)
             if (!charts.counter && document.getElementById('trendChartCounter')) {
                 const ctx4 = document.getElementById('trendChartCounter').getContext('2d');
                 charts.counter = new Chart(ctx4, {
                     type: 'line',
-                    data: getCounterChartData(),
+                    data: getCounterChartData(30),
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -1907,24 +1831,20 @@
                                 backgroundColor: 'rgba(15, 23, 42, 0.95)',
                                 padding: 12,
                                 callbacks: {
-                                    label: function(context) {
-                                        return ` ${context.dataset.label}: ${context.parsed.y} Sambaran`;
-                                    },
+                                    label: function(c) { return ` ${c.dataset.label}: ${c.parsed.y} Sambaran`; },
                                     afterBody: function(contexts) {
                                         const idx = contexts[0].dataIndex;
-                                        if (idx === 5) {
+                                        const count = activeRanges.counter;
+                                        const fullIdx = (count >= 30) ? idx : (30 - count + idx);
+                                        if (fullIdx >= 21 && fullIdx <= 22) {
                                             return [
                                                 '---------------------------------------',
                                                 '⚠️ PERINGATAN ANOMALI FISIK:',
                                                 '• Kondisi Fisik Fasa S: PECAH!',
-                                                '• Tindak Lanjut: Diterbitkan WO Penggantian',
-                                                '• Petugas: Doni Pratama (ULTG Mampang)'
+                                                '• Tindak Lanjut: Penggantian Unit LA'
                                             ];
                                         }
-                                        return [
-                                            '---------------------------------------',
-                                            '• Kondisi Fisik: Normal Semua Fasa'
-                                        ];
+                                        return ['---------------------------------------', '• Kondisi Fisik: Normal Semua Fasa'];
                                     }
                                 }
                             }
@@ -1940,74 +1860,156 @@
                     }
                 });
             }
+
+            // 5. PMS/DS Outer Chart (30 Points)
+            if (!charts.pms && document.getElementById('trendChartPMS')) {
+                const ctx5 = document.getElementById('trendChartPMS').getContext('2d');
+                charts.pms = new Chart(ctx5, {
+                    type: 'line',
+                    data: getPmsChartData(30),
+                    options: getPmsChartOptions()
+                });
+            }
         }
 
-        // Helper logic for Parameter 4: Kondisi & Pencatatan Counter
-        let counterDisplayMode = 'RST_SPLIT';
-        const counterLabels = ['15 Mei', '01 Jun', '18 Jun', '05 Jul', '24 Jul', '15 Agu', '02 Sep'];
-        const counterDataR = [14, 16, 19, 22, 25, 27, 28];
-        const counterDataS = [11, 12, 15, 18, 20, 20, 22]; // Stagnant at 20 on 15 Aug due to Pecah
-        const counterDataT = [10, 11, 13, 15, 16, 18, 19];
-        const counterDataCombined = [35, 39, 47, 55, 61, 65, 69];
+        // Data helpers for range updates
+        function getThermovisiChartData(count) {
+            const lbls = getSliceData(rawData30.labels, count);
+            return {
+                labels: lbls,
+                datasets: [
+                    {
+                        label: 'Suhu Fasa R',
+                        data: getSliceData(rawData30.thermovisi.r, count),
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.25
+                    },
+                    {
+                        label: 'Suhu Fasa S (Hotspot)',
+                        data: getSliceData(rawData30.thermovisi.s, count),
+                        borderColor: '#f59e0b',
+                        backgroundColor: '#f59e0b',
+                        borderWidth: 2.5, pointRadius: count > 15 ? 4 : 6, tension: 0.25
+                    },
+                    {
+                        label: 'Suhu Fasa T',
+                        data: getSliceData(rawData30.thermovisi.t, count),
+                        borderColor: '#2563eb',
+                        backgroundColor: '#2563eb',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.25
+                    },
+                    {
+                        label: 'Selisih Suhu (ΔT)',
+                        data: getSliceData(rawData30.thermovisi.delta, count),
+                        borderColor: '#64748b',
+                        backgroundColor: '#64748b',
+                        borderWidth: 1.8, borderDash: [4, 4], pointRadius: 2, tension: 0.25
+                    }
+                ]
+            };
+        }
 
-        function getCounterChartData() {
+        function getSf6ChartData(count) {
+            const lbls = getSliceData(rawData30.labels, count);
+            return {
+                labels: lbls,
+                datasets: [{
+                    label: 'Tekanan Gas SF6 (Bar)',
+                    data: getSliceData(rawData30.sf6, count),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: count > 15 ? 3 : 5,
+                    tension: 0.2
+                }]
+            };
+        }
+
+        function getResistanceChartData(count) {
+            const lbls = getSliceData(rawData30.labels, count);
+            return {
+                labels: lbls,
+                datasets: [
+                    {
+                        label: 'Fasa R',
+                        data: getSliceData(rawData30.resistance.r, count),
+                        borderColor: '#ef4444', backgroundColor: '#ef4444',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.25
+                    },
+                    {
+                        label: 'Fasa S',
+                        data: getSliceData(rawData30.resistance.s, count),
+                        borderColor: '#f59e0b', backgroundColor: '#f59e0b',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.25
+                    },
+                    {
+                        label: 'Fasa T',
+                        data: getSliceData(rawData30.resistance.t, count),
+                        borderColor: '#2563eb', backgroundColor: '#2563eb',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.25
+                    }
+                ]
+            };
+        }
+
+        let counterDisplayMode = 'RST_SPLIT';
+        function getCounterChartData(count) {
+            count = count || activeRanges.counter;
+            const lbls = getSliceData(rawData30.labels, count);
             if (counterDisplayMode === 'RST_SPLIT') {
                 const datasets = [];
                 const chkR = document.getElementById('chkCounterR');
                 const chkS = document.getElementById('chkCounterS');
                 const chkT = document.getElementById('chkCounterT');
 
+                const rData = getSliceData(rawData30.counter.r, count);
+                const sData = getSliceData(rawData30.counter.s, count);
+                const tData = getSliceData(rawData30.counter.t, count);
+
                 if (!chkR || chkR.checked) {
                     datasets.push({
                         label: 'Pencatatan Counter - Fasa R',
-                        data: counterDataR,
-                        borderColor: '#ef4444',
-                        backgroundColor: '#ef4444',
-                        borderWidth: 2.5,
-                        pointRadius: 5,
-                        tension: 0.25
+                        data: rData,
+                        borderColor: '#ef4444', backgroundColor: '#ef4444',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.2
                     });
                 }
                 if (!chkS || chkS.checked) {
+                    const sRadii = sData.map((_, i) => {
+                        const fullIdx = (count >= 30) ? i : (30 - count + i);
+                        return (fullIdx >= 21 && fullIdx <= 22) ? 8 : (count > 15 ? 3 : 5);
+                    });
+                    const sColors = sData.map((_, i) => {
+                        const fullIdx = (count >= 30) ? i : (30 - count + i);
+                        return (fullIdx >= 21 && fullIdx <= 22) ? '#ef4444' : '#f59e0b';
+                    });
                     datasets.push({
                         label: 'Pencatatan Counter - Fasa S',
-                        data: counterDataS,
-                        borderColor: '#f59e0b',
-                        backgroundColor: '#f59e0b',
-                        borderWidth: 2.5,
-                        pointRadius: [5, 5, 5, 5, 5, 9, 5],
-                        pointBackgroundColor: ['#f59e0b', '#f59e0b', '#f59e0b', '#f59e0b', '#f59e0b', '#ef4444', '#f59e0b'],
-                        pointBorderColor: ['#fff', '#fff', '#fff', '#fff', '#fff', '#fee2e2', '#fff'],
-                        pointBorderWidth: [2, 2, 2, 2, 2, 3, 2],
-                        pointHoverRadius: 11,
-                        tension: 0.25
+                        data: sData,
+                        borderColor: '#f59e0b', backgroundColor: '#f59e0b',
+                        borderWidth: 2, pointRadius: sRadii, pointBackgroundColor: sColors,
+                        pointBorderColor: '#fff', pointBorderWidth: 2, tension: 0.2
                     });
                 }
                 if (!chkT || chkT.checked) {
                     datasets.push({
                         label: 'Pencatatan Counter - Fasa T',
-                        data: counterDataT,
-                        borderColor: '#2563eb',
-                        backgroundColor: '#2563eb',
-                        borderWidth: 2.5,
-                        pointRadius: 5,
-                        tension: 0.25
+                        data: tData,
+                        borderColor: '#2563eb', backgroundColor: '#2563eb',
+                        borderWidth: 2, pointRadius: count > 15 ? 3 : 5, tension: 0.2
                     });
                 }
-                return { labels: counterLabels, datasets };
+                return { labels: lbls, datasets };
             } else {
                 return {
-                    labels: counterLabels,
+                    labels: lbls,
                     datasets: [{
                         label: 'Pencatatan Counter Gabungan (RST)',
-                        data: counterDataCombined,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        fill: true,
-                        borderWidth: 3,
-                        pointRadius: 6,
-                        pointHoverRadius: 9,
-                        tension: 0.25
+                        data: getSliceData(rawData30.counter.combined, count),
+                        borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        fill: true, borderWidth: 2.5, pointRadius: count > 15 ? 3 : 5, tension: 0.2
                     }]
                 };
             }
@@ -2021,151 +2023,74 @@
             const rowR = document.getElementById('matrixRowR');
             const rowS = document.getElementById('matrixRowS');
             const rowT = document.getElementById('matrixRowT');
-            const rowCombined = document.getElementById('matrixRowCombined');
 
             if (btnSplit) btnSplit.classList.toggle('active', mode === 'RST_SPLIT');
             if (btnCombined) btnCombined.classList.toggle('active', mode === 'RST_COMBINED');
             if (fasaCheckboxes) fasaCheckboxes.style.display = mode === 'RST_SPLIT' ? 'flex' : 'none';
-            if (rowR) rowR.style.display = mode === 'RST_SPLIT' ? '' : 'none';
-            if (rowS) rowS.style.display = mode === 'RST_SPLIT' ? '' : 'none';
-            if (rowT) rowT.style.display = mode === 'RST_SPLIT' ? '' : 'none';
-            if (rowCombined) rowCombined.style.display = mode === 'RST_COMBINED' ? '' : 'none';
 
             updateCounterChart();
         }
 
         function updateCounterChart() {
             if (charts.counter) {
-                charts.counter.data = getCounterChartData();
+                charts.counter.data = getCounterChartData(activeRanges.counter);
                 charts.counter.update();
             }
         }
 
-        // Helper logic for Parameter 5: [Training/TST] Kondisi Aset (PMS/DS) - Outer (4 Tipe Input)
+        // Helper logic for Parameter 5: [Training/TST] Kondisi Aset (PMS/DS) - Outer (30 Points)
         let showPmsThresholds = true;
-        const pmsLabels = ['15 Mei', '01 Jun', '18 Jun', '05 Jul', '24 Jul', '15 Agu', '02 Sep'];
-        const pmsHealthData = [95.0, 94.0, 92.5, 91.0, 90.0, 35.0, 96.0];
+        function getPmsChartData(count) {
+            count = count || activeRanges.pms;
+            const lbls = getSliceData(rawData30.labels, count);
+            const hData = getSliceData(rawData30.pms.health, count);
 
-        const pmsInspectionHistory = [
-            {
-                wo: "INS2026051501",
-                tanggal: "15 Mei 2026",
-                fisik: "Normal",
-                grounding: "Normal",
-                kesehatan: 95.0,
-                statusAhi: "1 - Very Good",
-                catatan: "Kondisi fisik luar PMS bersih, kontak pisau terlumasi baik, koneksi grounding kencang dan tidak berkarat.",
-                petugas: "Ahmad Fauzi (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026060102",
-                tanggal: "01 Juni 2026",
-                fisik: "Normal",
-                grounding: "Normal",
-                kesehatan: 94.0,
-                statusAhi: "1 - Very Good",
-                catatan: "Inspeksi rutin berkala. Tidak ditemukan kelainan visual maupun kelonggaran baut.",
-                petugas: "Ismail Hasan (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026061803",
-                tanggal: "18 Juni 2026",
-                fisik: "Normal",
-                grounding: "Normal",
-                kesehatan: 92.5,
-                statusAhi: "1 - Very Good",
-                catatan: "Pemeriksaan isolator penopang dan grounding box. Semua parameter dalam batas toleransi.",
-                petugas: "Doni Pratama (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026070504",
-                tanggal: "05 Juli 2026",
-                fisik: "Normal",
-                grounding: "Normal",
-                kesehatan: 91.0,
-                statusAhi: "1 - Very Good",
-                catatan: "Kondisi operasional normal. Mekanik pisau membuka dan menutup dengan presisi.",
-                petugas: "Ahmad Fauzi (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026072412",
-                tanggal: "24 Juli 2026",
-                fisik: "Normal",
-                grounding: "Korosi pada Mur dan Baut",
-                kesehatan: 90.0,
-                statusAhi: "2 - Good",
-                catatan: "Ditemukan korosi ringan pada mur klem grounding rangka. Dianjurkan pembersihan dan pemberian anti-korosi pada jadwal pemeliharaan berikutnya.",
-                petugas: "Ismail Hasan (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026081503",
-                tanggal: "15 Agustus 2026",
-                fisik: "Tidak normal",
-                grounding: "Lepas",
-                kesehatan: 35.0,
-                statusAhi: "4 - Poor",
-                catatan: "ANOMALI MAYOR: Kabel grounding terlepas dari sepatu kabel akibat getaran; kontak pisau PMS kotor berdebu tebal dan terindikasi kendor. Diterbitkan SPK perbaikan darurat.",
-                petugas: "Doni Pratama (ULTG Gandul)"
-            },
-            {
-                wo: "INS2026090209",
-                tanggal: "02 September 2026",
-                fisik: "Normal",
-                grounding: "Normal",
-                kesehatan: 96.0,
-                statusAhi: "1 - Very Good",
-                catatan: "Telah dilakukan penggantian sepatu kabel grounding, pengencangan baut torsi, dan pembersihan kontak PMS. Seluruh parameter normal kembali.",
-                petugas: "Ahmad Fauzi (ULTG Gandul)"
-            }
-        ];
+            const pRadii = hData.map((v, i) => {
+                const fullIdx = (count >= 30) ? i : (30 - count + i);
+                return fullIdx === 22 ? 10 : (count > 15 ? 4 : 6);
+            });
+            const pColors = hData.map((v, i) => {
+                const fullIdx = (count >= 30) ? i : (30 - count + i);
+                return fullIdx === 22 ? '#ef4444' : (v < 80 ? '#f59e0b' : '#0284c7');
+            });
 
-        function getPmsChartData() {
             const datasets = [{
                 label: 'Tingkat Kesehatan Aset (%)',
-                data: pmsHealthData,
+                data: hData,
                 borderColor: '#0284c7',
                 backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                borderWidth: 2.8,
+                borderWidth: 2.5,
                 tension: 0.25,
                 fill: false,
-                pointRadius: [6, 6, 6, 6, 6, 11, 6],
-                pointBackgroundColor: ['#0284c7', '#0284c7', '#0284c7', '#0284c7', '#f59e0b', '#ef4444', '#10b981'],
-                pointBorderColor: ['#fff', '#fff', '#fff', '#fff', '#fff', '#fee2e2', '#fff'],
-                pointBorderWidth: [2, 2, 2, 2, 2, 4, 2],
-                pointHoverRadius: 13
+                pointRadius: pRadii,
+                pointBackgroundColor: pColors,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 12
             }];
 
             if (showPmsThresholds) {
                 datasets.push({
                     label: 'Batas Very Good (80%)',
-                    data: [80, 80, 80, 80, 80, 80, 80],
+                    data: lbls.map(() => 80),
                     borderColor: 'rgba(16, 185, 129, 0.6)',
-                    borderDash: [5, 5],
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    fill: false
+                    borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false
                 });
                 datasets.push({
                     label: 'Batas Fair (60%)',
-                    data: [60, 60, 60, 60, 60, 60, 60],
+                    data: lbls.map(() => 60),
                     borderColor: 'rgba(245, 158, 11, 0.6)',
-                    borderDash: [5, 5],
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    fill: false
+                    borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false
                 });
                 datasets.push({
                     label: 'Batas Poor/Kritis (40%)',
-                    data: [40, 40, 40, 40, 40, 40, 40],
+                    data: lbls.map(() => 40),
                     borderColor: 'rgba(239, 68, 68, 0.6)',
-                    borderDash: [5, 5],
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    fill: false
+                    borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false
                 });
             }
 
-            return { labels: pmsLabels, datasets };
+            return { labels: lbls, datasets };
         }
 
         function getPmsChartOptions() {
@@ -2174,24 +2099,20 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { usePointStyle: true, boxWidth: 8 }
-                    },
+                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.95)',
                         padding: 14,
-                        titleFont: { size: 13, weight: 'bold' },
                         callbacks: {
-                            label: function(context) {
-                                if (context.datasetIndex === 0) {
-                                    return ` 📊 Tingkat Kesehatan: ${context.parsed.y}%`;
-                                }
-                                return ` ${context.dataset.label}`;
+                            label: function(ctx) {
+                                if (ctx.datasetIndex === 0) return ` 📊 Tingkat Kesehatan: ${ctx.parsed.y}%`;
+                                return ` ${ctx.dataset.label}`;
                             },
                             afterBody: function(contexts) {
                                 const idx = contexts[0].dataIndex;
-                                const h = pmsInspectionHistory[idx];
+                                const count = activeRanges.pms;
+                                const fullIdx = (count >= 30) ? idx : (30 - count + idx);
+                                const h = rawData30.pms.history[fullIdx];
                                 if (!h) return [];
                                 return [
                                     '---------------------------------------------------',
@@ -2207,14 +2128,10 @@
                 },
                 scales: {
                     y: {
-                        min: 0,
-                        max: 100,
+                        min: 0, max: 100,
                         title: { display: true, text: 'Tingkat Kesehatan Aset (%)' },
                         grid: { color: '#e2e8f0' },
-                        ticks: {
-                            stepSize: 20,
-                            callback: function(val) { return val + '%'; }
-                        }
+                        ticks: { stepSize: 20, callback: function(v) { return v + '%'; } }
                     },
                     x: { grid: { display: false } }
                 }
@@ -2228,15 +2145,40 @@
 
         function updatePmsChart() {
             if (charts.pms) {
-                charts.pms.data = getPmsChartData();
+                charts.pms.data = getPmsChartData(activeRanges.pms);
+                charts.pms.update();
+            }
+        }
+
+        // Range switcher for any chart (30, 15, 7)
+        function setChartRange(chartKey, count, btnEl) {
+            activeRanges[chartKey] = count;
+            const group = btnEl.parentElement;
+            group.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            if (chartKey === 'thermovisi' && charts.thermovisi) {
+                charts.thermovisi.data = getThermovisiChartData(count);
+                charts.thermovisi.update();
+            } else if (chartKey === 'sf6' && charts.sf6) {
+                charts.sf6.data = getSf6ChartData(count);
+                charts.sf6.update();
+            } else if (chartKey === 'resistance' && charts.resistance) {
+                charts.resistance.data = getResistanceChartData(count);
+                charts.resistance.update();
+            } else if (chartKey === 'counter' && charts.counter) {
+                charts.counter.data = getCounterChartData(count);
+                charts.counter.update();
+            } else if (chartKey === 'pms' && charts.pms) {
+                charts.pms.data = getPmsChartData(count);
                 charts.pms.update();
             }
         }
 
         function openPmsNoteModal(idx) {
-            const h = pmsInspectionHistory[idx];
+            const h = rawData30.pms.history[idx];
             if (!h) return;
-            document.getElementById('pmsModalTitle').textContent = `Catatan WO ${h.wo}`;
+            document.getElementById('pmsModalTitle').textContent = `Catatan WO ${h.wo} (Inspeksi #${idx+1})`;
             document.getElementById('pmsModalDate').textContent = `${h.tanggal} | Petugas: ${h.petugas}`;
             
             const isAnomaly = h.fisik !== 'Normal' || h.grounding !== 'Normal';
@@ -2264,9 +2206,6 @@
             const modal = document.getElementById('pmsNoteModal');
             if (modal) modal.style.display = 'none';
         }
-
-
-
 
         let actionNotesHistory = [
             {
