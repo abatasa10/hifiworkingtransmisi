@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Monitoring AHI (Versi 2 - UI Trend Baru) - Power Inspect</title>
+    <title>Detail Monitoring AHI (Versi 2 - UI Trend Terpadu) - Power Inspect</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -692,44 +692,89 @@
             background-color: #f8fafc;
         }
     
-        /* VERSI 2 UI TREND STYLING */
-        .v2-view-btn {
+        /* VERSI 2 ENHANCEMENTS */
+        .quick-jump-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
             transition: all 0.2s ease;
         }
-        .v2-view-btn:hover {
-            color: #00529c !important;
-        }
-        .v2-view-btn.active {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .phase-filter-pill {
-            transition: all 0.2s ease;
-        }
-        .phase-filter-pill:hover {
-            opacity: 0.9;
+        .quick-jump-pill:hover {
+            background: #e0f2fe;
+            color: #00529c;
+            border-color: #7dd3fc;
             transform: translateY(-1px);
         }
-        .table-scroll-wrapper::-webkit-scrollbar {
+        .quick-jump-pill.highlight {
+            background: #eff6ff;
+            color: #00529c;
+            border-color: #bfdbfe;
+            font-weight: 700;
+        }
+        .v2-tab-view-btn {
+            border: none;
+            background: transparent;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .v2-tab-view-btn.active {
+            background: #00529c;
+            color: #ffffff !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .phase-pill-v2 {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            border-radius: 14px;
+            padding: 2px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .phase-pill-v2.active {
+            background: #00529c !important;
+            color: #fff !important;
+            border-color: #00529c !important;
+        }
+        .bushing-split-layout {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+        .sticky-matrix-wrapper::-webkit-scrollbar {
             height: 12px;
             width: 10px;
         }
-        .table-scroll-wrapper::-webkit-scrollbar-track {
+        .sticky-matrix-wrapper::-webkit-scrollbar-track {
             background: #e2e8f0;
             border-radius: 6px;
         }
-        .table-scroll-wrapper::-webkit-scrollbar-thumb {
+        .sticky-matrix-wrapper::-webkit-scrollbar-thumb {
             background: #00529c;
             border-radius: 6px;
             border: 2px solid #e2e8f0;
         }
-        .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #003e75;
-        }
-        .split-active {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            align-items: start;
+        .sticky-matrix-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #003d75;
         }
     </style>
 
@@ -767,7 +812,7 @@
         <div class="page-header">
             <h1 class="page-title">
                 <i class="ri-arrow-left-line" onclick="window.history.back()"></i>
-                Detail Monitoring AHI &amp; Kualitas Data ( GI 150KV ANGKE - TRF#3 )
+                Detail Monitoring AHI &amp; Kualitas Data ( GI 150KV KALISARI )
             </h1>
             <div class="breadcrumbs">
                 <span>Monitoring AHI &amp; Kualitas Data</span>
@@ -781,13 +826,13 @@
             <!-- BANNER INFORMASI VERSI 2 -->
             <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 14px rgba(15,23,42,0.15); flex-wrap: wrap; gap: 12px; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="background: #0284c7; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;"><i class="ri-sparkling-fill"></i> VERSI 2 (UI TREND BARU)</span>
+                    <span style="background: #0284c7; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;"><i class="ri-sparkling-fill"></i> VERSI 2 (UI TREND TERPADU)</span>
                     <span style="font-size: 13px; color: #e2e8f0;">
-                        Layout halaman sama seperti Versi 1, namun <strong>UI Trend Parameter di bawah dibuat Modular (Tab Grafik / Matriks / Split &amp; Filter Fasa)</strong> agar bebas dari kesan penuh/sesak saat menangani banyak isian.
+                        Profil Aset, Skor AHI, dan Tab disamakan dengan Versi 1. <strong>Inovasi pada UI Trend:</strong> Dilengkapi <em>Quick Parameter Jump</em> dan mode <em>Split / Tab Matriks</em> agar daftar tabel tidak terbuang ke bawah sekali dan langsung terhubung dengan grafiknya.
                     </span>
                 </div>
                 <a href="monitoring-ahi.html" style="background: rgba(255,255,255,0.15); color: #ffffff; padding: 7px 16px; border-radius: 6px; font-size: 12.5px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;">
-                    <i class="ri-arrow-left-right-line"></i> Buka Versi 1 (Tampilan Trend Vertikal Panjang)
+                    <i class="ri-arrow-left-right-line"></i> Buka Versi 1 (Tampilan Vertikal Panjang)
                 </a>
             </div>
 
@@ -798,27 +843,27 @@
                     <div class="card-title"><i class="ri-map-pin-line"></i> Lokasi Asset</div>
                     <div class="info-row">
                         <span class="info-label">UIT</span>
-                        <span class="info-value">UITJBB</span>
+                        <span class="info-value">UITJBM</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">UPT</span>
-                        <span class="info-value">UPT DURIKOSAMBI</span>
+                        <span class="info-value">UPT SURABAYA</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">ULTG</span>
-                        <span class="info-value">ULTG ANGKE</span>
+                        <span class="info-value">ULTG SURABAYA UTARA</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Gardu Induk</span>
-                        <span class="info-value">GI 150KV ANGKE</span>
+                        <span class="info-value">GI 150KV KALISARI</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Bay</span>
-                        <span class="info-value">TRF#3 150/20KV</span>
+                        <span class="info-value">PHT 150KV SURABAYA SELATAN #2</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Penempatan</span>
-                        <span class="info-value">OUTDOOR</span>
+                        <span class="info-value">PMS BUS A</span>
                     </div>
                 </div>
 
@@ -827,15 +872,15 @@
                     <div class="card-title"><i class="ri-list-check-2"></i> Identitas Asset</div>
                     <div class="info-row">
                         <span class="info-label">Jenis Aset</span>
-                        <span class="info-value">Power Transformer</span>
+                        <span class="info-value">Disconnecting Switch</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Merk</span>
-                        <span class="info-value">UNINDO</span>
+                        <span class="info-value">SIEMENS</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Tipe</span>
-                        <span class="info-value">P060LEC</span>
+                        <span class="info-value">3DN1CB 170</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Phasa</span>
@@ -843,7 +888,7 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Serial ID</span>
-                        <span class="info-value">P060LEC879-01</span>
+                        <span class="info-value">100059102010001</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Status Aset</span>
@@ -851,43 +896,43 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Techidentno</span>
-                        <span class="info-value">11341307407400000005</span>
+                        <span class="info-value">15361155555500000018</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Tegangan Asset</span>
-                        <span class="info-value">150 / 20 kV (60 MVA)</span>
+                        <span class="info-value">150 kV</span>
                     </div>
                 </div>
 
                 <!-- Usia & Waktu Aset -->
                 <div class="card">
-                    <div class="card-title"><i class="ri-time-line"></i> Usia &amp; Waktu Aset</div>
+                    <div class="card-title"><i class="ri-time-line"></i> Usia & Waktu Aset</div>
                     <div class="info-row">
                         <span class="info-label">Tanggal Buat Asset</span>
-                        <span class="info-value">15 Januari 2019</span>
+                        <span class="info-value">12 April 2006</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Tanggal Operasi Asset</span>
-                        <span class="info-value">25 November 2023</span>
+                        <span class="info-value">20 Mei 2006</span>
                     </div>
                     <div class="info-row" style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
                         <span class="info-label" style="font-weight: 600;">Usia Asset</span>
-                        <span class="info-value" style="font-weight: 700; color: var(--text-main);">7 Tahun 1 Bulan</span>
+                        <span class="info-value" style="font-weight: 700; color: var(--text-main);">20 Tahun 2 Bulan</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label" style="font-weight: 600;">Definisi Usia</span>
-                        <span class="info-value" style="color: #10b981; font-weight: 800;">NORMAL (OPERASI BAIK)</span>
+                        <span class="info-value" style="color: #ef4444; font-weight: 800;">SANGAT TUA</span>
                     </div>
                 </div>
 
                 <!-- AHI Score -->
                 <div class="card">
-                    <div class="score-icon-left" style="background: #10b981;"></div>
+                    <div class="score-icon-left"></div>
                     <i class="ri-bar-chart-grouped-line score-icon-top"></i>
                     <div class="score-card">
-                        <div class="score-number" style="color: #10b981;">1</div>
-                        <div class="score-label" style="color: #10b981; font-size: 18px; margin-top: 4px; font-weight: 700;">Very Good</div>
-                        <div class="score-label" style="margin-top: 4px;">Aset Health Index (91.4%)</div>
+                        <div class="score-number score-critical">5</div>
+                        <div class="score-label" style="color: var(--text-main); font-size: 18px; margin-top: 4px;">Critical</div>
+                        <div class="score-label" style="margin-top: 4px;">Aset Health Index</div>
                     </div>
                 </div>
 
@@ -895,8 +940,8 @@
                 <div class="card">
                     <i class="ri-information-line" style="position: absolute; top: 20px; left: 20px; color: var(--text-muted);"></i>
                     <div class="score-card">
-                        <div class="score-number score-percentage" style="color: #00529c;">94.20%</div>
-                        <div class="score-label" style="margin-top: 8px;">Kualitas Data Lengkap</div>
+                        <div class="score-number score-percentage">76.67%</div>
+                        <div class="score-label" style="margin-top: 8px;">Kualitas Data</div>
                     </div>
                 </div>
             </div>
@@ -1042,125 +1087,656 @@
                 </div>
 
                 <!-- Trending Tab Content -->
-                
-                <!-- Trending Tab Content: VERSI 2 DENGAN INOVASI UI TREND ANTI-SESAK -->
                 <div class="table-container" id="table-trending" style="padding: 24px; display: block;">
-                    
-                    <!-- PARAMETER 1 (UTAMA): Tan Delta dan Kapasitansi Bushing Trafo (18 Isian) -->
-                    <div class="trend-card-v2" id="cardParamBushing" style="margin-bottom: 36px; border: 1px solid var(--border-color); padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                        
-                        <!-- CARD HEADER BAR -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <span style="background: #00529c; color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">PARAM 1</span>
-                                <h3 style="font-size: 16px; font-weight: 700; color: #00529c;">Trend: Tan Delta dan Kapasitansi Bushing Trafo</h3>
-                                <span style="background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                    <i class="ri-flashlight-line"></i> Sub-Sistem: Bushing (WF: 1.0)
-                                </span>
-                                <span style="background: #f5f3ff; color: #7c3aed; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
-                                    18 Uraian Parameter &bull; 30 Inspeksi
-                                </span>
-                            </div>
+                <!-- QUICK PARAMETER JUMP BAR (Mencegah scroll ke bawah sekali) -->
+                <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #00529c;">
+                        <i class="ri-compass-3-line" style="font-size: 16px;"></i>
+                        <span>Navigasi Cepat Parameter:</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <a href="#param-thermovisi" class="quick-jump-pill">1. Thermovisi Body</a>
+                        <a href="#param-resistance" class="quick-jump-pill">2. Tahanan Kontak</a>
+                        <a href="#param-sf6" class="quick-jump-pill">3. Tekanan Gas SF6</a>
+                        <a href="#param-counter" class="quick-jump-pill">4. Counter Arrester</a>
+                        <a href="#param-pms" class="quick-jump-pill">5. Kondisi Aset PMS (3 Isian)</a>
+                        <a href="#param-bushing" class="quick-jump-pill highlight"><i class="ri-flashlight-line"></i> 6. Tan Delta Bushing (18 Isian)</a>
+                    </div>
+                </div>
 
-                            <!-- RIGHT CONTROLS: SEGMENTED VIEW SWITCHER -->
+                    <!-- Parameter 1: Thermovisi Body Aset -->
+                    <div id="param-thermovisi" style="margin-bottom: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <!-- View Segmented Switcher (The Key Innovation to prevent overcrowded UI) -->
-                                <div style="display: inline-flex; background: #f1f5f9; border-radius: 8px; padding: 3px; border: 1px solid #e2e8f0;">
-                                    <button class="v2-view-btn active" id="btnViewChart" onclick="setParamView('bushing', 'chart', this)" style="border:none; background:#00529c; color:#fff; font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                                        <i class="ri-line-chart-line"></i> Mode Grafik
-                                    </button>
-                                    <button class="v2-view-btn" id="btnViewMatrix" onclick="setParamView('bushing', 'matrix', this)" style="border:none; background:transparent; color:#64748b; font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                                        <i class="ri-table-line"></i> Mode Matriks Data (18 Isian)
-                                    </button>
-                                    <button class="v2-view-btn" id="btnViewSplit" onclick="setParamView('bushing', 'split', this)" style="border:none; background:transparent; color:#64748b; font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                                        <i class="ri-layout-column-line"></i> Split (Berdampingan)
-                                    </button>
-                                </div>
-
-                                <span class="badge-verygood" style="margin-left: 4px;">Status Terakhir: Normal <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">1. Trend: Thermovisi Body Aset</h3>
+                                <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="ri-heart-pulse-line"></i> Mempengaruhi AHI</span>
                             </div>
-                        </div>
-
-                        <!-- GLANCEABLE KPI SUMMARY STRIP (Instant Phase Status without scrolling) -->
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-size: 11px; color: #64748b; font-weight: 600;">FASA R (TERAKHIR)</div>
-                                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">TD: 0.34% &bull; C1: 346.1 pF</div>
-                                </div>
-                                <span style="font-size: 11px; font-weight: 700; color: #10b981; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">Normal</span>
-                            </div>
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-size: 11px; color: #64748b; font-weight: 600;">FASA S (TERAKHIR)</div>
-                                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">TD: 0.39% &bull; C1: 349.5 pF</div>
-                                </div>
-                                <span style="font-size: 11px; font-weight: 700; color: #10b981; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">Normal</span>
-                            </div>
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-size: 11px; color: #64748b; font-weight: 600;">FASA T (TERAKHIR)</div>
-                                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">TD: 0.36% &bull; C1: 343.8 pF</div>
-                                </div>
-                                <span style="font-size: 11px; font-weight: 700; color: #10b981; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">Normal</span>
-                            </div>
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-size: 11px; color: #64748b; font-weight: 600;">MAX DEVIASI C1</div>
-                                    <div style="font-size: 14px; font-weight: 700; color: #10b981;">0.53 % (&lt; 5.0%)</div>
-                                </div>
-                                <span style="font-size: 11px; font-weight: 700; color: #10b981; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">Aman</span>
-                            </div>
-                        </div>
-
-                        <!-- FILTER BAR (Phase Selector + Curve Mode + Range) -->
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <!-- Phase Filter -->
-                            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
-                                <span style="font-weight: 700; color: #475569; margin-right: 4px;"><i class="ri-filter-2-line"></i> Filter Fasa:</span>
-                                <button class="phase-filter-pill active" onclick="filterBushingPhase('all', this)" style="border:1px solid #cbd5e1; background:#00529c; color:#fff; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer;">Semua Fasa</button>
-                                <button class="phase-filter-pill" onclick="filterBushingPhase('R', this)" style="border:1px solid #cbd5e1; background:#fff; color:#ef4444; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer;">Fasa R</button>
-                                <button class="phase-filter-pill" onclick="filterBushingPhase('S', this)" style="border:1px solid #cbd5e1; background:#fff; color:#d97706; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer;">Fasa S (Anomali 14 Nov)</button>
-                                <button class="phase-filter-pill" onclick="filterBushingPhase('T', this)" style="border:1px solid #cbd5e1; background:#fff; color:#2563eb; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer;">Fasa T</button>
-                            </div>
-
-                            <!-- Curve Mode Switcher -->
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="display: flex; gap: 2px; background: #fff; border-radius: 6px; padding: 2px; border: 1px solid #cbd5e1;">
-                                    <button class="bushing-mode-btn active" onclick="setBushingModeV2('tandelta', this)" style="border:none; background:#00529c; color:#fff; font-size:11px; font-weight:600; padding:4px 9px; border-radius:4px; cursor:pointer;">Tan Delta (%)</button>
-                                    <button class="bushing-mode-btn" onclick="setBushingModeV2('deviation', this)" style="border:none; background:transparent; color:#64748b; font-size:11px; font-weight:600; padding:4px 9px; border-radius:4px; cursor:pointer;">Deviasi (%)</button>
-                                    <button class="bushing-mode-btn" onclick="setBushingModeV2('capacitance', this)" style="border:none; background:transparent; color:#64748b; font-size:11px; font-weight:600; padding:4px 9px; border-radius:4px; cursor:pointer;">Kapasitansi (pF)</button>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'thermovisi', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'thermovisi', 'bar')">Bar</button>
                                 </div>
                                 <div class="range-selector-group">
-                                    <button class="range-btn active" onclick="setChartRangeV2('bushing', 30, this)">30 Data</button>
-                                    <button class="range-btn" onclick="setChartRangeV2('bushing', 15, this)">15 Data</button>
-                                    <button class="range-btn" onclick="setChartRangeV2('bushing', 7, this)">7 Data</button>
+                                    <button class="range-btn active" onclick="setChartRange('thermovisi', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('thermovisi', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('thermovisi', 7, this)">7 Terakhir</button>
+                                </div>
+                                <span class="badge-good">Status Terakhir: 2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+                        <div class="chart-container"><canvas id="trendChartThermovisi"></canvas></div>
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Suhu Fasa R</th>
+                                        <th>Suhu Fasa S</th>
+                                        <th>Suhu Fasa T</th>
+                                        <th>Selisih Suhu (ΔT)</th>
+                                        <th>Kondisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS202600883600</td>
+                                        <td>15 Juni 2026</td>
+                                        <td>35.2 °C</td>
+                                        <td>36.1 °C</td>
+                                        <td>35.8 °C</td>
+                                        <td>0.9 °C</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883601</td>
+                                        <td>16 Juni 2026</td>
+                                        <td>36.0 °C</td>
+                                        <td>37.5 °C</td>
+                                        <td>36.8 °C</td>
+                                        <td>1.5 °C</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883602</td>
+                                        <td>17 Juni 2026</td>
+                                        <td>37.1 °C</td>
+                                        <td>40.2 °C</td>
+                                        <td>38.0 °C</td>
+                                        <td>3.1 °C</td>
+                                        <td><span class="badge-fair">3 - Fair <i class="ri-information-line badge-icon"></i></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Parameter 2: Tahanan Kontak -->
+                    <div id="param-resistance" style="margin-bottom: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">2. Trend: Tahanan Kontak</h3>
+                                <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="ri-heart-pulse-line"></i> Mempengaruhi AHI</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'resistance', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'resistance', 'bar')">Bar</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('resistance', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('resistance', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('resistance', 7, this)">7 Terakhir</button>
+                                </div>
+                                <span class="badge-verygood">Status Terakhir: 1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+                        <div class="chart-container"><canvas id="trendChartResistance"></canvas></div>
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Fasa R</th>
+                                        <th>Fasa S</th>
+                                        <th>Fasa T</th>
+                                        <th>Kondisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS202600883600</td>
+                                        <td>15 Juni 2026</td>
+                                        <td>45 µΩ</td>
+                                        <td>46 µΩ</td>
+                                        <td>44 µΩ</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883601</td>
+                                        <td>16 Juni 2026</td>
+                                        <td>46 µΩ</td>
+                                        <td>48 µΩ</td>
+                                        <td>45 µΩ</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883602</td>
+                                        <td>17 Juni 2026</td>
+                                        <td>48 µΩ</td>
+                                        <td>50 µΩ</td>
+                                        <td>47 µΩ</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Parameter 3: Tekanan Gas SF6 -->
+                    <div style="border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">3. Trend: Tekanan Gas SF6</h3>
+                                <span style="background: rgba(148, 163, 184, 0.1); color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="ri-close-circle-line"></i> Tidak Mempengaruhi AHI</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'sf6', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'sf6', 'bar')">Bar</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('sf6', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('sf6', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('sf6', 7, this)">7 Terakhir</button>
+                                </div>
+                                <span class="badge-verygood">Status Terakhir: 1 - Very Good (6.2 Bar) <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+                        <div class="chart-container"><canvas id="trendChartSF6"></canvas></div>
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Tekanan Gas SF6</th>
+                                        <th>Temperatur Sekitar</th>
+                                        <th>Kondisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS202600883600</td>
+                                        <td>15 Juni 2026</td>
+                                        <td>6.5 Bar</td>
+                                        <td>31.2 °C</td>
+                                        <td><span class="badge-verygood">1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883601</td>
+                                        <td>16 Juni 2026</td>
+                                        <td>6.3 Bar</td>
+                                        <td>32.0 °C</td>
+                                        <td><span class="badge-verygood">1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS202600883602</td>
+                                        <td>17 Juni 2026</td>
+                                        <td>6.2 Bar</td>
+                                        <td>32.5 °C</td>
+                                        <td><span class="badge-verygood">1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Parameter 4: Kondisi & Pencatatan Counter -->
+                    <div id="param-counter" (Contoh 2 Jenis Data Berbeda) -->
+                    <div style="margin-top: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">4. Trend: Kondisi & Pencatatan Counter (Lightning Arrester)</h3>
+                                <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-equalizer-line"></i> 2 Tipe Input: Kualitatif (Fisik) + Kuantitatif (Angka)
+                                </span>
+                                <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-heart-pulse-line"></i> Mempengaruhi AHI & Keandalan
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'counter', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'counter', 'bar')">Bar</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('counter', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('counter', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('counter', 7, this)">7 Terakhir</button>
+                                </div>
+                                <span class="badge-good">Status Terakhir: 2 - Good (R:28, S:22, T:19) <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- Explanatory Callout Box -->
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #1e40af; line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;">
+                            <i class="ri-information-fill" style="font-size: 18px; color: #2563eb; margin-top: 1px;"></i>
+                            <div>
+                                <strong>Studi Kasus Parameter 2 Jenis Input:</strong> Parameter inspeksi ini memiliki 2 input:
+                                <strong>(1) Kondisi Fisik</strong> (Pilihan Radio: <em>Normal, Pecah, Rusak, Tidak Ada Counter, Tidak Terbaca</em>), dan
+                                <strong>(2) Pencatatan Counter</strong> (Input Angka Sambaran Kumulatif).<br>
+                                <strong>Solusi Visualisasi:</strong> Grafik garis memplot angka sambaran (Fasa R, S, T), sedangkan kondisi fisik tercermin langsung pada <strong>titik grafik (point marker)</strong> dan <strong>Matriks Strip Status Fisik</strong>. Pada tanggal 15 Agu 2026, terjadi anomali kaca Fasa S <strong>Pecah</strong> sehingga titik grafik ditandai merah menyala ⚠️ dan angka counter tidak bertambah.
+                            </div>
+                        </div>
+
+                        <!-- Controls: Mode Toggle & Fasa Checkboxes -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Mode Tampilan:</span>
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" id="btnCounterSplit" onclick="setCounterDisplayMode('RST_SPLIT')">R / S / T (3 Fasa)</button>
+                                    <button class="chart-toggle-btn" id="btnCounterCombined" onclick="setCounterDisplayMode('RST_COMBINED')">RST (Gabungan)</button>
+                                </div>
+                            </div>
+                            <div id="counterFasaCheckboxes" style="display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 600; background: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                                <label style="color: #ef4444; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterR" checked onchange="updateCounterChart()"> Fasa R
+                                </label>
+                                <span style="color: #cbd5e1;">|</span>
+                                <label style="color: #f59e0b; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterS" checked onchange="updateCounterChart()"> Fasa S
+                                </label>
+                                <span style="color: #cbd5e1;">|</span>
+                                <label style="color: #2563eb; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="chkCounterT" checked onchange="updateCounterChart()"> Fasa T
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Chart -->
+                        <div class="chart-container"><canvas id="trendChartCounter"></canvas></div>
+
+                                                <!-- Timeline Matrix Strip: Status Fisik (30 Inspeksi) -->
+                        <div style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span><i class="ri-pulse-line" style="color: #2563eb;"></i> Matriks Riwayat Kondisi Fisik (30 Inspeksi Terakhir):</span>
+                                    <span class="badge-count-pill">30 Titik Data</span>
+                                </div>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Scroll horizontal untuk melihat semua tanggal (Kolom Fasa terkunci di kiri)</span>
+                            </div>
+                            <div class="sticky-matrix-wrapper">
+                                <table class="sticky-matrix-table">
+                                    <thead>
+                                        <tr style="background: #f8fafc;">
+                                            <th class="col-sticky" style="width: 120px;">Fasa / Item</th>
+                                            <th style='min-width: 65px;'>10 Jan 25</th><th style='min-width: 65px;'>24 Jan 25</th><th style='min-width: 65px;'>07 Feb 25</th><th style='min-width: 65px;'>21 Feb 25</th><th style='min-width: 65px;'>07 Mar 25</th><th style='min-width: 65px;'>21 Mar 25</th><th style='min-width: 65px;'>04 Apr 25</th><th style='min-width: 65px;'>18 Apr 25</th><th style='min-width: 65px;'>02 Mei 25</th><th style='min-width: 65px;'>16 Mei 25</th><th style='min-width: 65px;'>30 Mei 25</th><th style='min-width: 65px;'>13 Jun 25</th><th style='min-width: 65px;'>27 Jun 25</th><th style='min-width: 65px;'>11 Jul 25</th><th style='min-width: 65px;'>25 Jul 25</th><th style='min-width: 65px;'>08 Agu 25</th><th style='min-width: 65px;'>22 Agu 25</th><th style='min-width: 65px;'>05 Sep 25</th><th style='min-width: 65px;'>19 Sep 25</th><th style='min-width: 65px;'>03 Okt 25</th><th style='min-width: 65px;'>17 Okt 25</th><th style='min-width: 65px;background:#fef2f2;color:#991b1b;'>31 Okt 25</th><th style='min-width: 65px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 65px;'>28 Nov 25</th><th style='min-width: 65px;'>12 Des 25</th><th style='min-width: 65px;'>26 Des 25</th><th style='min-width: 65px;'>09 Jan 26</th><th style='min-width: 65px;'>23 Jan 26</th><th style='min-width: 65px;'>06 Feb 26</th><th style='min-width: 65px;'>20 Feb 26</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr id="matrixRowR">
+                                            <td class="col-sticky" style="color: #ef4444; background: #fef2f2;">Fasa R</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+                                        </tr>
+                                        <tr id="matrixRowS">
+                                            <td class="col-sticky" style="color: #f59e0b; background: #fffbeb;">Fasa S</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Pecah ⚠️</span></td><td><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Pecah ⚠️</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Ganti Unit</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+                                        </tr>
+                                        <tr id="matrixRowT">
+                                            <td class="col-sticky" style="color: #2563eb; background: #eff6ff;">Fasa T</td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Data Table of Counter Inspections -->
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Fasa R (Counter & Fisik)</th>
+                                        <th>Fasa S (Counter & Fisik)</th>
+                                        <th>Fasa T (Counter & Fisik)</th>
+                                        <th>Status Anomali</th>
+                                        <th>Petugas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS2026051501</td>
+                                        <td>15 Mei 2026</td>
+                                        <td><strong>14</strong> | Normal</td>
+                                        <td><strong>11</strong> | Normal</td>
+                                        <td><strong>10</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026060104</td>
+                                        <td>01 Juni 2026</td>
+                                        <td><strong>16</strong> | Normal</td>
+                                        <td><strong>12</strong> | Normal</td>
+                                        <td><strong>11</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ismail Hasan</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026061809</td>
+                                        <td>18 Juni 2026</td>
+                                        <td><strong>19</strong> | Normal</td>
+                                        <td><strong>15</strong> | Normal</td>
+                                        <td><strong>13</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026070503</td>
+                                        <td>05 Juli 2026</td>
+                                        <td><strong>22</strong> | Normal</td>
+                                        <td><strong>18</strong> | Normal</td>
+                                        <td><strong>15</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Doni Pratama</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026072411</td>
+                                        <td>24 Juli 2026</td>
+                                        <td><strong>25</strong> | Normal</td>
+                                        <td><strong>20</strong> | Normal</td>
+                                        <td><strong>16</strong> | Normal</td>
+                                        <td><span class="badge-verygood">Normal <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ismail Hasan</td>
+                                    </tr>
+                                    <tr style="background: #fef2f2;">
+                                        <td style="color: #991b1b; font-weight: 700;">INS2026081502</td>
+                                        <td style="color: #991b1b; font-weight: 700;">15 Agustus 2026</td>
+                                        <td><strong>27</strong> | Normal</td>
+                                        <td><strong style="color: #ef4444;">20</strong> | <span style="color: #ef4444; font-weight: 700;">Pecah ⚠️</span></td>
+                                        <td><strong>18</strong> | Normal</td>
+                                        <td><span class="badge-critical">Anomali Mayor (Pecah) <i class="ri-error-warning-line badge-icon"></i></span></td>
+                                        <td>Doni Pratama</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026090208</td>
+                                        <td>02 September 2026</td>
+                                        <td><strong>28</strong> | Normal</td>
+                                        <td><strong>22</strong> | Normal (Ganti Unit)</td>
+                                        <td><strong>19</strong> | Normal</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Parameter 5: [Training/TST] Kondisi Aset -->
+                    <div id="param-pms" (PMS/DS) - Outer (4 Tipe Input Berbeda) -->
+                    <div style="margin-top: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="font-size: 15px; font-weight: 600; color: var(--primary);">5. Trend: [Training/TST] Kondisi Aset (PMS/DS) - Outer</h3>
+                                <span style="background: rgba(147, 51, 234, 0.1); color: #9333ea; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-stack-line"></i> 3 Isian Parameter: Fisik (Radio) + Grounding (Dropdown) + Kesehatan (%)
+                                </span>
+                                <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-heart-pulse-line"></i> Mempengaruhi AHI (Normal/Tidak)
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; gap: 4px; background: #f1f5f9; border-radius: 6px; padding: 2px;">
+                                    <button class="chart-toggle-btn active" onclick="changeChartType(this, 'pms', 'line')">Line</button>
+                                    <button class="chart-toggle-btn" onclick="changeChartType(this, 'pms', 'bar')">Bar</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setChartRange('pms', 30, this)">30 (Semua)</button>
+                                    <button class="range-btn" onclick="setChartRange('pms', 15, this)">15 Terakhir</button>
+                                    <button class="range-btn" onclick="setChartRange('pms', 7, this)">7 Terakhir</button>
+                                </div>
+                                <span class="badge-verygood">Status Terakhir: 1 - Very Good (96%) <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- Explanatory Callout Box -->
+                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #9333ea; border-radius: 6px; padding: 14px 16px; margin-bottom: 16px; font-size: 12px; color: #334155; line-height: 1.6;">
+                            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                <i class="ri-information-fill" style="font-size: 18px; color: #9333ea; margin-top: 2px;"></i>
+                                <div>
+                                    <strong style="color: #1e293b; font-size: 13px;">Studi Kasus 4 Tipe Input dalam 1 Parameter (PMS/DS Outer):</strong><br>
+                                    Parameter inspeksi ini memiliki 4 data isian dalam 1 formulir:
+                                    <span style="display: inline-block; background: #ede9fe; color: #6b21a8; padding: 1px 6px; border-radius: 3px; font-weight: 600; margin: 2px 0;">(1) Fisik PMS: Radio (Normal / Tidak normal)</span>,
+                                    <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 3px; font-weight: 600; margin: 2px 0;">(2) Grounding: Combo Box (Normal / Korosi / Lepas / Hilang)</span>,
+                                    <span style="display: inline-block; background: #dcfce7; color: #166534; padding: 1px 6px; border-radius: 3px; font-weight: 600; margin: 2px 0;">(3) Kesehatan Aset: Angka Persentase (0.0 - 100.0%)</span>, dan
+                                    <span style="display: inline-block; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; font-weight: 600; margin: 2px 0;">(4) Catatan Tambahan: Teks Narasi</span>.<br>
+                                    <strong>Konsep Penyajian Tren:</strong> Sumbu Y grafik memplot kesinambungan <em>Tingkat Kesehatan (%)</em> terhadap zona standar AHI (Very Good, Good, Fair, Poor). Titik inspeksi tanggal <strong>15 Agu 2026</strong> anjlok ke <strong>35%</strong> dengan marker merah berkedip ⚠️ karena fisik <em>Tidak normal</em> &amp; grounding <em>Lepas</em>. Riwayat seluruh atribut kualitatif dan catatan lapangan tersinkronisasi di <strong>Matriks Strip</strong> di bawah grafik.
                                 </div>
                             </div>
                         </div>
 
-                        <!-- DYNAMIC VIEW CONTAINER (CHART / MATRIX / SPLIT) -->
-                        <div id="bushingViewContainer">
-                            
-                            <!-- 1. CHART CONTAINER SECTION -->
-                            <div id="bushingChartSection" style="display: block;">
-                                <div class="chart-container" style="height: 330px;">
-                                    <canvas id="trendChartBushingV2"></canvas>
+                        <!-- Controls -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted);">
+                                <strong>Indikator Grafik:</strong>
+                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #0284c7; font-weight: 600;">
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #0284c7; display: inline-block;"></span> Tingkat Kesehatan Aset (%)
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #ef4444; font-weight: 600;">
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span> Anomali Mayor (Drop &lt; 40%) ⚠️
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-weight: 500;">
+                                    <input type="checkbox" id="chkPmsThresholds" checked onchange="togglePmsThresholds(this.checked)" style="accent-color: var(--primary);"> Tampilkan Zona Ambang Batas AHI
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Chart -->
+                        <div class="chart-container" style="height: 320px;"><canvas id="trendChartPMS"></canvas></div>
+
+                                                <!-- Timeline Matrix Strip: 4 Jenis Input (30 Inspeksi) -->
+                        <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span><i class="ri-table-line" style="color: #9333ea;"></i> Matriks Riwayat Isian Parameter (30 Inspeksi Terakhir):</span>
+                                    <span class="badge-count-pill" style="background:#faf5ff;color:#7e22ce;border-color:#e9d5ff;">30 Titik Data</span>
                                 </div>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Scroll horizontal untuk melihat semua tanggal (Kolom Item terkunci di kiri)</span>
+                            </div>
+                            <div class="sticky-matrix-wrapper">
+                                <table class="sticky-matrix-table">
+                                    <thead>
+                                        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                                            <th class="col-sticky" style="width: 190px;">Item / Tipe Input</th>
+                                            <th style='min-width: 75px;'>10 Jan 25</th><th style='min-width: 75px;'>24 Jan 25</th><th style='min-width: 75px;'>07 Feb 25</th><th style='min-width: 75px;'>21 Feb 25</th><th style='min-width: 75px;'>07 Mar 25</th><th style='min-width: 75px;'>21 Mar 25</th><th style='min-width: 75px;'>04 Apr 25</th><th style='min-width: 75px;'>18 Apr 25</th><th style='min-width: 75px;'>02 Mei 25</th><th style='min-width: 75px;'>16 Mei 25</th><th style='min-width: 75px;'>30 Mei 25</th><th style='min-width: 75px;'>13 Jun 25</th><th style='min-width: 75px;'>27 Jun 25</th><th style='min-width: 75px;'>11 Jul 25</th><th style='min-width: 75px;'>25 Jul 25</th><th style='min-width: 75px;'>08 Agu 25</th><th style='min-width: 75px;'>22 Agu 25</th><th style='min-width: 75px;'>05 Sep 25</th><th style='min-width: 75px;'>19 Sep 25</th><th style='min-width: 75px;'>03 Okt 25</th><th style='min-width: 75px;'>17 Okt 25</th><th style='min-width: 75px;'>31 Okt 25</th><th style='min-width: 75px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 75px;'>28 Nov 25</th><th style='min-width: 75px;'>12 Des 25</th><th style='min-width: 75px;'>26 Des 25</th><th style='min-width: 75px;'>09 Jan 26</th><th style='min-width: 75px;'>23 Jan 26</th><th style='min-width: 75px;'>06 Feb 26</th><th style='min-width: 75px;'>20 Feb 26</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="col-sticky" style="background: #faf5ff; color: #6b21a8;">
+                                                <i class="ri-radio-button-line"></i> 1. Fisik PMS (Radio)
+                                            </td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style='background:#fef2f2;'><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Tidak normal ⚠️</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Perbaikan</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-sticky" style="background: #eff6ff; color: #1e40af;">
+                                                <i class="ri-arrow-down-circle-line"></i> 2. Grounding (Dropdown)
+                                            </td>
+                                            <td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Korosi Mur</span></td><td style='background:#fef2f2;'><span class='badge-critical' style='padding:2px 5px;font-size:10px;'>Lepas ⚠️</span></td><td><span class='badge-fair' style='padding:2px 5px;font-size:10px;'>Re-klem</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-sticky" style="background: #f0fdf4; color: #166534;">
+                                                <i class="ri-percent-line"></i> 3. Kesehatan Aset (Number)
+                                            </td>
+                                            <td style=''><strong style='color:#10b981;'>98.0%</strong></td><td style=''><strong style='color:#10b981;'>97.5%</strong></td><td style=''><strong style='color:#10b981;'>97.0%</strong></td><td style=''><strong style='color:#10b981;'>96.5%</strong></td><td style=''><strong style='color:#10b981;'>96.0%</strong></td><td style=''><strong style='color:#10b981;'>95.5%</strong></td><td style=''><strong style='color:#10b981;'>95.0%</strong></td><td style=''><strong style='color:#10b981;'>94.5%</strong></td><td style=''><strong style='color:#10b981;'>94.0%</strong></td><td style=''><strong style='color:#10b981;'>93.5%</strong></td><td style=''><strong style='color:#10b981;'>93.0%</strong></td><td style=''><strong style='color:#10b981;'>92.5%</strong></td><td style=''><strong style='color:#10b981;'>92.0%</strong></td><td style=''><strong style='color:#10b981;'>91.5%</strong></td><td style=''><strong style='color:#10b981;'>91.0%</strong></td><td style=''><strong style='color:#10b981;'>90.5%</strong></td><td style=''><strong style='color:#10b981;'>90.0%</strong></td><td style=''><strong style='color:#10b981;'>89.0%</strong></td><td style=''><strong style='color:#10b981;'>88.0%</strong></td><td style=''><strong style='color:#10b981;'>86.5%</strong></td><td style=''><strong style='color:#10b981;'>84.0%</strong></td><td style=''><strong style='color:#f59e0b;'>78.0%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>35.0%</strong></td><td style=''><strong style='color:#ef4444;'>55.0%</strong></td><td style=''><strong style='color:#10b981;'>92.0%</strong></td><td style=''><strong style='color:#10b981;'>94.0%</strong></td><td style=''><strong style='color:#10b981;'>95.5%</strong></td><td style=''><strong style='color:#10b981;'>96.0%</strong></td><td style=''><strong style='color:#10b981;'>96.5%</strong></td><td style=''><strong style='color:#10b981;'>97.0%</strong></td>
+                                        </tr>
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Data Table of PMS Inspections -->
+                        <div style="overflow-x: auto; margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nomor WO</th>
+                                        <th>Tanggal</th>
+                                        <th>Fisik PMS (Radio)</th>
+                                        <th>Grounding (Dropdown)</th>
+                                        <th>Kesehatan Aset (%)</th>
+                                        <th>Catatan Lapangan (Text)</th>
+                                        <th>Status AHI</th>
+                                        <th>Petugas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>INS2026072412</td>
+                                        <td>24 Juli 2026</td>
+                                        <td><span class="badge-verygood">Normal</span></td>
+                                        <td><span class="badge-fair">Korosi Mur &amp; Baut</span></td>
+                                        <td><strong>90.0%</strong></td>
+                                        <td style="max-width: 250px; font-size: 11px; color: #64748b;">Ditemukan korosi ringan pada mur klem grounding rangka.</td>
+                                        <td><span class="badge-good">2 - Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ismail Hasan</td>
+                                    </tr>
+                                    <tr style="background: #fef2f2;">
+                                        <td style="color: #991b1b; font-weight: 700;">INS2026081503</td>
+                                        <td style="color: #991b1b; font-weight: 700;">15 Agustus 2026</td>
+                                        <td><span class="badge-poor">Tidak normal ⚠️</span></td>
+                                        <td><span class="badge-critical">Lepas ⚠️</span></td>
+                                        <td><strong style="color: #ef4444; font-size: 13px;">35.0%</strong></td>
+                                        <td style="max-width: 250px; font-size: 11px; color: #991b1b; font-weight: 600;">Kabel grounding terlepas dari sepatu kabel akibat getaran; kontak pisau PMS kotor berdebu tebal.</td>
+                                        <td><span class="badge-poor">4 - Poor <i class="ri-error-warning-line badge-icon"></i></span></td>
+                                        <td>Doni Pratama</td>
+                                    </tr>
+                                    <tr>
+                                        <td>INS2026090209</td>
+                                        <td>02 September 2026</td>
+                                        <td><span class="badge-verygood">Normal</span></td>
+                                        <td><span class="badge-verygood">Normal (Re-grounding)</span></td>
+                                        <td><strong style="color: #10b981; font-size: 13px;">96.0%</strong></td>
+                                        <td style="max-width: 250px; font-size: 11px; color: #166534;">Telah dilakukan penggantian sepatu kabel grounding dan pembersihan kontak PMS. Kondisi normal kembali.</td>
+                                        <td><span class="badge-verygood">1 - Very Good <i class="ri-checkbox-circle-line badge-icon"></i></span></td>
+                                        <td>Ahmad Fauzi</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                
+                    <!-- Parameter 6: Tan Delta dan Kapasitansi Bushing Trafo (18 Isian Parameter) -->
+                    <div id="param-bushing" style="margin-top: 40px; border: 1px solid var(--border-color); padding: 24px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        
+                        <!-- CARD HEADER BAR WITH VIEW SWITCHER -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="background: #00529c; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">PARAM 6</span>
+                                <h3 style="font-size: 15px; font-weight: 700; color: var(--primary);">Trend: Tan Delta dan Kapasitansi Bushing Trafo</h3>
+                                <span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-flashlight-line"></i> Level 3 (Offline Test)
+                                </span>
+                                <span style="background: rgba(147, 51, 234, 0.1); color: #9333ea; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ri-stack-line"></i> 18 Isian Parameter (30 Kolom Riwayat)
+                                </span>
                             </div>
 
-                            <!-- 2. MATRIX TABLE SECTION (Collapsible Groups & 12px prominent scrollbar) -->
-                            <div id="bushingMatrixSection" style="display: none; margin-top: 14px;">
+                            <!-- RIGHT CONTROLS: SEGMENTED VIEW SWITCHER (LANGSUNG LIHAT DAFTAR DI ATAS) -->
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div style="display: inline-flex; background: #f1f5f9; border-radius: 8px; padding: 3px; border: 1px solid #cbd5e1;">
+                                    <button class="v2-tab-view-btn active" onclick="switchBushingView('chart', this)">
+                                        <i class="ri-line-chart-line"></i> Grafik
+                                    </button>
+                                    <button class="v2-tab-view-btn" onclick="switchBushingView('matrix', this)" style="color:#00529c; font-weight:700;">
+                                        <i class="ri-table-line"></i> Matriks Data 18 Isian (Langsung di Atas)
+                                    </button>
+                                    <button class="v2-tab-view-btn" onclick="switchBushingView('split', this)">
+                                        <i class="ri-layout-column-line"></i> Split Berdampingan
+                                    </button>
+                                </div>
+                                <span class="badge-verygood">Status Terakhir: Normal <i class="ri-checkbox-circle-line badge-icon"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- GLANCEABLE KPI STRIP (Nilai Terakhir Fasa R, S, T) -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ef4444; border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                                <span style="color: #64748b; font-size: 11px; font-weight: 600;">FASA R:</span>
+                                <strong style="color: #0f172a; margin-left: 4px;">TD 0.34% &bull; C1 346.1 pF</strong>
+                                <span style="color: #10b981; font-weight: 700; float: right;">Normal</span>
+                            </div>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                                <span style="color: #64748b; font-size: 11px; font-weight: 600;">FASA S:</span>
+                                <strong style="color: #0f172a; margin-left: 4px;">TD 0.39% &bull; C1 349.5 pF</strong>
+                                <span style="color: #10b981; font-weight: 700; float: right;">Normal</span>
+                            </div>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #2563eb; border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                                <span style="color: #64748b; font-size: 11px; font-weight: 600;">FASA T:</span>
+                                <strong style="color: #0f172a; margin-left: 4px;">TD 0.36% &bull; C1 343.8 pF</strong>
+                                <span style="color: #10b981; font-weight: 700; float: right;">Normal</span>
+                            </div>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #10b981; border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                                <span style="color: #64748b; font-size: 11px; font-weight: 600;">MAX DEVIASI C1:</span>
+                                <strong style="color: #10b981; margin-left: 4px;">0.53%</strong>
+                                <span style="color: #10b981; font-weight: 700; float: right;">Aman (&lt; 5%)</span>
+                            </div>
+                        </div>
+
+                        <!-- FILTER & CONTROLS ROW -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <!-- Filter Fasa -->
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+                                <span style="font-weight: 700; color: #475569;"><i class="ri-filter-2-line"></i> Filter Fasa:</span>
+                                <button class="phase-pill-v2 active" onclick="filterBushingPhaseV2('all', this)">Semua Fasa</button>
+                                <button class="phase-pill-v2" onclick="filterBushingPhaseV2('R', this)" style="color:#ef4444;">Fasa R</button>
+                                <button class="phase-pill-v2" onclick="filterBushingPhaseV2('S', this)" style="color:#d97706;">Fasa S (Anomali 14 Nov)</button>
+                                <button class="phase-pill-v2" onclick="filterBushingPhaseV2('T', this)" style="color:#2563eb;">Fasa T</button>
+                            </div>
+
+                            <!-- Mode & Range -->
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div style="display: flex; gap: 2px; background: #fff; border-radius: 6px; padding: 2px; border: 1px solid #cbd5e1;">
+                                    <button class="bushing-mode-btn active" id="btnModeTD_v2" onclick="setBushingModeAligned('tandelta', this)">Tan Delta (%)</button>
+                                    <button class="bushing-mode-btn" id="btnModeDev_v2" onclick="setBushingModeAligned('deviation', this)">Deviasi (%)</button>
+                                    <button class="bushing-mode-btn" id="btnModeCap_v2" onclick="setBushingModeAligned('capacitance', this)">Kapasitansi (pF)</button>
+                                </div>
+                                <div class="range-selector-group">
+                                    <button class="range-btn active" onclick="setBushingRangeAligned(30, this)">30 Data</button>
+                                    <button class="range-btn" onclick="setBushingRangeAligned(15, this)">15 Data</button>
+                                    <button class="range-btn" onclick="setBushingRangeAligned(7, this)">7 Data</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UNIFIED WORKSPACE (CHART & MATRIX) -->
+                        <div id="bushingUnifiedArea">
+                            
+                            <!-- CHART SECTION -->
+                            <div id="bushingChartSection" style="display: block;">
+                                <div class="chart-container" style="height: 310px;"><canvas id="trendChartBushing"></canvas></div>
+                            </div>
+
+                            <!-- MATRIX SECTION (Dapat langsung tampil di atas tanpa scroll ke bawah) -->
+                            <div id="bushingMatrixSection" style="display: none; margin-top: 10px;">
                                 <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span><i class="ri-table-line" style="color: #059669;"></i> Matriks Riwayat 18 Uraian Parameter (30 Inspeksi):</span>
-                                        <span style="background: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700;">Grup Accordion Aktif</span>
+                                        <span><i class="ri-table-line" style="color: #059669;"></i> <strong>Matriks Riwayat 18 Uraian Parameter (30 Inspeksi):</strong></span>
+                                        <span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">18 Uraian &bull; 30 Kolom</span>
                                     </div>
-                                    <span style="font-size: 11px; color: var(--text-muted);"><i class="ri-arrow-left-right-line"></i> Geser horizontal untuk melihat 30 tanggal lengkap</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);"><i class="ri-arrow-left-right-line"></i> Gunakan scrollbar bawah tebal (12px) untuk menggeser tanggal</span>
                                 </div>
-
-                                <div class="table-scroll-wrapper" style="max-height: 480px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px;">
-                                    <table class="sticky-matrix-table" id="matrixTableBushingV2" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11.5px; text-align: center;">
+                                <div class="sticky-matrix-wrapper" id="bushingTableScrollWrapper" style="max-height: 480px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <table class="sticky-matrix-table" id="matrixTableBushing">
                                         
     <thead>
         <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
@@ -1170,7 +1746,7 @@
     </thead>
     <tbody>
         <!-- GROUP 1: NAMEPLATE -->
-        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroup('grp-np')">
+        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroupV2('grp-np')">
             <td colspan="31"><i class="ri-arrow-down-s-line" id="icon-grp-np"></i> <strong>1. Nilai Referensi Nameplate Pabrikan (pF)</strong> <span style="font-size:11px;color:#64748b;font-weight:normal;">(Klik untuk sembunyikan/tampilkan)</span></td>
         </tr>
         <tr class="row-grp-np row-phase-r">
@@ -1187,7 +1763,7 @@
         </tr>
 
         <!-- GROUP 2: HASIL UJI KAPASITANSI -->
-        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroup('grp-cap')">
+        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroupV2('grp-cap')">
             <td colspan="31"><i class="ri-arrow-down-s-line" id="icon-grp-cap"></i> <strong>2. Pengukuran Kapasitansi C1 Terukur (pF)</strong></td>
         </tr>
         <tr class="row-grp-cap row-phase-r">
@@ -1204,7 +1780,7 @@
         </tr>
 
         <!-- GROUP 3: TAN DELTA -->
-        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroup('grp-td')">
+        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroupV2('grp-td')">
             <td colspan="31"><i class="ri-arrow-down-s-line" id="icon-grp-td"></i> <strong>3. Pengukuran Faktor Disipasi Tan Delta (%)</strong></td>
         </tr>
         <tr class="row-grp-td row-phase-r">
@@ -1221,7 +1797,7 @@
         </tr>
 
         <!-- GROUP 4: DEVIASI KAPASITANSI -->
-        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroup('grp-dev')">
+        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroupV2('grp-dev')">
             <td colspan="31"><i class="ri-arrow-down-s-line" id="icon-grp-dev"></i> <strong>4. Kalkulasi Deviasi Kapasitansi C1 vs Nameplate (%)</strong></td>
         </tr>
         <tr class="row-grp-dev row-phase-r">
@@ -1238,7 +1814,7 @@
         </tr>
 
         <!-- GROUP 5: FORMULA EVALUASI -->
-        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroup('grp-eval')">
+        <tr class="group-row" style="background:#f1f5f9; cursor:pointer;" onclick="toggleAccordionGroupV2('grp-eval')">
             <td colspan="31"><i class="ri-arrow-down-s-line" id="icon-grp-eval"></i> <strong>5. Evaluasi Ambang Batas Otomatis (IEEE / PLN SE 032)</strong></td>
         </tr>
         <tr class="row-grp-eval">
@@ -1259,218 +1835,6 @@
 
                     </div>
 
-                    <!-- PARAMETER 2: Pengujian DGA Minyak Maintank (Dissolved Gas Analysis) -->
-                    <div class="trend-card-v2" id="cardParamDGA" style="margin-bottom: 36px; border: 1px solid var(--border-color); padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <span style="background: #00529c; color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">PARAM 2</span>
-                                <h3 style="font-size: 16px; font-weight: 700; color: #00529c;">Trend: Pengujian DGA Minyak Maintank (Gas Terlarut)</h3>
-                                <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                    <i class="ri-drop-line"></i> Sub-Sistem: Insulasi Minyak (WF: 1.0)
-                                </span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="badge-verygood">Status Terakhir: Normal (Kondisi 1 - Aman) <i class="ri-checkbox-circle-line badge-icon"></i></span>
-                            </div>
-                        </div>
-
-                        <!-- Gas Quick KPI Chips -->
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px;">
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
-                                <div style="font-size:11px;color:#64748b;">Asetilena (C2H2)</div>
-                                <div style="font-size:14px;font-weight:700;color:#10b981;">0.4 ppm <span style="font-size:10px;color:#64748b;">(&lt; 1)</span></div>
-                            </div>
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
-                                <div style="font-size:11px;color:#64748b;">Hidrogen (H2)</div>
-                                <div style="font-size:14px;font-weight:700;color:#10b981;">18.2 ppm <span style="font-size:10px;color:#64748b;">(&lt; 100)</span></div>
-                            </div>
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
-                                <div style="font-size:11px;color:#64748b;">Metana (CH4)</div>
-                                <div style="font-size:14px;font-weight:700;color:#10b981;">24.5 ppm <span style="font-size:10px;color:#64748b;">(&lt; 120)</span></div>
-                            </div>
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
-                                <div style="font-size:11px;color:#64748b;">Etilena (C2H4)</div>
-                                <div style="font-size:14px;font-weight:700;color:#10b981;">15.0 ppm <span style="font-size:10px;color:#64748b;">(&lt; 50)</span></div>
-                            </div>
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
-                                <div style="font-size:11px;color:#64748b;">TDCG Total</div>
-                                <div style="font-size:14px;font-weight:700;color:#10b981;">210 ppm <span style="font-size:10px;color:#64748b;">(&lt; 720)</span></div>
-                            </div>
-                        </div>
-
-                        <!-- Canvas DGA -->
-                        <div class="chart-container" style="height: 280px;"><canvas id="trendChartDGAV2"></canvas></div>
-                    </div>
-
-                    <!-- PARAMETER 3: Thermovisi Bushing Trafo -->
-                    <div class="trend-card-v2" id="cardParamThermo" style="margin-bottom: 24px; border: 1px solid var(--border-color); padding: 22px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="background: #00529c; color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">PARAM 3</span>
-                                <h3 style="font-size: 16px; font-weight: 700; color: #00529c;">Trend: Thermovisi Bushing (Suhu Operasi Fasa R, S, T)</h3>
-                            </div>
-                            <span class="badge-verygood">Status Terakhir: Normal (&Delta;T = 1.4&deg;C) <i class="ri-checkbox-circle-line badge-icon"></i></span>
-                        </div>
-                        <div class="chart-container" style="height: 280px;"><canvas id="trendChartThermoV2"></canvas></div>
-                    </div>
-
-                </div>
-
-
-                        <!-- Legend & Thresholds -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted);">
-                                <strong>Fasa:</strong>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #ef4444; font-weight: 600;">
-                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span> Fasa R
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span> Fasa S
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; color: #2563eb; font-weight: 600;">
-                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #2563eb; display: inline-block;"></span> Fasa T
-                                </span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-main); font-weight: 500;">
-                                    <input type="checkbox" id="chkBushingThresholds" checked onchange="toggleBushingThresholds(this.checked)" style="accent-color: var(--primary);"> Tampilkan Garis Batas Norma Standar
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Canvas Chart -->
-                        <div class="chart-container" style="height: 320px;"><canvas id="trendChartBushing"></canvas></div>
-
-                        <!-- Grouped Matrix Table: 18 Uraian Parameter -->
-                        <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                            <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span><i class="ri-table-line" style="color: #059669;"></i> Matriks Riwayat 18 Uraian Parameter (30 Inspeksi Terakhir):</span>
-                                    <span class="badge-count-pill" style="background:#ecfdf5;color:#047857;border-color:#a7f3d0;">18 Uraian &bull; 30 Data</span>
-                                </div>
-                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 400;"><i class="ri-arrow-left-right-line"></i> Scrollbar bawah untuk menggeser 30 tanggal (Kolom Uraian terkunci di kiri)</span>
-                            </div>
-                            <div class="sticky-matrix-wrapper">
-                                <table class="sticky-matrix-table">
-                                    <thead>
-                                        <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1;">
-                                            <th class="col-sticky" style="width: 250px;">Uraian Parameter (18 Item)</th>
-                                            <th style='min-width: 75px;'>10 Jan 25</th><th style='min-width: 75px;'>24 Jan 25</th><th style='min-width: 75px;'>07 Feb 25</th><th style='min-width: 75px;'>21 Feb 25</th><th style='min-width: 75px;'>07 Mar 25</th><th style='min-width: 75px;'>21 Mar 25</th><th style='min-width: 75px;'>04 Apr 25</th><th style='min-width: 75px;'>18 Apr 25</th><th style='min-width: 75px;'>02 Mei 25</th><th style='min-width: 75px;'>16 Mei 25</th><th style='min-width: 75px;'>30 Mei 25</th><th style='min-width: 75px;'>13 Jun 25</th><th style='min-width: 75px;'>27 Jun 25</th><th style='min-width: 75px;'>11 Jul 25</th><th style='min-width: 75px;'>25 Jul 25</th><th style='min-width: 75px;'>08 Agu 25</th><th style='min-width: 75px;'>22 Agu 25</th><th style='min-width: 75px;'>05 Sep 25</th><th style='min-width: 75px;'>19 Sep 25</th><th style='min-width: 75px;'>03 Okt 25</th><th style='min-width: 75px;'>17 Okt 25</th><th style='min-width: 75px;'>31 Okt 25</th><th style='min-width: 75px;background:#fef2f2;color:#991b1b;'>14 Nov 25</th><th style='min-width: 75px;'>28 Nov 25</th><th style='min-width: 75px;'>12 Des 25</th><th style='min-width: 75px;'>26 Des 25</th><th style='min-width: 75px;'>09 Jan 26</th><th style='min-width: 75px;'>23 Jan 26</th><th style='min-width: 75px;'>06 Feb 26</th><th style='min-width: 75px;'>20 Feb 26</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- GRUP 1: TAN DELTA BUSHING (%) -->
-                                        <tr style="background: #f0fdf4;">
-                                            <td class="col-sticky" style="background: #dcfce7; color: #166534; font-weight: 800;" colspan="1">
-                                                <i class="ri-percent-line"></i> GRUP 1: PENGUJIAN TAN DELTA (%)
-                                            </td>
-                                            <td colspan="30" style="background: #f0fdf4; color: #166534; text-align: left; font-weight: 600; padding-left: 14px;">
-                                                Standar IEEE/PLN: Normal &le; 0.5% &bull; Warning 0.5 - 1.0% &bull; Critical &gt; 1.0%
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#ef4444; font-weight:bold;">&bull;</span> [TDBR15] Tan Delta Bushing R (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#f59e0b; font-weight:bold;">&bull;</span> [TDBS16] Tan Delta Bushing S (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#f59e0b;'>0.68%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>1.18%</strong></td><td style=''><strong style='color:#f59e0b;'>0.85%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#2563eb; font-weight:bold;">&bull;</span> [TDBT17] Tan Delta Bushing T (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.41%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
-                                                <i class="ri-calculator-line" style="color:#059669;"></i> [ETDB18] Evaluasi Tan Delta (MAX)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#f59e0b;'>0.68%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>1.18%</strong></td><td style=''><strong style='color:#f59e0b;'>0.85%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td>
-                                        </tr>
-
-                                        <!-- GRUP 2: HASIL UJI KAPASITANSI (pF) -->
-                                        <tr style="background: #fefce8;">
-                                            <td class="col-sticky" style="background: #fef9c3; color: #854d0e; font-weight: 800;" colspan="1">
-                                                <i class="ri-sound-module-line"></i> GRUP 2: KAPASITANSI AKTUAL (pF)
-                                            </td>
-                                            <td colspan="30" style="background: #fefce8; color: #854d0e; text-align: left; font-weight: 600; padding-left: 14px;">
-                                                Nameplate: R=345 pF &bull; S=348 pF &bull; T=342 pF
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#ef4444; font-weight:bold;">&bull;</span> [HUBR2] Hasil Uji Bushing R (pF)
-                                            </td>
-                                            <td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style='background:#fef2f2;'><span>348.2 pF</span></td><td style=''><span>347.5 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#f59e0b; font-weight:bold;">&bull;</span> [HUBS4] Hasil Uji Bushing S (pF)
-                                            </td>
-                                            <td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>368.0 pF</span></td><td style='background:#fef2f2;'><span>391.2 pF</span></td><td style=''><span>378.0 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <span style="color:#2563eb; font-weight:bold;">&bull;</span> [HUBT6] Hasil Uji Bushing T (pF)
-                                            </td>
-                                            <td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style='background:#fef2f2;'><span>346.0 pF</span></td><td style=''><span>345.5 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td>
-                                        </tr>
-
-                                        <!-- GRUP 3: DEVIASI KAPASITANSI & RUMUS NORMA -->
-                                        <tr style="background: #faf5ff;">
-                                            <td class="col-sticky" style="background: #f3e8ff; color: #6b21a8; font-weight: 800;" colspan="1">
-                                                <i class="ri-function-line"></i> GRUP 3: DEVIASI &amp; RUMUS NORMA
-                                            </td>
-                                            <td colspan="30" style="background: #faf5ff; color: #6b21a8; text-align: left; font-weight: 600; padding-left: 14px;">
-                                                Rumus Deviasi: |(Nameplate - Uji) / Nameplate| &times; 100% (Batas Aman &le; 5.0%)
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <i class="ri-equalizer-line"></i> [DR7] Deviasi Fasa R (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.93%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <i class="ri-equalizer-line"></i> [DS8] Deviasi Fasa S (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #ffffff; color: #334155;">
-                                                <i class="ri-equalizer-line"></i> [DT9] Deviasi Fasa T (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>1.17%</strong></td><td style=''><strong style='color:#10b981;'>1.02%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
-                                                <i class="ri-arrow-up-circle-line" style="color:#ef4444;"></i> [MD11] Max Deviasi (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
-                                                <i class="ri-arrow-down-circle-line" style="color:#0284c7;"></i> [MD10] Min Deviasi (%)
-                                            </td>
-                                            <td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.93%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="col-sticky" style="background: #f8fafc; color: #1e293b; font-weight: 700;">
-                                                <i class="ri-shield-check-line" style="color:#059669;"></i> [EK14] Evaluasi Kapasitansi
-                                            </td>
-                                            <td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style='background:#fef2f2;'><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style=''><span class='badge-poor' style='padding:2px 5px;font-size:10px;'>Deviasi &gt; 5% ⚠️</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td><td style=''><span class='badge-verygood' style='padding:2px 5px;font-size:10px;'>Normal</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
 
                 <div class="table-container" id="table-ahi" style="display: none;">
                     <table>
@@ -2853,80 +3217,66 @@
     </div>
 
 
-    <!-- SCRIPT LOGIC VERSI 2 (UI TREND BARU) -->
     <script>
         const bushingDataV2 = [{"index": 0, "tanggal": "10 Jan 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 349.5, "cap_t": 343.0, "td_r": 0.32, "td_s": 0.35, "td_t": 0.33, "eval_td": 0.35, "dev_r": 0.35, "dev_s": 0.43, "dev_t": 0.29, "max_dev": 0.43, "min_dev": 0.29, "eval_cap": 0}, {"index": 1, "tanggal": "24 Jan 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 350.0, "cap_t": 343.3, "td_r": 0.335, "td_s": 0.368, "td_t": 0.344, "eval_td": 0.368, "dev_r": 0.46, "dev_s": 0.57, "dev_t": 0.38, "max_dev": 0.57, "min_dev": 0.38, "eval_cap": 0}, {"index": 2, "tanggal": "07 Feb 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 350.5, "cap_t": 343.6, "td_r": 0.35, "td_s": 0.386, "td_t": 0.358, "eval_td": 0.386, "dev_r": 0.58, "dev_s": 0.72, "dev_t": 0.47, "max_dev": 0.72, "min_dev": 0.47, "eval_cap": 0}, {"index": 3, "tanggal": "21 Feb 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 351.0, "cap_t": 343.0, "td_r": 0.365, "td_s": 0.404, "td_t": 0.372, "eval_td": 0.404, "dev_r": 0.7, "dev_s": 0.86, "dev_t": 0.29, "max_dev": 0.86, "min_dev": 0.29, "eval_cap": 0}, {"index": 4, "tanggal": "07 Mar 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 351.5, "cap_t": 343.3, "td_r": 0.38, "td_s": 0.422, "td_t": 0.33, "eval_td": 0.422, "dev_r": 0.35, "dev_s": 1.01, "dev_t": 0.38, "max_dev": 1.01, "min_dev": 0.35, "eval_cap": 0}, {"index": 5, "tanggal": "21 Mar 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 349.5, "cap_t": 343.6, "td_r": 0.32, "td_s": 0.44, "td_t": 0.344, "eval_td": 0.44, "dev_r": 0.46, "dev_s": 0.43, "dev_t": 0.47, "max_dev": 0.47, "min_dev": 0.43, "eval_cap": 0}, {"index": 6, "tanggal": "04 Apr 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 350.0, "cap_t": 343.0, "td_r": 0.335, "td_s": 0.35, "td_t": 0.358, "eval_td": 0.358, "dev_r": 0.58, "dev_s": 0.57, "dev_t": 0.29, "max_dev": 0.58, "min_dev": 0.29, "eval_cap": 0}, {"index": 7, "tanggal": "18 Apr 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 350.5, "cap_t": 343.3, "td_r": 0.35, "td_s": 0.368, "td_t": 0.372, "eval_td": 0.372, "dev_r": 0.7, "dev_s": 0.72, "dev_t": 0.38, "max_dev": 0.72, "min_dev": 0.38, "eval_cap": 0}, {"index": 8, "tanggal": "02 Mei 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 351.0, "cap_t": 343.6, "td_r": 0.365, "td_s": 0.386, "td_t": 0.33, "eval_td": 0.386, "dev_r": 0.35, "dev_s": 0.86, "dev_t": 0.47, "max_dev": 0.86, "min_dev": 0.35, "eval_cap": 0}, {"index": 9, "tanggal": "16 Mei 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 351.5, "cap_t": 343.0, "td_r": 0.38, "td_s": 0.404, "td_t": 0.344, "eval_td": 0.404, "dev_r": 0.46, "dev_s": 1.01, "dev_t": 0.29, "max_dev": 1.01, "min_dev": 0.29, "eval_cap": 0}, {"index": 10, "tanggal": "30 Mei 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 349.5, "cap_t": 343.3, "td_r": 0.32, "td_s": 0.422, "td_t": 0.358, "eval_td": 0.422, "dev_r": 0.58, "dev_s": 0.43, "dev_t": 0.38, "max_dev": 0.58, "min_dev": 0.38, "eval_cap": 0}, {"index": 11, "tanggal": "13 Jun 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 350.0, "cap_t": 343.6, "td_r": 0.335, "td_s": 0.44, "td_t": 0.372, "eval_td": 0.44, "dev_r": 0.7, "dev_s": 0.57, "dev_t": 0.47, "max_dev": 0.7, "min_dev": 0.47, "eval_cap": 0}, {"index": 12, "tanggal": "27 Jun 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 350.5, "cap_t": 343.0, "td_r": 0.35, "td_s": 0.35, "td_t": 0.33, "eval_td": 0.35, "dev_r": 0.35, "dev_s": 0.72, "dev_t": 0.29, "max_dev": 0.72, "min_dev": 0.29, "eval_cap": 0}, {"index": 13, "tanggal": "11 Jul 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 351.0, "cap_t": 343.3, "td_r": 0.365, "td_s": 0.368, "td_t": 0.344, "eval_td": 0.368, "dev_r": 0.46, "dev_s": 0.86, "dev_t": 0.38, "max_dev": 0.86, "min_dev": 0.38, "eval_cap": 0}, {"index": 14, "tanggal": "25 Jul 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 351.5, "cap_t": 343.6, "td_r": 0.38, "td_s": 0.386, "td_t": 0.358, "eval_td": 0.386, "dev_r": 0.58, "dev_s": 1.01, "dev_t": 0.47, "max_dev": 1.01, "min_dev": 0.47, "eval_cap": 0}, {"index": 15, "tanggal": "08 Agu 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 349.5, "cap_t": 343.0, "td_r": 0.32, "td_s": 0.404, "td_t": 0.372, "eval_td": 0.404, "dev_r": 0.7, "dev_s": 0.43, "dev_t": 0.29, "max_dev": 0.7, "min_dev": 0.29, "eval_cap": 0}, {"index": 16, "tanggal": "22 Agu 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 350.0, "cap_t": 343.3, "td_r": 0.335, "td_s": 0.422, "td_t": 0.33, "eval_td": 0.422, "dev_r": 0.35, "dev_s": 0.57, "dev_t": 0.38, "max_dev": 0.57, "min_dev": 0.35, "eval_cap": 0}, {"index": 17, "tanggal": "05 Sep 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 350.5, "cap_t": 343.6, "td_r": 0.35, "td_s": 0.44, "td_t": 0.344, "eval_td": 0.44, "dev_r": 0.46, "dev_s": 0.72, "dev_t": 0.47, "max_dev": 0.72, "min_dev": 0.46, "eval_cap": 0}, {"index": 18, "tanggal": "19 Sep 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 351.0, "cap_t": 343.0, "td_r": 0.365, "td_s": 0.35, "td_t": 0.358, "eval_td": 0.365, "dev_r": 0.58, "dev_s": 0.86, "dev_t": 0.29, "max_dev": 0.86, "min_dev": 0.29, "eval_cap": 0}, {"index": 19, "tanggal": "03 Okt 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 351.5, "cap_t": 343.3, "td_r": 0.38, "td_s": 0.368, "td_t": 0.372, "eval_td": 0.38, "dev_r": 0.7, "dev_s": 1.01, "dev_t": 0.38, "max_dev": 1.01, "min_dev": 0.38, "eval_cap": 0}, {"index": 20, "tanggal": "17 Okt 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 349.5, "cap_t": 343.6, "td_r": 0.32, "td_s": 0.386, "td_t": 0.33, "eval_td": 0.386, "dev_r": 0.35, "dev_s": 0.43, "dev_t": 0.47, "max_dev": 0.47, "min_dev": 0.35, "eval_cap": 0}, {"index": 21, "tanggal": "31 Okt 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 368.0, "cap_t": 343.0, "td_r": 0.335, "td_s": 0.68, "td_t": 0.344, "eval_td": 0.68, "dev_r": 0.46, "dev_s": 5.75, "dev_t": 0.29, "max_dev": 5.75, "min_dev": 0.29, "eval_cap": 1}, {"index": 22, "tanggal": "14 Nov 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 348.2, "cap_s": 391.2, "cap_t": 346.0, "td_r": 0.38, "td_s": 1.18, "td_t": 0.41, "eval_td": 1.18, "dev_r": 0.93, "dev_s": 12.41, "dev_t": 1.17, "max_dev": 12.41, "min_dev": 0.93, "eval_cap": 1}, {"index": 23, "tanggal": "28 Nov 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.5, "cap_s": 378.0, "cap_t": 345.5, "td_r": 0.37, "td_s": 0.85, "td_t": 0.4, "eval_td": 0.85, "dev_r": 0.72, "dev_s": 8.62, "dev_t": 1.02, "max_dev": 8.62, "min_dev": 0.72, "eval_cap": 1}, {"index": 24, "tanggal": "12 Des 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 25, "tanggal": "26 Des 25", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 26, "tanggal": "09 Jan 26", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 27, "tanggal": "23 Jan 26", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 28, "tanggal": "06 Feb 26", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 29, "tanggal": "20 Feb 26", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}];
         let activeBushingModeV2 = 'tandelta';
-        let activePhaseFilterV2 = 'all'; // 'all', 'R', 'S', 'T'
-        let activeRangeV2 = 30;
-        let chartBushingV2Instance = null;
+        let activePhaseFilterV2 = 'all';
+        let activeBushingRangeV2 = 30;
 
         // View Mode Switcher: 'chart', 'matrix', 'split'
-        function setParamView(paramKey, mode, btnElem) {
-            const card = document.getElementById('cardParamBushing');
-            card.querySelectorAll('.v2-view-btn').forEach(b => {
-                b.classList.remove('active');
-                b.style.background = 'transparent';
-                b.style.color = '#64748b';
-            });
+        function switchBushingView(mode, btnElem) {
+            const card = document.getElementById('param-bushing');
+            card.querySelectorAll('.v2-tab-view-btn').forEach(b => b.classList.remove('active'));
             btnElem.classList.add('active');
-            btnElem.style.background = '#00529c';
-            btnElem.style.color = '#ffffff';
 
-            const container = document.getElementById('bushingViewContainer');
+            const container = document.getElementById('bushingUnifiedArea');
             const chartSec = document.getElementById('bushingChartSection');
             const matrixSec = document.getElementById('bushingMatrixSection');
 
             if (mode === 'chart') {
-                container.classList.remove('split-active');
+                container.classList.remove('bushing-split-layout');
                 chartSec.style.display = 'block';
                 matrixSec.style.display = 'none';
             } else if (mode === 'matrix') {
-                container.classList.remove('split-active');
+                container.classList.remove('bushing-split-layout');
                 chartSec.style.display = 'none';
                 matrixSec.style.display = 'block';
             } else if (mode === 'split') {
-                container.classList.add('split-active');
+                container.classList.add('bushing-split-layout');
                 chartSec.style.display = 'block';
                 matrixSec.style.display = 'block';
             }
-            if (chartBushingV2Instance) {
-                chartBushingV2Instance.resize();
-            }
+            if (charts.bushing) charts.bushing.resize();
         }
 
-        // Phase Filter: 'all', 'R', 'S', 'T'
-        function filterBushingPhase(phase, btnElem) {
+        // Phase Filter
+        function filterBushingPhaseV2(phase, btnElem) {
             activePhaseFilterV2 = phase;
-            document.querySelectorAll('.phase-filter-pill').forEach(b => {
-                b.classList.remove('active');
-                b.style.background = '#fff';
-                b.style.color = b.textContent.includes('Fasa R') ? '#ef4444' : (b.textContent.includes('Fasa S') ? '#d97706' : (b.textContent.includes('Fasa T') ? '#2563eb' : '#475569'));
-            });
+            document.querySelectorAll('.phase-pill-v2').forEach(b => b.classList.remove('active'));
             btnElem.classList.add('active');
-            btnElem.style.background = '#00529c';
-            btnElem.style.color = '#fff';
 
             // Filter Matrix Rows
-            const table = document.getElementById('matrixTableBushingV2');
-            if (phase === 'all') {
-                table.querySelectorAll('.row-phase-r, .row-phase-s, .row-phase-t').forEach(r => r.style.display = '');
-            } else if (phase === 'R') {
-                table.querySelectorAll('.row-phase-r').forEach(r => r.style.display = '');
-                table.querySelectorAll('.row-phase-s, .row-phase-t').forEach(r => r.style.display = 'none');
-            } else if (phase === 'S') {
-                table.querySelectorAll('.row-phase-s').forEach(r => r.style.display = '');
-                table.querySelectorAll('.row-phase-r, .row-phase-t').forEach(r => r.style.display = 'none');
-            } else if (phase === 'T') {
-                table.querySelectorAll('.row-phase-t').forEach(r => r.style.display = '');
-                table.querySelectorAll('.row-phase-r, .row-phase-s').forEach(r => r.style.display = 'none');
+            const table = document.getElementById('matrixTableBushing');
+            if (table) {
+                if (phase === 'all') {
+                    table.querySelectorAll('.row-phase-r, .row-phase-s, .row-phase-t').forEach(r => r.style.display = '');
+                } else if (phase === 'R') {
+                    table.querySelectorAll('.row-phase-r').forEach(r => r.style.display = '');
+                    table.querySelectorAll('.row-phase-s, .row-phase-t').forEach(r => r.style.display = 'none');
+                } else if (phase === 'S') {
+                    table.querySelectorAll('.row-phase-s').forEach(r => r.style.display = '');
+                    table.querySelectorAll('.row-phase-r, .row-phase-t').forEach(r => r.style.display = 'none');
+                } else if (phase === 'T') {
+                    table.querySelectorAll('.row-phase-t').forEach(r => r.style.display = '');
+                    table.querySelectorAll('.row-phase-r, .row-phase-s').forEach(r => r.style.display = 'none');
+                }
             }
 
-            updateChartBushingV2();
+            updateBushingChartV2();
         }
 
-        // Accordion Toggle for Matrix Groups
-        function toggleAccordionGroup(grpClass) {
+        // Accordion Toggle
+        function toggleAccordionGroupV2(grpClass) {
             const rows = document.querySelectorAll('.row-' + grpClass);
             const icon = document.getElementById('icon-' + grpClass);
             let isHidden = false;
@@ -2944,29 +3294,23 @@
             }
         }
 
-        function setBushingModeV2(mode, btnElem) {
+        function setBushingModeAligned(mode, btnElem) {
             activeBushingModeV2 = mode;
-            btnElem.parentElement.querySelectorAll('.bushing-mode-btn').forEach(b => {
-                b.classList.remove('active');
-                b.style.background = 'transparent';
-                b.style.color = '#64748b';
-            });
+            btnElem.parentElement.querySelectorAll('.bushing-mode-btn').forEach(b => b.classList.remove('active'));
             btnElem.classList.add('active');
-            btnElem.style.background = '#00529c';
-            btnElem.style.color = '#ffffff';
-            updateChartBushingV2();
+            updateBushingChartV2();
         }
 
-        function setChartRangeV2(param, range, btnElem) {
-            activeRangeV2 = range;
+        function setBushingRangeAligned(range, btnElem) {
+            activeBushingRangeV2 = range;
             btnElem.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
             btnElem.classList.add('active');
-            updateChartBushingV2();
+            updateBushingChartV2();
         }
 
-        function updateChartBushingV2() {
-            if (!chartBushingV2Instance) return;
-            const sliced = bushingDataV2.slice(Math.max(0, bushingDataV2.length - activeRangeV2));
+        function updateBushingChartV2() {
+            if (!charts.bushing) return;
+            const sliced = bushingDataV2.slice(Math.max(0, bushingDataV2.length - activeBushingRangeV2));
             const labels = sliced.map(d => d.tanggal);
 
             let datasets = [];
@@ -3006,67 +3350,10 @@
                 }
             }
 
-            chartBushingV2Instance.data.labels = labels;
-            chartBushingV2Instance.data.datasets = datasets;
-            chartBushingV2Instance.update();
+            charts.bushing.data.labels = labels;
+            charts.bushing.data.datasets = datasets;
+            charts.bushing.update();
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Init Chart Bushing V2
-            const ctxBsh = document.getElementById('trendChartBushingV2');
-            if (ctxBsh) {
-                chartBushingV2Instance = new Chart(ctxBsh.getContext('2d'), {
-                    type: 'line',
-                    data: { labels: [], datasets: [] },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
-                        }
-                    }
-                });
-                updateChartBushingV2();
-            }
-
-            // Init Chart DGA
-            const ctxDGA = document.getElementById('trendChartDGAV2');
-            if (ctxDGA) {
-                const dgaLabels = bushingDataV2.slice(-15).map(d => d.tanggal);
-                new Chart(ctxDGA.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: dgaLabels,
-                        datasets: [
-                            { label: 'H2 (ppm)', data: dgaLabels.map((_, i) => (15 + (i%4)*2).toFixed(1)), borderColor: '#0284c7', tension: 0.2 },
-                            { label: 'CH4 (ppm)', data: dgaLabels.map((_, i) => (20 + (i%5)*1.5).toFixed(1)), borderColor: '#10b981', tension: 0.2 },
-                            { label: 'C2H4 (ppm)', data: dgaLabels.map((_, i) => (12 + (i%3)*1.2).toFixed(1)), borderColor: '#f59e0b', tension: 0.2 },
-                            { label: 'C2H2 (ppm)', data: dgaLabels.map((_, i) => (0.3 + (i%2)*0.1).toFixed(1)), borderColor: '#ef4444', tension: 0.2 }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-
-            // Init Chart Thermo
-            const ctxTh = document.getElementById('trendChartThermoV2');
-            if (ctxTh) {
-                const thLabels = bushingDataV2.slice(-15).map(d => d.tanggal);
-                new Chart(ctxTh.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: thLabels,
-                        datasets: [
-                            { label: 'Suhu Bushing R (°C)', data: thLabels.map((_, i) => (42.5 + (i%3)*0.8).toFixed(1)), borderColor: '#ef4444', tension: 0.2 },
-                            { label: 'Suhu Bushing S (°C)', data: thLabels.map((_, i) => (43.2 + (i%4)*0.6).toFixed(1)), borderColor: '#f59e0b', tension: 0.2 },
-                            { label: 'Suhu Bushing T (°C)', data: thLabels.map((_, i) => (41.9 + (i%3)*0.7).toFixed(1)), borderColor: '#2563eb', tension: 0.2 }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-        });
     </script>
 </body>
 </html>
