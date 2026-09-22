@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Parameter 172 Uraian: Pengukuran Tegangan Sel Baterai - Power Inspect</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        :root {
+            --primary: #00529c;
+            --primary-hover: #003e75;
+            --primary-light: #e0f2fe;
+            --bg-page: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Header Navigation Card */
+        .header-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .breadcrumbs {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breadcrumbs a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Mode Switcher Tabs */
+        .mode-nav {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+            gap: 4px;
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        /* MODE 1: MASTER PARAMETER FORM VIEW (PERSIS GAMBAR 2) */
+        .master-form-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+
+        .sub-uraian-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-right: 1px solid var(--border-color);
+            padding-right: 16px;
+        }
+
+        .sub-uraian-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sub-uraian-item:hover {
+            background: #f8fafc;
+            color: var(--primary);
+        }
+
+        .sub-uraian-item.active {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-left: 4px solid #2563eb;
+            font-weight: 700;
+        }
+
+        .master-main-area {
+            padding-left: 8px;
+        }
+
+        .form-label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-select, .form-input, .form-textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #1e293b;
+            background: #ffffff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-select:focus, .form-input:focus, .form-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .form-input[disabled], .form-select[disabled] {
+            background: #f8fafc;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            background: #ffffff;
+            transition: border-color 0.2s;
+        }
+
+        .accordion-item:hover {
+            border-color: #cbd5e1;
+        }
+
+        .accordion-header {
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: #ffffff;
+            user-select: none;
+        }
+
+        .accordion-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-title .btn-del {
+            color: #94a3b8;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .accordion-body {
+            padding: 18px 20px;
+            background: #fafafa;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .form-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* MODE 2: DASHBOARD & TREND MONITORING (SOLUSI 172 ISIAN) */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary);
+        }
+
+        .kpi-card.danger::before { background: var(--danger); }
+        .kpi-card.warning::before { background: var(--warning); }
+        .kpi-card.success::before { background: var(--success); }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Heatmap Grid Styles */
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .cell-tile {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px 4px;
+            text-align: center;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .cell-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+            z-index: 2;
+        }
+
+        .cell-tile.selected {
+            border: 2px solid #00529c;
+            box-shadow: 0 0 0 3px rgba(0, 82, 156, 0.2);
+            background: #eff6ff !important;
+        }
+
+        .cell-tile.normal {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .cell-tile.warning {
+            background: #fefce8;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        .cell-tile.danger {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+            animation: pulse-danger 2s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .cell-num {
+            font-size: 10.5px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .cell-val {
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        /* Table Matrix View */
+        .table-responsive {
+            overflow-x: auto;
+            max-height: 480px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .col-sticky-code {
+            position: sticky;
+            left: 0;
+            background: #ffffff;
+            z-index: 5;
+            font-weight: 700;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+
+        .col-sticky-name {
+            position: sticky;
+            left: 80px;
+            background: #ffffff;
+            z-index: 5;
+            font-weight: 600;
+            border-right: 2px solid #cbd5e1 !important;
+        }
+
+        tr:hover td {
+            background-color: #f1f5f9;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .pill-filter {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .pill-filter.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header Card -->
+    <div class="header-card">
+        <div>
+            <div class="breadcrumbs">
+                <a href="../index.html"><i class="ri-home-4-line"></i> Portal</a>
+                <i class="ri-arrow-right-s-line"></i>
+                <a href="monitoring-ahi-v2.html">Monitoring AHI</a>
+                <i class="ri-arrow-right-s-line"></i>
+                <span>Simulasi Parameter 172 Isian (Tegangan Sel Baterai)</span>
+            </div>
+            <h1 class="page-title">
+                <i class="ri-battery-2-charge-line"></i>
+                Parameter Inspeksi 172 Isian: Pengukuran Tegangan Sel Baterai DC
+            </h1>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                Kode Form: <code>JSB1S_1</code> s/d <code>JSB1S_172</code> • Tipe: <strong>Number Double (Volt)</strong> • Rentang Operasi: <strong>0 - 9 V</strong> (Nominal 2.20 V / Sel)
+            </p>
+        </div>
+
+        <!-- Mode Navigation -->
+        <div class="mode-nav">
+            <button class="mode-btn active" id="btnModeMaster" onclick="switchMainMode('master')">
+                <i class="ri-file-list-3-line"></i> 1. Tampilan Master Form (Persis Gambar 2)
+            </button>
+            <button class="mode-btn" id="btnModeTrend" onclick="switchMainMode('trend')">
+                <i class="ri-dashboard-3-line"></i> 2. Solusi Monitoring &amp; Tren 172 Sel
+            </button>
+        </div>
+    </div>
+
+    <!-- BANNER PROMPT CONTEXT -->
+    <div style="background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color: white; border-radius: 12px; padding: 16px 22px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="background: rgba(255,255,255,0.2); width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                <i class="ri-lightbulb-flash-line"></i>
+            </div>
+            <div>
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">Solusi Desain Parameter 172 Isian (Sub Uraian 4 - Sel Baterai)</div>
+                <div style="font-size: 12.5px; opacity: 0.9;">
+                    Berdasarkan screenshot formulir master dari user (172 uraian sel tegangan), halaman ini menyediakan <strong>Mode 1 (Formulir Master)</strong> dan <strong>Mode 2 (Executive Heatmap &amp; Trend Riwayat 30 Inspeksi)</strong> agar tidak perlu scroll 172 baris secara manual.
+                </div>
+            </div>
+        </div>
+        <button class="btn-primary" onclick="switchMainMode(currentMode === 'master' ? 'trend' : 'master')" style="background: #ffffff; color: #00529c; font-weight: 700;">
+            <i class="ri-swap-line"></i> Ganti Tampilan Simulasi
+        </button>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODE 1: TAMPILAN MASTER PARAMETER FORM (PERSIS SCREENSHOT 2) -->
+    <!-- ============================================================= -->
+    <div id="viewMasterForm" style="display: block;">
+        <div class="master-form-layout">
+            <!-- Left Sidebar -->
+            <div class="sub-uraian-sidebar">
+                <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Struktur Sub Uraian</div>
+                <div class="sub-uraian-item">Sub Uraian 1</div>
+                <div class="sub-uraian-item">Sub Uraian 2</div>
+                <div class="sub-uraian-item">Sub Uraian 3</div>
+                <div class="sub-uraian-item active">
+                    <span>Sub Uraian 4</span>
+                    <span style="background:#2563eb; color:white; padding:1px 6px; border-radius:10px; font-size:10px;">172</span>
+                </div>
+            </div>
+
+            <!-- Right Main Area -->
+            <div class="master-main-area">
+                <div style="margin-bottom: 20px; max-width: 320px;">
+                    <label class="form-label">
+                        Sub Uraian <i class="ri-information-line" style="color: #64748b;"></i>
+                    </label>
+                    <select class="form-select" disabled style="font-weight: 700; color: #1e293b;">
+                        <option selected>172</option>
+                    </select>
+                </div>
+
+                <!-- Search & Quick Expand Filter -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; width: 340px;">
+                        <input type="text" id="searchUraianInput" onkeyup="filterUraianList()" class="form-input" placeholder="Cari Uraian (misal: Sel 1, Sel 42)...">
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="expandAllUraian(true)">
+                            <i class="ri-expand-up-down-line"></i> Buka Semua
+                        </button>
+                        <button class="btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="expandAllUraian(false)">
+                            <i class="ri-collapse-diagonal-line"></i> Tutup Semua
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Accordion List (172 Items) -->
+                <div id="accordionContainer" style="max-height: 600px; overflow-y: auto; padding-right: 6px;">
+                    <!-- Javascript will render 172 accordions dynamically -->
+                </div>
+
+                <!-- Bottom Actions Footer -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+                    <div style="font-size: 13px; color: var(--text-muted);">
+                        Menampilkan <strong id="lblShownUraian">172</strong> dari <strong>172</strong> Data Uraian Sel Baterai
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-outline" onclick="window.history.back()">KEMBALI</button>
+                        <button class="btn-primary" onclick="switchMainMode('trend')">
+                            Lihat Visualisasi Trending 172 Sel <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODE 2: EXECUTIVE DASHBOARD & TREND MONITORING 172 SEL       -->
+    <!-- ============================================================= -->
+    <div id="viewTrendSolution" style="display: none;">
+        
+        <!-- 4 KPI CARDS -->
+        <div class="kpi-grid">
+            <div class="kpi-card success">
+                <div class="kpi-label">
+                    <span>Tegangan Total Bank</span>
+                    <i class="ri-flashlight-line" style="font-size: 16px; color: var(--success);"></i>
+                </div>
+                <div class="kpi-value">378.4 V</div>
+                <div class="kpi-subtext">Nominal Standar: 380.0 V (±5% Normal)</div>
+            </div>
+
+            <div class="kpi-card success">
+                <div class="kpi-label">
+                    <span>Rata-Rata Tegangan Sel</span>
+                    <i class="ri-bar-chart-2-line" style="font-size: 16px; color: var(--primary);"></i>
+                </div>
+                <div class="kpi-value">2.20 V</div>
+                <div class="kpi-subtext">Standar Float: 2.18 - 2.23 V/Sel</div>
+            </div>
+
+            <div class="kpi-card danger">
+                <div class="kpi-label">
+                    <span>Sel Terendah (Min Cell)</span>
+                    <i class="ri-error-warning-line" style="font-size: 16px; color: var(--danger);"></i>
+                </div>
+                <div class="kpi-value" style="color: var(--danger);">1.84 V</div>
+                <div class="kpi-subtext"><strong>Sel 42</strong> (<span style="color:var(--danger);font-weight:700;">Drop Kritis &lt; 1.95V</span>)</div>
+            </div>
+
+            <div class="kpi-card warning">
+                <div class="kpi-label">
+                    <span>Status Kesehatan 172 Sel</span>
+                    <i class="ri-shield-check-line" style="font-size: 16px; color: var(--warning);"></i>
+                </div>
+                <div class="kpi-value">170 / 172</div>
+                <div class="kpi-subtext">170 Normal • 1 Warning (Sel 87) • 1 Kritis (Sel 42)</div>
+            </div>
+        </div>
+
+        <!-- CARD 1: INTERACTIVE 172-CELL HEATMAP MATRIX -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <i class="ri-grid-fill"></i>
+                        1. Visual Matrix Heatmap 172 Sel Baterai (Susunan Rak 1 s/d 4)
+                    </div>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Klik kotak sel mana saja untuk langsung memfokuskan grafik riwayat 30 inspeksi sel tersebut di bawah.
+                    </p>
+                </div>
+
+                <!-- Controls & Filters -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button class="pill-filter active" onclick="filterHeatmap('all', this)">Semua (172 Sel)</button>
+                    <button class="pill-filter" onclick="filterHeatmap('anomaly', this)" style="border-color:#fca5a5; color:#b91c1c;">Hanya Anomali / Warning (2)</button>
+                    <button class="pill-filter" onclick="filterHeatmap('normal', this)">Hanya Normal (170)</button>
+                    <input type="text" id="searchHeatmapInput" onkeyup="searchHeatmap()" placeholder="Cari No Sel..." style="padding: 5px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; width: 120px;">
+                </div>
+            </div>
+
+            <!-- Rack Tabs / Legend -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; gap: 14px; font-weight: 600;">
+                    <span>Rak 1: Sel 1 - 43</span>
+                    <span>Rak 2: Sel 44 - 86</span>
+                    <span>Rak 3: Sel 87 - 129</span>
+                    <span>Rak 4: Sel 130 - 172</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width:10px;height:10px;border-radius:3px;background:#86efac;display:inline-block;"></span> Normal (2.15 - 2.25V)</span>
+                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width:10px;height:10px;border-radius:3px;background:#fde047;display:inline-block;"></span> Warning (2.00 - 2.14V)</span>
+                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width:10px;height:10px;border-radius:3px;background:#fca5a5;display:inline-block;"></span> Kritis (&lt; 2.00V)</span>
+                </div>
+            </div>
+
+            <!-- Heatmap Container -->
+            <div class="rack-grid" id="heatmapContainer">
+                <!-- Javascript will inject 172 interactive cell tiles -->
+            </div>
+        </div>
+
+        <!-- CARD 2: GRAFIK DISTRIBUSI TEGANGAN SELURUH 172 SEL (LATEST INSPECTION) -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <i class="ri-bar-chart-grouped-line"></i>
+                        2. Grafik Distribusi Tegangan 172 Sel (Inspeksi Terakhir: 20 Feb 2026)
+                    </div>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Penyebaran voltase seluruh 172 sel terhadap standar ambang batas IEEE / PLN SE (Nominal 2.20 V).
+                    </p>
+                </div>
+                <div>
+                    <span class="badge-pill" style="background:#fee2e2; color:#991b1b; padding:4px 10px;">
+                        <i class="ri-alert-line"></i> 1 Sel Drop Kritis di Bawah 1.95 V (Sel 42: 1.84 V)
+                    </span>
+                </div>
+            </div>
+            <div style="height: 320px; position: relative;">
+                <canvas id="chartDistribution"></canvas>
+            </div>
+        </div>
+
+        <!-- CARD 3: GRAFIK RIWAYAT TREN 30 TITIK INSPEKSI (HISTORIS) -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <i class="ri-line-chart-line"></i>
+                        3. Tren Riwayat 30 Inspeksi (Historis)
+                    </div>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Memantau laju penurunan sel bermasalah sepanjang 30 inspeksi terakhir.
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 12px; font-weight: 600; color: #475569;">Pilih Sel untuk Dianalisis:</label>
+                    <select id="selPicker" onchange="updateHistoryChart(parseInt(this.value))" class="form-select" style="width: 170px; padding: 5px 8px; font-size: 12px;">
+                        <!-- Options filled by JS -->
+                    </select>
+                </div>
+            </div>
+            <div style="height: 320px; position: relative;">
+                <canvas id="chartHistory"></canvas>
+            </div>
+        </div>
+
+        <!-- CARD 4: TABEL MATRIKS LENGKAP 172 SEL X 30 KOLOM RIWAYAT -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">
+                        <i class="ri-table-line"></i>
+                        4. Matriks Data Lengkap (172 Isian x 30 Kolom Tanggal Riwayat)
+                    </div>
+                    <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                        Daftar tabel lengkap dengan nomor kode isian, batas min/max, dan nilai pengukuran riil 30 inspeksi.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="searchTableInput" onkeyup="filterTableMatrix()" placeholder="Cari Kode / Nama Sel..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; width: 200px;">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="matrixTable">
+                    <thead>
+                        <tr>
+                            <th class="col-sticky-code">Kode</th>
+                            <th class="col-sticky-name">Nama Sel</th>
+                            <th>Status</th>
+                            <th>Tegangan Terakhir</th>
+                            <th>10 Jan 25</th><th>24 Jan 25</th><th>07 Feb 25</th><th>21 Feb 25</th><th>07 Mar 25</th><th>21 Mar 25</th><th>04 Apr 25</th><th>18 Apr 25</th><th>02 Mei 25</th><th>16 Mei 25</th><th>30 Mei 25</th><th>13 Jun 25</th><th>27 Jun 25</th><th>11 Jul 25</th><th>25 Jul 25</th><th>08 Agu 25</th><th>22 Agu 25</th><th>05 Sep 25</th><th>19 Sep 25</th><th>03 Okt 25</th><th>17 Okt 25</th><th>31 Okt 25</th><th>14 Nov 25</th><th>28 Nov 25</th><th>12 Des 25</th><th>26 Des 25</th><th>09 Jan 26</th><th>23 Jan 26</th><th>06 Feb 26</th><th>20 Feb 26</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixTableBody">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const rawCells = [{"id": 1, "name": "Sel 1", "kode": "JSB1S_1", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.2, 2.2, 2.22, 2.22, 2.23, 2.19, 2.21, 2.19, 2.2, 2.21, 2.19, 2.2, 2.22, 2.21, 2.2, 2.21, 2.22, 2.19, 2.22, 2.22, 2.2, 2.2, 2.23, 2.2, 2.19, 2.19, 2.22, 2.21, 2.22]}, {"id": 2, "name": "Sel 2", "kode": "JSB1S_2", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.24, 2.22, 2.22, 2.23, 2.22, 2.23, 2.22, 2.23, 2.2, 2.21, 2.21, 2.2, 2.21, 2.2, 2.21, 2.23, 2.21, 2.21, 2.21, 2.21, 2.24, 2.23, 2.22, 2.21, 2.23, 2.21, 2.22, 2.24, 2.23]}, {"id": 3, "name": "Sel 3", "kode": "JSB1S_3", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.22, 2.22, 2.2, 2.19, 2.2, 2.2, 2.2, 2.23, 2.23, 2.2, 2.22, 2.21, 2.23, 2.21, 2.2, 2.2, 2.21, 2.2, 2.21, 2.23, 2.21, 2.2, 2.23, 2.21, 2.19, 2.19, 2.19, 2.22, 2.22]}, {"id": 4, "name": "Sel 4", "kode": "JSB1S_4", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.2, 2.22, 2.2, 2.22, 2.21, 2.18, 2.21, 2.21, 2.2, 2.19, 2.21, 2.18, 2.2, 2.2, 2.22, 2.22, 2.19, 2.2, 2.19, 2.22, 2.21, 2.19, 2.21, 2.2, 2.19, 2.21, 2.2, 2.21, 2.2]}, {"id": 5, "name": "Sel 5", "kode": "JSB1S_5", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.17, 2.16, 2.2, 2.2, 2.19, 2.17, 2.16, 2.2, 2.2, 2.16, 2.18, 2.16, 2.19, 2.19, 2.17, 2.18, 2.18, 2.17, 2.19, 2.18, 2.17, 2.18, 2.19, 2.17, 2.17, 2.2, 2.19, 2.18, 2.18, 2.16]}, {"id": 6, "name": "Sel 6", "kode": "JSB1S_6", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.19, 2.18, 2.18, 2.17, 2.2, 2.18, 2.21, 2.2, 2.17, 2.18, 2.2, 2.18, 2.18, 2.21, 2.19, 2.19, 2.2, 2.2, 2.18, 2.17, 2.19, 2.19, 2.19, 2.2, 2.2, 2.21, 2.17, 2.19, 2.18]}, {"id": 7, "name": "Sel 7", "kode": "JSB1S_7", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.21, 2.22, 2.22, 2.21, 2.21, 2.24, 2.22, 2.23, 2.22, 2.2, 2.24, 2.23, 2.24, 2.24, 2.23, 2.21, 2.22, 2.21, 2.22, 2.2, 2.22, 2.24, 2.21, 2.23, 2.22, 2.22, 2.24, 2.24, 2.22]}, {"id": 8, "name": "Sel 8", "kode": "JSB1S_8", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.21, 2.24, 2.22, 2.22, 2.23, 2.2, 2.22, 2.22, 2.23, 2.21, 2.24, 2.2, 2.21, 2.22, 2.23, 2.21, 2.2, 2.24, 2.21, 2.22, 2.22, 2.22, 2.22, 2.22, 2.24, 2.21, 2.23, 2.21, 2.22]}, {"id": 9, "name": "Sel 9", "kode": "JSB1S_9", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.2, 2.22, 2.19, 2.21, 2.23, 2.23, 2.19, 2.2, 2.2, 2.23, 2.23, 2.23, 2.2, 2.2, 2.22, 2.22, 2.21, 2.23, 2.22, 2.19, 2.22, 2.2, 2.22, 2.23, 2.2, 2.19, 2.19, 2.21, 2.2]}, {"id": 10, "name": "Sel 10", "kode": "JSB1S_10", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.2, 2.22, 2.2, 2.21, 2.23, 2.22, 2.19, 2.21, 2.2, 2.19, 2.22, 2.22, 2.2, 2.22, 2.21, 2.21, 2.19, 2.19, 2.23, 2.23, 2.21, 2.22, 2.21, 2.2, 2.2, 2.2, 2.23, 2.22, 2.22]}, {"id": 11, "name": "Sel 11", "kode": "JSB1S_11", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.21, 2.2, 2.23, 2.24, 2.22, 2.22, 2.21, 2.24, 2.23, 2.24, 2.23, 2.24, 2.2, 2.23, 2.21, 2.24, 2.23, 2.23, 2.23, 2.21, 2.23, 2.2, 2.23, 2.23, 2.21, 2.23, 2.22, 2.21, 2.23]}, {"id": 12, "name": "Sel 12", "kode": "JSB1S_12", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.18, 2.18, 2.2, 2.21, 2.18, 2.2, 2.19, 2.21, 2.19, 2.21, 2.17, 2.21, 2.18, 2.21, 2.18, 2.17, 2.19, 2.2, 2.18, 2.19, 2.19, 2.19, 2.19, 2.18, 2.2, 2.17, 2.21, 2.19, 2.2]}, {"id": 13, "name": "Sel 13", "kode": "JSB1S_13", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.21, 2.2, 2.23, 2.21, 2.21, 2.23, 2.23, 2.21, 2.21, 2.22, 2.22, 2.21, 2.21, 2.22, 2.24, 2.23, 2.24, 2.22, 2.21, 2.22, 2.2, 2.21, 2.22, 2.22, 2.23, 2.22, 2.22, 2.21, 2.22]}, {"id": 14, "name": "Sel 14", "kode": "JSB1S_14", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.24, 2.22, 2.21, 2.23, 2.24, 2.22, 2.24, 2.24, 2.24, 2.22, 2.22, 2.21, 2.22, 2.23, 2.24, 2.21, 2.23, 2.24, 2.22, 2.24, 2.23, 2.22, 2.24, 2.21, 2.24, 2.24, 2.21, 2.23, 2.22, 2.25]}, {"id": 15, "name": "Sel 15", "kode": "JSB1S_15", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.2, 2.22, 2.21, 2.22, 2.22, 2.23, 2.21, 2.23, 2.23, 2.21, 2.22, 2.21, 2.22, 2.21, 2.23, 2.22, 2.21, 2.2, 2.2, 2.22, 2.22, 2.21, 2.22, 2.2, 2.19, 2.2, 2.2, 2.2, 2.21]}, {"id": 16, "name": "Sel 16", "kode": "JSB1S_16", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.2, 2.2, 2.17, 2.19, 2.19, 2.19, 2.18, 2.19, 2.21, 2.19, 2.2, 2.2, 2.2, 2.19, 2.17, 2.18, 2.2, 2.2, 2.21, 2.19, 2.2, 2.19, 2.19, 2.18, 2.18, 2.19, 2.17, 2.18, 2.2]}, {"id": 17, "name": "Sel 17", "kode": "JSB1S_17", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.2, 2.19, 2.2, 2.18, 2.2, 2.2, 2.18, 2.21, 2.19, 2.2, 2.18, 2.2, 2.19, 2.19, 2.21, 2.2, 2.21, 2.21, 2.19, 2.18, 2.18, 2.2, 2.22, 2.19, 2.21, 2.21, 2.21, 2.21, 2.22]}, {"id": 18, "name": "Sel 18", "kode": "JSB1S_18", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.18, 2.18, 2.2, 2.19, 2.18, 2.2, 2.2, 2.18, 2.19, 2.2, 2.17, 2.2, 2.21, 2.17, 2.17, 2.18, 2.2, 2.21, 2.19, 2.2, 2.17, 2.2, 2.2, 2.17, 2.2, 2.2, 2.19, 2.17, 2.21]}, {"id": 19, "name": "Sel 19", "kode": "JSB1S_19", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.22, 2.21, 2.22, 2.21, 2.23, 2.23, 2.2, 2.24, 2.23, 2.23, 2.23, 2.22, 2.23, 2.24, 2.21, 2.23, 2.22, 2.22, 2.22, 2.23, 2.21, 2.23, 2.23, 2.2, 2.24, 2.21, 2.22, 2.22, 2.22]}, {"id": 20, "name": "Sel 20", "kode": "JSB1S_20", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.19, 2.17, 2.17, 2.19, 2.17, 2.2, 2.19, 2.17, 2.16, 2.2, 2.16, 2.19, 2.18, 2.19, 2.19, 2.19, 2.18, 2.19, 2.16, 2.17, 2.19, 2.17, 2.18, 2.18, 2.18, 2.18, 2.19, 2.17, 2.19, 2.17]}, {"id": 21, "name": "Sel 21", "kode": "JSB1S_21", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.18, 2.17, 2.19, 2.2, 2.18, 2.18, 2.19, 2.2, 2.21, 2.19, 2.18, 2.17, 2.18, 2.18, 2.18, 2.17, 2.19, 2.18, 2.21, 2.19, 2.2, 2.18, 2.2, 2.19, 2.2, 2.19, 2.19, 2.19, 2.18]}, {"id": 22, "name": "Sel 22", "kode": "JSB1S_22", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.2, 2.18, 2.19, 2.18, 2.16, 2.19, 2.16, 2.17, 2.18, 2.17, 2.2, 2.16, 2.19, 2.18, 2.19, 2.17, 2.18, 2.18, 2.18, 2.19, 2.2, 2.17, 2.18, 2.18, 2.19, 2.2, 2.17, 2.17, 2.19, 2.17]}, {"id": 23, "name": "Sel 23", "kode": "JSB1S_23", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.17, 2.19, 2.19, 2.18, 2.18, 2.2, 2.2, 2.19, 2.2, 2.21, 2.2, 2.2, 2.2, 2.21, 2.19, 2.19, 2.2, 2.21, 2.2, 2.17, 2.18, 2.18, 2.2, 2.19, 2.18, 2.17, 2.2, 2.2, 2.21]}, {"id": 24, "name": "Sel 24", "kode": "JSB1S_24", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.19, 2.19, 2.21, 2.2, 2.2, 2.19, 2.23, 2.22, 2.21, 2.23, 2.23, 2.22, 2.2, 2.19, 2.22, 2.21, 2.22, 2.23, 2.2, 2.21, 2.22, 2.21, 2.19, 2.2, 2.2, 2.22, 2.22, 2.2, 2.22]}, {"id": 25, "name": "Sel 25", "kode": "JSB1S_25", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.2, 2.19, 2.19, 2.18, 2.18, 2.21, 2.19, 2.19, 2.21, 2.2, 2.19, 2.19, 2.18, 2.18, 2.2, 2.2, 2.2, 2.18, 2.19, 2.21, 2.19, 2.2, 2.17, 2.21, 2.19, 2.18, 2.18, 2.19, 2.19]}, {"id": 26, "name": "Sel 26", "kode": "JSB1S_26", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.2, 2.2, 2.18, 2.16, 2.19, 2.18, 2.19, 2.18, 2.17, 2.19, 2.2, 2.17, 2.18, 2.18, 2.2, 2.18, 2.2, 2.19, 2.17, 2.19, 2.18, 2.2, 2.18, 2.19, 2.17, 2.17, 2.18, 2.2, 2.18, 2.17]}, {"id": 27, "name": "Sel 27", "kode": "JSB1S_27", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.21, 2.21, 2.21, 2.2, 2.2, 2.22, 2.21, 2.2, 2.22, 2.19, 2.22, 2.22, 2.22, 2.21, 2.22, 2.22, 2.23, 2.21, 2.19, 2.21, 2.21, 2.22, 2.22, 2.21, 2.21, 2.21, 2.22, 2.21, 2.22]}, {"id": 28, "name": "Sel 28", "kode": "JSB1S_28", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.21, 2.18, 2.2, 2.2, 2.2, 2.2, 2.2, 2.19, 2.18, 2.2, 2.2, 2.2, 2.17, 2.17, 2.2, 2.21, 2.21, 2.2, 2.19, 2.17, 2.2, 2.2, 2.19, 2.2, 2.21, 2.17, 2.2, 2.18, 2.18]}, {"id": 29, "name": "Sel 29", "kode": "JSB1S_29", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.19, 2.2, 2.18, 2.17, 2.2, 2.19, 2.18, 2.21, 2.18, 2.19, 2.18, 2.18, 2.17, 2.2, 2.21, 2.2, 2.18, 2.19, 2.18, 2.19, 2.2, 2.19, 2.18, 2.2, 2.18, 2.19, 2.19, 2.18, 2.19]}, {"id": 30, "name": "Sel 30", "kode": "JSB1S_30", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.23, 2.2, 2.23, 2.22, 2.2, 2.21, 2.22, 2.22, 2.19, 2.21, 2.21, 2.23, 2.2, 2.22, 2.21, 2.2, 2.22, 2.21, 2.22, 2.22, 2.22, 2.22, 2.22, 2.23, 2.22, 2.2, 2.21, 2.21, 2.22, 2.19]}, {"id": 31, "name": "Sel 31", "kode": "JSB1S_31", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.18, 2.19, 2.21, 2.19, 2.21, 2.2, 2.18, 2.2, 2.19, 2.2, 2.2, 2.18, 2.17, 2.21, 2.18, 2.21, 2.2, 2.2, 2.21, 2.21, 2.2, 2.18, 2.2, 2.17, 2.19, 2.19, 2.2, 2.2]}, {"id": 32, "name": "Sel 32", "kode": "JSB1S_32", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.23, 2.19, 2.2, 2.19, 2.23, 2.21, 2.23, 2.2, 2.19, 2.22, 2.23, 2.2, 2.21, 2.2, 2.23, 2.2, 2.21, 2.19, 2.23, 2.2, 2.21, 2.22, 2.22, 2.23, 2.21, 2.22, 2.2, 2.21, 2.19]}, {"id": 33, "name": "Sel 33", "kode": "JSB1S_33", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.2, 2.22, 2.18, 2.19, 2.2, 2.22, 2.21, 2.18, 2.21, 2.2, 2.22, 2.19, 2.2, 2.19, 2.18, 2.21, 2.2, 2.21, 2.21, 2.2, 2.18, 2.21, 2.19, 2.19, 2.2, 2.18, 2.21, 2.19, 2.19, 2.21]}, {"id": 34, "name": "Sel 34", "kode": "JSB1S_34", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.22, 2.18, 2.21, 2.19, 2.19, 2.19, 2.19, 2.21, 2.18, 2.18, 2.21, 2.19, 2.19, 2.19, 2.18, 2.21, 2.2, 2.21, 2.2, 2.21, 2.2, 2.18, 2.2, 2.22, 2.18, 2.21, 2.21, 2.2, 2.2]}, {"id": 35, "name": "Sel 35", "kode": "JSB1S_35", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.21, 2.23, 2.23, 2.24, 2.23, 2.25, 2.21, 2.21, 2.23, 2.21, 2.22, 2.24, 2.23, 2.22, 2.25, 2.23, 2.23, 2.23, 2.21, 2.24, 2.24, 2.24, 2.24, 2.24, 2.22, 2.23, 2.22, 2.22, 2.23, 2.23]}, {"id": 36, "name": "Sel 36", "kode": "JSB1S_36", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.18, 2.19, 2.17, 2.17, 2.2, 2.16, 2.19, 2.16, 2.16, 2.19, 2.19, 2.18, 2.18, 2.18, 2.17, 2.16, 2.17, 2.19, 2.19, 2.19, 2.19, 2.2, 2.18, 2.17, 2.18, 2.17, 2.19, 2.17, 2.16, 2.19]}, {"id": 37, "name": "Sel 37", "kode": "JSB1S_37", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.2, 2.21, 2.21, 2.22, 2.21, 2.2, 2.21, 2.18, 2.22, 2.21, 2.19, 2.19, 2.21, 2.19, 2.19, 2.18, 2.21, 2.2, 2.2, 2.19, 2.21, 2.18, 2.21, 2.19, 2.2, 2.19, 2.19, 2.21, 2.21]}, {"id": 38, "name": "Sel 38", "kode": "JSB1S_38", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.19, 2.2, 2.21, 2.22, 2.2, 2.22, 2.21, 2.21, 2.2, 2.22, 2.19, 2.21, 2.2, 2.22, 2.21, 2.22, 2.19, 2.21, 2.21, 2.19, 2.2, 2.2, 2.2, 2.2, 2.2, 2.19, 2.22, 2.2, 2.21]}, {"id": 39, "name": "Sel 39", "kode": "JSB1S_39", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.23, 2.23, 2.2, 2.23, 2.2, 2.2, 2.24, 2.23, 2.22, 2.22, 2.23, 2.22, 2.2, 2.2, 2.21, 2.23, 2.22, 2.23, 2.24, 2.2, 2.23, 2.21, 2.22, 2.22, 2.22, 2.21, 2.21, 2.21, 2.21]}, {"id": 40, "name": "Sel 40", "kode": "JSB1S_40", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.21, 2.23, 2.2, 2.22, 2.22, 2.22, 2.2, 2.2, 2.2, 2.21, 2.22, 2.22, 2.2, 2.22, 2.21, 2.22, 2.22, 2.21, 2.23, 2.21, 2.22, 2.21, 2.22, 2.22, 2.2, 2.19, 2.21, 2.2, 2.2]}, {"id": 41, "name": "Sel 41", "kode": "JSB1S_41", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.18, 2.17, 2.18, 2.16, 2.19, 2.16, 2.19, 2.19, 2.18, 2.18, 2.18, 2.18, 2.19, 2.2, 2.18, 2.19, 2.19, 2.17, 2.18, 2.17, 2.16, 2.16, 2.2, 2.17, 2.19, 2.18, 2.17, 2.17, 2.18, 2.18]}, {"id": 42, "name": "Sel 42", "kode": "JSB1S_42", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 1.84, "status": "Kritis", "history": [2.19, 2.18, 2.17, 2.16, 2.14, 2.14, 2.14, 2.12, 2.08, 2.07, 2.08, 2.05, 2.06, 2.04, 2.04, 2.03, 1.99, 1.99, 1.96, 1.96, 1.97, 1.95, 1.92, 1.92, 1.92, 1.88, 1.87, 1.88, 1.86, 1.85]}, {"id": 43, "name": "Sel 43", "kode": "JSB1S_43", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.23, 2.22, 2.23, 2.22, 2.21, 2.21, 2.21, 2.21, 2.24, 2.22, 2.21, 2.21, 2.2, 2.23, 2.2, 2.23, 2.23, 2.24, 2.2, 2.21, 2.23, 2.21, 2.22, 2.21, 2.23, 2.23, 2.23, 2.21, 2.22]}, {"id": 44, "name": "Sel 44", "kode": "JSB1S_44", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.19, 2.2, 2.19, 2.21, 2.2, 2.2, 2.19, 2.21, 2.2, 2.21, 2.19, 2.22, 2.22, 2.2, 2.19, 2.2, 2.2, 2.22, 2.21, 2.21, 2.19, 2.19, 2.21, 2.21, 2.2, 2.18, 2.21, 2.21, 2.19]}, {"id": 45, "name": "Sel 45", "kode": "JSB1S_45", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.24, 2.21, 2.22, 2.24, 2.21, 2.22, 2.21, 2.2, 2.2, 2.22, 2.21, 2.24, 2.21, 2.2, 2.24, 2.23, 2.23, 2.23, 2.21, 2.21, 2.23, 2.23, 2.21, 2.23, 2.22, 2.2, 2.2, 2.21, 2.23]}, {"id": 46, "name": "Sel 46", "kode": "JSB1S_46", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.21, 2.19, 2.2, 2.2, 2.19, 2.21, 2.22, 2.21, 2.19, 2.23, 2.21, 2.19, 2.21, 2.2, 2.2, 2.21, 2.21, 2.2, 2.21, 2.22, 2.19, 2.23, 2.19, 2.21, 2.21, 2.23, 2.21, 2.21, 2.21]}, {"id": 47, "name": "Sel 47", "kode": "JSB1S_47", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.23, 2.2, 2.19, 2.22, 2.2, 2.22, 2.22, 2.22, 2.22, 2.2, 2.19, 2.21, 2.22, 2.2, 2.22, 2.21, 2.22, 2.22, 2.22, 2.19, 2.22, 2.21, 2.2, 2.19, 2.2, 2.19, 2.23, 2.21, 2.23, 2.21]}, {"id": 48, "name": "Sel 48", "kode": "JSB1S_48", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.18, 2.2, 2.2, 2.18, 2.17, 2.18, 2.21, 2.2, 2.21, 2.19, 2.21, 2.19, 2.19, 2.21, 2.19, 2.2, 2.2, 2.17, 2.19, 2.2, 2.19, 2.18, 2.17, 2.2, 2.18, 2.19, 2.19, 2.2]}, {"id": 49, "name": "Sel 49", "kode": "JSB1S_49", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.21, 2.19, 2.22, 2.19, 2.22, 2.22, 2.18, 2.21, 2.19, 2.21, 2.21, 2.22, 2.19, 2.2, 2.21, 2.18, 2.18, 2.21, 2.19, 2.2, 2.2, 2.2, 2.21, 2.22, 2.19, 2.21, 2.2, 2.2, 2.2]}, {"id": 50, "name": "Sel 50", "kode": "JSB1S_50", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.19, 2.22, 2.21, 2.21, 2.21, 2.2, 2.2, 2.21, 2.23, 2.2, 2.23, 2.21, 2.19, 2.22, 2.21, 2.23, 2.21, 2.19, 2.22, 2.22, 2.2, 2.2, 2.19, 2.21, 2.23, 2.22, 2.22, 2.23, 2.22]}, {"id": 51, "name": "Sel 51", "kode": "JSB1S_51", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.2, 2.21, 2.21, 2.23, 2.2, 2.22, 2.21, 2.23, 2.22, 2.22, 2.2, 2.21, 2.24, 2.23, 2.22, 2.23, 2.23, 2.2, 2.24, 2.23, 2.22, 2.23, 2.21, 2.24, 2.23, 2.23, 2.21, 2.24, 2.22]}, {"id": 52, "name": "Sel 52", "kode": "JSB1S_52", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.21, 2.21, 2.22, 2.22, 2.22, 2.24, 2.22, 2.25, 2.25, 2.24, 2.22, 2.24, 2.23, 2.22, 2.22, 2.23, 2.23, 2.22, 2.25, 2.22, 2.24, 2.24, 2.23, 2.24, 2.23, 2.24, 2.21, 2.21, 2.24, 2.23]}, {"id": 53, "name": "Sel 53", "kode": "JSB1S_53", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.21, 2.22, 2.21, 2.22, 2.2, 2.23, 2.21, 2.22, 2.22, 2.2, 2.19, 2.19, 2.21, 2.21, 2.2, 2.21, 2.2, 2.22, 2.22, 2.22, 2.23, 2.2, 2.2, 2.21, 2.2, 2.21, 2.2, 2.2, 2.19]}, {"id": 54, "name": "Sel 54", "kode": "JSB1S_54", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.19, 2.18, 2.2, 2.18, 2.18, 2.19, 2.18, 2.2, 2.19, 2.19, 2.19, 2.18, 2.17, 2.21, 2.19, 2.21, 2.18, 2.18, 2.17, 2.19, 2.21, 2.2, 2.19, 2.19, 2.2, 2.19, 2.21, 2.2, 2.2]}, {"id": 55, "name": "Sel 55", "kode": "JSB1S_55", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.2, 2.2, 2.19, 2.2, 2.18, 2.2, 2.21, 2.19, 2.22, 2.21, 2.18, 2.22, 2.2, 2.21, 2.19, 2.22, 2.21, 2.19, 2.2, 2.2, 2.18, 2.19, 2.19, 2.2, 2.2, 2.2, 2.2, 2.19, 2.2, 2.19]}, {"id": 56, "name": "Sel 56", "kode": "JSB1S_56", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.24, 2.22, 2.22, 2.24, 2.23, 2.24, 2.22, 2.24, 2.22, 2.24, 2.25, 2.23, 2.24, 2.24, 2.24, 2.21, 2.23, 2.25, 2.24, 2.24, 2.23, 2.24, 2.23, 2.22, 2.24, 2.23, 2.24, 2.22, 2.24, 2.21]}, {"id": 57, "name": "Sel 57", "kode": "JSB1S_57", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.21, 2.21, 2.22, 2.22, 2.24, 2.23, 2.24, 2.25, 2.24, 2.24, 2.21, 2.22, 2.22, 2.22, 2.24, 2.23, 2.22, 2.22, 2.25, 2.22, 2.22, 2.24, 2.24, 2.24, 2.24, 2.23, 2.22, 2.22, 2.23, 2.22]}, {"id": 58, "name": "Sel 58", "kode": "JSB1S_58", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.22, 2.22, 2.22, 2.24, 2.22, 2.22, 2.25, 2.24, 2.22, 2.21, 2.24, 2.23, 2.25, 2.24, 2.25, 2.24, 2.22, 2.22, 2.24, 2.22, 2.23, 2.22, 2.23, 2.22, 2.23, 2.25, 2.24, 2.22, 2.23, 2.23]}, {"id": 59, "name": "Sel 59", "kode": "JSB1S_59", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.19, 2.2, 2.17, 2.19, 2.2, 2.17, 2.2, 2.17, 2.19, 2.21, 2.19, 2.21, 2.21, 2.19, 2.18, 2.21, 2.18, 2.2, 2.21, 2.17, 2.19, 2.19, 2.2, 2.21, 2.21, 2.18, 2.21, 2.18, 2.21]}, {"id": 60, "name": "Sel 60", "kode": "JSB1S_60", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.23, 2.23, 2.25, 2.25, 2.25, 2.25, 2.21, 2.23, 2.21, 2.25, 2.22, 2.25, 2.23, 2.23, 2.25, 2.24, 2.23, 2.22, 2.21, 2.22, 2.23, 2.22, 2.22, 2.24, 2.24, 2.23, 2.24, 2.22, 2.24, 2.25]}, {"id": 61, "name": "Sel 61", "kode": "JSB1S_61", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.2, 2.23, 2.21, 2.21, 2.21, 2.21, 2.21, 2.21, 2.23, 2.24, 2.21, 2.23, 2.2, 2.23, 2.23, 2.2, 2.2, 2.21, 2.22, 2.22, 2.24, 2.23, 2.21, 2.2, 2.24, 2.21, 2.22, 2.21, 2.21]}, {"id": 62, "name": "Sel 62", "kode": "JSB1S_62", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.19, 2.19, 2.19, 2.19, 2.19, 2.2, 2.18, 2.18, 2.2, 2.2, 2.17, 2.19, 2.2, 2.17, 2.19, 2.17, 2.19, 2.19, 2.19, 2.18, 2.18, 2.19, 2.17, 2.18, 2.19, 2.17, 2.19, 2.2, 2.19]}, {"id": 63, "name": "Sel 63", "kode": "JSB1S_63", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.19, 2.21, 2.22, 2.22, 2.21, 2.22, 2.22, 2.21, 2.19, 2.2, 2.19, 2.23, 2.23, 2.19, 2.23, 2.19, 2.21, 2.22, 2.22, 2.23, 2.22, 2.21, 2.23, 2.21, 2.22, 2.23, 2.21, 2.22, 2.22]}, {"id": 64, "name": "Sel 64", "kode": "JSB1S_64", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.2, 2.2, 2.21, 2.21, 2.22, 2.2, 2.19, 2.19, 2.2, 2.22, 2.21, 2.21, 2.22, 2.2, 2.2, 2.2, 2.23, 2.22, 2.19, 2.22, 2.21, 2.22, 2.23, 2.19, 2.2, 2.19, 2.19, 2.21, 2.22]}, {"id": 65, "name": "Sel 65", "kode": "JSB1S_65", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.19, 2.18, 2.17, 2.17, 2.19, 2.16, 2.18, 2.17, 2.19, 2.19, 2.17, 2.18, 2.19, 2.17, 2.17, 2.17, 2.19, 2.17, 2.17, 2.16, 2.2, 2.2, 2.2, 2.19, 2.18, 2.18, 2.2, 2.2, 2.19, 2.19]}, {"id": 66, "name": "Sel 66", "kode": "JSB1S_66", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.2, 2.19, 2.2, 2.21, 2.2, 2.21, 2.19, 2.21, 2.21, 2.22, 2.2, 2.22, 2.2, 2.19, 2.19, 2.19, 2.21, 2.22, 2.21, 2.18, 2.21, 2.19, 2.19, 2.21, 2.2, 2.21, 2.19, 2.21, 2.21, 2.2]}, {"id": 67, "name": "Sel 67", "kode": "JSB1S_67", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.19, 2.22, 2.18, 2.22, 2.22, 2.18, 2.22, 2.2, 2.19, 2.2, 2.19, 2.22, 2.2, 2.21, 2.2, 2.2, 2.19, 2.19, 2.2, 2.2, 2.18, 2.22, 2.2, 2.21, 2.22, 2.19, 2.2, 2.2, 2.19]}, {"id": 68, "name": "Sel 68", "kode": "JSB1S_68", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.21, 2.19, 2.19, 2.18, 2.18, 2.19, 2.2, 2.19, 2.2, 2.2, 2.18, 2.2, 2.21, 2.2, 2.19, 2.18, 2.2, 2.18, 2.2, 2.19, 2.21, 2.19, 2.2, 2.17, 2.17, 2.2, 2.21, 2.2, 2.2]}, {"id": 69, "name": "Sel 69", "kode": "JSB1S_69", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.19, 2.21, 2.18, 2.2, 2.19, 2.2, 2.21, 2.2, 2.2, 2.2, 2.18, 2.2, 2.18, 2.2, 2.19, 2.22, 2.18, 2.21, 2.21, 2.21, 2.22, 2.18, 2.18, 2.19, 2.19, 2.2, 2.21, 2.19, 2.2]}, {"id": 70, "name": "Sel 70", "kode": "JSB1S_70", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.2, 2.2, 2.22, 2.19, 2.21, 2.21, 2.21, 2.21, 2.21, 2.18, 2.2, 2.2, 2.18, 2.18, 2.19, 2.2, 2.2, 2.21, 2.2, 2.21, 2.18, 2.2, 2.18, 2.19, 2.21, 2.22, 2.2, 2.18, 2.18, 2.22]}, {"id": 71, "name": "Sel 71", "kode": "JSB1S_71", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.2, 2.24, 2.21, 2.24, 2.22, 2.23, 2.23, 2.22, 2.2, 2.21, 2.21, 2.23, 2.22, 2.24, 2.21, 2.23, 2.21, 2.24, 2.23, 2.22, 2.24, 2.2, 2.22, 2.23, 2.21, 2.23, 2.24, 2.22, 2.23]}, {"id": 72, "name": "Sel 72", "kode": "JSB1S_72", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.17, 2.2, 2.18, 2.17, 2.2, 2.18, 2.19, 2.19, 2.16, 2.18, 2.19, 2.19, 2.16, 2.17, 2.19, 2.19, 2.19, 2.17, 2.16, 2.16, 2.17, 2.17, 2.17, 2.17, 2.17, 2.18, 2.18, 2.18, 2.16, 2.17]}, {"id": 73, "name": "Sel 73", "kode": "JSB1S_73", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.18, 2.17, 2.18, 2.17, 2.18, 2.16, 2.2, 2.2, 2.2, 2.18, 2.17, 2.18, 2.17, 2.17, 2.18, 2.16, 2.18, 2.18, 2.18, 2.16, 2.17, 2.17, 2.19, 2.18, 2.17, 2.16, 2.17, 2.2, 2.17, 2.18]}, {"id": 74, "name": "Sel 74", "kode": "JSB1S_74", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.21, 2.23, 2.23, 2.24, 2.21, 2.21, 2.24, 2.21, 2.21, 2.24, 2.24, 2.21, 2.23, 2.22, 2.22, 2.21, 2.22, 2.23, 2.22, 2.2, 2.22, 2.22, 2.22, 2.23, 2.22, 2.24, 2.22, 2.23, 2.22]}, {"id": 75, "name": "Sel 75", "kode": "JSB1S_75", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.2, 2.2, 2.19, 2.19, 2.2, 2.18, 2.2, 2.2, 2.2, 2.17, 2.21, 2.19, 2.19, 2.19, 2.21, 2.2, 2.19, 2.2, 2.18, 2.21, 2.19, 2.2, 2.17, 2.2, 2.2, 2.18, 2.2, 2.17, 2.21]}, {"id": 76, "name": "Sel 76", "kode": "JSB1S_76", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.22, 2.23, 2.21, 2.19, 2.2, 2.21, 2.21, 2.21, 2.21, 2.21, 2.21, 2.22, 2.21, 2.21, 2.2, 2.19, 2.19, 2.21, 2.23, 2.19, 2.23, 2.2, 2.2, 2.21, 2.2, 2.21, 2.21, 2.21, 2.22]}, {"id": 77, "name": "Sel 77", "kode": "JSB1S_77", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.21, 2.18, 2.21, 2.21, 2.21, 2.19, 2.22, 2.19, 2.19, 2.19, 2.2, 2.22, 2.19, 2.2, 2.19, 2.21, 2.2, 2.18, 2.2, 2.19, 2.2, 2.2, 2.21, 2.19, 2.21, 2.21, 2.18, 2.18, 2.21]}, {"id": 78, "name": "Sel 78", "kode": "JSB1S_78", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.19, 2.18, 2.2, 2.19, 2.2, 2.19, 2.19, 2.19, 2.18, 2.2, 2.19, 2.2, 2.2, 2.18, 2.19, 2.17, 2.18, 2.17, 2.18, 2.18, 2.2, 2.19, 2.19, 2.18, 2.19, 2.18, 2.2, 2.2, 2.2]}, {"id": 79, "name": "Sel 79", "kode": "JSB1S_79", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.23, 2.23, 2.22, 2.22, 2.23, 2.21, 2.22, 2.21, 2.22, 2.24, 2.25, 2.23, 2.23, 2.24, 2.23, 2.24, 2.23, 2.21, 2.21, 2.24, 2.22, 2.22, 2.23, 2.22, 2.23, 2.24, 2.24, 2.23, 2.21, 2.21]}, {"id": 80, "name": "Sel 80", "kode": "JSB1S_80", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.21, 2.23, 2.2, 2.23, 2.22, 2.24, 2.2, 2.23, 2.23, 2.21, 2.24, 2.22, 2.21, 2.23, 2.22, 2.24, 2.23, 2.21, 2.23, 2.22, 2.21, 2.23, 2.23, 2.21, 2.21, 2.21, 2.21, 2.2, 2.21]}, {"id": 81, "name": "Sel 81", "kode": "JSB1S_81", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.18, 2.2, 2.18, 2.18, 2.2, 2.21, 2.2, 2.17, 2.21, 2.2, 2.21, 2.21, 2.2, 2.18, 2.2, 2.18, 2.2, 2.2, 2.2, 2.2, 2.19, 2.19, 2.18, 2.19, 2.19, 2.2, 2.21, 2.17, 2.19]}, {"id": 82, "name": "Sel 82", "kode": "JSB1S_82", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.18, 2.21, 2.18, 2.17, 2.2, 2.2, 2.2, 2.19, 2.2, 2.18, 2.17, 2.19, 2.18, 2.19, 2.18, 2.18, 2.2, 2.18, 2.19, 2.19, 2.19, 2.18, 2.2, 2.17, 2.17, 2.2, 2.19, 2.17, 2.2]}, {"id": 83, "name": "Sel 83", "kode": "JSB1S_83", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.22, 2.19, 2.21, 2.19, 2.21, 2.19, 2.22, 2.19, 2.21, 2.19, 2.19, 2.22, 2.19, 2.2, 2.19, 2.21, 2.19, 2.21, 2.21, 2.18, 2.2, 2.19, 2.19, 2.21, 2.18, 2.21, 2.21, 2.22, 2.2]}, {"id": 84, "name": "Sel 84", "kode": "JSB1S_84", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.19, 2.2, 2.17, 2.18, 2.21, 2.18, 2.2, 2.2, 2.18, 2.21, 2.18, 2.19, 2.17, 2.2, 2.19, 2.2, 2.2, 2.18, 2.19, 2.2, 2.2, 2.17, 2.17, 2.2, 2.19, 2.19, 2.21, 2.18, 2.18]}, {"id": 85, "name": "Sel 85", "kode": "JSB1S_85", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.19, 2.19, 2.19, 2.2, 2.2, 2.2, 2.2, 2.18, 2.19, 2.19, 2.2, 2.18, 2.17, 2.21, 2.21, 2.19, 2.17, 2.19, 2.19, 2.19, 2.21, 2.21, 2.21, 2.18, 2.2, 2.19, 2.18, 2.2, 2.2]}, {"id": 86, "name": "Sel 86", "kode": "JSB1S_86", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.24, 2.21, 2.21, 2.22, 2.21, 2.21, 2.24, 2.23, 2.24, 2.23, 2.23, 2.24, 2.21, 2.23, 2.23, 2.22, 2.22, 2.23, 2.22, 2.24, 2.23, 2.23, 2.24, 2.24, 2.24, 2.21, 2.24, 2.24, 2.24, 2.21]}, {"id": 87, "name": "Sel 87", "kode": "JSB1S_87", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.05, "status": "Warning", "history": [2.19, 2.18, 2.18, 2.17, 2.18, 2.18, 2.15, 2.16, 2.16, 2.13, 2.16, 2.14, 2.14, 2.14, 2.11, 2.1, 2.12, 2.1, 2.12, 2.11, 2.07, 2.1, 2.07, 2.06, 2.08, 2.07, 2.05, 2.06, 2.05, 2.05]}, {"id": 88, "name": "Sel 88", "kode": "JSB1S_88", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.2, 2.19, 2.21, 2.22, 2.2, 2.21, 2.19, 2.22, 2.2, 2.21, 2.21, 2.2, 2.23, 2.22, 2.21, 2.23, 2.22, 2.21, 2.2, 2.21, 2.22, 2.2, 2.19, 2.2, 2.21, 2.23, 2.2, 2.22, 2.23]}, {"id": 89, "name": "Sel 89", "kode": "JSB1S_89", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.21, 2.23, 2.22, 2.24, 2.22, 2.23, 2.21, 2.22, 2.23, 2.22, 2.23, 2.23, 2.23, 2.23, 2.24, 2.22, 2.25, 2.24, 2.22, 2.21, 2.23, 2.22, 2.22, 2.24, 2.25, 2.25, 2.21, 2.24, 2.24, 2.24]}, {"id": 90, "name": "Sel 90", "kode": "JSB1S_90", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.18, 2.19, 2.17, 2.21, 2.2, 2.17, 2.21, 2.21, 2.19, 2.2, 2.18, 2.21, 2.17, 2.17, 2.18, 2.2, 2.17, 2.19, 2.19, 2.21, 2.18, 2.18, 2.18, 2.2, 2.2, 2.2, 2.18, 2.18, 2.17]}, {"id": 91, "name": "Sel 91", "kode": "JSB1S_91", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.19, 2.18, 2.18, 2.19, 2.19, 2.19, 2.21, 2.18, 2.18, 2.18, 2.17, 2.18, 2.2, 2.2, 2.2, 2.17, 2.2, 2.18, 2.17, 2.18, 2.18, 2.19, 2.2, 2.18, 2.21, 2.17, 2.19, 2.19, 2.2]}, {"id": 92, "name": "Sel 92", "kode": "JSB1S_92", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.2, 2.18, 2.17, 2.2, 2.21, 2.18, 2.2, 2.18, 2.2, 2.2, 2.19, 2.18, 2.2, 2.17, 2.17, 2.21, 2.19, 2.18, 2.21, 2.2, 2.18, 2.17, 2.19, 2.18, 2.19, 2.2, 2.19, 2.17, 2.2]}, {"id": 93, "name": "Sel 93", "kode": "JSB1S_93", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.18, 2.18, 2.21, 2.17, 2.19, 2.18, 2.18, 2.19, 2.19, 2.17, 2.18, 2.18, 2.18, 2.21, 2.19, 2.2, 2.2, 2.2, 2.21, 2.2, 2.18, 2.19, 2.19, 2.21, 2.19, 2.19, 2.18, 2.18, 2.18]}, {"id": 94, "name": "Sel 94", "kode": "JSB1S_94", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.2, 2.24, 2.22, 2.23, 2.24, 2.24, 2.2, 2.23, 2.21, 2.23, 2.24, 2.2, 2.24, 2.21, 2.23, 2.23, 2.21, 2.23, 2.23, 2.21, 2.22, 2.23, 2.23, 2.24, 2.2, 2.23, 2.24, 2.22, 2.22]}, {"id": 95, "name": "Sel 95", "kode": "JSB1S_95", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.21, 2.19, 2.18, 2.19, 2.17, 2.18, 2.18, 2.19, 2.17, 2.21, 2.18, 2.18, 2.2, 2.21, 2.2, 2.18, 2.17, 2.19, 2.21, 2.2, 2.2, 2.2, 2.21, 2.18, 2.21, 2.19, 2.17, 2.18, 2.18]}, {"id": 96, "name": "Sel 96", "kode": "JSB1S_96", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.2, 2.21, 2.2, 2.18, 2.21, 2.2, 2.21, 2.2, 2.18, 2.19, 2.18, 2.18, 2.2, 2.18, 2.2, 2.21, 2.21, 2.19, 2.21, 2.21, 2.17, 2.19, 2.21, 2.21, 2.18, 2.19, 2.21, 2.18, 2.2]}, {"id": 97, "name": "Sel 97", "kode": "JSB1S_97", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.18, 2.21, 2.17, 2.2, 2.2, 2.21, 2.19, 2.18, 2.18, 2.17, 2.18, 2.17, 2.17, 2.19, 2.2, 2.21, 2.21, 2.19, 2.19, 2.19, 2.17, 2.19, 2.2, 2.2, 2.2, 2.18, 2.17, 2.2, 2.18]}, {"id": 98, "name": "Sel 98", "kode": "JSB1S_98", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.18, 2.19, 2.2, 2.21, 2.2, 2.22, 2.18, 2.2, 2.2, 2.2, 2.18, 2.22, 2.19, 2.22, 2.19, 2.18, 2.19, 2.19, 2.21, 2.21, 2.21, 2.19, 2.19, 2.19, 2.18, 2.2, 2.21, 2.19, 2.19]}, {"id": 99, "name": "Sel 99", "kode": "JSB1S_99", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.21, 2.2, 2.19, 2.18, 2.19, 2.19, 2.18, 2.21, 2.19, 2.2, 2.2, 2.21, 2.18, 2.2, 2.19, 2.22, 2.19, 2.2, 2.19, 2.2, 2.19, 2.19, 2.18, 2.21, 2.21, 2.18, 2.19, 2.2, 2.22]}, {"id": 100, "name": "Sel 100", "kode": "JSB1S_100", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.22, 2.22, 2.21, 2.21, 2.22, 2.21, 2.23, 2.21, 2.19, 2.23, 2.22, 2.21, 2.23, 2.22, 2.22, 2.21, 2.19, 2.22, 2.2, 2.23, 2.23, 2.22, 2.2, 2.21, 2.23, 2.21, 2.23, 2.22, 2.22]}, {"id": 101, "name": "Sel 101", "kode": "JSB1S_101", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.21, 2.17, 2.19, 2.19, 2.18, 2.18, 2.19, 2.2, 2.2, 2.19, 2.19, 2.19, 2.19, 2.18, 2.19, 2.2, 2.21, 2.21, 2.19, 2.17, 2.18, 2.19, 2.18, 2.19, 2.19, 2.19, 2.19, 2.17, 2.18]}, {"id": 102, "name": "Sel 102", "kode": "JSB1S_102", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.2, 2.17, 2.21, 2.18, 2.18, 2.2, 2.21, 2.21, 2.17, 2.2, 2.18, 2.18, 2.19, 2.2, 2.17, 2.2, 2.18, 2.21, 2.19, 2.2, 2.18, 2.19, 2.2, 2.18, 2.18, 2.2, 2.2, 2.2, 2.2]}, {"id": 103, "name": "Sel 103", "kode": "JSB1S_103", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.21, 2.21, 2.22, 2.21, 2.23, 2.24, 2.2, 2.21, 2.23, 2.23, 2.21, 2.22, 2.24, 2.23, 2.21, 2.23, 2.22, 2.23, 2.2, 2.2, 2.21, 2.22, 2.21, 2.23, 2.22, 2.21, 2.21, 2.24, 2.23]}, {"id": 104, "name": "Sel 104", "kode": "JSB1S_104", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.21, 2.2, 2.21, 2.23, 2.22, 2.22, 2.22, 2.2, 2.21, 2.19, 2.22, 2.22, 2.19, 2.23, 2.22, 2.21, 2.19, 2.2, 2.22, 2.2, 2.23, 2.22, 2.21, 2.21, 2.2, 2.2, 2.21, 2.22, 2.22]}, {"id": 105, "name": "Sel 105", "kode": "JSB1S_105", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.2, 2.21, 2.21, 2.19, 2.21, 2.2, 2.19, 2.18, 2.18, 2.22, 2.21, 2.21, 2.19, 2.21, 2.22, 2.19, 2.19, 2.21, 2.22, 2.21, 2.21, 2.2, 2.21, 2.21, 2.21, 2.21, 2.22, 2.19, 2.2]}, {"id": 106, "name": "Sel 106", "kode": "JSB1S_106", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.21, 2.2, 2.19, 2.21, 2.19, 2.2, 2.21, 2.22, 2.21, 2.2, 2.21, 2.21, 2.22, 2.19, 2.18, 2.19, 2.19, 2.21, 2.21, 2.19, 2.21, 2.19, 2.18, 2.19, 2.21, 2.19, 2.21, 2.19, 2.19]}, {"id": 107, "name": "Sel 107", "kode": "JSB1S_107", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.19, 2.2, 2.19, 2.21, 2.17, 2.21, 2.19, 2.2, 2.19, 2.18, 2.17, 2.2, 2.18, 2.18, 2.19, 2.19, 2.21, 2.19, 2.18, 2.2, 2.2, 2.19, 2.2, 2.18, 2.2, 2.17, 2.18, 2.2, 2.18]}, {"id": 108, "name": "Sel 108", "kode": "JSB1S_108", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.23, 2.2, 2.22, 2.23, 2.22, 2.24, 2.22, 2.2, 2.21, 2.21, 2.2, 2.21, 2.23, 2.21, 2.23, 2.23, 2.21, 2.23, 2.21, 2.21, 2.22, 2.22, 2.21, 2.23, 2.21, 2.21, 2.23, 2.22, 2.21]}, {"id": 109, "name": "Sel 109", "kode": "JSB1S_109", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.24, 2.21, 2.24, 2.21, 2.21, 2.24, 2.24, 2.22, 2.21, 2.23, 2.21, 2.23, 2.22, 2.21, 2.21, 2.23, 2.2, 2.24, 2.21, 2.22, 2.2, 2.24, 2.23, 2.23, 2.2, 2.23, 2.22, 2.22, 2.22, 2.22]}, {"id": 110, "name": "Sel 110", "kode": "JSB1S_110", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.2, 2.18, 2.2, 2.2, 2.18, 2.19, 2.18, 2.2, 2.17, 2.2, 2.17, 2.17, 2.17, 2.18, 2.18, 2.18, 2.19, 2.18, 2.2, 2.18, 2.17, 2.19, 2.18, 2.21, 2.18, 2.17, 2.2, 2.21, 2.2]}, {"id": 111, "name": "Sel 111", "kode": "JSB1S_111", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.19, 2.21, 2.22, 2.19, 2.2, 2.2, 2.23, 2.2, 2.21, 2.19, 2.2, 2.19, 2.2, 2.22, 2.2, 2.22, 2.19, 2.22, 2.19, 2.22, 2.22, 2.2, 2.2, 2.21, 2.21, 2.23, 2.19, 2.22, 2.2]}, {"id": 112, "name": "Sel 112", "kode": "JSB1S_112", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.19, 2.2, 2.21, 2.21, 2.21, 2.21, 2.18, 2.21, 2.18, 2.22, 2.19, 2.2, 2.2, 2.21, 2.21, 2.19, 2.2, 2.19, 2.18, 2.21, 2.21, 2.22, 2.19, 2.22, 2.18, 2.2, 2.18, 2.19, 2.19]}, {"id": 113, "name": "Sel 113", "kode": "JSB1S_113", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.23, 2.22, 2.22, 2.24, 2.23, 2.21, 2.22, 2.23, 2.2, 2.23, 2.21, 2.21, 2.23, 2.22, 2.23, 2.22, 2.24, 2.2, 2.23, 2.21, 2.23, 2.23, 2.23, 2.2, 2.22, 2.21, 2.24, 2.2, 2.21]}, {"id": 114, "name": "Sel 114", "kode": "JSB1S_114", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.2, 2.21, 2.22, 2.21, 2.22, 2.21, 2.19, 2.21, 2.22, 2.19, 2.21, 2.21, 2.19, 2.19, 2.21, 2.21, 2.2, 2.21, 2.2, 2.22, 2.23, 2.2, 2.19, 2.2, 2.21, 2.21, 2.21, 2.21, 2.22]}, {"id": 115, "name": "Sel 115", "kode": "JSB1S_115", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.2, 2.23, 2.21, 2.21, 2.23, 2.24, 2.21, 2.22, 2.23, 2.2, 2.21, 2.21, 2.23, 2.23, 2.2, 2.22, 2.21, 2.24, 2.22, 2.22, 2.23, 2.23, 2.2, 2.22, 2.24, 2.23, 2.22, 2.23, 2.22, 2.23]}, {"id": 116, "name": "Sel 116", "kode": "JSB1S_116", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.22, 2.23, 2.23, 2.21, 2.25, 2.24, 2.23, 2.23, 2.25, 2.22, 2.23, 2.24, 2.22, 2.23, 2.23, 2.25, 2.23, 2.23, 2.25, 2.25, 2.24, 2.22, 2.25, 2.25, 2.23, 2.22, 2.23, 2.24, 2.24, 2.22]}, {"id": 117, "name": "Sel 117", "kode": "JSB1S_117", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.23, 2.24, 2.23, 2.21, 2.22, 2.21, 2.21, 2.23, 2.24, 2.23, 2.24, 2.22, 2.23, 2.21, 2.2, 2.21, 2.22, 2.22, 2.23, 2.22, 2.23, 2.23, 2.21, 2.23, 2.23, 2.22, 2.2, 2.21, 2.23]}, {"id": 118, "name": "Sel 118", "kode": "JSB1S_118", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.29, "status": "Normal", "history": [2.3, 2.28, 2.28, 2.28, 2.3, 2.3, 2.28, 2.3, 2.27, 2.3, 2.27, 2.3, 2.3, 2.3, 2.3, 2.29, 2.28, 2.3, 2.3, 2.28, 2.3, 2.31, 2.29, 2.31, 2.31, 2.28, 2.29, 2.27, 2.28, 2.29]}, {"id": 119, "name": "Sel 119", "kode": "JSB1S_119", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.23, 2.24, 2.23, 2.23, 2.23, 2.22, 2.22, 2.23, 2.24, 2.21, 2.21, 2.23, 2.21, 2.21, 2.22, 2.22, 2.22, 2.22, 2.21, 2.22, 2.21, 2.21, 2.23, 2.21, 2.21, 2.21, 2.2, 2.24, 2.22]}, {"id": 120, "name": "Sel 120", "kode": "JSB1S_120", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.21, 2.2, 2.22, 2.2, 2.2, 2.2, 2.19, 2.21, 2.21, 2.21, 2.19, 2.2, 2.2, 2.2, 2.2, 2.2, 2.22, 2.21, 2.23, 2.22, 2.23, 2.19, 2.22, 2.21, 2.23, 2.21, 2.21, 2.23, 2.22]}, {"id": 121, "name": "Sel 121", "kode": "JSB1S_121", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.22, 2.2, 2.2, 2.19, 2.22, 2.21, 2.19, 2.21, 2.2, 2.18, 2.22, 2.19, 2.2, 2.22, 2.19, 2.22, 2.2, 2.18, 2.18, 2.21, 2.21, 2.21, 2.2, 2.18, 2.2, 2.21, 2.22, 2.21, 2.21]}, {"id": 122, "name": "Sel 122", "kode": "JSB1S_122", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.24, 2.22, 2.23, 2.22, 2.21, 2.21, 2.24, 2.23, 2.23, 2.22, 2.22, 2.23, 2.24, 2.23, 2.21, 2.24, 2.23, 2.24, 2.23, 2.24, 2.23, 2.24, 2.21, 2.25, 2.21, 2.24, 2.22, 2.21, 2.24, 2.23]}, {"id": 123, "name": "Sel 123", "kode": "JSB1S_123", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.2, 2.2, 2.19, 2.2, 2.21, 2.2, 2.22, 2.19, 2.21, 2.22, 2.21, 2.21, 2.19, 2.22, 2.2, 2.2, 2.18, 2.18, 2.2, 2.2, 2.22, 2.19, 2.21, 2.22, 2.19, 2.2, 2.21, 2.2, 2.19]}, {"id": 124, "name": "Sel 124", "kode": "JSB1S_124", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.18, 2.2, 2.2, 2.2, 2.21, 2.21, 2.19, 2.19, 2.18, 2.17, 2.17, 2.2, 2.19, 2.18, 2.18, 2.2, 2.17, 2.19, 2.21, 2.18, 2.19, 2.19, 2.18, 2.19, 2.19, 2.18, 2.18, 2.19]}, {"id": 125, "name": "Sel 125", "kode": "JSB1S_125", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.17, 2.17, 2.19, 2.18, 2.19, 2.17, 2.19, 2.2, 2.18, 2.17, 2.17, 2.18, 2.17, 2.18, 2.19, 2.19, 2.17, 2.18, 2.17, 2.2, 2.16, 2.16, 2.16, 2.18, 2.16, 2.18, 2.18, 2.18, 2.2, 2.18]}, {"id": 126, "name": "Sel 126", "kode": "JSB1S_126", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.23, 2.21, 2.22, 2.2, 2.2, 2.22, 2.22, 2.2, 2.21, 2.21, 2.21, 2.21, 2.22, 2.22, 2.22, 2.21, 2.2, 2.21, 2.21, 2.2, 2.23, 2.22, 2.23, 2.22, 2.21, 2.2, 2.2, 2.21, 2.19, 2.2]}, {"id": 127, "name": "Sel 127", "kode": "JSB1S_127", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.17, 2.2, 2.17, 2.18, 2.18, 2.16, 2.2, 2.17, 2.19, 2.18, 2.19, 2.19, 2.17, 2.18, 2.17, 2.19, 2.17, 2.19, 2.19, 2.18, 2.18, 2.2, 2.18, 2.17, 2.19, 2.18, 2.18, 2.18, 2.18, 2.17]}, {"id": 128, "name": "Sel 128", "kode": "JSB1S_128", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.2, 2.18, 2.18, 2.18, 2.2, 2.17, 2.18, 2.2, 2.2, 2.19, 2.19, 2.18, 2.18, 2.2, 2.17, 2.17, 2.19, 2.18, 2.2, 2.17, 2.19, 2.17, 2.18, 2.18, 2.21, 2.19, 2.19, 2.17, 2.2]}, {"id": 129, "name": "Sel 129", "kode": "JSB1S_129", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.19, 2.21, 2.23, 2.22, 2.2, 2.22, 2.21, 2.22, 2.22, 2.2, 2.22, 2.2, 2.22, 2.2, 2.21, 2.21, 2.2, 2.21, 2.19, 2.2, 2.22, 2.21, 2.21, 2.2, 2.19, 2.21, 2.21, 2.19, 2.22]}, {"id": 130, "name": "Sel 130", "kode": "JSB1S_130", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.21, 2.2, 2.21, 2.22, 2.23, 2.22, 2.22, 2.21, 2.2, 2.19, 2.21, 2.2, 2.22, 2.22, 2.21, 2.21, 2.22, 2.22, 2.22, 2.19, 2.2, 2.21, 2.2, 2.22, 2.2, 2.23, 2.21, 2.2, 2.22]}, {"id": 131, "name": "Sel 131", "kode": "JSB1S_131", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.22, 2.2, 2.2, 2.23, 2.23, 2.21, 2.21, 2.21, 2.23, 2.21, 2.23, 2.22, 2.21, 2.21, 2.23, 2.23, 2.22, 2.23, 2.22, 2.21, 2.22, 2.21, 2.21, 2.21, 2.23, 2.23, 2.23, 2.23, 2.23, 2.22]}, {"id": 132, "name": "Sel 132", "kode": "JSB1S_132", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.2, 2.21, 2.2, 2.21, 2.22, 2.22, 2.2, 2.23, 2.19, 2.19, 2.2, 2.23, 2.21, 2.19, 2.2, 2.19, 2.19, 2.21, 2.23, 2.21, 2.21, 2.22, 2.21, 2.23, 2.22, 2.22, 2.21, 2.2, 2.22]}, {"id": 133, "name": "Sel 133", "kode": "JSB1S_133", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.2, 2.22, 2.22, 2.21, 2.21, 2.2, 2.21, 2.2, 2.21, 2.24, 2.23, 2.21, 2.22, 2.22, 2.22, 2.23, 2.2, 2.2, 2.21, 2.23, 2.24, 2.21, 2.24, 2.21, 2.22, 2.21, 2.24, 2.22, 2.21]}, {"id": 134, "name": "Sel 134", "kode": "JSB1S_134", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.18, 2.18, 2.19, 2.22, 2.21, 2.22, 2.22, 2.21, 2.2, 2.21, 2.22, 2.2, 2.21, 2.21, 2.22, 2.2, 2.2, 2.2, 2.18, 2.18, 2.18, 2.21, 2.22, 2.21, 2.19, 2.19, 2.22, 2.2, 2.18, 2.21]}, {"id": 135, "name": "Sel 135", "kode": "JSB1S_135", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.2, 2.2, 2.17, 2.21, 2.19, 2.18, 2.21, 2.18, 2.21, 2.2, 2.21, 2.19, 2.18, 2.2, 2.2, 2.18, 2.18, 2.18, 2.19, 2.18, 2.17, 2.21, 2.2, 2.2, 2.19, 2.2, 2.19, 2.17, 2.19]}, {"id": 136, "name": "Sel 136", "kode": "JSB1S_136", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.23, 2.23, 2.22, 2.21, 2.23, 2.23, 2.2, 2.2, 2.21, 2.19, 2.22, 2.21, 2.21, 2.21, 2.21, 2.22, 2.2, 2.23, 2.22, 2.21, 2.22, 2.19, 2.2, 2.21, 2.2, 2.21, 2.2, 2.21, 2.2]}, {"id": 137, "name": "Sel 137", "kode": "JSB1S_137", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.2, 2.19, 2.2, 2.19, 2.21, 2.19, 2.21, 2.19, 2.19, 2.19, 2.2, 2.19, 2.18, 2.19, 2.19, 2.2, 2.2, 2.19, 2.22, 2.19, 2.21, 2.19, 2.2, 2.22, 2.21, 2.2, 2.21, 2.21, 2.19, 2.2]}, {"id": 138, "name": "Sel 138", "kode": "JSB1S_138", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.22, 2.19, 2.22, 2.21, 2.22, 2.21, 2.2, 2.2, 2.21, 2.23, 2.2, 2.19, 2.19, 2.22, 2.23, 2.2, 2.21, 2.22, 2.2, 2.22, 2.2, 2.22, 2.21, 2.22, 2.23, 2.21, 2.2, 2.22, 2.2]}, {"id": 139, "name": "Sel 139", "kode": "JSB1S_139", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.2, 2.19, 2.2, 2.17, 2.18, 2.18, 2.18, 2.18, 2.18, 2.2, 2.18, 2.19, 2.2, 2.18, 2.19, 2.21, 2.19, 2.18, 2.17, 2.2, 2.2, 2.21, 2.2, 2.17, 2.18, 2.17, 2.17, 2.21]}, {"id": 140, "name": "Sel 140", "kode": "JSB1S_140", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.19, 2.21, 2.22, 2.19, 2.2, 2.2, 2.22, 2.23, 2.2, 2.2, 2.2, 2.22, 2.2, 2.22, 2.19, 2.22, 2.22, 2.2, 2.21, 2.23, 2.21, 2.2, 2.21, 2.23, 2.22, 2.2, 2.21, 2.22, 2.22, 2.21]}, {"id": 141, "name": "Sel 141", "kode": "JSB1S_141", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.22, 2.2, 2.2, 2.21, 2.22, 2.21, 2.2, 2.2, 2.2, 2.19, 2.22, 2.22, 2.2, 2.21, 2.19, 2.23, 2.23, 2.21, 2.19, 2.21, 2.2, 2.2, 2.19, 2.2, 2.21, 2.21, 2.21, 2.2, 2.22, 2.21]}, {"id": 142, "name": "Sel 142", "kode": "JSB1S_142", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.2, 2.19, 2.21, 2.22, 2.21, 2.21, 2.19, 2.21, 2.21, 2.2, 2.21, 2.19, 2.19, 2.21, 2.2, 2.19, 2.2, 2.19, 2.18, 2.18, 2.2, 2.19, 2.18, 2.19, 2.21, 2.21, 2.19, 2.19, 2.2]}, {"id": 143, "name": "Sel 143", "kode": "JSB1S_143", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.21, 2.22, 2.2, 2.21, 2.19, 2.21, 2.22, 2.18, 2.21, 2.18, 2.2, 2.19, 2.21, 2.21, 2.21, 2.18, 2.21, 2.19, 2.21, 2.2, 2.21, 2.18, 2.2, 2.21, 2.2, 2.22, 2.2, 2.21, 2.19]}, {"id": 144, "name": "Sel 144", "kode": "JSB1S_144", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.18, 2.22, 2.2, 2.19, 2.21, 2.19, 2.22, 2.21, 2.19, 2.18, 2.21, 2.19, 2.19, 2.19, 2.18, 2.21, 2.18, 2.18, 2.21, 2.2, 2.2, 2.19, 2.18, 2.19, 2.18, 2.2, 2.22, 2.22, 2.21]}, {"id": 145, "name": "Sel 145", "kode": "JSB1S_145", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.19, 2.19, 2.19, 2.17, 2.17, 2.2, 2.19, 2.19, 2.19, 2.18, 2.17, 2.19, 2.17, 2.17, 2.2, 2.18, 2.18, 2.17, 2.19, 2.17, 2.17, 2.17, 2.19, 2.17, 2.19, 2.2, 2.18, 2.16, 2.17, 2.17]}, {"id": 146, "name": "Sel 146", "kode": "JSB1S_146", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.17, 2.2, 2.19, 2.18, 2.17, 2.2, 2.2, 2.18, 2.2, 2.2, 2.19, 2.19, 2.19, 2.19, 2.19, 2.19, 2.18, 2.2, 2.17, 2.19, 2.17, 2.2, 2.18, 2.2, 2.18, 2.19, 2.17, 2.19, 2.2]}, {"id": 147, "name": "Sel 147", "kode": "JSB1S_147", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.22, 2.2, 2.2, 2.21, 2.19, 2.23, 2.2, 2.21, 2.23, 2.19, 2.22, 2.19, 2.21, 2.23, 2.21, 2.2, 2.22, 2.22, 2.2, 2.19, 2.19, 2.2, 2.23, 2.23, 2.19, 2.22, 2.21, 2.2, 2.21]}, {"id": 148, "name": "Sel 148", "kode": "JSB1S_148", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.2, 2.19, 2.17, 2.2, 2.18, 2.19, 2.2, 2.21, 2.18, 2.18, 2.19, 2.18, 2.18, 2.21, 2.19, 2.18, 2.18, 2.21, 2.18, 2.18, 2.2, 2.19, 2.2, 2.19, 2.19, 2.18, 2.2, 2.21]}, {"id": 149, "name": "Sel 149", "kode": "JSB1S_149", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.21, 2.19, 2.19, 2.2, 2.21, 2.19, 2.19, 2.21, 2.18, 2.18, 2.18, 2.2, 2.17, 2.2, 2.2, 2.18, 2.19, 2.19, 2.21, 2.18, 2.17, 2.18, 2.18, 2.18, 2.19, 2.18, 2.2, 2.17, 2.19, 2.21]}, {"id": 150, "name": "Sel 150", "kode": "JSB1S_150", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.23, 2.21, 2.23, 2.23, 2.22, 2.24, 2.22, 2.21, 2.23, 2.22, 2.2, 2.2, 2.23, 2.21, 2.23, 2.22, 2.23, 2.23, 2.21, 2.23, 2.22, 2.2, 2.23, 2.22, 2.21, 2.2, 2.22, 2.21, 2.22]}, {"id": 151, "name": "Sel 151", "kode": "JSB1S_151", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.17, 2.2, 2.19, 2.19, 2.19, 2.19, 2.18, 2.18, 2.19, 2.18, 2.17, 2.19, 2.17, 2.19, 2.17, 2.19, 2.2, 2.18, 2.18, 2.19, 2.19, 2.2, 2.18, 2.19, 2.2, 2.18, 2.17, 2.2, 2.18, 2.21]}, {"id": 152, "name": "Sel 152", "kode": "JSB1S_152", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.19, 2.18, 2.17, 2.17, 2.18, 2.16, 2.17, 2.2, 2.18, 2.2, 2.18, 2.17, 2.16, 2.19, 2.17, 2.17, 2.19, 2.19, 2.16, 2.16, 2.2, 2.2, 2.19, 2.19, 2.16, 2.19, 2.16, 2.18, 2.16, 2.17]}, {"id": 153, "name": "Sel 153", "kode": "JSB1S_153", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.2, 2.21, 2.2, 2.21, 2.22, 2.2, 2.22, 2.19, 2.21, 2.22, 2.19, 2.2, 2.2, 2.22, 2.21, 2.19, 2.22, 2.19, 2.21, 2.2, 2.22, 2.22, 2.22, 2.19, 2.22, 2.22, 2.2, 2.21, 2.23, 2.19]}, {"id": 154, "name": "Sel 154", "kode": "JSB1S_154", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.21, 2.2, 2.19, 2.2, 2.2, 2.22, 2.18, 2.19, 2.2, 2.19, 2.2, 2.19, 2.19, 2.19, 2.21, 2.19, 2.22, 2.2, 2.21, 2.21, 2.22, 2.22, 2.21, 2.18, 2.2, 2.19, 2.19, 2.22, 2.21, 2.18]}, {"id": 155, "name": "Sel 155", "kode": "JSB1S_155", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.2, 2.21, 2.19, 2.19, 2.19, 2.22, 2.22, 2.19, 2.2, 2.19, 2.19, 2.2, 2.21, 2.21, 2.19, 2.21, 2.2, 2.19, 2.22, 2.22, 2.19, 2.22, 2.22, 2.19, 2.2, 2.22, 2.18, 2.19, 2.22]}, {"id": 156, "name": "Sel 156", "kode": "JSB1S_156", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.24, 2.22, 2.22, 2.22, 2.24, 2.24, 2.24, 2.21, 2.23, 2.2, 2.21, 2.23, 2.22, 2.21, 2.22, 2.21, 2.21, 2.23, 2.21, 2.23, 2.22, 2.22, 2.22, 2.23, 2.21, 2.23, 2.22, 2.21, 2.21]}, {"id": 157, "name": "Sel 157", "kode": "JSB1S_157", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.19, 2.16, 2.17, 2.18, 2.19, 2.2, 2.19, 2.16, 2.2, 2.2, 2.19, 2.18, 2.17, 2.18, 2.17, 2.18, 2.16, 2.19, 2.18, 2.17, 2.18, 2.19, 2.18, 2.18, 2.2, 2.19, 2.18, 2.18, 2.19, 2.16]}, {"id": 158, "name": "Sel 158", "kode": "JSB1S_158", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.23, "status": "Normal", "history": [2.23, 2.23, 2.24, 2.23, 2.23, 2.24, 2.21, 2.22, 2.23, 2.22, 2.24, 2.23, 2.23, 2.23, 2.21, 2.23, 2.22, 2.24, 2.23, 2.24, 2.21, 2.24, 2.25, 2.24, 2.22, 2.23, 2.23, 2.22, 2.23, 2.24]}, {"id": 159, "name": "Sel 159", "kode": "JSB1S_159", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.19, 2.18, 2.2, 2.21, 2.2, 2.2, 2.17, 2.17, 2.19, 2.18, 2.19, 2.19, 2.2, 2.19, 2.21, 2.19, 2.19, 2.2, 2.21, 2.19, 2.2, 2.18, 2.2, 2.18, 2.2, 2.19, 2.18, 2.2, 2.19, 2.2]}, {"id": 160, "name": "Sel 160", "kode": "JSB1S_160", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.18, 2.18, 2.19, 2.18, 2.19, 2.2, 2.19, 2.17, 2.21, 2.18, 2.19, 2.19, 2.19, 2.17, 2.19, 2.18, 2.19, 2.19, 2.19, 2.2, 2.17, 2.18, 2.2, 2.17, 2.2, 2.2, 2.2, 2.18, 2.21, 2.17]}, {"id": 161, "name": "Sel 161", "kode": "JSB1S_161", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.21, 2.2, 2.21, 2.2, 2.21, 2.19, 2.2, 2.2, 2.22, 2.18, 2.19, 2.19, 2.2, 2.18, 2.2, 2.2, 2.19, 2.19, 2.21, 2.19, 2.2, 2.2, 2.21, 2.2, 2.18, 2.21, 2.21, 2.22, 2.2]}, {"id": 162, "name": "Sel 162", "kode": "JSB1S_162", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.23, 2.23, 2.2, 2.21, 2.2, 2.21, 2.23, 2.2, 2.2, 2.21, 2.21, 2.22, 2.21, 2.2, 2.21, 2.22, 2.23, 2.19, 2.19, 2.22, 2.19, 2.22, 2.22, 2.23, 2.21, 2.2, 2.21, 2.22, 2.19, 2.2]}, {"id": 163, "name": "Sel 163", "kode": "JSB1S_163", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.18, 2.19, 2.18, 2.17, 2.2, 2.18, 2.2, 2.19, 2.17, 2.18, 2.18, 2.18, 2.2, 2.21, 2.2, 2.2, 2.19, 2.2, 2.21, 2.19, 2.18, 2.2, 2.19, 2.2, 2.2, 2.18, 2.2, 2.18, 2.19]}, {"id": 164, "name": "Sel 164", "kode": "JSB1S_164", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.19, "status": "Normal", "history": [2.2, 2.2, 2.21, 2.18, 2.21, 2.18, 2.17, 2.21, 2.2, 2.2, 2.19, 2.19, 2.19, 2.2, 2.2, 2.2, 2.18, 2.17, 2.19, 2.19, 2.18, 2.19, 2.21, 2.18, 2.18, 2.17, 2.2, 2.2, 2.21, 2.19]}, {"id": 165, "name": "Sel 165", "kode": "JSB1S_165", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.18, "status": "Normal", "history": [2.18, 2.18, 2.17, 2.2, 2.19, 2.18, 2.19, 2.17, 2.19, 2.19, 2.2, 2.19, 2.17, 2.19, 2.18, 2.19, 2.18, 2.16, 2.2, 2.19, 2.18, 2.16, 2.18, 2.16, 2.18, 2.19, 2.17, 2.18, 2.17, 2.2]}, {"id": 166, "name": "Sel 166", "kode": "JSB1S_166", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.19, 2.19, 2.2, 2.18, 2.19, 2.19, 2.18, 2.2, 2.2, 2.19, 2.19, 2.19, 2.19, 2.21, 2.19, 2.19, 2.18, 2.2, 2.19, 2.2, 2.19, 2.2, 2.21, 2.18, 2.18, 2.2, 2.19, 2.2, 2.2]}, {"id": 167, "name": "Sel 167", "kode": "JSB1S_167", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.23, 2.22, 2.21, 2.23, 2.23, 2.23, 2.22, 2.24, 2.23, 2.22, 2.21, 2.23, 2.24, 2.22, 2.22, 2.23, 2.23, 2.22, 2.21, 2.21, 2.23, 2.22, 2.24, 2.22, 2.23, 2.23, 2.23, 2.24, 2.22, 2.2]}, {"id": 168, "name": "Sel 168", "kode": "JSB1S_168", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.19, 2.2, 2.19, 2.21, 2.2, 2.19, 2.18, 2.21, 2.21, 2.19, 2.21, 2.21, 2.2, 2.2, 2.2, 2.2, 2.2, 2.22, 2.2, 2.19, 2.21, 2.2, 2.21, 2.2, 2.21, 2.2, 2.19, 2.21, 2.18, 2.22]}, {"id": 169, "name": "Sel 169", "kode": "JSB1S_169", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.21, "status": "Normal", "history": [2.21, 2.21, 2.21, 2.21, 2.22, 2.2, 2.23, 2.19, 2.19, 2.22, 2.22, 2.21, 2.21, 2.22, 2.19, 2.22, 2.23, 2.23, 2.22, 2.19, 2.2, 2.2, 2.21, 2.21, 2.21, 2.2, 2.22, 2.2, 2.21, 2.23]}, {"id": 170, "name": "Sel 170", "kode": "JSB1S_170", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.2, 2.22, 2.19, 2.18, 2.18, 2.22, 2.2, 2.19, 2.19, 2.19, 2.2, 2.18, 2.21, 2.21, 2.19, 2.21, 2.21, 2.19, 2.21, 2.2, 2.19, 2.2, 2.2, 2.2, 2.21, 2.2, 2.19, 2.2, 2.22]}, {"id": 171, "name": "Sel 171", "kode": "JSB1S_171", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.22, "status": "Normal", "history": [2.21, 2.24, 2.23, 2.21, 2.2, 2.2, 2.23, 2.22, 2.22, 2.24, 2.2, 2.23, 2.22, 2.22, 2.23, 2.22, 2.22, 2.21, 2.22, 2.22, 2.22, 2.21, 2.21, 2.22, 2.22, 2.23, 2.21, 2.22, 2.22, 2.22]}, {"id": 172, "name": "Sel 172", "kode": "JSB1S_172", "tipeIsian": "Number Double", "satuan": "Volt", "min": 0, "max": 9, "latest_v": 2.2, "status": "Normal", "history": [2.22, 2.2, 2.21, 2.18, 2.2, 2.21, 2.19, 2.21, 2.22, 2.22, 2.21, 2.2, 2.18, 2.22, 2.18, 2.2, 2.21, 2.22, 2.18, 2.21, 2.21, 2.19, 2.18, 2.19, 2.21, 2.2, 2.2, 2.2, 2.21, 2.2]}];
+    const rawDates = ["10 Jan 25", "24 Jan 25", "07 Feb 25", "21 Feb 25", "07 Mar 25", "21 Mar 25", "04 Apr 25", "18 Apr 25", "02 Mei 25", "16 Mei 25", "30 Mei 25", "13 Jun 25", "27 Jun 25", "11 Jul 25", "25 Jul 25", "08 Agu 25", "22 Agu 25", "05 Sep 25", "19 Sep 25", "03 Okt 25", "17 Okt 25", "31 Okt 25", "14 Nov 25", "28 Nov 25", "12 Des 25", "26 Des 25", "09 Jan 26", "23 Jan 26", "06 Feb 26", "20 Feb 26"];
+    let currentMode = 'master';
+    let selectedCellId = 42; // default to anomalous cell 42
+
+    let distChart = null;
+    let histChart = null;
+
+    window.onload = function() {
+        renderMasterAccordions();
+        renderHeatmap();
+        renderSelPicker();
+        renderMatrixTable();
+        initCharts();
+    };
+
+    function switchMainMode(mode) {
+        currentMode = mode;
+        const btnMaster = document.getElementById('btnModeMaster');
+        const btnTrend = document.getElementById('btnModeTrend');
+        const viewMaster = document.getElementById('viewMasterForm');
+        const viewTrend = document.getElementById('viewTrendSolution');
+
+        if (mode === 'master') {
+            btnMaster.classList.add('active');
+            btnTrend.classList.remove('active');
+            viewMaster.style.display = 'block';
+            viewTrend.style.display = 'none';
+        } else {
+            btnTrend.classList.add('active');
+            btnMaster.classList.remove('active');
+            viewMaster.style.display = 'none';
+            viewTrend.style.display = 'block';
+            setTimeout(() => {
+                if (distChart) distChart.resize();
+                if (histChart) histChart.resize();
+            }, 50);
+        }
+    }
+
+    /* RENDER MODE 1: MASTER PARAMETER FORM ACCORDIONS */
+    function renderMasterAccordions() {
+        const container = document.getElementById('accordionContainer');
+        let html = '';
+
+        rawCells.forEach((c, idx) => {
+            const isOpen = idx === 0; // open first item like in image
+            html += `
+            <div class="accordion-item" id="acc-item-${c.id}">
+                <div class="accordion-header" onclick="toggleAccordion(${c.id})">
+                    <div class="accordion-title">
+                        <i class="ri-close-line btn-del"></i>
+                        <span>Uraian ${c.id} - ${c.name}</span>
+                    </div>
+                    <div>
+                        <i class="ri-arrow-down-s-line" id="acc-icon-${c.id}" style="transform: ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}; transition: transform 0.2s;"></i>
+                    </div>
+                </div>
+                <div class="accordion-body" id="acc-body-${c.id}" style="display: ${isOpen ? 'block' : 'none'};">
+                    <div class="form-grid-4">
+                        <div>
+                            <label class="form-label">Uraian <i class="ri-information-line"></i></label>
+                            <input type="text" class="form-input" value="${c.name}">
+                        </div>
+                        <div>
+                            <label class="form-label">Kode Uraian <i class="ri-information-line"></i></label>
+                            <input type="text" class="form-input" value="${c.kode}">
+                        </div>
+                        <div>
+                            <label class="form-label">Tipe Isian <i class="ri-information-line"></i></label>
+                            <select class="form-select">
+                                <option selected>Number Double</option>
+                                <option>Number Integer</option>
+                                <option>Combo Box</option>
+                                <option>Text</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Referensi Data <i class="ri-information-line"></i></label>
+                            <select class="form-select" disabled>
+                                <option selected>Pilih Referensi Data</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-3">
+                        <div>
+                            <label class="form-label">Satuan</label>
+                            <select class="form-select">
+                                <option selected>Volt</option>
+                                <option>mV</option>
+                                <option>Ampere</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Batas Minimum <i class="ri-information-line"></i></label>
+                            <input type="number" class="form-input" value="0">
+                        </div>
+                        <div>
+                            <label class="form-label">Batas Maksimum <i class="ri-information-line"></i></label>
+                            <input type="number" class="form-input" value="9">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div>
+                            <label class="form-label">
+                                <input type="checkbox" style="margin-right: 4px;"> Rumus
+                            </label>
+                            <textarea class="form-textarea" rows="3" placeholder="Masukkan Rumus"></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">Keterangan <i class="ri-information-line"></i></label>
+                            <textarea class="form-textarea" rows="3" placeholder="Masukkan Keterangan"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function toggleAccordion(id) {
+        const body = document.getElementById(`acc-body-${id}`);
+        const icon = document.getElementById(`acc-icon-${id}`);
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            body.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function expandAllUraian(open) {
+        rawCells.forEach(c => {
+            const body = document.getElementById(`acc-body-${c.id}`);
+            const icon = document.getElementById(`acc-icon-${c.id}`);
+            if (body && icon) {
+                body.style.display = open ? 'block' : 'none';
+                icon.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        });
+    }
+
+    function filterUraianList() {
+        const q = document.getElementById('searchUraianInput').value.toLowerCase();
+        let shown = 0;
+        rawCells.forEach(c => {
+            const el = document.getElementById(`acc-item-${c.id}`);
+            if (c.name.toLowerCase().includes(q) || c.kode.toLowerCase().includes(q)) {
+                el.style.display = 'block';
+                shown++;
+            } else {
+                el.style.display = 'none';
+            }
+        });
+        document.getElementById('lblShownUraian').innerText = shown;
+    }
+
+    /* RENDER MODE 2: HEATMAP */
+    function renderHeatmap(filterType = 'all', searchQuery = '') {
+        const container = document.getElementById('heatmapContainer');
+        let html = '';
+
+        rawCells.forEach(c => {
+            let matchFilter = true;
+            if (filterType === 'anomaly') matchFilter = (c.status === 'Kritis' || c.status === 'Warning');
+            if (filterType === 'normal') matchFilter = (c.status === 'Normal');
+
+            let matchSearch = true;
+            if (searchQuery) {
+                matchSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.id.toString() === searchQuery;
+            }
+
+            if (matchFilter && matchSearch) {
+                const statusClass = c.status === 'Kritis' ? 'danger' : (c.status === 'Warning' ? 'warning' : 'normal');
+                const isSelected = c.id === selectedCellId ? 'selected' : '';
+                html += `
+                <div class="cell-tile ${statusClass} ${isSelected}" id="cell-tile-${c.id}" onclick="selectCell(${c.id})" title="${c.name} (${c.kode}): ${c.latest_v} V - Status: ${c.status}">
+                    <span class="cell-num">S-${c.id}</span>
+                    <span class="cell-val">${c.latest_v}V</span>
+                </div>`;
+            }
+        });
+
+        container.innerHTML = html || '<div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #94a3b8;">Tidak ada sel yang sesuai filter</div>';
+    }
+
+    function filterHeatmap(type, btn) {
+        document.querySelectorAll('.pill-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const q = document.getElementById('searchHeatmapInput').value;
+        renderHeatmap(type, q);
+    }
+
+    function searchHeatmap() {
+        const q = document.getElementById('searchHeatmapInput').value;
+        renderHeatmap('all', q);
+    }
+
+    function selectCell(id) {
+        selectedCellId = id;
+        document.querySelectorAll('.cell-tile').forEach(t => t.classList.remove('selected'));
+        const el = document.getElementById(`cell-tile-${id}`);
+        if (el) el.classList.add('selected');
+
+        document.getElementById('selPicker').value = id;
+        updateHistoryChart(id);
+    }
+
+    function renderSelPicker() {
+        const sel = document.getElementById('selPicker');
+        let html = '';
+        rawCells.forEach(c => {
+            const tag = c.status !== 'Normal' ? ` (⚠️ ${c.status})` : '';
+            html += `<option value="${c.id}" ${c.id === selectedCellId ? 'selected' : ''}>${c.name} - ${c.latest_v} V${tag}</option>`;
+        });
+        sel.innerHTML = html;
+    }
+
+    function renderMatrixTable() {
+        const tbody = document.getElementById('matrixTableBody');
+        let html = '';
+
+        rawCells.forEach(c => {
+            let badge = `<span class="badge-pill" style="background:#dcfce7;color:#166534;">Normal</span>`;
+            if (c.status === 'Kritis') badge = `<span class="badge-pill" style="background:#fee2e2;color:#991b1b;">Drop Kritis ⚠️</span>`;
+            if (c.status === 'Warning') badge = `<span class="badge-pill" style="background:#fef3c7;color:#92400e;">Warning</span>`;
+
+            let cols = '';
+            c.history.forEach((val, idx) => {
+                let bg = '';
+                if (val < 1.95) bg = 'background:#fee2e2;color:#991b1b;font-weight:800;';
+                else if (val <= 2.05) bg = 'background:#fef9c3;color:#854d0e;font-weight:700;';
+                cols += `<td style="${bg} text-align:center;">${val}</td>`;
+            });
+
+            html += `
+            <tr id="tr-cell-${c.id}">
+                <td class="col-sticky-code" style="color:var(--primary);">${c.kode}</td>
+                <td class="col-sticky-name">${c.name}</td>
+                <td>${badge}</td>
+                <td style="font-weight:800; text-align:center;">${c.latest_v} V</td>
+                ${cols}
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    function filterTableMatrix() {
+        const q = document.getElementById('searchTableInput').value.toLowerCase();
+        rawCells.forEach(c => {
+            const row = document.getElementById(`tr-cell-${c.id}`);
+            if (c.name.toLowerCase().includes(q) || c.kode.toLowerCase().includes(q)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    /* CHARTS INITIALIZATION */
+    function initCharts() {
+        // 1. Distribution Chart (172 Cells)
+        const ctxDist = document.getElementById('chartDistribution').getContext('2d');
+        const distLabels = rawCells.map(c => `S-${c.id}`);
+        const distData = rawCells.map(c => c.latest_v);
+        const pointColors = rawCells.map(c => c.status === 'Kritis' ? '#ef4444' : (c.status === 'Warning' ? '#f59e0b' : '#10b981'));
+        const pointRadius = rawCells.map(c => c.status === 'Kritis' ? 7 : (c.status === 'Warning' ? 5 : 2.5));
+
+        distChart = new Chart(ctxDist, {
+            type: 'line',
+            data: {
+                labels: distLabels,
+                datasets: [{
+                    label: 'Tegangan Sel (V)',
+                    data: distData,
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    pointBackgroundColor: pointColors,
+                    pointBorderColor: pointColors,
+                    pointRadius: pointRadius,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (ctx) => `Sel ${rawCells[ctx[0].dataIndex].id} (${rawCells[ctx[0].dataIndex].kode})`,
+                            label: (ctx) => `Tegangan: ${ctx.raw} Volt (${rawCells[ctx.dataIndex].status})`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 1.70,
+                        max: 2.45,
+                        title: { display: true, text: 'Tegangan (Volt)' },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxTicksLimit: 25 }
+                    }
+                }
+            }
+        });
+
+        // 2. Historical Trend Chart (30 Points)
+        updateHistoryChart(selectedCellId);
+    }
+
+    function updateHistoryChart(cellId) {
+        const cell = rawCells.find(c => c.id === cellId) || rawCells[41];
+        const normalCell = rawCells[0]; // Sel 1 reference
+
+        // Average history of all 172 cells
+        const avgHistory = rawDates.map((_, dateIdx) => {
+            let sum = 0;
+            rawCells.forEach(c => sum += c.history[dateIdx]);
+            return Number((sum / rawCells.length).toFixed(2));
+        });
+
+        const ctxHist = document.getElementById('chartHistory').getContext('2d');
+        if (histChart) histChart.destroy();
+
+        histChart = new Chart(ctxHist, {
+            type: 'line',
+            data: {
+                labels: rawDates,
+                datasets: [
+                    {
+                        label: `${cell.name} (${cell.kode}) - Terpilih`,
+                        data: cell.history,
+                        borderColor: cell.status === 'Kritis' ? '#ef4444' : (cell.status === 'Warning' ? '#f59e0b' : '#0284c7'),
+                        backgroundColor: cell.status === 'Kritis' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Rata-Rata Seluruh 172 Sel',
+                        data: avgHistory,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Standar Sel Sehat (Sel 1)',
+                        data: normalCell.history,
+                        borderColor: '#94a3b8',
+                        borderWidth: 1.5,
+                        borderDash: [3, 3],
+                        pointRadius: 0,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        min: 1.70,
+                        max: 2.35,
+                        title: { display: true, text: 'Tegangan (Volt)' },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
