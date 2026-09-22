@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring AHI (Versi 2 - Power Transformer) | HiFi Power Inspect</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #00529c;
+            --primary-hover: #003d75;
+            --primary-light: #e0f2fe;
+            --accent: #0284c7;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 32px 60px 32px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1480px;
+            margin: 0 auto;
+        }
+
+        /* TOP VERSION SWITCHER BANNER */
+        .version-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 14px;
+            padding: 14px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .version-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .version-pill {
+            background: #0284c7;
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .version-text {
+            color: #e2e8f0;
+            font-size: 13.5px;
+        }
+
+        .version-text strong {
+            color: #38bdf8;
+        }
+
+        .version-switcher-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .version-switcher-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* HEADER & BREADCRUMBS */
+        .header-section {
+            margin-bottom: 20px;
+        }
+
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .breadcrumbs a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* MASTER ASSET PROFILE CARD */
+        .asset-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .asset-main-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .asset-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .asset-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #00529c;
+        }
+
+        .badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-blue { background: #e0f2fe; color: #0369a1; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-amber { background: #fef3c7; color: #b45309; }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding-top: 8px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .asset-spec-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .asset-spec-label {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .asset-spec-val {
+            font-size: 13.5px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .asset-health-score-box {
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-width: 280px;
+        }
+
+        .score-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 4px solid #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-val {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+        }
+
+        .score-pct {
+            font-size: 10px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .score-desc {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .score-desc-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .score-desc-status {
+            font-size: 15px;
+            font-weight: 700;
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* SUB-SYSTEM NAVIGATION TABS */
+        .subsystem-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+            overflow-x: auto;
+        }
+
+        .subsystem-tab {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .subsystem-tab:hover {
+            border-color: #00529c;
+            color: #00529c;
+            background: #f8fafc;
+        }
+
+        .subsystem-tab.active {
+            background: #00529c;
+            color: #ffffff;
+            border-color: #00529c;
+            box-shadow: 0 4px 10px rgba(0, 82, 156, 0.25);
+        }
+
+        .subsystem-tab .count-badge {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .subsystem-tab.active .count-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        /* TWO-PANEL WORKSPACE (MODULAR & TIDY) */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* LEFT PANEL: PARAMETER SELECTOR */
+        .param-selector-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .param-selector-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .param-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .param-item {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .param-item:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            transform: translateX(2px);
+        }
+
+        .param-item.active {
+            background: #eff6ff;
+            border-color: #00529c;
+            box-shadow: 0 2px 8px rgba(0, 82, 156, 0.12);
+        }
+
+        .param-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .param-item-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .param-item.active .param-item-name {
+            color: #00529c;
+        }
+
+        .param-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+        .status-dot.green { background: #10b981; }
+        .status-dot.amber { background: #f59e0b; }
+
+        /* RIGHT PANEL: FOCUSED WORKSPACE */
+        .param-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* PARAMETER WORKSPACE HEADER */
+        .workspace-header-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .workspace-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .workspace-title-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .workspace-param-name {
+            font-size: 19px;
+            font-weight: 800;
+            color: #00529c;
+        }
+
+        .workspace-param-sub {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* KPI STATS ROW */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .kpi-val {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .kpi-hint {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* CHART & MATRIX CARD */
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 22px 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #00529c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CONTROLS */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-group {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: #ffffff;
+            color: #00529c;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .date-filter-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .date-input {
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            padding: 4px 6px;
+            font-size: 11.5px;
+            color: #0f172a;
+            outline: none;
+        }
+
+        .btn-apply {
+            background: #00529c;
+            color: #ffffff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-apply:hover {
+            background: #003d75;
+        }
+
+        /* CHART CONTAINER */
+        .chart-container {
+            position: relative;
+            height: 340px;
+            width: 100%;
+        }
+
+        /* MATRIX TABLE (ANTI OVERLAPPING & CUSTOM SCROLLBAR) */
+        .table-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #ffffff;
+            margin-top: 12px;
+            /* Extra clearance for scrollbar so it never overlaps content */
+            padding-bottom: 4px;
+        }
+
+        /* Custom prominent 12px horizontal scrollbar */
+        .table-scroll-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+        .table-scroll-wrapper::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 6px;
+        }
+        .table-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #00529c;
+            border-radius: 6px;
+            border: 2px solid #e2e8f0;
+        }
+        .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #003d75;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 11.5px;
+            text-align: center;
+        }
+
+        .matrix-table th, .matrix-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #f1f5f9;
+            white-space: nowrap;
+        }
+
+        .matrix-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .matrix-table .col-sticky {
+            position: sticky;
+            left: 0;
+            background: #ffffff;
+            z-index: 20;
+            text-align: left;
+            font-weight: 600;
+            border-right: 2px solid #cbd5e1;
+        }
+
+        .matrix-table thead .col-sticky {
+            background: #f8fafc;
+            z-index: 30;
+        }
+
+        .group-row td {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            font-weight: 800;
+            text-align: left;
+            padding: 7px 14px;
+            font-size: 11.5px;
+            letter-spacing: 0.3px;
+        }
+
+        .label-sub {
+            padding-left: 20px !important;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bullet {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .bullet-blue { background: #2563eb; }
+        .bullet-amber { background: #d97706; }
+        .bullet-emerald { background: #059669; }
+
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- 1. TOP VERSION SWITCHER BANNER -->
+        <div class="version-banner">
+            <div class="version-banner-left">
+                <span class="version-pill"><i class="ri-sparkling-fill"></i> VERSI 2 (BARU)</span>
+                <span class="version-text">
+                    <strong>Tampilan Terstruktur Modular:</strong> Didesain khusus untuk aset kompleks (seperti <em>Power Transformer</em>) agar bebas dari penumpukan vertikal yang sesak.
+                </span>
+            </div>
+            <a href="monitoring-ahi.html" class="version-switcher-btn">
+                <i class="ri-arrow-left-right-line"></i> Buka Versi 1 (Tampilan Vertikal Panjang)
+            </a>
+        </div>
+
+        <!-- 2. BREADCRUMBS & PAGE TITLE -->
+        <div class="header-section">
+            <div class="breadcrumbs">
+                <a href="../index.html"><i class="ri-home-4-line"></i> Portal</a>
+                <i class="ri-arrow-right-s-line"></i>
+                <a href="monitoring-ahi.html">Monitoring AHI</a>
+                <i class="ri-arrow-right-s-line"></i>
+                <span>Power Transformer (GI 150KV ANGKE TRF#3)</span>
+            </div>
+            <div class="page-title">
+                <i class="ri-dashboard-3-line" style="color: #00529c;"></i>
+                Monitoring AHI Detail: Power Transformer
+            </div>
+        </div>
+
+        <!-- 3. MASTER ASSET PROFILE CARD (GI ANGKE TRF#3 RIIL) -->
+        <div class="asset-card">
+            <div class="asset-main-info">
+                <div class="asset-title-row">
+                    <span class="asset-name">TRF#3 150/20KV</span>
+                    <span class="badge-tag badge-blue"><i class="ri-building-line"></i> GI 150KV ANGKE</span>
+                    <span class="badge-tag badge-green"><i class="ri-checkbox-circle-line"></i> Status: Operasi</span>
+                    <span class="badge-tag badge-amber"><i class="ri-sun-line"></i> Outdoor (RST)</span>
+                </div>
+                
+                <div class="asset-grid">
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Merk &amp; Tipe</span>
+                        <span class="asset-spec-val">UNINDO — P060LEC</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Serial ID</span>
+                        <span class="asset-spec-val">P060LEC879-01</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Techidentno</span>
+                        <span class="asset-spec-val">11341307407400000005</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Unit Pengelola</span>
+                        <span class="asset-spec-val">UITJBB — UPT DURIKOSAMBI (ULTG ANGKE)</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Tahun Buat / Usia</span>
+                        <span class="asset-spec-val">2019 (7 Tahun)</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Tanggal Operasi</span>
+                        <span class="asset-spec-val">25 November 2023</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Kapasitas / Tegangan</span>
+                        <span class="asset-spec-val">60 MVA / 150 / 20 kV</span>
+                    </div>
+                    <div class="asset-spec-item">
+                        <span class="asset-spec-label">Konfigurasi AHI</span>
+                        <span class="asset-spec-val" style="color:#00529c;">Power Transformer v2.0 (Active)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Index Global Widget -->
+            <div class="asset-health-score-box">
+                <div class="score-circle">
+                    <span class="score-val">91.4</span>
+                    <span class="score-pct">%</span>
+                </div>
+                <div class="score-desc">
+                    <span class="score-desc-title">Indeks Kesehatan Aset</span>
+                    <span class="score-desc-status"><i class="ri-shield-check-fill"></i> Sangat Baik</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">Diperbarui: 20 Feb 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SUB-SYSTEM NAVIGATION TABS -->
+        <div class="subsystem-nav">
+            <button class="subsystem-tab active" onclick="switchSubsystem('bushing', this)">
+                <i class="ri-flashlight-line"></i> Bushing <span class="count-badge">5 Parameter</span>
+            </button>
+            <button class="subsystem-tab" onclick="switchSubsystem('oil', this)">
+                <i class="ri-drop-line"></i> Insulasi Minyak <span class="count-badge">15 Parameter</span>
+            </button>
+            <button class="subsystem-tab" onclick="switchSubsystem('primary', this)">
+                <i class="ri-cpu-line"></i> Primary Unit <span class="count-badge">7 Parameter</span>
+            </button>
+            <button class="subsystem-tab" onclick="switchSubsystem('oltc', this)">
+                <i class="ri-settings-4-line"></i> OLTC <span class="count-badge">3 Parameter</span>
+            </button>
+            <button class="subsystem-tab" onclick="switchSubsystem('tank', this)">
+                <i class="ri-archive-line"></i> Main Tank &amp; Anciliary <span class="count-badge">2 Parameter</span>
+            </button>
+        </div>
+
+        <!-- 5. WORKSPACE DENGAN 2 PANEL (ANTI SESAK) -->
+        <div class="workspace-layout">
+            
+            <!-- LEFT PANEL: PARAMETER LIST SELECTOR -->
+            <div class="param-selector-card">
+                <div class="param-selector-title">
+                    <span id="subsystemParamTitle">Parameter Sub-Sistem Bushing</span>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">Pilih 1 Parameter</span>
+                </div>
+
+                <div class="param-list" id="paramListContainer">
+                    <!-- Item 1: 18 Uraian Bushing (Default Active) -->
+                    <div class="param-item active" onclick="selectParam('bushing_tandelta', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">Tan Delta &amp; Kapasitansi Bushing</span>
+                            <span class="status-dot green" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: 1.0</span>
+                            <span>•</span>
+                            <span style="color: #00529c; font-weight: 600;">18 Isian Uraian</span>
+                        </div>
+                    </div>
+
+                    <!-- Item 2: Thermovisi Bushing -->
+                    <div class="param-item" onclick="selectParam('bushing_thermo', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">Thermovisi Bushing</span>
+                            <span class="status-dot green" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: 1.0</span>
+                            <span>•</span>
+                            <span>Thermal Camera (&Delta;T &lt; 5&deg;C)</span>
+                        </div>
+                    </div>
+
+                    <!-- Item 3: Pemeriksaan Level Minyak Bushing -->
+                    <div class="param-item" onclick="selectParam('bushing_oil', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">Level Minyak Bushing</span>
+                            <span class="status-dot green" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: 1.0</span>
+                            <span>•</span>
+                            <span>Visual Sight Glass</span>
+                        </div>
+                    </div>
+
+                    <!-- Item 4: Kondisi Fisik Isolator -->
+                    <div class="param-item" onclick="selectParam('bushing_isolator', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">Kondisi Fisik Isolator</span>
+                            <span class="status-dot green" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: 1.0</span>
+                            <span>•</span>
+                            <span>Kerapihan &amp; Kebersihan</span>
+                        </div>
+                    </div>
+
+                    <!-- Item 5: Korosi Center Tap -->
+                    <div class="param-item" onclick="selectParam('bushing_centertap', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">Korosi Center Tap</span>
+                            <span class="status-dot green" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: 1.0</span>
+                            <span>•</span>
+                            <span>Terminal &amp; Grounding</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: FOCUSED PARAMETER WORKSPACE -->
+            <div class="param-workspace" id="workspaceContainer">
+                
+                <!-- WORKSPACE HEADER & KPI -->
+                <div class="workspace-header-card">
+                    <div class="workspace-title-row">
+                        <div class="workspace-title-left">
+                            <div class="workspace-param-name" id="selectedParamTitle">Tan Delta dan Kapasitansi Bushing Trafo</div>
+                            <div class="workspace-param-sub">
+                                <span><i class="ri-hashtag"></i> ID: <strong>0c1ea9b9-854e-40fd-8b11-35acf29fce34</strong></span>
+                                <span>•</span>
+                                <span><i class="ri-file-shield-2-line"></i> Standar: <strong>IEEE C57.19.01 / PLN SE 032</strong></span>
+                                <span>•</span>
+                                <span><i class="ri-battery-charge-line"></i> Metode: <strong>Tan Delta Test Set (10 kV)</strong></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="badge-tag badge-green" style="font-size: 13px; padding: 6px 14px;">
+                                <i class="ri-shield-check-line"></i> Status Parameter: Normal (Aman Operasi)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- KPIS PADA INSPEKSI TERAKHIR -->
+                    <div class="kpi-row">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Max Tan Delta (Terakhir)</span>
+                            <span class="kpi-val" style="color: #10b981;">0.39 %</span>
+                            <span class="kpi-hint" style="color: #10b981;"><i class="ri-check-line"></i> Normal (&lt; 0.5%)</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Max Deviasi Kapasitansi</span>
+                            <span class="kpi-val" style="color: #10b981;">0.53 %</span>
+                            <span class="kpi-hint" style="color: #10b981;"><i class="ri-check-line"></i> Sangat Baik (&lt; 5%)</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Kapasitansi Fasa S (Terakhir)</span>
+                            <span class="kpi-val" style="color: #0f172a;">349.5 pF</span>
+                            <span class="kpi-hint" style="color: var(--text-muted);">Nameplate: 348.0 pF</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Tanggal Uji Terakhir</span>
+                            <span class="kpi-val" style="color: #00529c; font-size: 16px;">20 Feb 2026</span>
+                            <span class="kpi-hint" style="color: var(--text-muted);">WO-BSH-202530</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 1: GRAFIK TREN MULTI-MODE INTERAKTIF -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="ri-line-chart-line"></i>
+                            <span id="chartCardHeading">Tren Pengukuran Parameter (30 Inspeksi Terakhir)</span>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="control-group">
+                            <!-- Toggle Mode -->
+                            <div class="toggle-group" id="chartModeGroup">
+                                <button class="toggle-btn active" onclick="setChartMode('td', this)">Tan Delta (%)</button>
+                                <button class="toggle-btn" onclick="setChartMode('dev', this)">Deviasi Kapasitansi (%)</button>
+                                <button class="toggle-btn" onclick="setChartMode('cap', this)">Kapasitansi (pF)</button>
+                            </div>
+
+                            <!-- Range Selector -->
+                            <div class="toggle-group">
+                                <button class="toggle-btn" onclick="setRange(5, this)">5</button>
+                                <button class="toggle-btn" onclick="setRange(10, this)">10</button>
+                                <button class="toggle-btn" onclick="setRange(15, this)">15</button>
+                                <button class="toggle-btn active" onclick="setRange(30, this)">30</button>
+                            </div>
+
+                            <!-- Date Filter -->
+                            <div class="date-filter-group">
+                                <i class="ri-calendar-line"></i>
+                                <input type="date" id="dateStart" class="date-input" value="2025-01-10">
+                                <span>s.d.</span>
+                                <input type="date" id="dateEnd" class="date-input" value="2026-02-20">
+                                <button class="btn-apply" onclick="applyCustomDateFilter()">Filter</button>
+                                <button class="btn-apply" style="background:#64748b;" onclick="resetDateFilter()">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="chart-container">
+                        <canvas id="bushingChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- CARD 2: MATRIKS RIWAYAT TABEL (18 ISIAN) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="ri-table-line"></i>
+                            <span>Matriks Riwayat Isian Parameter: 18 Uraian Lengkap (30 Inspeksi)</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            <i class="ri-arrow-left-right-line"></i> Geser horizontal untuk melihat seluruh 30 inspeksi
+                        </div>
+                    </div>
+
+                    <!-- Table Wrapper dengan Scrollbar Bawah yang bebas tumpang tindih -->
+                    <div class="table-scroll-wrapper" id="matrixTableWrapper">
+                        <table class="matrix-table">
+                            
+    <thead>
+        <tr>
+            <th class='col-sticky' style='min-width: 250px;'>Parameter &amp; Uraian (18 Isian)</th>
+            <th style='min-width: 82px; '>10 Jan 25</th><th style='min-width: 82px; '>24 Jan 25</th><th style='min-width: 82px; '>07 Feb 25</th><th style='min-width: 82px; '>21 Feb 25</th><th style='min-width: 82px; '>07 Mar 25</th><th style='min-width: 82px; '>21 Mar 25</th><th style='min-width: 82px; '>04 Apr 25</th><th style='min-width: 82px; '>18 Apr 25</th><th style='min-width: 82px; '>02 Mei 25</th><th style='min-width: 82px; '>16 Mei 25</th><th style='min-width: 82px; '>30 Mei 25</th><th style='min-width: 82px; '>13 Jun 25</th><th style='min-width: 82px; '>27 Jun 25</th><th style='min-width: 82px; '>11 Jul 25</th><th style='min-width: 82px; '>25 Jul 25</th><th style='min-width: 82px; '>08 Agu 25</th><th style='min-width: 82px; '>22 Agu 25</th><th style='min-width: 82px; '>05 Sep 25</th><th style='min-width: 82px; '>19 Sep 25</th><th style='min-width: 82px; '>03 Okt 25</th><th style='min-width: 82px; '>17 Okt 25</th><th style='min-width: 82px; '>31 Okt 25</th><th style='min-width: 82px; background:#fef2f2; color:#991b1b; font-weight:800;'>14 Nov 25</th><th style='min-width: 82px; '>28 Nov 25</th><th style='min-width: 82px; '>12 Des 25</th><th style='min-width: 82px; '>26 Des 25</th><th style='min-width: 82px; '>09 Jan 26</th><th style='min-width: 82px; '>23 Jan 26</th><th style='min-width: 82px; '>06 Feb 26</th><th style='min-width: 82px; '>20 Feb 26</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- GROUP 1: NAMEPLATE -->
+        <tr class='group-row'>
+            <td colspan='31'><i class='ri-information-line'></i> 1. Nilai Referensi Nameplate Pabrikan (pF)</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-blue'></span> Nameplate Fasa R (pF)</td>
+            <td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td><td>345.0</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-amber'></span> Nameplate Fasa S (pF)</td>
+            <td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td><td>348.0</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-emerald'></span> Nameplate Fasa T (pF)</td>
+            <td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td><td>342.0</td>
+        </tr>
+
+        <!-- GROUP 2: HASIL UJI KAPASITANSI -->
+        <tr class='group-row'>
+            <td colspan='31'><i class='ri-flashlight-line'></i> 2. Pengukuran Kapasitansi C1 Terukur (pF)</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-blue'></span> Hasil Uji C1 - Fasa R</td>
+            <td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style=''><span>347.0 pF</span></td><td style=''><span>347.4 pF</span></td><td style=''><span>346.2 pF</span></td><td style=''><span>346.6 pF</span></td><td style='background:#fef2f2;'><span>348.2 pF</span></td><td style=''><span>347.5 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td><td style=''><span>346.1 pF</span></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-amber'></span> Hasil Uji C1 - Fasa S</td>
+            <td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>350.0 pF</span></td><td style=''><span>350.5 pF</span></td><td style=''><span>351.0 pF</span></td><td style=''><span>351.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>368.0 pF</span></td><td style='background:#fef2f2;'><span>391.2 pF</span></td><td style=''><span>378.0 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td><td style=''><span>349.5 pF</span></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-emerald'></span> Hasil Uji C1 - Fasa T</td>
+            <td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style=''><span>343.3 pF</span></td><td style=''><span>343.6 pF</span></td><td style=''><span>343.0 pF</span></td><td style='background:#fef2f2;'><span>346.0 pF</span></td><td style=''><span>345.5 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td><td style=''><span>343.8 pF</span></td>
+        </tr>
+
+        <!-- GROUP 3: TAN DELTA -->
+        <tr class='group-row'>
+            <td colspan='31'><i class='ri-line-chart-line'></i> 3. Pengukuran Faktor Disipasi Tan Delta (%)</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-blue'></span> Tan Delta C1 - Fasa R (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-amber'></span> Tan Delta C1 - Fasa S (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.42%</strong></td><td style=''><strong style='color:#10b981;'>0.44%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#f59e0b;'>0.68%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>1.18%</strong></td><td style=''><strong style='color:#f59e0b;'>0.85%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td><td style=''><strong style='color:#10b981;'>0.39%</strong></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-emerald'></span> Tan Delta C1 - Fasa T (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.37%</strong></td><td style=''><strong style='color:#10b981;'>0.33%</strong></td><td style=''><strong style='color:#10b981;'>0.34%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.41%</strong></td><td style=''><strong style='color:#10b981;'>0.40%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td><td style=''><strong style='color:#10b981;'>0.36%</strong></td>
+        </tr>
+
+        <!-- GROUP 4: DEVIASI KAPASITANSI -->
+        <tr class='group-row'>
+            <td colspan='31'><i class='ri-percent-line'></i> 4. Kalkulasi Deviasi Kapasitansi C1 vs Nameplate (%)</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-blue'></span> Deviasi C1 - Fasa R (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.35%</strong></td><td style=''><strong style='color:#10b981;'>0.46%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>0.93%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td><td style=''><strong style='color:#10b981;'>0.32%</strong></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-amber'></span> Deviasi C1 - Fasa S (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.43%</strong></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><span class='bullet bullet-emerald'></span> Deviasi C1 - Fasa T (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style=''><strong style='color:#10b981;'>0.38%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.29%</strong></td><td style='background:#fef2f2;'><strong style='color:#10b981;'>1.17%</strong></td><td style=''><strong style='color:#10b981;'>1.02%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
+        </tr>
+
+        <!-- GROUP 5: FORMULA EVALUASI -->
+        <tr class='group-row'>
+            <td colspan='31'><i class='ri-shield-check-line'></i> 5. Evaluasi Ambang Batas Otomatis (IEEE / PLN SE 032)</td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><i class='ri-arrow-up-circle-line'></i> Max Deviasi Kapasitansi (%)</td>
+            <td style=''><strong style='color:#10b981;'>0.43%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.58%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.70%</strong></td><td style=''><strong style='color:#10b981;'>0.57%</strong></td><td style=''><strong style='color:#10b981;'>0.72%</strong></td><td style=''><strong style='color:#10b981;'>0.86%</strong></td><td style=''><strong style='color:#10b981;'>1.01%</strong></td><td style=''><strong style='color:#10b981;'>0.47%</strong></td><td style=''><strong style='color:#f59e0b;'>5.75%</strong></td><td style='background:#fef2f2;'><strong style='color:#ef4444;'>12.41%</strong></td><td style=''><strong style='color:#f59e0b;'>8.62%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td><td style=''><strong style='color:#10b981;'>0.53%</strong></td>
+        </tr>
+        <tr>
+            <td class='col-sticky label-sub'><i class='ri-checkbox-circle-line'></i> Status Evaluasi Kapasitansi</td>
+            <td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-danger'>Dev &gt; 5% ⚠️</span></td><td style='background:#fef2f2;'><span class='badge-pill badge-danger'>Dev &gt; 5% ⚠️</span></td><td style=''><span class='badge-pill badge-danger'>Dev &gt; 5% ⚠️</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td><td style=''><span class='badge-pill badge-success'>Normal</span></td>
+        </tr>
+    </tbody>
+    
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Data 30 Inspeksi Bushing
+        const bushingData = [{"index": 0, "tanggal": "10 Jan 25", "wo": "WO-BSH-202501", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 349.5, "cap_t": 343.0, "td_r": 0.32, "td_s": 0.35, "td_t": 0.33, "eval_td": 0.35, "dev_r": 0.35, "dev_s": 0.43, "dev_t": 0.29, "max_dev": 0.43, "min_dev": 0.29, "eval_cap": 0}, {"index": 1, "tanggal": "24 Jan 25", "wo": "WO-BSH-202502", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 350.0, "cap_t": 343.3, "td_r": 0.335, "td_s": 0.368, "td_t": 0.344, "eval_td": 0.368, "dev_r": 0.46, "dev_s": 0.57, "dev_t": 0.38, "max_dev": 0.57, "min_dev": 0.38, "eval_cap": 0}, {"index": 2, "tanggal": "07 Feb 25", "wo": "WO-BSH-202503", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 350.5, "cap_t": 343.6, "td_r": 0.35, "td_s": 0.386, "td_t": 0.358, "eval_td": 0.386, "dev_r": 0.58, "dev_s": 0.72, "dev_t": 0.47, "max_dev": 0.72, "min_dev": 0.47, "eval_cap": 0}, {"index": 3, "tanggal": "21 Feb 25", "wo": "WO-BSH-202504", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 351.0, "cap_t": 343.0, "td_r": 0.365, "td_s": 0.404, "td_t": 0.372, "eval_td": 0.404, "dev_r": 0.7, "dev_s": 0.86, "dev_t": 0.29, "max_dev": 0.86, "min_dev": 0.29, "eval_cap": 0}, {"index": 4, "tanggal": "07 Mar 25", "wo": "WO-BSH-202505", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 351.5, "cap_t": 343.3, "td_r": 0.38, "td_s": 0.422, "td_t": 0.33, "eval_td": 0.422, "dev_r": 0.35, "dev_s": 1.01, "dev_t": 0.38, "max_dev": 1.01, "min_dev": 0.35, "eval_cap": 0}, {"index": 5, "tanggal": "21 Mar 25", "wo": "WO-BSH-202506", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 349.5, "cap_t": 343.6, "td_r": 0.32, "td_s": 0.44, "td_t": 0.344, "eval_td": 0.44, "dev_r": 0.46, "dev_s": 0.43, "dev_t": 0.47, "max_dev": 0.47, "min_dev": 0.43, "eval_cap": 0}, {"index": 6, "tanggal": "04 Apr 25", "wo": "WO-BSH-202507", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 350.0, "cap_t": 343.0, "td_r": 0.335, "td_s": 0.35, "td_t": 0.358, "eval_td": 0.358, "dev_r": 0.58, "dev_s": 0.57, "dev_t": 0.29, "max_dev": 0.58, "min_dev": 0.29, "eval_cap": 0}, {"index": 7, "tanggal": "18 Apr 25", "wo": "WO-BSH-202508", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 350.5, "cap_t": 343.3, "td_r": 0.35, "td_s": 0.368, "td_t": 0.372, "eval_td": 0.372, "dev_r": 0.7, "dev_s": 0.72, "dev_t": 0.38, "max_dev": 0.72, "min_dev": 0.38, "eval_cap": 0}, {"index": 8, "tanggal": "02 Mei 25", "wo": "WO-BSH-202509", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 351.0, "cap_t": 343.6, "td_r": 0.365, "td_s": 0.386, "td_t": 0.33, "eval_td": 0.386, "dev_r": 0.35, "dev_s": 0.86, "dev_t": 0.47, "max_dev": 0.86, "min_dev": 0.35, "eval_cap": 0}, {"index": 9, "tanggal": "16 Mei 25", "wo": "WO-BSH-202510", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 351.5, "cap_t": 343.0, "td_r": 0.38, "td_s": 0.404, "td_t": 0.344, "eval_td": 0.404, "dev_r": 0.46, "dev_s": 1.01, "dev_t": 0.29, "max_dev": 1.01, "min_dev": 0.29, "eval_cap": 0}, {"index": 10, "tanggal": "30 Mei 25", "wo": "WO-BSH-202511", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 349.5, "cap_t": 343.3, "td_r": 0.32, "td_s": 0.422, "td_t": 0.358, "eval_td": 0.422, "dev_r": 0.58, "dev_s": 0.43, "dev_t": 0.38, "max_dev": 0.58, "min_dev": 0.38, "eval_cap": 0}, {"index": 11, "tanggal": "13 Jun 25", "wo": "WO-BSH-202512", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 350.0, "cap_t": 343.6, "td_r": 0.335, "td_s": 0.44, "td_t": 0.372, "eval_td": 0.44, "dev_r": 0.7, "dev_s": 0.57, "dev_t": 0.47, "max_dev": 0.7, "min_dev": 0.47, "eval_cap": 0}, {"index": 12, "tanggal": "27 Jun 25", "wo": "WO-BSH-202513", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 350.5, "cap_t": 343.0, "td_r": 0.35, "td_s": 0.35, "td_t": 0.33, "eval_td": 0.35, "dev_r": 0.35, "dev_s": 0.72, "dev_t": 0.29, "max_dev": 0.72, "min_dev": 0.29, "eval_cap": 0}, {"index": 13, "tanggal": "11 Jul 25", "wo": "WO-BSH-202514", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 351.0, "cap_t": 343.3, "td_r": 0.365, "td_s": 0.368, "td_t": 0.344, "eval_td": 0.368, "dev_r": 0.46, "dev_s": 0.86, "dev_t": 0.38, "max_dev": 0.86, "min_dev": 0.38, "eval_cap": 0}, {"index": 14, "tanggal": "25 Jul 25", "wo": "WO-BSH-202515", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 351.5, "cap_t": 343.6, "td_r": 0.38, "td_s": 0.386, "td_t": 0.358, "eval_td": 0.386, "dev_r": 0.58, "dev_s": 1.01, "dev_t": 0.47, "max_dev": 1.01, "min_dev": 0.47, "eval_cap": 0}, {"index": 15, "tanggal": "08 Agu 25", "wo": "WO-BSH-202516", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 349.5, "cap_t": 343.0, "td_r": 0.32, "td_s": 0.404, "td_t": 0.372, "eval_td": 0.404, "dev_r": 0.7, "dev_s": 0.43, "dev_t": 0.29, "max_dev": 0.7, "min_dev": 0.29, "eval_cap": 0}, {"index": 16, "tanggal": "22 Agu 25", "wo": "WO-BSH-202517", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 350.0, "cap_t": 343.3, "td_r": 0.335, "td_s": 0.422, "td_t": 0.33, "eval_td": 0.422, "dev_r": 0.35, "dev_s": 0.57, "dev_t": 0.38, "max_dev": 0.57, "min_dev": 0.35, "eval_cap": 0}, {"index": 17, "tanggal": "05 Sep 25", "wo": "WO-BSH-202518", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 350.5, "cap_t": 343.6, "td_r": 0.35, "td_s": 0.44, "td_t": 0.344, "eval_td": 0.44, "dev_r": 0.46, "dev_s": 0.72, "dev_t": 0.47, "max_dev": 0.72, "min_dev": 0.46, "eval_cap": 0}, {"index": 18, "tanggal": "19 Sep 25", "wo": "WO-BSH-202519", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.0, "cap_s": 351.0, "cap_t": 343.0, "td_r": 0.365, "td_s": 0.35, "td_t": 0.358, "eval_td": 0.365, "dev_r": 0.58, "dev_s": 0.86, "dev_t": 0.29, "max_dev": 0.86, "min_dev": 0.29, "eval_cap": 0}, {"index": 19, "tanggal": "03 Okt 25", "wo": "WO-BSH-202520", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.4, "cap_s": 351.5, "cap_t": 343.3, "td_r": 0.38, "td_s": 0.368, "td_t": 0.372, "eval_td": 0.38, "dev_r": 0.7, "dev_s": 1.01, "dev_t": 0.38, "max_dev": 1.01, "min_dev": 0.38, "eval_cap": 0}, {"index": 20, "tanggal": "17 Okt 25", "wo": "WO-BSH-202521", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.2, "cap_s": 349.5, "cap_t": 343.6, "td_r": 0.32, "td_s": 0.386, "td_t": 0.33, "eval_td": 0.386, "dev_r": 0.35, "dev_s": 0.43, "dev_t": 0.47, "max_dev": 0.47, "min_dev": 0.35, "eval_cap": 0}, {"index": 21, "tanggal": "31 Okt 25", "wo": "WO-BSH-202522", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.6, "cap_s": 368.0, "cap_t": 343.0, "td_r": 0.335, "td_s": 0.68, "td_t": 0.344, "eval_td": 0.68, "dev_r": 0.46, "dev_s": 5.75, "dev_t": 0.29, "max_dev": 5.75, "min_dev": 0.29, "eval_cap": 1}, {"index": 22, "tanggal": "14 Nov 25", "wo": "WO-BSH-202523", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 348.2, "cap_s": 391.2, "cap_t": 346.0, "td_r": 0.38, "td_s": 1.18, "td_t": 0.41, "eval_td": 1.18, "dev_r": 0.93, "dev_s": 12.41, "dev_t": 1.17, "max_dev": 12.41, "min_dev": 0.93, "eval_cap": 1}, {"index": 23, "tanggal": "28 Nov 25", "wo": "WO-BSH-202524", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 347.5, "cap_s": 378.0, "cap_t": 345.5, "td_r": 0.37, "td_s": 0.85, "td_t": 0.4, "eval_td": 0.85, "dev_r": 0.72, "dev_s": 8.62, "dev_t": 1.02, "max_dev": 8.62, "min_dev": 0.72, "eval_cap": 1}, {"index": 24, "tanggal": "12 Des 25", "wo": "WO-BSH-202525", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 25, "tanggal": "26 Des 25", "wo": "WO-BSH-202526", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 26, "tanggal": "09 Jan 26", "wo": "WO-BSH-202527", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 27, "tanggal": "23 Jan 26", "wo": "WO-BSH-202528", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 28, "tanggal": "06 Feb 26", "wo": "WO-BSH-202529", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}, {"index": 29, "tanggal": "20 Feb 26", "wo": "WO-BSH-202530", "np_r": 345.0, "np_s": 348.0, "np_t": 342.0, "cap_r": 346.1, "cap_s": 349.5, "cap_t": 343.8, "td_r": 0.34, "td_s": 0.39, "td_t": 0.36, "eval_td": 0.39, "dev_r": 0.32, "dev_s": 0.43, "dev_t": 0.53, "max_dev": 0.53, "min_dev": 0.32, "eval_cap": 0}];
+        let activeRange = 30;
+        let activeMode = 'td'; // 'td', 'dev', 'cap'
+        let chartInstance = null;
+
+        // Subsystems dictionary for switcher
+        const subsystemParams = {
+            'bushing': [
+                { id: 'bushing_tandelta', name: 'Tan Delta & Kapasitansi Bushing', wf: '1.0', meta: '18 Isian Uraian', status: 'green' },
+                { id: 'bushing_thermo', name: 'Thermovisi Bushing', wf: '1.0', meta: 'Thermal Camera (ΔT < 5°C)', status: 'green' },
+                { id: 'bushing_oil', name: 'Level Minyak Bushing', wf: '1.0', meta: 'Visual Sight Glass', status: 'green' },
+                { id: 'bushing_isolator', name: 'Kondisi Fisik Isolator', wf: '1.0', meta: 'Kerapihan & Kebersihan', status: 'green' },
+                { id: 'bushing_centertap', name: 'Korosi Center Tap', wf: '1.0', meta: 'Terminal & Grounding', status: 'green' }
+            ],
+            'oil': [
+                { id: 'oil_dga', name: 'Pengujian DGA Minyak Maintank', wf: '1.0', meta: 'Gas Terlarut (Duval / Roger)', status: 'green' },
+                { id: 'oil_breakdown', name: 'Tegangan Tembus Minyak', wf: '1.0', meta: 'Standar IEC 60156 (> 50 kV)', status: 'green' },
+                { id: 'oil_water', name: 'Kadar Air', wf: '1.0', meta: 'Karl Fischer (< 20 ppm)', status: 'green' },
+                { id: 'oil_acidity', name: 'Keasaman Minyak', wf: '1.0', meta: 'Titrimetri (< 0.15 mg KOH/g)', status: 'green' },
+                { id: 'oil_ift', name: 'Tegangan Antar Muka (IFT)', wf: '1.0', meta: 'Du Nouy Ring (> 25 mN/m)', status: 'green' }
+            ],
+            'primary': [
+                { id: 'primary_td', name: 'Tan Delta Belitan 3P', wf: '1.0', meta: 'Disipasi Belitan (< 0.5%)', status: 'green' },
+                { id: 'primary_wr', name: 'Pengujian Winding Resistance', wf: '1.0', meta: 'Resistansi Belitan (Dev < 2%)', status: 'green' },
+                { id: 'primary_ttr', name: 'Pengujian Rasio Belitan Trafo', wf: '1.0', meta: 'TTR (Dev < 0.5%)', status: 'green' },
+                { id: 'primary_pi', name: 'Index Polarisasi Trafo Tenaga', wf: '1.0', meta: 'R10m / R1m (> 1.5)', status: 'green' }
+            ],
+            'oltc': [
+                { id: 'oltc_thermo', name: 'Thermovisi OLTC', wf: '1.0', meta: 'Thermal Kompartemen OLTC', status: 'green' },
+                { id: 'oltc_oil_level', name: 'Level Minyak OLTC', wf: '1.0', meta: 'Sight Glass Konservator', status: 'green' },
+                { id: 'oltc_dga', name: 'Pengujian DGA Minyak OLTC', wf: '1.0', meta: 'Gas Terlarut OLTC', status: 'green' }
+            ],
+            'tank': [
+                { id: 'tank_thermo', name: 'Thermovisi Body Trafo', wf: '1.0', meta: 'Sebaran Suara & Panas Maintank', status: 'green' },
+                { id: 'tank_noise', name: 'Inspeksi Suara & Getaran', wf: '0.8', meta: 'Dengung Inti / Trafo', status: 'green' }
+            ]
+        };
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('bushingChart').getContext('2d');
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: getChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                font: { family: 'Outfit', size: 12, weight: 'bold' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Outfit', size: 13, weight: 'bold' },
+                            bodyFont: { family: 'Outfit', size: 12 },
+                            padding: 12,
+                            boxPadding: 6,
+                            usePointStyle: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { family: 'Outfit', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { family: 'Outfit', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getSliceData() {
+            return bushingData.slice(Math.max(0, bushingData.length - activeRange));
+        }
+
+        function getChartData() {
+            const sliced = getSliceData();
+            const labels = sliced.map(d => d.tanggal);
+
+            if (activeMode === 'td') {
+                return {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Tan Delta Fasa R (%)',
+                            data: sliced.map(d => d.td_r),
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Tan Delta Fasa S (%)',
+                            data: sliced.map(d => d.td_s),
+                            borderColor: '#d97706',
+                            backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                            borderWidth: 2.5,
+                            tension: 0.2,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'Tan Delta Fasa T (%)',
+                            data: sliced.map(d => d.td_t),
+                            borderColor: '#059669',
+                            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Batas Peringatan (0.5%)',
+                            data: labels.map(() => 0.5),
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: 'Batas Kritis (1.0%)',
+                            data: labels.map(() => 1.0),
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                };
+            } else if (activeMode === 'dev') {
+                return {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Deviasi C1 Fasa R (%)',
+                            data: sliced.map(d => d.dev_r),
+                            borderColor: '#2563eb',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Deviasi C1 Fasa S (%)',
+                            data: sliced.map(d => d.dev_s),
+                            borderColor: '#d97706',
+                            borderWidth: 2.5,
+                            tension: 0.2,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'Deviasi C1 Fasa T (%)',
+                            data: sliced.map(d => d.dev_t),
+                            borderColor: '#059669',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Batas Waspada Deviasi (5%)',
+                            data: labels.map(() => 5.0),
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Batas Kritis Deviasi (10%)',
+                            data: labels.map(() => 10.0),
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            pointRadius: 0
+                        }
+                    ]
+                };
+            } else {
+                return {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Kapasitansi C1 R (pF)',
+                            data: sliced.map(d => d.cap_r),
+                            borderColor: '#2563eb',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Kapasitansi C1 S (pF)',
+                            data: sliced.map(d => d.cap_s),
+                            borderColor: '#d97706',
+                            borderWidth: 2.5,
+                            tension: 0.2,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'Kapasitansi C1 T (pF)',
+                            data: sliced.map(d => d.cap_t),
+                            borderColor: '#059669',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: 4
+                        }
+                    ]
+                };
+            }
+        }
+
+        function setChartMode(mode, btn) {
+            activeMode = mode;
+            document.querySelectorAll('#chartModeGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (chartInstance) {
+                chartInstance.data = getChartData();
+                chartInstance.update();
+            }
+        }
+
+        function setRange(range, btn) {
+            activeRange = range;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (chartInstance) {
+                chartInstance.data = getChartData();
+                chartInstance.update();
+            }
+        }
+
+        function applyCustomDateFilter() {
+            const s = document.getElementById('dateStart').value;
+            const e = document.getElementById('dateEnd').value;
+            alert('Filter Tanggal diterapkan: ' + s + ' s.d. ' + e + '\nMenampilkan rentang inspeksi sesuai tanggal yang dipilih.');
+        }
+
+        function resetDateFilter() {
+            document.getElementById('dateStart').value = '2025-01-10';
+            document.getElementById('dateEnd').value = '2026-02-20';
+            activeRange = 30;
+            if (chartInstance) {
+                chartInstance.data = getChartData();
+                chartInstance.update();
+            }
+        }
+
+        function switchSubsystem(subsystemKey, tabElem) {
+            document.querySelectorAll('.subsystem-tab').forEach(t => t.classList.remove('active'));
+            tabElem.classList.add('active');
+
+            const params = subsystemParams[subsystemKey] || [];
+            const container = document.getElementById('paramListContainer');
+            const titleElem = document.getElementById('subsystemParamTitle');
+            
+            const titles = {
+                'bushing': 'Parameter Sub-Sistem Bushing',
+                'oil': 'Parameter Sub-Sistem Insulasi Minyak',
+                'primary': 'Parameter Sub-Sistem Primary Unit',
+                'oltc': 'Parameter Sub-Sistem OLTC',
+                'tank': 'Parameter Main Tank & Anciliary'
+            };
+            titleElem.textContent = titles[subsystemKey] || 'Daftar Parameter';
+
+            let html = '';
+            params.forEach((p, idx) => {
+                const activeClass = idx === 0 ? 'active' : '';
+                html += `
+                    <div class="param-item ${activeClass}" onclick="selectParam('${p.id}', this)">
+                        <div class="param-item-header">
+                            <span class="param-item-name">${p.name}</span>
+                            <span class="status-dot ${p.status}" title="Normal"></span>
+                        </div>
+                        <div class="param-item-meta">
+                            <span><i class="ri-scales-3-line"></i> WF: ${p.wf}</span>
+                            <span>•</span>
+                            <span>${p.meta}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            if (params.length > 0) {
+                selectParam(params[0].id, container.firstElementChild);
+            }
+        }
+
+        function selectParam(paramId, elem) {
+            document.querySelectorAll('.param-item').forEach(i => i.classList.remove('active'));
+            if (elem) elem.classList.add('active');
+
+            const titleElem = document.getElementById('selectedParamTitle');
+            if (paramId === 'bushing_tandelta') {
+                titleElem.textContent = 'Tan Delta dan Kapasitansi Bushing Trafo';
+                document.getElementById('chartCardHeading').textContent = 'Tren Pengukuran Tan Delta & Kapasitansi (30 Inspeksi Terakhir)';
+                document.getElementById('chartModeGroup').style.display = 'inline-flex';
+                activeMode = 'td';
+                if (chartInstance) {
+                    chartInstance.data = getChartData();
+                    chartInstance.update();
+                }
+            } else {
+                titleElem.textContent = elem ? elem.querySelector('.param-item-name').textContent : paramId;
+                document.getElementById('chartCardHeading').textContent = 'Tren ' + titleElem.textContent + ' (30 Inspeksi Terakhir)';
+                // Demo change chart data for other params
+                if (chartInstance) {
+                    const sliced = getSliceData();
+                    chartInstance.data = {
+                        labels: sliced.map(d => d.tanggal),
+                        datasets: [
+                            {
+                                label: 'Nilai Pengukuran',
+                                data: sliced.map((d, i) => (20 + (i % 7) * 1.5).toFixed(1)),
+                                borderColor: '#00529c',
+                                backgroundColor: 'rgba(0, 82, 156, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.2,
+                                pointRadius: 4
+                            }
+                        ]
+                    };
+                    chartInstance.update();
+                }
+            }
+        }
+
+        // On Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>
