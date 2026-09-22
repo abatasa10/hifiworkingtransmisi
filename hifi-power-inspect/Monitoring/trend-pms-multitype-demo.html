@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solusi Visualisasi Tren Multi-Tipe Input (PMS/DS Outer) - Power Inspect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #F4F7FA; color: #1E293B; font-size: 13px; line-height: 1.5; padding: 24px; }
+    
+    .container { max-width: 1240px; margin: 0 auto; }
+    
+    .header-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-title { font-size: 18px; font-weight: 800; color: #00529C; display: flex; align-items: center; gap: 10px; }
+    .header-subtitle { font-size: 12px; color: #64748B; margin-top: 4px; }
+    .badge-tag {
+      background: #EDE9FE;
+      color: #6D28D9;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid #DDD6FE;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-card {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .info-icon {
+      width: 38px; height: 38px;
+      background: #00529C;
+      color: white;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; flex-shrink: 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #F1F5F9;
+      padding-bottom: 12px;
+    }
+
+    /* Form Preview Styles */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .form-label span.req { color: #EF4444; }
+    .form-desc { font-size: 11px; color: #64748B; margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #1E293B;
+      outline: none;
+      transition: all 0.2s;
+      background: #fff;
+    }
+    .form-control:focus { border-color: #00529C; box-shadow: 0 0 0 3px rgba(0,82,156,0.1); }
+    
+    .radio-group { display: flex; gap: 16px; margin-top: 4px; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: #334155; font-weight: 500; }
+    .radio-label input { accent-color: #00529C; cursor: pointer; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-vgood { background: rgba(16,185,129,0.12); color: #10B981; }
+    .badge-good  { background: rgba(37,99,235,0.12); color: #2563EB; }
+    .badge-fair  { background: rgba(245,158,11,0.12); color: #F59E0B; }
+    .badge-poor  { background: rgba(239,68,68,0.12); color: #EF4444; }
+
+    /* Table styles */
+    table.custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      text-align: center;
+    }
+    table.custom-table th, table.custom-table td {
+      border: 1px solid #E2E8F0;
+      padding: 8px 10px;
+    }
+    table.custom-table thead tr { background: #F8FAFC; }
+    table.custom-table th { font-weight: 700; color: #475569; }
+
+    .btn-action {
+      background: #00529C;
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-action:hover { background: #003e75; transform: translateY(-1px); }
+
+    .chart-wrapper {
+      position: relative;
+      height: 320px;
+      width: 100%;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Top Header -->
+    <div class="header-card">
+      <div>
+        <div class="header-title">
+          <i class="ri-pulse-line"></i> Solusi Tren Multi-Tipe Input dalam 1 Parameter
+        </div>
+        <div class="header-subtitle">
+          Studi Kasus Parameter Master: <strong>[Training/TST] Kondisi Aset (PMS/DS) - Outer</strong> (Gardu Induk / Disconnecting Switch)
+        </div>
+      </div>
+      <div>
+        <span class="badge-tag">
+          <i class="ri-stack-line"></i> 4 Tipe Input: Radio + Dropdown + Number % + Catatan
+        </span>
+      </div>
+    </div>
+
+    <!-- Info Explanation -->
+    <div class="info-card">
+      <div class="info-icon"><i class="ri-lightbulb-line"></i></div>
+      <div style="font-size: 12px; color: #1E40AF; line-height: 1.6;">
+        <strong>Mengapa Kasus Ini Berbeda?</strong><br>
+        Pada formulir inspeksi transmisi, terdapat parameter kompleks yang tidak hanya berisi 1 angka atau 1 status pilihan.
+        Parameter ini memiliki <strong>4 isian sekaligus</strong> dalam 1 kali inspeksi:
+        <ul style="margin: 6px 0 0 18px;">
+          <li><strong>1. Kondisi Aset PMS Outer:</strong> Pilihan Radio (<em>Normal</em> / <em>Tidak normal</em>) &rarr; Menjadi trigger skor AHI (Normal = 1 Very Good, Tidak normal = 4 Poor).</li>
+          <li><strong>2. Kondisi Grounding PMS:</strong> Pilihan Dropdown (<em>Normal</em>, <em>Korosi pada Mur dan Baut</em>, <em>Lepas</em>, <em>Tertutup Polutan</em>, <em>Hilang</em>).</li>
+          <li><strong>3. Tingkat Kesehatan Aset:</strong> Angka numerik persentase (<em>0.0 s/d 100.0%</em>).</li>
+          <li><strong>4. Catatan Tambahan:</strong> Deskripsi/uraian bebas catatan temuan lapangan dari petugas.</li>
+        </ul>
+        <strong>Solusi Visualisasi Tren:</strong> Gunakan pola <em>Composite Trend Card</em>: Grafik garis memplot kontinuitas angka persentase kesehatan aset dengan batas zona AHI, titik anomali ditandai merah menyala ⚠️ saat kondisi fisik rusak, dan di bawah grafik disajikan <strong>Matriks Strip Historis</strong> yang memaparkan ke-4 data secara sinkron per tanggal.
+      </div>
+    </div>
+
+    <!-- 2 Column Section: Form Simulator & Interactive Trend -->
+    <div class="grid-2">
+      
+      <!-- Form Input Simulation -->
+      <div class="card">
+        <div class="card-title">
+          <i class="ri-file-edit-line" style="color: #00529C;"></i> Simulasi Form Input Inspektur Lapangan
+        </div>
+        <div style="font-size: 11px; color: #64748B; margin-bottom: 16px;">
+          Berikut tampilan form persis seperti yang diisi petugas saat melakukan inspeksi level 2 di Gardu Induk:
+        </div>
+
+        <form id="simForm" onsubmit="handleSimSubmit(event)">
+          <!-- 1. Radio Button -->
+          <div class="form-group" style="background: #FAF5FF; border: 1px solid #E9D5FF; padding: 12px; border-radius: 8px;">
+            <label class="form-label" style="color: #6B21A8;">
+              <i class="ri-radio-button-line"></i> 1. Kondisi Aset PMS Outer <span class="req">*</span>
+            </label>
+            <div class="form-desc">Pemicu Utama Skor AHI (SK520-2024)</div>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="simFisik" value="Normal" checked onchange="updateSimImpact()"> Normal
+              </label>
+              <label class="radio-label" style="color: #EF4444;">
+                <input type="radio" name="simFisik" value="Tidak normal" onchange="updateSimImpact()"> Tidak normal ⚠️
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Combo Box -->
+          <div class="form-group" style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 12px; border-radius: 8px;">
+            <label class="form-label" style="color: #1E40AF;">
+              <i class="ri-arrow-down-circle-line"></i> 2. Kondisi Grounding PMS <span class="req">*</span>
+            </label>
+            <div class="form-desc">Pilihan dari Master Referensi Data "Koneksi Grounding"</div>
+            <select class="form-control" id="simGrounding" onchange="updateSimImpact()">
+              <option value="Normal">Normal</option>
+              <option value="Korosi pada Mur dan Baut">Korosi pada Mur dan Baut</option>
+              <option value="Lepas">Lepas (Kendor / Putus)</option>
+              <option value="Tertutup Polutan">Tertutup Polutan</option>
+              <option value="Hilang">Hilang</option>
+            </select>
+          </div>
+
+          <!-- 3. Number Input -->
+          <div class="form-group" style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 12px; border-radius: 8px;">
+            <label class="form-label" style="color: #166534;">
+              <i class="ri-percent-line"></i> 3. Tingkat Kesehatan Aset (%) <span class="req">*</span>
+            </label>
+            <div class="form-desc">Nilai persentase estimasi kesehatan teknis (Rentang: 0.0 - 100.0%)</div>
+            <input type="number" step="0.1" min="0" max="100" class="form-control" id="simKesehatan" value="96.0" oninput="updateSimImpact()">
+          </div>
+
+          <!-- 4. Text Note Input -->
+          <div class="form-group" style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 12px; border-radius: 8px;">
+            <label class="form-label" style="color: #92400E;">
+              <i class="ri-chat-quote-line"></i> 4. Catatan Tambahan mengenai Kesehatan Aset
+            </label>
+            <div class="form-desc">Catatan naratif temuan inspektur untuk data historis</div>
+            <textarea class="form-control" id="simCatatan" rows="3" placeholder="Tuliskan catatan kondisi visual..."></textarea>
+          </div>
+
+          <!-- Result Preview -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 600;">Kalkulasi Status AHI:</span>
+            <span id="simAhiBadge" class="badge badge-vgood">1 - Very Good</span>
+          </div>
+
+          <button type="submit" class="btn-action" style="width: 100%; justify-content: center;">
+            <i class="ri-add-line"></i> Simulasikan Data ke Grafik Tren di Samping
+          </button>
+        </form>
+      </div>
+
+      <!-- Trend Visualization -->
+      <div class="card">
+        <div class="card-title" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="ri-line-chart-line" style="color: #0284C7;"></i> Visualisasi Tren Gabungan (4 Tipe Input)
+          </div>
+          <span class="badge badge-vgood" id="latestHeaderBadge">Status Terakhir: 1 - Very Good (96%)</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 12px; color: #64748B;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; color: #0284C7; font-weight: 600;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284C7;"></span> Garis Tingkat Kesehatan (%)
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; color: #EF4444; font-weight: 600;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #EF4444;"></span> Titik Anomali Drop ⚠️
+            </span>
+          </div>
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="chkThresholds" checked onchange="toggleThresholds(this.checked)" style="accent-color: #00529C;"> Batas Zona AHI
+          </label>
+        </div>
+
+        <!-- Canvas -->
+        <div class="chart-wrapper">
+          <canvas id="pmsChart"></canvas>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #64748B; margin-top: 8px;">
+          <i class="ri-information-line" style="color: #00529C;"></i>
+          <strong>Hover pada titik grafik:</strong> Tooltip otomatis menampilkan rincian kondisi fisik PMS (radio), kondisi grounding (combo box), tingkat kesehatan (angka), dan catatan teks petugas.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Timeline Strip Matrix Table -->
+    <div class="card">
+      <div class="card-title">
+        <i class="ri-table-line" style="color: #9333EA;"></i> Matriks Riwayat Multi-Tipe Input (Sinkron Sumbu Tanggal Inspeksi)
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="custom-table" id="matrixTable">
+          <thead>
+            <tr style="background: #F8FAFC;">
+              <th style="text-align: left; width: 220px;">Uraian / Tipe Input</th>
+              <th>15 Mei</th>
+              <th>01 Jun</th>
+              <th>18 Jun</th>
+              <th>05 Jul</th>
+              <th>24 Jul</th>
+              <th style="background: #FEF2F2; color: #B91C1C;">15 Agu (Anomali ⚠️)</th>
+              <th>02 Sep</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left; font-weight: 700; background: #FAF5FF; color: #6B21A8;">
+                <i class="ri-radio-button-line"></i> 1. Fisik PMS Outer (Radio)
+              </td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td style="background: #FEF2F2;"><span class="badge badge-poor">Tidak normal ⚠️</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+            </tr>
+            <tr>
+              <td style="text-align: left; font-weight: 700; background: #EFF6FF; color: #1E40AF;">
+                <i class="ri-arrow-down-circle-line"></i> 2. Grounding PMS (Dropdown)
+              </td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+              <td><span class="badge badge-fair">Korosi Mur &amp; Baut</span></td>
+              <td style="background: #FEF2F2;"><span class="badge badge-poor">Lepas ⚠️</span></td>
+              <td><span class="badge badge-vgood">Normal</span></td>
+            </tr>
+            <tr>
+              <td style="text-align: left; font-weight: 700; background: #F0FDF4; color: #166534;">
+                <i class="ri-percent-line"></i> 3. Kesehatan Aset (Number)
+              </td>
+              <td><strong style="color: #10B981;">95.0%</strong></td>
+              <td><strong style="color: #10B981;">94.0%</strong></td>
+              <td><strong style="color: #10B981;">92.5%</strong></td>
+              <td><strong style="color: #10B981;">91.0%</strong></td>
+              <td><strong style="color: #F59E0B;">90.0%</strong></td>
+              <td style="background: #FEF2F2;"><strong style="color: #EF4444; font-size: 12px;">35.0% 🔴</strong></td>
+              <td><strong style="color: #10B981;">96.0%</strong></td>
+            </tr>
+            <tr>
+              <td style="text-align: left; font-weight: 700; background: #F8FAFC; color: #1E293B;">
+                <i class="ri-heart-pulse-line"></i> Skor AHI Sistem
+              </td>
+              <td><span class="badge badge-vgood">1 - Very Good</span></td>
+              <td><span class="badge badge-vgood">1 - Very Good</span></td>
+              <td><span class="badge badge-vgood">1 - Very Good</span></td>
+              <td><span class="badge badge-vgood">1 - Very Good</span></td>
+              <td><span class="badge badge-good">2 - Good</span></td>
+              <td style="background: #FEF2F2;"><span class="badge badge-poor">4 - Poor</span></td>
+              <td><span class="badge badge-vgood">1 - Very Good</span></td>
+            </tr>
+            <tr>
+              <td style="text-align: left; font-weight: 700; background: #FFFBEB; color: #92400E;">
+                <i class="ri-chat-quote-line"></i> 4. Catatan Petugas (Text)
+              </td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px;" onclick="viewNote(0)"><i class="ri-file-text-line"></i> Baca</button></td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px;" onclick="viewNote(1)"><i class="ri-file-text-line"></i> Baca</button></td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px;" onclick="viewNote(2)"><i class="ri-file-text-line"></i> Baca</button></td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px;" onclick="viewNote(3)"><i class="ri-file-text-line"></i> Baca</button></td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px;" onclick="viewNote(4)"><i class="ri-file-text-line"></i> Baca</button></td>
+              <td style="background: #FEF2F2;"><button class="btn-action" style="padding: 4px 8px; font-size: 10px; background: #EF4444;" onclick="viewNote(5)"><i class="ri-error-warning-fill"></i> Anomali</button></td>
+              <td><button class="btn-action" style="padding: 4px 8px; font-size: 10px; background: #10B981;" onclick="viewNote(6)"><i class="ri-checkbox-circle-line"></i> Perbaikan</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="demoNoteModal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+      <div style="background: #fff; border-radius: 12px; width: 500px; max-width: 90vw; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="ri-file-text-line" style="color: #9333EA; font-size: 20px;"></i>
+            <h3 style="font-size: 15px; font-weight: 700; color: #0F172A;" id="modalTitle">Catatan Inspeksi</h3>
+          </div>
+          <button onclick="closeNoteModal()" style="border: none; background: transparent; font-size: 20px; cursor: pointer; color: #64748B;">&times;</button>
+        </div>
+        <div id="modalContent" style="font-size: 13px; line-height: 1.6; color: #334155;"></div>
+        <div style="margin-top: 18px; text-align: right;">
+          <button class="btn-action" onclick="closeNoteModal()">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let pmsChartInstance = null;
+    let showThresholds = true;
+
+    const historyData = [
+      {
+        tanggal: "15 Mei",
+        fisik: "Normal",
+        grounding: "Normal",
+        kesehatan: 95.0,
+        statusAhi: "1 - Very Good",
+        catatan: "Kondisi fisik luar PMS bersih, kontak pisau terlumasi baik, koneksi grounding kencang dan tidak berkarat.",
+        petugas: "Ahmad Fauzi (ULTG Gandul)"
+      },
+      {
+        tanggal: "01 Jun",
+        fisik: "Normal",
+        grounding: "Normal",
+        kesehatan: 94.0,
+        statusAhi: "1 - Very Good",
+        catatan: "Inspeksi rutin berkala. Tidak ditemukan kelainan visual maupun kelonggaran baut.",
+        petugas: "Ismail Hasan (ULTG Gandul)"
+      },
+      {
+        tanggal: "18 Jun",
+        fisik: "Normal",
+        grounding: "Normal",
+        kesehatan: 92.5,
+        statusAhi: "1 - Very Good",
+        catatan: "Pemeriksaan isolator penopang dan grounding box. Semua parameter dalam batas toleransi.",
+        petugas: "Doni Pratama (ULTG Gandul)"
+      },
+      {
+        tanggal: "05 Jul",
+        fisik: "Normal",
+        grounding: "Normal",
+        kesehatan: 91.0,
+        statusAhi: "1 - Very Good",
+        catatan: "Kondisi operasional normal. Mekanik pisau membuka dan menutup dengan presisi.",
+        petugas: "Ahmad Fauzi (ULTG Gandul)"
+      },
+      {
+        tanggal: "24 Jul",
+        fisik: "Normal",
+        grounding: "Korosi pada Mur dan Baut",
+        kesehatan: 90.0,
+        statusAhi: "2 - Good",
+        catatan: "Ditemukan korosi ringan pada mur klem grounding rangka. Dianjurkan pembersihan dan pemberian anti-korosi pada jadwal pemeliharaan berikutnya.",
+        petugas: "Ismail Hasan (ULTG Gandul)"
+      },
+      {
+        tanggal: "15 Agu",
+        fisik: "Tidak normal",
+        grounding: "Lepas",
+        kesehatan: 35.0,
+        statusAhi: "4 - Poor",
+        catatan: "ANOMALI MAYOR: Kabel grounding terlepas dari sepatu kabel akibat getaran; kontak pisau PMS kotor berdebu tebal dan terindikasi kendor. Diterbitkan SPK perbaikan darurat.",
+        petugas: "Doni Pratama (ULTG Gandul)"
+      },
+      {
+        tanggal: "02 Sep",
+        fisik: "Normal",
+        grounding: "Normal",
+        kesehatan: 96.0,
+        statusAhi: "1 - Very Good",
+        catatan: "Telah dilakukan penggantian sepatu kabel grounding, pengencangan baut torsi, dan pembersihan kontak PMS. Seluruh parameter normal kembali.",
+        petugas: "Ahmad Fauzi (ULTG Gandul)"
+      }
+    ];
+
+    function initChart() {
+      const ctx = document.getElementById('pmsChart').getContext('2d');
+      const labels = historyData.map(d => d.tanggal);
+      const dataPoints = historyData.map(d => d.kesehatan);
+
+      const pointColors = historyData.map(d => d.kesehatan < 40 ? '#EF4444' : (d.kesehatan < 80 ? '#F59E0B' : '#0284C7'));
+      const pointRadii = historyData.map(d => d.kesehatan < 40 ? 11 : 6);
+
+      const datasets = [{
+        label: 'Tingkat Kesehatan Aset (%)',
+        data: dataPoints,
+        borderColor: '#0284C7',
+        backgroundColor: 'rgba(2, 132, 199, 0.12)',
+        borderWidth: 2.8,
+        tension: 0.25,
+        fill: false,
+        pointRadius: pointRadii,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 13
+      }];
+
+      if (showThresholds) {
+        datasets.push({
+          label: 'Batas Very Good (80%)',
+          data: labels.map(() => 80),
+          borderColor: 'rgba(16, 185, 129, 0.6)',
+          borderDash: [5, 5],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false
+        });
+        datasets.push({
+          label: 'Batas Fair (60%)',
+          data: labels.map(() => 60),
+          borderColor: 'rgba(245, 158, 11, 0.6)',
+          borderDash: [5, 5],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false
+        });
+        datasets.push({
+          label: 'Batas Poor/Kritis (40%)',
+          data: labels.map(() => 40),
+          borderColor: 'rgba(239, 68, 68, 0.6)',
+          borderDash: [5, 5],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      pmsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              padding: 14,
+              callbacks: {
+                label: function(context) {
+                  if (context.datasetIndex === 0) return ` 📊 Tingkat Kesehatan: ${context.parsed.y}%`;
+                  return ` ${context.dataset.label}`;
+                },
+                afterBody: function(contexts) {
+                  const idx = contexts[0].dataIndex;
+                  const item = historyData[idx];
+                  if (!item) return [];
+                  return [
+                    '--------------------------------------------------',
+                    `• 1. Fisik PMS Outer  : ${item.fisik === 'Normal' ? '✅ Normal' : '❌ Tidak normal (ANOMALI)'}`,
+                    `• 2. Kondisi Grounding: ${item.grounding === 'Normal' ? '✅ Normal' : '⚠️ ' + item.grounding}`,
+                    `• 3. Skor AHI Sistem  : ${item.statusAhi}`,
+                    `• 4. Catatan Lapangan : "${item.catatan}"`,
+                    `• Petugas Inspeksi    : ${item.petugas}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              min: 0,
+              max: 100,
+              title: { display: true, text: 'Tingkat Kesehatan Aset (%)' },
+              grid: { color: '#E2E8F0' },
+              ticks: { stepSize: 20, callback: v => v + '%' }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function toggleThresholds(checked) {
+      showThresholds = checked;
+      if (pmsChartInstance) {
+        pmsChartInstance.destroy();
+        initChart();
+      }
+    }
+
+    function updateSimImpact() {
+      const fisik = document.querySelector('input[name="simFisik"]:checked').value;
+      const grounding = document.getElementById('simGrounding').value;
+      const val = parseFloat(document.getElementById('simKesehatan').value) || 0;
+
+      const badge = document.getElementById('simAhiBadge');
+      if (fisik === 'Tidak normal' || grounding === 'Lepas' || grounding === 'Hilang' || val < 40) {
+        badge.className = 'badge badge-poor';
+        badge.textContent = '4 - Poor (Anomali)';
+      } else if (grounding === 'Korosi pada Mur dan Baut' || val < 70) {
+        badge.className = 'badge badge-fair';
+        badge.textContent = '3 - Fair';
+      } else if (val < 85) {
+        badge.className = 'badge badge-good';
+        badge.textContent = '2 - Good';
+      } else {
+        badge.className = 'badge badge-vgood';
+        badge.textContent = '1 - Very Good';
+      }
+    }
+
+    function handleSimSubmit(e) {
+      e.preventDefault();
+      const fisik = document.querySelector('input[name="simFisik"]:checked').value;
+      const grounding = document.getElementById('simGrounding').value;
+      const kesehatan = parseFloat(document.getElementById('simKesehatan').value) || 0;
+      const catatan = document.getElementById('simCatatan').value || "Pemeriksaan parameter formulir simulasi.";
+
+      const statusAhi = (fisik === 'Tidak normal' || grounding === 'Lepas' || grounding === 'Hilang' || kesehatan < 40)
+        ? "4 - Poor" : (kesehatan < 85 ? "2 - Good" : "1 - Very Good");
+
+      historyData.push({
+        tanggal: "Baru",
+        fisik,
+        grounding,
+        kesehatan,
+        statusAhi,
+        catatan,
+        petugas: "Super Admin Ridwan"
+      });
+
+      if (pmsChartInstance) {
+        pmsChartInstance.destroy();
+        initChart();
+      }
+
+      alert("Data berhasil ditambahkan ke grafik tren dan riwayat matriks!");
+    }
+
+    function viewNote(idx) {
+      const item = historyData[idx];
+      if (!item) return;
+      document.getElementById('modalTitle').textContent = `Catatan Inspeksi - ${item.tanggal}`;
+      document.getElementById('modalContent').innerHTML = `
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #E2E8F0;">
+          <div><strong>Fisik PMS:</strong> ${item.fisik}</div>
+          <div><strong>Kondisi Grounding:</strong> ${item.grounding}</div>
+          <div><strong>Tingkat Kesehatan:</strong> ${item.kesehatan}% (${item.statusAhi})</div>
+          <div><strong>Petugas:</strong> ${item.petugas}</div>
+        </div>
+        <div style="font-style: italic; color: #1E293B; background: #FFFBEB; padding: 12px; border-radius: 6px; border-left: 3px solid #F59E0B;">
+          "${item.catatan}"
+        </div>
+      `;
+      document.getElementById('demoNoteModal').style.display = 'flex';
+    }
+
+    function closeNoteModal() {
+      document.getElementById('demoNoteModal').style.display = 'none';
+    }
+
+    window.onload = function() {
+      initChart();
+      updateSimImpact();
+    };
+  </script>
+</body>
+</html>
