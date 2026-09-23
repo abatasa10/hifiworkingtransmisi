@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
-import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
   ParsedGINode,
@@ -297,7 +297,9 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   // Auto-layout calculation for React Flow
   const { flowNodes, flowEdges } = useMemo(() => {
     // Compute optimal, non-overlapping hierarchical coordinates
-    const layoutPositions = computeCleanSLDLayout(giList, lineList);
+    // Uploaded data must use computed positions, even when its assets match
+    // the built-in demo subsystem's names.
+    const layoutPositions = computeTieredLayout(giList, lineList);
 
     const calculatedNodes: Node[] = giList.map((node) => {
       const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
@@ -361,6 +363,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       return {
         id: node.id,
         type: 'custom',
+        draggable: false,
         position: { x: pos.x, y: pos.y },
         data: {
           label: isIBTNode ? (

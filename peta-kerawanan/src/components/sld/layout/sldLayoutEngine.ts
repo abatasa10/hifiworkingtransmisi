@@ -160,7 +160,7 @@ export function computeTieredLayout(
 ): Record<string, NodePosition> {
   const tierMap = new Map<string, number>();
   nodes.forEach((n) => {
-    if (typeof n.tier === 'number' && n.tier > 0) tierMap.set(n.id, n.tier);
+    if (typeof n.tier === 'number' && n.tier >= 0) tierMap.set(n.id, n.tier);
   });
   return computeEngineLayout(nodes, lines, tierMap);
 }

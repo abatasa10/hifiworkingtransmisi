@@ -39,8 +39,8 @@ function isSideBusbar(n: ParsedGINode): boolean {
 
 function fallbackTier(node: ParsedGINode, tierMap: Map<string, number> | null | undefined): number {
   const explicit = tierMap?.get(node.id);
-  if (typeof explicit === 'number' && explicit > 0) return explicit;
-  if (typeof node.tier === 'number' && node.tier > 0) return node.tier;
+  if (typeof explicit === 'number' && explicit >= 0) return explicit;
+  if (typeof node.tier === 'number' && node.tier >= 0) return node.tier;
   const a = String(node.assetType || '');
   const n = (node.name || '').toLowerCase();
   const v = String(node.voltage || '');

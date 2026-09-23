@@ -18,7 +18,7 @@ import { TransformerNode } from '../sld/nodes/TransformerNode';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { TierGuides } from '../sld/TierGuides';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
-import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
@@ -439,7 +439,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   useEffect(() => {
     if (customConfig?.type === 'excel' && customConfig.excelData?.giList && customConfig.excelData.giList.length > 0) {
       // Calculate clean, non-overlapping hierarchical coordinates
-      const layoutPositions = computeCleanSLDLayout(
+      const layoutPositions = computeTieredLayout(
         customConfig.excelData.giList,
         customConfig.excelData.lineList || []
       );
@@ -503,6 +503,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         return {
           id: gi.id,
           type: nodeType,
+          draggable: false,
           position: { x: pos.x, y: pos.y },
           data: {
             id: gi.id,
