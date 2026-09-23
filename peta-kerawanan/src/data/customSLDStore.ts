@@ -22,6 +22,12 @@ export interface ParsedGINode {
   solution?: string;
   x?: number;
   y?: number;
+  // Engine metadata (port from SLD engine / ingest_parser.py)
+  objectType?: 'GITET' | 'GISTET' | 'GI' | 'GIS' | 'GENERATING_UNIT' | 'IBT' | 'TRAFO' | 'KAPASITOR' | 'BEBAN' | 'BAY';
+  unitNo?: string;
+  busLvKey?: string;
+  isBay?: boolean;
+  feederKey?: string;
 }
 
 export interface ParsedTransmissionLine {
