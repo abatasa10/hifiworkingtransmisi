@@ -1167,6 +1167,8 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                   <ReactFlow
                     nodes={nodes}
                     edges={edges}
+                    nodesDraggable={false}
+                    nodesConnectable={false}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodeClick={onNodeClick}

@@ -115,6 +115,8 @@ const UploadSLDCanvas: React.FC<{
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodesDraggable={false}
+        nodesConnectable={false}
         nodeTypes={uploadNodeTypes}
         edgeTypes={uploadEdgeTypes}
         fitView

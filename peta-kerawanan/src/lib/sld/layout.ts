@@ -112,47 +112,40 @@ export function computeEngineLayout(
   const tierY = (t: number) => TIER_Y_BASE + (t - minTier) * TIER_Y_STEP;
 
   const xOf = new Map<string, number>();
-
-  // Tier placement order: source bands first.
+  const orderedTiers = new Map<number, ParsedGINode[]>();
   tierKeys.forEach((t) => {
-    const tierNodes = [...(tiers.get(t) || [])];
+    const ordered = [...(tiers.get(t) || [])].sort((a, b) => a.name.localeCompare(b.name));
+    orderedTiers.set(t, ordered);
+    ordered.forEach((n, i) => xOf.set(n.id, i * MIN_GAP));
+  });
 
-    // barycenter of parents (already placed)
-    tierNodes.forEach((n) => {
-      const pxs = (parentsOf.get(n.id) || [])
-        .map((p) => xOf.get(p))
-        .filter((v): v is number => typeof v === 'number');
-      xOf.set(n.id, pxs.length ? pxs.reduce((a, b) => a + b, 0) / pxs.length : 120 + t * 60);
+  // Reorder the layered graph using alternating barycenter sweeps, as in SLD
+  // Engine. Considering both sides of each connection reduces crossings when
+  // a node has several incoming/outgoing circuits.
+  for (let sweep = 0; sweep < 16; sweep++) {
+    const rows = sweep % 2 === 0 ? tierKeys : [...tierKeys].reverse();
+    rows.forEach((tier) => {
+      const row = orderedTiers.get(tier) || [];
+      const priorIndex = new Map(row.map((n, i) => [n.id, i]));
+      row.sort((a, b) => {
+        const connectedX = (n: ParsedGINode) => [...(parentsOf.get(n.id) || []), ...(childrenOf.get(n.id) || [])]
+          .map((id) => xOf.get(id)).filter((x): x is number => x !== undefined);
+        const ax = connectedX(a);
+        const bx = connectedX(b);
+        const ac = ax.length ? ax.reduce((sum, x) => sum + x, 0) / ax.length : xOf.get(a.id) ?? 0;
+        const bc = bx.length ? bx.reduce((sum, x) => sum + x, 0) / bx.length : xOf.get(b.id) ?? 0;
+        return ac - bc || (priorIndex.get(a.id)! - priorIndex.get(b.id)!);
+      });
+      row.forEach((n, i) => xOf.set(n.id, i * MIN_GAP));
     });
+  }
 
-    // siblings sharing one parent fan out around the parent
-    const cluster = new Map<string, ParsedGINode[]>();
-    tierNodes.forEach((n) => {
-      const p = parentsOf.get(n.id) || [];
-      if (p.length === 1) {
-        if (!cluster.has(p[0])) cluster.set(p[0], []);
-        cluster.get(p[0])!.push(n);
-      }
-    });
-    for (const [pid, sibs] of cluster) {
-      if (sibs.length > 1) {
-        const px = xOf.get(pid) ?? 150;
-        const span = 120;
-        sibs.forEach((sib, i) => {
-          xOf.set(sib.id, px + (i - (sibs.length - 1) / 2) * span);
-        });
-      }
-    }
-
-    // collision-avoidance sweep
-    const ordered = [...tierNodes].sort((a, b) => (xOf.get(a.id) ?? 0) - (xOf.get(b.id) ?? 0));
-    for (let i = 1; i < ordered.length; i++) {
-      const prev = ordered[i - 1];
-      const curr = ordered[i];
-      const prevX = xOf.get(prev.id) ?? 0;
-      const currX = xOf.get(curr.id) ?? 0;
-      if (currX < prevX + MIN_GAP) xOf.set(curr.id, prevX + MIN_GAP);
-    }
+  // Center each tier after its order has converged, keeping a fixed minimum
+  // bay gap like the engine's width-aware row packing.
+  tierKeys.forEach((tier) => {
+    const row = orderedTiers.get(tier) || [];
+    const shift = Math.max(0, (row.length - 1) * MIN_GAP) / 2;
+    row.forEach((n, i) => xOf.set(n.id, i * MIN_GAP - shift));
   });
 
   // Finalize: wide busbar detection + IBT vertical offset + taps
