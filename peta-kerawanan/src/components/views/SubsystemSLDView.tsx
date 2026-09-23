@@ -417,6 +417,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(subsystemBogorNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(subsystemBogorEdges);
+  const handleNodesChange = useCallback((changes: any[]) => {
+    onNodesChange(changes.filter((change) => change.type !== 'position'));
+  }, [onNodesChange]);
   const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
@@ -1170,7 +1173,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                     edges={edges}
                     nodesDraggable={false}
                     nodesConnectable={false}
-                    onNodesChange={onNodesChange}
+                    onNodesChange={handleNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodeClick={onNodeClick}
                     onEdgeClick={onEdgeClick}

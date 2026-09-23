@@ -17,7 +17,7 @@ export interface NodePosition {
   taps?: BusbarTap[];
 }
 
-const MIN_GAP = 210;
+const ROW_GUTTER = 110;
 const TIER_Y_BASE = 90;
 const TIER_Y_STEP = 200;
 const IBT_Y_OFFSET = 95;
@@ -84,10 +84,14 @@ export function computeEngineLayout(
   const physicalLines = [...new Map(
     lines.map((line) => [[line.sourceId, line.targetId].sort().join('___'), line] as const)
   ).values()];
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const neighbors = new Map<string, Set<string>>(nodes.map((node) => [node.id, new Set()]));
   physicalLines.forEach((l) => {
     if (!parentsOf.has(l.sourceId) || !parentsOf.has(l.targetId)) return;
-    const sT = fallbackTier(nodes.find((n) => n.id === l.sourceId) as ParsedGINode, tierMap);
-    const tT = fallbackTier(nodes.find((n) => n.id === l.targetId) as ParsedGINode, tierMap);
+    const sT = fallbackTier(nodeById.get(l.sourceId)!, tierMap);
+    const tT = fallbackTier(nodeById.get(l.targetId)!, tierMap);
+    neighbors.get(l.sourceId)?.add(l.targetId);
+    neighbors.get(l.targetId)?.add(l.sourceId);
     if (sT < tT) {
       parentsOf.get(l.targetId)?.push(l.sourceId);
       childrenOf.get(l.sourceId)?.push(l.targetId);
@@ -111,13 +115,36 @@ export function computeEngineLayout(
   const minTier = tierKeys[0] ?? 1;
   const tierY = (t: number) => TIER_Y_BASE + (t - minTier) * TIER_Y_STEP;
 
+  const halfWidth = new Map<string, number>();
+  nodes.forEach((node) => {
+    const degree = neighbors.get(node.id)?.size || 0;
+    const wide = isSideBusbar(node) && degree >= 3;
+    halfWidth.set(node.id, wide ? Math.max(120, degree * 23) : 75);
+  });
   const xOf = new Map<string, number>();
   const orderedTiers = new Map<number, ParsedGINode[]>();
   tierKeys.forEach((t) => {
     const ordered = [...(tiers.get(t) || [])].sort((a, b) => a.name.localeCompare(b.name));
     orderedTiers.set(t, ordered);
-    ordered.forEach((n, i) => xOf.set(n.id, i * MIN_GAP));
+    const packedWidth = ordered.reduce((sum, node) => sum + 2 * (halfWidth.get(node.id) || 75), 0) + Math.max(0, ordered.length - 1) * ROW_GUTTER;
+    let cursor = -packedWidth / 2;
+    ordered.forEach((node) => {
+      const half = halfWidth.get(node.id) || 75;
+      xOf.set(node.id, cursor + half);
+      cursor += 2 * half + ROW_GUTTER;
+    });
   });
+
+  const repackTier = (tier: number, center = false) => {
+    const row = orderedTiers.get(tier) || [];
+    const packedWidth = row.reduce((sum, node) => sum + 2 * (halfWidth.get(node.id) || 75), 0) + Math.max(0, row.length - 1) * ROW_GUTTER;
+    let cursor = center ? -packedWidth / 2 : 0;
+    row.forEach((node) => {
+      const half = halfWidth.get(node.id) || 75;
+      xOf.set(node.id, cursor + half);
+      cursor += 2 * half + ROW_GUTTER;
+    });
+  };
 
   // Reorder the layered graph using alternating barycenter sweeps, as in SLD
   // Engine. Considering both sides of each connection reduces crossings when
@@ -128,25 +155,19 @@ export function computeEngineLayout(
       const row = orderedTiers.get(tier) || [];
       const priorIndex = new Map(row.map((n, i) => [n.id, i]));
       row.sort((a, b) => {
-        const connectedX = (n: ParsedGINode) => [...(parentsOf.get(n.id) || []), ...(childrenOf.get(n.id) || [])]
-          .map((id) => xOf.get(id)).filter((x): x is number => x !== undefined);
-        const ax = connectedX(a);
-        const bx = connectedX(b);
+        const ax = [...(neighbors.get(a.id) || [])].map((id) => xOf.get(id)).filter((x): x is number => x !== undefined);
+        const bx = [...(neighbors.get(b.id) || [])].map((id) => xOf.get(id)).filter((x): x is number => x !== undefined);
         const ac = ax.length ? ax.reduce((sum, x) => sum + x, 0) / ax.length : xOf.get(a.id) ?? 0;
         const bc = bx.length ? bx.reduce((sum, x) => sum + x, 0) / bx.length : xOf.get(b.id) ?? 0;
         return ac - bc || (priorIndex.get(a.id)! - priorIndex.get(b.id)!);
       });
-      row.forEach((n, i) => xOf.set(n.id, i * MIN_GAP));
+      repackTier(tier);
     });
   }
 
   // Center each tier after its order has converged, keeping a fixed minimum
   // bay gap like the engine's width-aware row packing.
-  tierKeys.forEach((tier) => {
-    const row = orderedTiers.get(tier) || [];
-    const shift = Math.max(0, (row.length - 1) * MIN_GAP) / 2;
-    row.forEach((n, i) => xOf.set(n.id, i * MIN_GAP - shift));
-  });
+  tierKeys.forEach((tier) => repackTier(tier, true));
 
   // Finalize: wide busbar detection + IBT vertical offset + taps
   nodes.forEach((n) => {
@@ -156,34 +177,23 @@ export function computeEngineLayout(
     const total = parents.length + children.length;
     const aT = String(n.assetType || '');
     const isIBT = aT === 'ibt';
-    const isBusbarLike = isSideBusbar(n);
 
-    let x = xOf.get(n.id) ?? 120;
-    let width = 150;
-    let isWide = false;
+    const centerX = xOf.get(n.id) ?? 120;
+    let width = (halfWidth.get(n.id) || 75) * 2;
+    let x = centerX - width / 2;
+    let isWide = isSideBusbar(n) && total >= 3;
     let taps: BusbarTap[] | undefined = undefined;
 
-    if (total >= 3 && isBusbarLike) {
-      const connected = [...parents, ...children];
-      const connXs = connected.map((c) => xOf.get(c)).filter((v): v is number => typeof v === 'number');
-      if (connXs.length) {
-        const minC = Math.min(...connXs);
-        const maxC = Math.max(...connXs);
-        x = Math.min(x - 30, minC - 60);
-        width = Math.max(240, Math.max(xOf.get(n.id) ?? 0, maxC + 60) - x);
-        isWide = true;
-        taps = [];
-        parents.forEach((p) => {
-          const px = xOf.get(p) ?? x + 40;
-          const tx = Math.min(width - 24, Math.max(24, px - x));
-          taps?.push({ id: `tap-top-${p}`, connectedNodeId: p, x: tx, position: 'top', label: `Bay ${p}` });
+    if (isWide) {
+      taps = [];
+      const addTaps = (connectedIds: string[], side: 'top' | 'bottom') => {
+        [...connectedIds].sort((a, b) => (xOf.get(a) ?? 0) - (xOf.get(b) ?? 0)).forEach((connectedNodeId, index, sorted) => {
+          const xTap = width * (index + 1) / (sorted.length + 1);
+          taps?.push({ id: `tap-${side}-${connectedNodeId}`, connectedNodeId, x: xTap, position: side, label: `Bay ${connectedNodeId}` });
         });
-        children.forEach((c) => {
-          const cx = xOf.get(c) ?? x + 60;
-          const tx = Math.min(width - 24, Math.max(24, cx - x));
-          taps?.push({ id: `tap-bot-${c}`, connectedNodeId: c, x: tx, position: 'bottom', label: `Bay ${c}` });
-        });
-      }
+      };
+      addTaps(parents, 'top');
+      addTaps(children, 'bottom');
     }
 
     const y = isIBT ? tierY(t) + IBT_Y_OFFSET : isWide ? tierY(t) - 40 : tierY(t);

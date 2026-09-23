@@ -28,6 +28,7 @@ import { risksData } from '../../data/risks';
 import { SLDFilterOptions, SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { ActiveView } from '../layout/Header';
 import { getCustomSLD, removeCustomSLD, CustomSLDConfig } from '../../data/customSLDStore';
+import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
 import {
   Maximize2,
   RotateCcw,
@@ -265,6 +266,9 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(computedEdges);
+  const handleNodesChange = useCallback((changes: any[]) => {
+    onNodesChange(changes.filter((change) => change.type !== 'position'));
+  }, [onNodesChange]);
 
   const isCustomExcelValid = Boolean(
     customConfig?.type === 'excel' &&
@@ -275,30 +279,47 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   // Synchronize state when custom config or computed nodes/edges change
   React.useEffect(() => {
     if (isCustomExcelValid && customConfig?.excelData?.giList && customConfig.excelData.giList.length > 0) {
-      const cols = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(customConfig.excelData.giList.length))));
-      const newNodes: Node[] = customConfig.excelData.giList.map((gi, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
+      const giList = customConfig.excelData.giList;
+      const lineList = customConfig.excelData.lineList || [];
+      const layout = computeTieredLayout(giList, lineList);
+      const newNodes: Node[] = giList.map((gi) => {
+        const pos = layout[gi.id] || { x: 0, y: 0, tier: gi.tier ?? 1 };
+        const name = (gi.name || '').toLowerCase();
+        const assetType = String(gi.assetType || '').toLowerCase();
+        const isGenerator = assetType === 'pembangkit' || name.includes('plt') || name.includes('unit');
+        const isIbt = assetType === 'ibt' || name.includes('ibt');
+        const isTrafo = assetType === 'trafo' || name.includes('trafo');
+        const isLoad = assetType === 'beban' || name.includes('ktt');
+        const type = isGenerator ? 'generator' : isIbt || isTrafo ? 'ibt' : isLoad ? 'custom' : 'busbar';
         return {
           id: gi.id,
-          type: 'custom',
-          position: { x: 80 + col * 280, y: 80 + row * 160 },
+          type,
+          draggable: false,
+          position: { x: pos.x, y: pos.y },
           data: {
             id: gi.id,
             name: gi.name,
-            code: gi.name,
-            voltage: gi.voltage,
+            code: gi.code || gi.name,
+            voltage: gi.voltage || '150 kV',
+            tier: pos.tier,
+            assetType: gi.assetType,
+            ibtNumber: gi.ibtNumber,
+            capacityMVA: gi.capacityMVA,
+            isWideBusbar: pos.isWideBusbar,
+            busbarWidth: pos.busbarWidth,
+            taps: pos.taps,
             region: gi.region || 'Jamali',
-            riskStatus: gi.riskStatus
+            riskStatus: gi.riskStatus,
+            riskNumber: gi.riskNumber
           }
         };
       });
 
-      const newEdges: Edge[] = (customConfig.excelData.lineList || []).map((l) => ({
+      const newEdges: Edge[] = lineList.map((l) => ({
         id: l.id,
         source: l.sourceId,
         target: l.targetId,
-        type: 'default',
+        type: 'transmission',
         animated: l.riskStatus !== 'Normal',
         style: {
           stroke: l.riskStatus !== 'Normal' ? '#dc2626' : '#00d2d3',
@@ -312,10 +333,13 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
         data: {
           id: l.id,
           name: l.lineName,
-          voltage: '500 kV',
+          voltage: l.voltage || '150 kV',
           status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
           riskLevel: l.riskStatus,
-          loading: { circuit1: l.loadingPct }
+          riskId: l.riskNumber,
+          circuitCount: l.circuitCount,
+          circuitNumber: l.circuitNumber,
+          loading: { circuit1: l.loadingCircuit1 || l.loadingPct, circuit2: l.loadingCircuit2 }
         }
       }));
 
@@ -682,7 +706,9 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
-                onNodesChange={onNodesChange}
+                nodesDraggable={false}
+                nodesConnectable={false}
+                onNodesChange={handleNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={onNodeClick}
                 onEdgeClick={onEdgeClick}
