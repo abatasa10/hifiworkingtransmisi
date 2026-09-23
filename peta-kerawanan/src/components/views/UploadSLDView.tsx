@@ -301,7 +301,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     // Uploaded data must use computed positions, even when its assets match
     // the built-in demo subsystem's names.
     const layoutPositions = computeTieredLayout(giList, lineList);
-    const edgeRouteChannels = computeEdgeRouteChannels(lineList, layoutPositions);
+    const edgeRouteChannels = computeEdgeRouteChannels(giList, lineList, layoutPositions);
 
     const calculatedNodes: Node[] = giList.map((node) => {
       const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
@@ -627,7 +627,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           circuitCount: cNum ? 1 : line.circuitCount || 2,
           circuitNumber: cNum,
             offset: offsetVal,
-            routeY: edgeRouteChannels[line.id],
+            routePoints: edgeRouteChannels[line.id],
           isDoubleLine: line.circuitCount === 2 && !cNum,
           operatingStatus: line.operatingStatus || 'Beroperasi',
           loading: {

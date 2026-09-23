@@ -283,7 +283,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
       const giList = customConfig.excelData.giList;
       const lineList = customConfig.excelData.lineList || [];
       const layout = computeTieredLayout(giList, lineList);
-      const edgeRouteChannels = computeEdgeRouteChannels(lineList, layout);
+      const edgeRouteChannels = computeEdgeRouteChannels(giList, lineList, layout);
       const newNodes: Node[] = giList.map((gi) => {
         const pos = layout[gi.id] || { x: 0, y: 0, tier: gi.tier ?? 1 };
         const name = (gi.name || '').toLowerCase();
@@ -341,7 +341,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
           riskId: l.riskNumber,
           circuitCount: l.circuitCount,
           circuitNumber: l.circuitNumber,
-          routeY: edgeRouteChannels[l.id],
+          routePoints: edgeRouteChannels[l.id],
           loading: { circuit1: l.loadingCircuit1 || l.loadingPct, circuit2: l.loadingCircuit2 }
         }
       }));

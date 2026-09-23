@@ -63,14 +63,20 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const routeY = typeof (edgeData as any)?.routeY === 'number' ? (edgeData as any).routeY as number : undefined;
-  const orthogonalPath = (sx: number, sy: number, tx: number, ty: number, lane: number) =>
-    `M ${sx},${sy} L ${sx},${lane} L ${tx},${lane} L ${tx},${ty}`;
-  const edgePath = routeY === undefined
-    ? smoothPath
-    : orthogonalPath(effSourceX, effSourceY, effTargetX, effTargetY, routeY);
-  const labelX = routeY === undefined ? smoothLabelX : (effSourceX + effTargetX) / 2;
-  const labelY = routeY === undefined ? smoothLabelY : routeY;
+  const routePoints = Array.isArray((edgeData as any)?.routePoints)
+    ? (edgeData as any).routePoints as Array<{ x: number; y: number }>
+    : undefined;
+  const routedPath = (sx: number, sy: number, tx: number, ty: number, offset = 0) => {
+    if (!routePoints?.length) return undefined;
+    const shiftX = isVertical ? offset : 0;
+    const shiftY = isVertical ? 0 : offset;
+    const points = routePoints.map((point) => `${point.x + shiftX},${point.y + shiftY}`);
+    return `M ${sx + shiftX},${sy + shiftY} ${points.map((point) => `L ${point}`).join(' ')} L ${tx + shiftX},${ty + shiftY}`;
+  };
+  const edgePath = routedPath(sourceX, sourceY, targetX, targetY) || smoothPath;
+  const labelPoint = routePoints?.[Math.floor(routePoints.length / 2)];
+  const labelX = labelPoint?.x ?? smoothLabelX;
+  const labelY = labelPoint?.y ?? smoothLabelY;
 
   // Parallel paths for 2-line representation
   const [smoothPath1] = getSmoothStepPath({
@@ -92,20 +98,20 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const path1 = routeY === undefined ? smoothPath1 : orthogonalPath(
+  const path1 = routedPath(
     isVertical ? sourceX - 12 : sourceX,
     isVertical ? sourceY : sourceY - 12,
     isVertical ? targetX - 12 : targetX,
     isVertical ? targetY : targetY - 12,
-    routeY - (isVertical ? 0 : 12)
-  );
-  const path2 = routeY === undefined ? smoothPath2 : orthogonalPath(
+    -12
+  ) || smoothPath1;
+  const path2 = routedPath(
     isVertical ? sourceX + 12 : sourceX,
     isVertical ? sourceY : sourceY + 12,
     isVertical ? targetX + 12 : targetX,
     isVertical ? targetY : targetY + 12,
-    routeY + (isVertical ? 0 : 12)
-  );
+    12
+  ) || smoothPath2;
 
   const rLevel = String(edgeData?.riskLevel || '');
   const isCritical = edgeData?.status === 'critical' || rLevel === 'Sangat Rawan' || rLevel === 'N-2' || rLevel === 'N-1-2';
