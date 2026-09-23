@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
-import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { computeCleanSLDLayout, computeEngineRouteChannels } from '../sld/layout/sldLayoutEngine';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
   ParsedGINode,
@@ -296,6 +296,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const { flowNodes, flowEdges } = useMemo(() => {
     // Compute optimal, non-overlapping hierarchical coordinates
     const layoutPositions = computeCleanSLDLayout(giList, lineList);
+    const routeChannels = computeEngineRouteChannels(giList, lineList, layoutPositions);
 
     const calculatedNodes: Node[] = giList.map((node) => {
       const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
@@ -620,6 +621,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
           circuitCount: cNum ? 1 : line.circuitCount || 2,
           circuitNumber: cNum,
           offset: offsetVal,
+          routeY: routeChannels[line.id],
           isDoubleLine: line.circuitCount === 2 && !cNum,
           operatingStatus: line.operatingStatus || 'Beroperasi',
           loading: {

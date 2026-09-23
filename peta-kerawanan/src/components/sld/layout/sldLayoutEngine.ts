@@ -1,9 +1,10 @@
 import { ParsedGINode, ParsedTransmissionLine } from '../../../data/customSLDStore';
-import { computeEngineLayout, BusbarTap, NodePosition } from '../../../lib/sld/layout';
+import { computeEngineLayout, computeEngineRouteChannels, BusbarTap, NodePosition } from '../../../lib/sld/layout';
 import { computeTiers } from '../../../lib/sld/tier';
 import { EnginePayload } from '../../../lib/sld/types';
 
 export type { BusbarTap, NodePosition };
+export { computeEngineRouteChannels };
 
 /**
  * Suralaya - Cilegon blueprint (hand-authored, like the engine's persisted

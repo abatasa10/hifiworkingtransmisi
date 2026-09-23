@@ -7,6 +7,9 @@ import {
 } from '@xyflow/react';
 import { SLDEdgeData } from '../../../types/graph';
 
+const channelPath = (sx: number, sy: number, tx: number, ty: number, laneY: number) =>
+  `M ${sx} ${sy} L ${sx} ${laneY} L ${tx} ${laneY} L ${tx} ${ty}`;
+
 export const TransmissionEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
@@ -48,13 +51,14 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
       ? 14
       : 0;
 
-  const effSourceX = isVertical ? sourceX + lineOffset : sourceX;
-  const effSourceY = isVertical ? sourceY : sourceY + lineOffset;
-  const effTargetX = isVertical ? targetX + lineOffset : targetX;
-  const effTargetY = isVertical ? targetY : targetY + lineOffset;
+  const routeY = typeof (edgeData as any)?.routeY === 'number' ? (edgeData as any).routeY as number : undefined;
+  const effSourceX = routeY !== undefined ? sourceX : isVertical ? sourceX + lineOffset : sourceX;
+  const effSourceY = routeY !== undefined ? sourceY : isVertical ? sourceY : sourceY + lineOffset;
+  const effTargetX = routeY !== undefined ? targetX : isVertical ? targetX + lineOffset : targetX;
+  const effTargetY = routeY !== undefined ? targetY : isVertical ? targetY : targetY + lineOffset;
 
   // Smooth step orthogonal routing for single line diagrams
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [smoothPath, smoothLabelX, smoothLabelY] = getSmoothStepPath({
     sourceX: effSourceX,
     sourceY: effSourceY,
     sourcePosition,
@@ -63,9 +67,14 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
+  const edgePath = routeY === undefined
+    ? smoothPath
+    : channelPath(sourceX, sourceY, targetX, targetY, routeY);
+  const labelX = routeY === undefined ? smoothLabelX : (sourceX + targetX) / 2;
+  const labelY = routeY === undefined ? smoothLabelY : routeY;
 
   // Parallel paths for 2-line representation
-  const [path1] = getSmoothStepPath({
+  const [smoothPath1] = getSmoothStepPath({
     sourceX: isVertical ? sourceX - 12 : sourceX,
     sourceY: isVertical ? sourceY : sourceY - 12,
     sourcePosition,
@@ -75,7 +84,7 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     borderRadius: 8
   });
 
-  const [path2] = getSmoothStepPath({
+  const [smoothPath2] = getSmoothStepPath({
     sourceX: isVertical ? sourceX + 12 : sourceX,
     sourceY: isVertical ? sourceY : sourceY + 12,
     sourcePosition,
@@ -84,6 +93,12 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
+  const path1 = routeY === undefined
+    ? smoothPath1
+    : channelPath(sourceX - 8, sourceY, targetX - 8, targetY, routeY - 8);
+  const path2 = routeY === undefined
+    ? smoothPath2
+    : channelPath(sourceX + 8, sourceY, targetX + 8, targetY, routeY + 8);
 
   const rLevel = String(edgeData?.riskLevel || '');
   const isCritical = edgeData?.status === 'critical' || rLevel === 'Sangat Rawan' || rLevel === 'N-2' || rLevel === 'N-1-2';
@@ -327,32 +342,19 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX + (isTransformerLink ? 26 : 0)}px,${labelY + (isTransformerLink ? -18 : 0)}px)`,
+              transform: `translate(-50%, -50%) translate(${labelX + (isTransformerLink ? 26 : 14)}px,${labelY - 16 + (isTransformerLink ? -18 : 0)}px)`,
               pointerEvents: 'all'
             }}
             className="z-30 group cursor-pointer"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            {/* Starburst Badge (matches Gambar 1 & Gambar 2) */}
             <div
-              className={`relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ${
-                isCritical ? 'animate-risk-pulse' : 'animate-risk-yellow-pulse'
-              } ${isHovered || isHighlighted ? 'scale-125' : 'hover:scale-115'}`}
+              className={`flex items-center justify-center w-[18px] h-[18px] rounded-full border border-amber-700 bg-amber-300 text-slate-950 font-bold text-[8px] shadow-sm transition-transform ${
+                isHovered || isHighlighted ? 'scale-125' : 'hover:scale-110'
+              }`}
             >
-              {/* Starburst SVG Shape */}
-              <svg viewBox="0 0 100 100" className="w-8 h-8 filter drop-shadow-md">
-                <polygon
-                  points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
-                  fill={isCritical ? '#ff4757' : '#ffa502'}
-                  stroke="#ffffff"
-                  strokeWidth="4"
-                />
-              </svg>
-              {/* Risk Number / Code inside starburst */}
-              <span className="absolute inset-0 flex items-center justify-center text-slate-950 font-black text-[10px]">
-                {riskBadgeText}
-              </span>
+              {riskBadgeText}
             </div>
 
             {/* Hover Tooltip Popup (Exact style matching Image 2) */}

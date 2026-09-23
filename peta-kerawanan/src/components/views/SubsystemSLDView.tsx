@@ -18,7 +18,7 @@ import { TransformerNode } from '../sld/nodes/TransformerNode';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { TierGuides } from '../sld/TierGuides';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
-import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { computeCleanSLDLayout, computeEngineRouteChannels } from '../sld/layout/sldLayoutEngine';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
@@ -443,6 +443,11 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         customConfig.excelData.giList,
         customConfig.excelData.lineList || []
       );
+      const routeChannels = computeEngineRouteChannels(
+        customConfig.excelData.giList,
+        customConfig.excelData.lineList || [],
+        layoutPositions
+      );
 
       const newNodes: Node[] = customConfig.excelData.giList.map((gi) => {
         const nameL = (gi.name || '').toLowerCase();
@@ -556,7 +561,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             cNum = curIdx === 0 ? 1 : 2;
           }
         }
-        const offsetVal = cNum === 1 ? -14 : cNum === 2 ? 14 : 0;
+        const offsetVal = cNum === 1 ? -24 : cNum === 2 ? 24 : 0;
 
         // Resolve dedicated tap handles on wide busbars for orthogonal straight vertical connections
         const targetPos = layoutPositions[l.targetId];
@@ -630,9 +635,10 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
             riskLevel: l.riskStatus,
             riskId: l.riskNumber || (l.riskStatus !== 'Normal' ? 11 : undefined),
-            circuitCount: l.circuitCount || (cNum ? 1 : 2),
+            circuitCount: cNum ? 1 : l.circuitCount || 2,
             circuitNumber: cNum,
             offset: offsetVal,
+            routeY: routeChannels[l.id],
             isDoubleLine: l.circuitCount === 2 && !cNum,
             lengthKm: l.lengthKm || 21.4,
             operatingStatus: l.operatingStatus || 'Beroperasi',
