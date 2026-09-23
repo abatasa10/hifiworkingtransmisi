@@ -210,3 +210,34 @@ export function computeEngineLayout(
 
   return positions;
 }
+
+/** Allocate a separate horizontal routing channel to each uploaded circuit
+ * crossing the same pair of tiers. This keeps the long inter-tier runs from
+ * stacking on top of one another while leaving within-tier links untouched. */
+export function computeEdgeRouteChannels(
+  lines: ParsedTransmissionLine[],
+  positions: Record<string, NodePosition>
+): Record<string, number> {
+  const groups = new Map<string, ParsedTransmissionLine[]>();
+  for (const line of lines) {
+    const source = positions[line.sourceId];
+    const target = positions[line.targetId];
+    if (!source || !target || source.tier === target.tier || Math.abs(source.y - target.y) < 80) continue;
+    const key = [source.tier, target.tier].sort((a, b) => a - b).join(':');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(line);
+  }
+
+  const channels: Record<string, number> = {};
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.id.localeCompare(b.id));
+    const endpoints = group.flatMap((line) => [positions[line.sourceId].y, positions[line.targetId].y]);
+    const top = Math.min(...endpoints) + 58;
+    const bottom = Math.max(...endpoints) - 12;
+    const room = Math.max(8, bottom - top);
+    group.forEach((line, index) => {
+      channels[line.id] = top + room * (index + 1) / (group.length + 1);
+    });
+  }
+  return channels;
+}

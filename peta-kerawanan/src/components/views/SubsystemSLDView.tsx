@@ -19,6 +19,7 @@ import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { TierGuides } from '../sld/TierGuides';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
+import { computeEdgeRouteChannels } from '../../lib/sld/layout';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
@@ -446,6 +447,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
         customConfig.excelData.giList,
         customConfig.excelData.lineList || []
       );
+      const edgeRouteChannels = computeEdgeRouteChannels(customConfig.excelData.lineList || [], layoutPositions);
 
       const newNodes: Node[] = customConfig.excelData.giList.map((gi) => {
         const nameL = (gi.name || '').toLowerCase();
@@ -637,6 +639,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             circuitCount: cNum ? 1 : l.circuitCount || 2,
             circuitNumber: cNum,
             offset: offsetVal,
+            routeY: edgeRouteChannels[l.id],
             isDoubleLine: l.circuitCount === 2 && !cNum,
             lengthKm: l.lengthKm || 21.4,
             operatingStatus: l.operatingStatus || 'Beroperasi',

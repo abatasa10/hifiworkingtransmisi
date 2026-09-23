@@ -63,9 +63,14 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const edgePath = smoothPath;
-  const labelX = smoothLabelX;
-  const labelY = smoothLabelY;
+  const routeY = typeof (edgeData as any)?.routeY === 'number' ? (edgeData as any).routeY as number : undefined;
+  const orthogonalPath = (sx: number, sy: number, tx: number, ty: number, lane: number) =>
+    `M ${sx},${sy} L ${sx},${lane} L ${tx},${lane} L ${tx},${ty}`;
+  const edgePath = routeY === undefined
+    ? smoothPath
+    : orthogonalPath(effSourceX, effSourceY, effTargetX, effTargetY, routeY);
+  const labelX = routeY === undefined ? smoothLabelX : (effSourceX + effTargetX) / 2;
+  const labelY = routeY === undefined ? smoothLabelY : routeY;
 
   // Parallel paths for 2-line representation
   const [smoothPath1] = getSmoothStepPath({
@@ -87,8 +92,20 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const path1 = smoothPath1;
-  const path2 = smoothPath2;
+  const path1 = routeY === undefined ? smoothPath1 : orthogonalPath(
+    isVertical ? sourceX - 12 : sourceX,
+    isVertical ? sourceY : sourceY - 12,
+    isVertical ? targetX - 12 : targetX,
+    isVertical ? targetY : targetY - 12,
+    routeY - (isVertical ? 0 : 12)
+  );
+  const path2 = routeY === undefined ? smoothPath2 : orthogonalPath(
+    isVertical ? sourceX + 12 : sourceX,
+    isVertical ? sourceY : sourceY + 12,
+    isVertical ? targetX + 12 : targetX,
+    isVertical ? targetY : targetY + 12,
+    routeY + (isVertical ? 0 : 12)
+  );
 
   const rLevel = String(edgeData?.riskLevel || '');
   const isCritical = edgeData?.status === 'critical' || rLevel === 'Sangat Rawan' || rLevel === 'N-2' || rLevel === 'N-1-2';
