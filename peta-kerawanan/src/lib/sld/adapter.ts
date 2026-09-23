@@ -64,8 +64,24 @@ export function toViewModel(
   const lineList: ParsedTransmissionLine[] = [];
   const ibrLinks: ParsedTransmissionLine[] = [];
 
+  // Drop IBT objects that are not an endpoint of any connection: in the
+  // current templates an IBT is drawn as an IBT_LINK edge (500kV bus -> 150kV
+  // bus), not as a standalone node, so orphan IBT stubs would render as dead
+  // nodes. Keep any IBT object that still participates in a connection.
+  const endpointKeys = new Set<string>();
+  for (const c of payload.connections) {
+    endpointKeys.add(c.from_external_key);
+    endpointKeys.add(c.to_external_key);
+  }
+  const droppedIbt = new Set<string>(
+    payload.objects
+      .filter((o) => o.object_type === 'IBT' && !endpointKeys.has(o.external_key))
+      .map((o) => o.external_key)
+  );
+
   const nodeByKey = new Map<string, ParsedGINode>();
   for (const o of payload.objects) {
+    if (droppedIbt.has(o.external_key)) continue;
     const tier = tierMap.get(o.external_key);
     const riskStatus = riskStatusOf(o.risk_level);
     const volt = voltageLabel(o.voltage_hv_kv, o.voltage_lv_kv, o.object_type === 'IBT' ? '500/150 kV' : '150 kV');
@@ -128,6 +144,7 @@ export function toViewModel(
   };
 
   for (const c of payload.connections) {
+    if (droppedIbt.has(c.from_external_key) || droppedIbt.has(c.to_external_key)) continue;
     const line = lineFrom(c);
     if (c.relation_type === 'IBT_LINK') ibrLinks.push(line);
     else lineList.push(line);

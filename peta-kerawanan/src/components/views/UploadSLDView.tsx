@@ -55,7 +55,13 @@ import {
   saveCustomSLD,
   defaultTargetOptions
 } from '../../data/customSLDStore';
-import { parseWorkbookToPayload, parseFlexibleSheet, readSheetPreview, hasEngineSheets } from '../../lib/sld/parser';
+import {
+  parseWorkbookToPayload,
+  parseFlexibleSheet,
+  parseFlexibleWorkbook,
+  readSheetPreview,
+  hasEngineSheets
+} from '../../lib/sld/parser';
 import { computeTiers } from '../../lib/sld/tier';
 import { toViewModel } from '../../lib/sld/adapter';
 import { autoDetectMapping, emptyColumnMapping } from '../../lib/sld/mapping';
@@ -704,11 +710,17 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         return;
       }
 
-      const { payload, issues } = parseFlexibleSheet(sheet, { ...emptyColumnMapping(), ...mapping }, {
-        filename: fileName,
-        subsystem: currentTargetName,
-        defaultVoltage: '150 kV'
-      });
+      const ctx = { filename: fileName, subsystem: currentTargetName, defaultVoltage: '150 kV' };
+      const { payload, issues } = workbookOpt
+        ? (() => {
+            const activeName = Object.keys(workbookOpt.Sheets).find((k) => workbookOpt.Sheets[k] === sheet);
+            return parseFlexibleWorkbook(
+              workbookOpt,
+              ctx,
+              activeName ? { sheetName: activeName, mapping: { ...emptyColumnMapping(), ...mapping } } : undefined
+            );
+          })()
+        : parseFlexibleSheet(sheet, { ...emptyColumnMapping(), ...mapping }, ctx);
       const tierMap = computeTiers(payload);
       const vm = toViewModel(payload, tierMap, currentTargetName);
       const warnings = issues.filter((i) => i.level === 'warning');

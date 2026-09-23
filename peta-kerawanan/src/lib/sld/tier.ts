@@ -1,4 +1,4 @@
-import { EnginePayload } from './types';
+import { EngineObject, EnginePayload } from './types';
 import { isSourceObject } from './parser';
 
 /**
@@ -28,10 +28,20 @@ export function computeTiers(payload: EnginePayload): Map<string, number> {
     adj.get(c.to_external_key)?.add(c.from_external_key);
   }
 
+  // The app template labels its tier column "Tier (Mulai 0)"; normalise the
+  // whole workbook to 1-based once if any 0-based hint is present (a genuine
+  // 1-based workbook never carries a 0).
+  const zeroBased = payload.objects.some((o) => typeof o.tier_hint === 'number' && o.tier_hint === 0);
+  const hintOf = (o: EngineObject): number | null => {
+    if (typeof o.tier_hint !== 'number' || !Number.isFinite(o.tier_hint)) return null;
+    return zeroBased ? o.tier_hint + 1 : o.tier_hint;
+  };
+
   // seed sources
   for (const o of payload.objects) {
-    if (typeof o.tier_hint === 'number' && o.tier_hint > 0) {
-      tiers.set(o.external_key, o.tier_hint);
+    const h = hintOf(o);
+    if (h !== null && h > 0) {
+      tiers.set(o.external_key, h);
     }
   }
   for (const o of payload.objects) {

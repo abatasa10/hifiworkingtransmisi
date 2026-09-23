@@ -99,7 +99,7 @@ export interface EngineRisk {
 
 export interface EngineMeta {
   filename: string;
-  document_type: 'SLD_TEMPLATE_XLSX' | 'SLD_SHEET_XLSX' | 'SLD_HANDOFF_JSON';
+  document_type: 'SLD_TEMPLATE_XLSX' | 'SLD_SHEET_XLSX' | 'SLD_WORKBOOK_XLSX' | 'SLD_HANDOFF_JSON';
   analytical_hint: string;
   source_ref: string | null;
   effective_date: string | null;

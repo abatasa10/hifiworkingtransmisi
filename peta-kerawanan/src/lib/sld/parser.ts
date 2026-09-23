@@ -2,7 +2,8 @@ import * as XLSX from 'xlsx';
 import {
   ColumnMapping,
   cleanKey,
-  autoDetectMapping
+  autoDetectMapping,
+  emptyColumnMapping
 } from './mapping';
 import {
   EngineObject,
@@ -63,6 +64,7 @@ const firstLine = (v: unknown): string => {
 const tokens = (v: unknown): string[] => {
   return str(v)
     .replace(/,/g, ';')
+    .replace(/&/g, ';')
     .split(';')
     .map((s) => s.trim().toUpperCase())
     .filter(Boolean);
@@ -229,6 +231,8 @@ function readHeaderRows(sheet: XLSX.WorkSheet): HeaderRows {
     const row = grid[r];
     if (!Array.isArray(row) || !row.length) continue;
     const h = row.map((c) => str(c)).filter(Boolean);
+    // a header row never contains long sentence cells (legend rows often do)
+    if (h.some((c) => c.length > 60)) continue;
     const key = cleanKey(h.join(' '));
     if (
       key.includes('gi') ||
@@ -279,6 +283,45 @@ function guessSubsystemName(filename: string): string {
     .replace(/_/g, ' ')
     .replace(/-/g, ' ');
   return base.trim() || 'Subsistem';
+}
+
+/**
+ * Derive the risk registry entries from the objects/connections that already
+ * carry `risk_seq` Pins (substation vs circuit), so multi-sheet merges can
+ * rebuild a consistent risk list from unioned state.
+ */
+export function buildRisksFromState(
+  objList: EngineObject[],
+  connections: EngineConnection[]
+): EngineRisk[] {
+  const pinBySeq = new Map<number, { pin_kind: EngineRisk['pin_kind']; pin_key: string | null }>();
+  for (const o of objList) {
+    for (const rn of o.risk_seq) pinBySeq.set(rn, { pin_kind: 'SUBSTATION', pin_key: o.external_key });
+  }
+  for (const c of connections) {
+    for (const rn of c.risk_seq) {
+      pinBySeq.set(rn, { pin_kind: 'CIRCUIT', pin_key: `${c.from_external_key}-${c.to_external_key}` });
+    }
+  }
+
+  const risks: EngineRisk[] = [];
+  for (const [seq, pin] of pinBySeq) {
+    const conn = connections.find((c) => c.risk_seq.includes(seq));
+    const obj = objList.find((o) => o.risk_seq.includes(seq));
+    risks.push({
+      seq_no: seq,
+      uit: conn?.uit || (objList.length ? '' : '') || '',
+      category: conn?.risk_level || obj?.risk_level || 'Normal',
+      title: conn?.line_name || obj?.raw_label || `Kerawanan #${seq}`,
+      condition: conn?.note || obj?.raw_label || '',
+      impact: conn?.corridor || '',
+      mitigation: '',
+      follow_up: '',
+      pin_kind: pin.pin_kind,
+      pin_key: pin.pin_key
+    });
+  }
+  return risks;
 }
 
 // ===========================================================================
@@ -459,6 +502,17 @@ export function parseFlexibleSheet(
         : `${dariVal} - ${keVal}`;
     const voltRaw = col.voltage >= 0 ? r[headers[col.voltage]] : defaultVoltage;
     const voltStr = str(voltRaw) || defaultVoltage;
+    const sldTypeVal = col.assetType >= 0 ? str(r[headers[col.assetType]]) : '';
+    const isIbt = norm(sldTypeVal).includes('ibt') || norm(lineNameVal).includes('ibt');
+    // an IBT bay spans two voltage levels; split "500/150 kV" per endpoint
+    let srcVolt = voltStr;
+    let dstVolt = voltStr;
+    if (isIbt && voltStr.includes('/')) {
+      const parts = voltStr.split('/');
+      srcVolt = `${parts[0].trim()} kV`;
+      const lv = parts[1].trim();
+      dstVolt = /\d/.test(lv) ? (norm(lv).includes('kv') ? lv : `${lv} kV`) : voltStr;
+    }
     const riskLevelVal = col.risk >= 0 ? normalizeRiskLevel(r[headers[col.risk]]) : 'Normal';
     const riskNo = col.riskNumber >= 0 ? riskNumbers(r[headers[col.riskNumber]]) : [];
     const tierFromVal = col.tierFrom >= 0 ? intOr(r[headers[col.tierFrom]]) : null;
@@ -467,14 +521,12 @@ export function parseFlexibleSheet(
     const symbolToVal = col.symbolTo >= 0 ? str(r[headers[col.symbolTo]]) : '';
     const bus150Raw = col.bus150 >= 0 ? r[headers[col.bus150]] : undefined;
 
-    const src = ensureObject(dariVal, undefined, symbolFromVal, voltStr, tierFromVal, bus150Raw, {
-      risk_seq: riskNo,
-      risk_level: riskLevelVal
-    });
-    const dst = ensureObject(keVal, undefined, symbolToVal, voltStr, tierToVal, undefined, {
-      risk_seq: riskNo,
-      risk_level: riskLevelVal
-    });
+    // risk lives on the IBT wheel itself (the connection), not its busbars
+    const endpointRisk = isIbt
+      ? { risk_seq: [], risk_level: 'Normal' as RiskCategory }
+      : { risk_seq: riskNo, risk_level: riskLevelVal };
+    const src = ensureObject(dariVal, undefined, symbolFromVal, srcVolt, tierFromVal, bus150Raw, endpointRisk);
+    const dst = ensureObject(keVal, undefined, symbolToVal, dstVolt, tierToVal, undefined, endpointRisk);
 
     const lenVal = col.lengthKm >= 0 ? numOr(r[headers[col.lengthKm]]) : null;
     const loadVal = col.load >= 0 ? pcOr(r[headers[col.load]]) : null;
@@ -489,6 +541,36 @@ export function parseFlexibleSheet(
       for (const n of riskNo) {
         (riskByView['flex'] ??= new Set()).add(n);
       }
+    }
+
+    if (isIbt) {
+      const unitNo = lineNameVal.match(/ibt\s*(\d+)/i)?.[1] ?? null;
+      connections.push({
+        from_external_key: src.external_key,
+        to_external_key: dst.external_key,
+        relation_type: 'IBT_LINK',
+        circuit_type_hint: 'IBT_LINK',
+        status_hint: statusVal,
+        circuit_count: 1,
+        circuit_number: col.circuitNumber >= 0 ? intOr(r[headers[col.circuitNumber]]) : null,
+        unit_no: unitNo,
+        single_phi: false,
+        confidence: 1.0,
+        note: lineNameVal,
+        view_keys: [],
+        line_name: lineNameVal,
+        voltage_kv: kvNum(dstVolt) ?? kvNum(voltStr),
+        length_km: lenVal,
+        loading_c1: loadVal,
+        loading_c2: loadC2Val,
+        corridor: corridorVal || null,
+        uit: uitVal,
+        tier_from_hint: tierFromVal,
+        tier_to_hint: tierToVal,
+        risk_seq: riskNo,
+        risk_level: riskLevelVal
+      });
+      continue;
     }
 
     connections.push({
@@ -569,33 +651,7 @@ export function parseFlexibleSheet(
   }
 
   // ---- risks: pin by seq using riskByView + line/object pins --------------
-  const pinBySeq = new Map<number, { pin_kind: EngineRisk['pin_kind']; pin_key: string | null }>();
-  for (const o of objects.values()) {
-    for (const rn of o.risk_seq) pinBySeq.set(rn, { pin_kind: 'SUBSTATION', pin_key: o.external_key });
-  }
-  for (const c of connections) {
-    for (const rn of c.risk_seq) {
-      pinBySeq.set(rn, { pin_kind: 'CIRCUIT', pin_key: `${c.from_external_key}-${c.to_external_key}` });
-    }
-  }
-
-  const risks: EngineRisk[] = [];
-  for (const [seq, pin] of pinBySeq) {
-    const conn = connections.find((c) => c.risk_seq.includes(seq));
-    const obj = objList.find((o) => o.risk_seq.includes(seq));
-    risks.push({
-      seq_no: seq,
-      uit: conn?.uit || (objList.length ? '' : '') || '',
-      category: conn?.risk_level || obj?.risk_level || 'Normal',
-      title: conn?.line_name || obj?.raw_label || `Kerawanan #${seq}`,
-      condition: conn?.note || obj?.raw_label || '',
-      impact: conn?.corridor || '',
-      mitigation: '',
-      follow_up: '',
-      pin_kind: pin.pin_kind,
-      pin_key: pin.pin_key
-    });
-  }
+  const risks = buildRisksFromState(objList, connections);
 
   const subsystemName = ctx.subsystem || regionHint || guessSubsystemName(ctx.filename);
   return {
@@ -605,6 +661,197 @@ export function parseFlexibleSheet(
         document_type: 'SLD_SHEET_XLSX',
         analytical_hint: 'SUBSYSTEM_500_150',
         source_ref: `Template fleksibel (${ctx.filename})`,
+        effective_date: null
+      },
+      subsystem: {
+        code: `SS_${cleanKey(subsystemName).slice(0, 8).toUpperCase() || 'NEW'}`,
+        name: subsystemName,
+        apb: regionHint || 'UP2B',
+        views:
+          viewKeys.size > 0
+            ? [...viewKeys].map((vk) => ({ view_key: vk, name: vk, source_keys: ['flex'] }))
+            : [{ view_key: 'FLEX', name: 'Sudut Pandang Utama', source_keys: ['flex'] }]
+      },
+      objects: objList,
+      connections,
+      risks
+    },
+    issues
+  };
+}
+
+export interface FlexWorkbookOverride {
+  /** Sheet whose manual column mapping should be applied (usually the active sheet). */
+  sheetName?: string;
+  mapping?: ColumnMapping;
+}
+
+/**
+ * Multi-sheet flexible workbook parser: classifies every worksheet on the fly
+ * (object sheet = GI rows, line sheet = Dari/Ke rows, risk sheet = No
+ * Kerawanan + Kondisi/Dampak/Mitigasi rows), parses object sheets first so
+ * their richer node data wins, merges the line-sheet connections on top, and
+ * finally rebuilds the risk registry from the unioned state (or from a
+ * dedicated risk sheet pinned by seq).
+ */
+export function parseFlexibleWorkbook(
+  wb: XLSX.WorkBook,
+  ctx: FlexSheetContext,
+  override?: FlexWorkbookOverride
+): EngineParseResult {
+  const issues: EngineParseResult['issues'] = [];
+
+  interface ClassifiedSheet {
+    name: string;
+    sheet: XLSX.WorkSheet;
+    mapping: ColumnMapping;
+  }
+
+  const objectSheets: ClassifiedSheet[] = [];
+  const lineSheets: ClassifiedSheet[] = [];
+  const riskSheets: Array<{ name: string; sheet: XLSX.WorkSheet }> = [];
+
+  const classify = (headers: string[]) => {
+    const m = autoDetectMapping(headers);
+    const isLine = Boolean(m.from && m.to);
+    const shortColumn = (h: string | undefined) => (h ? h.length > 0 && h.length <= 40 : false);
+    // an object sheet needs a real, short GI column plus at least one object
+    // marker column; this keeps symbol/description sheets and legends out.
+    const isObject =
+      shortColumn(m.gi) &&
+      Boolean(m.assetType || m.code || m.tier || m.capacity || m.ibtNumber || m.busbarShape);
+    const isRisk = Boolean(m.noKerawanan && (m.condition || m.impact || m.mitigation || m.solution));
+    return { isLine, isObject, isRisk, m };
+  };
+
+  for (const sn of wb.SheetNames) {
+    const { headers } = readHeaderRows(wb.Sheets[sn]);
+    if (!headers.length) continue;
+    const { isLine, isObject, isRisk, m } = classify(headers);
+    const mapping =
+      override && override.sheetName === sn && override.mapping
+        ? { ...emptyColumnMapping(), ...override.mapping }
+        : m;
+    if (isLine) {
+      lineSheets.push({ name: sn, sheet: wb.Sheets[sn], mapping });
+    } else if (isObject) {
+      objectSheets.push({ name: sn, sheet: wb.Sheets[sn], mapping });
+    } else if (isRisk) {
+      riskSheets.push({ name: sn, sheet: wb.Sheets[sn] });
+    }
+  }
+
+  if (!objectSheets.length && !lineSheets.length) {
+    issues.push({
+      level: 'error',
+      message: 'Tidak ada sheet Objek (GI) atau sheet Jalur Transmisi (kolom Dari-Ke GI) yang dikenali di workbook ini.'
+    });
+    return { payload: emptyPayload(ctx.filename), issues };
+  }
+
+  const objects = new Map<string, EngineObject>();
+  const connections: EngineConnection[] = [];
+  const viewKeys = new Set<string>();
+  let regionHint = ctx.region || '';
+
+  const mergePayload = (p: EnginePayload) => {
+    for (const o of p.objects) {
+      const ex = objects.get(o.external_key);
+      if (!ex) {
+        objects.set(o.external_key, o);
+      } else {
+        // object-sheet data parsed first wins; union risk pins and upgrade level
+        if (ex.tier_hint === null && o.tier_hint !== null) ex.tier_hint = o.tier_hint;
+        if (!ex.raw_label) ex.raw_label = o.raw_label;
+        for (const rn of o.risk_seq) {
+          if (!ex.risk_seq.includes(rn)) ex.risk_seq.push(rn);
+        }
+        if (ex.risk_level === 'Normal' && isRawan(o.risk_level)) ex.risk_level = o.risk_level;
+      }
+      for (const vk of o.view_keys) viewKeys.add(vk);
+    }
+    for (const c of p.connections) {
+      const dup = connections.some(
+        (x) =>
+          x.from_external_key === c.from_external_key &&
+          x.to_external_key === c.to_external_key &&
+          x.relation_type === c.relation_type &&
+          (x.circuit_number ?? null) === (c.circuit_number ?? null) &&
+          (x.unit_no ?? null) === (c.unit_no ?? null)
+      );
+      if (!dup) connections.push(c);
+      if (c.corridor && !regionHint) regionHint = c.corridor;
+      for (const vk of c.view_keys) viewKeys.add(vk);
+    }
+  };
+
+  // object sheets first (authoritative node data), then line sheets
+  for (const s of [...objectSheets, ...lineSheets]) {
+    const { payload, issues: sheetIssues } = parseFlexibleSheet(s.sheet, s.mapping, ctx);
+    issues.push(...sheetIssues);
+    mergePayload(payload);
+  }
+
+  const objList = [...objects.values()];
+  const subsystemName = ctx.subsystem || regionHint || guessSubsystemName(ctx.filename);
+
+  let risks: EngineRisk[] = [];
+  if (riskSheets.length) {
+    const pinBySeq = new Map<number, { pin_kind: EngineRisk['pin_kind']; pin_key: string | null }>();
+    for (const o of objList) {
+      for (const rn of o.risk_seq) pinBySeq.set(rn, { pin_kind: 'SUBSTATION', pin_key: o.external_key });
+    }
+    for (const c of connections) {
+      for (const rn of c.risk_seq) {
+        pinBySeq.set(rn, { pin_kind: 'CIRCUIT', pin_key: `${c.from_external_key}-${c.to_external_key}` });
+      }
+    }
+    const bySeq = new Map<number, EngineRisk>();
+    for (const rs of riskSheets) {
+      const { headers, rows } = readHeaderRows(rs.sheet);
+      const m = autoDetectMapping(headers);
+      const i = (h: string) => (h ? headers.indexOf(h) : -1);
+      const colSeq = i(m.noKerawanan);
+      const colUit = i(m.uit);
+      const colCond = i(m.condition);
+      const colImpact = i(m.impact);
+      const colMitig = i(m.mitigation);
+      const colSol = i(m.solution);
+      for (const r of rows) {
+        const seqs = colSeq >= 0 ? riskNumbers(r[headers[colSeq]]) : [];
+        if (!seqs.length) continue;
+        const cond = colCond >= 0 ? str(r[headers[colCond]]) : '';
+        for (const seq of seqs) {
+          if (bySeq.has(seq)) continue;
+          const pin = pinBySeq.get(seq);
+          const conn = connections.find((c) => c.risk_seq.includes(seq));
+          bySeq.set(seq, {
+            seq_no: seq,
+            uit: colUit >= 0 ? str(r[headers[colUit]]) : '',
+            category: conn?.risk_level || 'Normal',
+            title: firstLine(cond) || conn?.line_name || `Kerawanan #${seq}`,
+            condition: cond,
+            impact: colImpact >= 0 ? str(r[headers[colImpact]]) : '',
+            mitigation: colMitig >= 0 ? str(r[headers[colMitig]]) : '',
+            follow_up: colSol >= 0 ? str(r[headers[colSol]]) : '',
+            pin_kind: pin?.pin_kind ?? null,
+            pin_key: pin?.pin_key ?? null
+          });
+        }
+      }
+    }
+    risks = [...bySeq.values()];
+  } else {
+    risks = buildRisksFromState(objList, connections);
+  }
+
+  return {
+    payload: {
+      meta: {
+        filename: ctx.filename,
+        document_type: 'SLD_WORKBOOK_XLSX',
+        analytical_hint: 'SUBSYSTEM_500_150',
+        source_ref: `Template fleksibel multi-sheet (${ctx.filename})`,
         effective_date: null
       },
       subsystem: {
@@ -653,18 +900,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
   const wsBay = pickSheet(wb, ['Bay', 'Bays']);
   const wsViews = pickSheet(wb, ['Views', 'Sudut Pandang', 'SLD Views']);
 
-  // Deterministic sheet detection: if the engine's asset+line sheets exist,
-  // prefer the full multi-sheet parse; otherwise fall back to a flexible sheet.
-  if (!wsAsset && !wsLine) {
-    const single = wb.Sheets[wb.SheetNames[0]];
-    const headers = sheetHeaders(single);
-    return parseFlexibleSheet(single, autoDetectMapping(headers), {
-      filename,
-      defaultVoltage: '150 kV'
-    });
-  }
-  if (!wsAsset || !wsLine) {
-    issues.push({ level: 'warning', message: 'Template engine butuh sheet Gardu_Induk_dan_Aset dan Jalur_Transmisi.' });
+// Deterministic sheet detection: only run the full multi-sheet engine parse
+  // when BOTH strict engine sheets are present; any other workbook falls back
+  // to the smart flexible workbook parser (object + line + risk sheets).
+  if (!hasEngineSheets(wb)) {
+    return parseFlexibleWorkbook(wb, { filename, defaultVoltage: '150 kV' });
   }
 
   const info: Record<string, unknown> = {};
@@ -785,6 +1025,7 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
   }
 
   // Bay sheet
+  const bayLinks: EngineConnection[] = [];
   if (wsBay) {
     const { rows } = readHeaderRows(wsBay);
     for (const row of rows) {
@@ -827,11 +1068,38 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
           risk_level: 'Normal'
         });
       }
+      if (objects.has(feeder)) {
+        bayLinks.push({
+          from_external_key: code,
+          to_external_key: feeder,
+          relation_type: 'CONNECTED_TO',
+          circuit_type_hint: 'SUTT',
+          status_hint: 'ENERGIZED',
+          circuit_count: 1,
+          circuit_number: null,
+          unit_no: null,
+          single_phi: false,
+          confidence: 0.7,
+          note: null,
+          view_keys: [],
+          line_name: null,
+          voltage_kv: null,
+          length_km: null,
+          loading_c1: null,
+          loading_c2: null,
+          corridor: null,
+          uit: null,
+          tier_from_hint: null,
+          tier_to_hint: null,
+          risk_seq: [],
+          risk_level: 'Normal'
+        });
+      }
     }
   }
 
   // Connections from Jalur_Transmisi
-  const connections = [...pendingIbt];
+  const connections = [...pendingIbt, ...bayLinks];
   if (wsLine) {
     for (const row of readHeaderRows(wsLine).rows) {
       const fr = str(get(row, 'Dari GI', 'Dari', 'From')).trim();
@@ -875,6 +1143,24 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
         risk_seq: riskNo,
         risk_level: riskLevel
       });
+    }
+  }
+
+  // De-duplicate repeated (from, to, relation) tuples (e.g. a Bay also listed
+  // as a Jalur_Transmisi endpoint).
+  const seenConn = new Set<string>();
+  for (let i = 0; i < connections.length; i++) {
+    const c = connections[i];
+    // IBT_LINK runs that share both endpoints are distinct units (IBT 2 & IBT 3);
+    // parallel Sirkit 1 / Sirkit 2 rows are distinct circuits.
+    const k = `${c.from_external_key}\u0000${c.to_external_key}\u0000${c.relation_type}\u0000${
+      c.relation_type === 'IBT_LINK' ? c.unit_no ?? '1' : c.circuit_number ?? ''
+    }`;
+    if (seenConn.has(k)) {
+      connections.splice(i, 1);
+      i--;
+    } else {
+      seenConn.add(k);
     }
   }
 

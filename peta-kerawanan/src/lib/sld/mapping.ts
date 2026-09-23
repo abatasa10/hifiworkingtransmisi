@@ -67,8 +67,19 @@ export const autoDetectMapping = (headers: string[]): ColumnMapping => {
     return '';
   };
 
-  const fromCol = findHeader(['darigi', 'dari', 'from', 'asal', 'bus1', 'source', 'pangkal']);
-  const toCol = findHeader(['kegi', 'ke', 'to', 'tujuan', 'bus2', 'target', 'ujung'], [fromCol]);
+  // Strict Dari/Ke detection: only treat a column as a line endpoint when its
+  // header IS a dari/ke-style column name. The loose substring matches (`asal`
+  // inside "Permasalahan", `ke` inside "Status Kerawanan") misclassified
+  // object/description sheets as line sheets.
+  const headerKeys = headers.map(cleanKey);
+  const fromRaw =
+    headerKeys.find((k) => /^(darigi|bus1|source|pangkal|dari|from|asal)$/.test(k)) ||
+    headerKeys.find((k) => k.includes('darigi'));
+  const toRaw =
+    headerKeys.find((k) => /^(kegi|bus2|target|ujung|ke|to|tujuan)$/.test(k)) ||
+    headerKeys.find((k) => k.includes('kegi'));
+  const fromCol = fromRaw ? colMap[fromRaw] || '' : '';
+  const toCol = toRaw ? colMap[toRaw] || '' : '';
   const lineNameCol = findHeader(['namapenghantar', 'penghantar', 'namaline', 'line', 'jalur', 'transmisi', 'bay'], [fromCol, toCol]);
   const isLineSheet = Boolean(fromCol && toCol);
   const giCol =
@@ -100,7 +111,7 @@ export const autoDetectMapping = (headers: string[]): ColumnMapping => {
   const impactCol = findHeader(['dampak', 'impact', 'akibat', 'risiko']);
   const mitigationCol = findHeader(['mitigasi', 'mitigation', 'pencegahan', 'penanganan']);
   const solutionCol = findHeader(['usulansolusi', 'usulan', 'solusi', 'solution', 'rekomendasi', 'jangkapendek']);
-  const bus150Col = findHeader(['bus150kv', 'bus150', 'buslv', 'kebus', 'outlet', 'terhubungkebus', 'bus']);
+  const bus150Col = findHeader(['bus150kv', 'bus150', 'buslv', 'kebus', 'outlet', 'terhubungkebus']);
   const feederCol = findHeader(['feeder', 'feedergiinduk', 'giinduk', 'induk', 'feeder']);
   const bayKindCol = findHeader(['jenisbay', 'jenis', 'tipebay'], [assetTypeCol]);
   const viewKeyCol = findHeader(['sudutpandang', 'viewkey', 'kunciview', 'view', 'kodesudutpandang']);
