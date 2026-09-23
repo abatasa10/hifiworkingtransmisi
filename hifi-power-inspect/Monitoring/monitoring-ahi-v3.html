@@ -4927,31 +4927,70 @@ function initChartsForPage(page) {
     }
 }
 
+const dates30 = ["10 Jan 25", "24 Jan 25", "07 Feb 25", "21 Feb 25", "07 Mar 25", "21 Mar 25", "04 Apr 25", "18 Apr 25", "02 Mei 25", "16 Mei 25", "30 Mei 25", "13 Jun 25", "27 Jun 25", "11 Jul 25", "25 Jul 25", "08 Agu 25", "22 Agu 25", "05 Sep 25", "19 Sep 25", "03 Okt 25", "17 Okt 25", "31 Okt 25", "14 Nov 25", "28 Nov 25", "12 Des 25", "26 Des 25", "09 Jan 26", "23 Jan 26", "06 Feb 26", "20 Feb 26"];
+
 function createChartForParam(pid) {
     const canvas = document.getElementById('chart-param-' + pid);
     if (!canvas) return;
 
-    const dataCfg = CHARTS_CONFIG[pid];
-    if (!dataCfg) return;
+    const pData = CHARTS_CONFIG[pid];
+    if (!pData) return;
 
     const ctx = canvas.getContext('2d');
     
-    // Dataset creation
-    const datasets = dataCfg.datasets.map(ds => ({
-        label: ds.label,
-        data: [...ds.data],
-        borderColor: ds.borderColor,
-        backgroundColor: ds.backgroundColor,
-        borderWidth: 2,
-        tension: 0.3,
-        pointRadius: 2.5,
-        pointHoverRadius: 5
-    }));
+    let datasets = [];
+    if (pData.has_rst) {
+        datasets = [
+            {
+                label: 'Fasa R',
+                data: [...pData.r],
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                borderWidth: 2,
+                pointRadius: 2.5,
+                fill: false,
+                tension: 0.25
+            },
+            {
+                label: 'Fasa S',
+                data: [...pData.s],
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                borderWidth: 2,
+                pointRadius: 2.5,
+                fill: false,
+                tension: 0.25
+            },
+            {
+                label: 'Fasa T',
+                data: [...pData.t],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                borderWidth: 2,
+                pointRadius: 2.5,
+                fill: false,
+                tension: 0.25
+            }
+        ];
+    } else {
+        datasets = [
+            {
+                label: `Nilai Pengukuran (${pData.unit})`,
+                data: [...pData.val],
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                borderWidth: 2.5,
+                pointRadius: 3,
+                fill: true,
+                tension: 0.25
+            }
+        ];
+    }
 
     const config = {
         type: 'line',
         data: {
-            labels: [...dataCfg.labels],
+            labels: [...dates30],
             datasets: datasets
         },
         options: {
@@ -4984,7 +5023,8 @@ function createChartForParam(pid) {
                 },
                 y: {
                     grid: { color: '#f1f5f9' },
-                    ticks: { font: { size: 10.5 } }
+                    ticks: { font: { size: 10.5 } },
+                    title: { display: true, text: pData.unit, font: { size: 11 } }
                 }
             }
         }
@@ -5011,14 +5051,17 @@ function setChartRangeV3(pid, count, btn) {
     btn.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const dataCfg = CHARTS_CONFIG[pid];
-    const total = dataCfg.labels.length;
-    const startIdx = Math.max(0, total - count);
+    const pData = CHARTS_CONFIG[pid];
+    const startIdx = Math.max(0, 30 - count);
 
-    chart.data.labels = dataCfg.labels.slice(startIdx);
-    chart.data.datasets.forEach((ds, i) => {
-        ds.data = dataCfg.datasets[i].data.slice(startIdx);
-    });
+    chart.data.labels = dates30.slice(startIdx);
+    if (pData.has_rst) {
+        chart.data.datasets[0].data = pData.r.slice(startIdx);
+        chart.data.datasets[1].data = pData.s.slice(startIdx);
+        chart.data.datasets[2].data = pData.t.slice(startIdx);
+    } else {
+        chart.data.datasets[0].data = pData.val.slice(startIdx);
+    }
     chart.update();
 }
 
@@ -5033,11 +5076,11 @@ function filterPhase(pid, phase, btn) {
         if (phase === 'all') {
             ds.hidden = false;
         } else if (phase === 'r') {
-            ds.hidden = !ds.label.toLowerCase().includes('r') && !ds.label.toLowerCase().includes('u-v');
+            ds.hidden = !ds.label.toLowerCase().includes('r');
         } else if (phase === 's') {
-            ds.hidden = !ds.label.toLowerCase().includes('s') && !ds.label.toLowerCase().includes('v-w');
+            ds.hidden = !ds.label.toLowerCase().includes('s');
         } else if (phase === 't') {
-            ds.hidden = !ds.label.toLowerCase().includes('t') && !ds.label.toLowerCase().includes('w-u');
+            ds.hidden = !ds.label.toLowerCase().includes('t');
         }
     });
     chart.update();
