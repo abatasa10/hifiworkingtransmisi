@@ -7,9 +7,6 @@ import {
 } from '@xyflow/react';
 import { SLDEdgeData } from '../../../types/graph';
 
-const channelPath = (sx: number, sy: number, tx: number, ty: number, laneY: number) =>
-  `M ${sx} ${sy} L ${sx} ${laneY} L ${tx} ${laneY} L ${tx} ${ty}`;
-
 export const TransmissionEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
@@ -51,11 +48,10 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
       ? 14
       : 0;
 
-  const routeY = typeof (edgeData as any)?.routeY === 'number' ? (edgeData as any).routeY as number : undefined;
-  const effSourceX = routeY !== undefined ? sourceX : isVertical ? sourceX + lineOffset : sourceX;
-  const effSourceY = routeY !== undefined ? sourceY : isVertical ? sourceY : sourceY + lineOffset;
-  const effTargetX = routeY !== undefined ? targetX : isVertical ? targetX + lineOffset : targetX;
-  const effTargetY = routeY !== undefined ? targetY : isVertical ? targetY : targetY + lineOffset;
+  const effSourceX = isVertical ? sourceX + lineOffset : sourceX;
+  const effSourceY = isVertical ? sourceY : sourceY + lineOffset;
+  const effTargetX = isVertical ? targetX + lineOffset : targetX;
+  const effTargetY = isVertical ? targetY : targetY + lineOffset;
 
   // Smooth step orthogonal routing for single line diagrams
   const [smoothPath, smoothLabelX, smoothLabelY] = getSmoothStepPath({
@@ -67,11 +63,9 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const edgePath = routeY === undefined
-    ? smoothPath
-    : channelPath(sourceX, sourceY, targetX, targetY, routeY);
-  const labelX = routeY === undefined ? smoothLabelX : (sourceX + targetX) / 2;
-  const labelY = routeY === undefined ? smoothLabelY : routeY;
+  const edgePath = smoothPath;
+  const labelX = smoothLabelX;
+  const labelY = smoothLabelY;
 
   // Parallel paths for 2-line representation
   const [smoothPath1] = getSmoothStepPath({
@@ -93,12 +87,8 @@ export const TransmissionEdge: React.FC<EdgeProps> = ({
     targetPosition,
     borderRadius: 8
   });
-  const path1 = routeY === undefined
-    ? smoothPath1
-    : channelPath(sourceX - 8, sourceY, targetX - 8, targetY, routeY - 8);
-  const path2 = routeY === undefined
-    ? smoothPath2
-    : channelPath(sourceX + 8, sourceY, targetX + 8, targetY, routeY + 8);
+  const path1 = smoothPath1;
+  const path2 = smoothPath2;
 
   const rLevel = String(edgeData?.riskLevel || '');
   const isCritical = edgeData?.status === 'critical' || rLevel === 'Sangat Rawan' || rLevel === 'N-2' || rLevel === 'N-1-2';
