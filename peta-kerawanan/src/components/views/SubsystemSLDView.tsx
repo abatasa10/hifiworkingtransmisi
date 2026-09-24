@@ -42,8 +42,6 @@ import {
   UploadCloud,
   RotateCcw,
   CheckCircle2,
-  ChevronsRight,
-  ChevronsLeft
 } from 'lucide-react';
 import { SLDNodeData, SLDEdgeData } from '../../types/graph';
 import {
@@ -418,7 +416,6 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
   const [activeTab, setActiveTab] = useState<'500kv' | '150kv'>('500kv');
   const [viewMode, setViewMode] = useState<'sld' | 'list-kerawanan'>('sld');
   const [showSubsystemInfoOverlay, setShowSubsystemInfoOverlay] = useState(false);
-  const [showInfoPanel, setShowInfoPanel] = useState(true);
   const [showLegendModal, setShowLegendModal] = useState(false);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(subsystemBogorNodes);
@@ -1019,20 +1016,19 @@ data: {
             <span>Upload SLD</span>
           </button>
 
-          {/* 4. Info Subsistem Trigger (Only when on list-kerawanan) */}
-          {viewMode === 'list-kerawanan' && (
-            <button
-              onClick={() => setShowSubsystemInfoOverlay(true)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                showSubsystemInfoOverlay
-                  ? 'bg-[#0046ad] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
-              }`}
-            >
-              <Info className="w-3.5 h-3.5 text-[#0046ad]" />
-              <span>Info Subsistem</span>
-            </button>
-          )}
+          {/* Info Subsistem Trigger: opens as overlay with X (same as sistem view) */}
+          <button
+            onClick={() => setShowSubsystemInfoOverlay(true)}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              showSubsystemInfoOverlay
+                ? 'bg-[#0046ad] text-white shadow-xs'
+                : 'text-slate-600 hover:text-[#0046ad] hover:bg-white'
+            }`}
+            title="Buka Informasi Subsistem"
+          >
+            <Info className="w-3.5 h-3.5 text-[#0046ad]" />
+            <span>Info Subsistem</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -1308,18 +1304,6 @@ data: {
                     </div>
                   )}
 
-                  {/* Expand info panel (when collapsed for full SLD) */}
-                  {!showInfoPanel && (
-                    <button
-                      onClick={() => setShowInfoPanel(true)}
-                      className="absolute top-3 right-3 z-20 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 shadow-md border transition-all bg-white/95 hover:bg-white text-slate-700 hover:text-[#0046ad] border-slate-300"
-                      title="Tampilkan Informasi Subsistem"
-                    >
-                      <ChevronsLeft className="w-3.5 h-3.5" />
-                      <span>Info</span>
-                    </button>
-                  )}
-
                   {/* Status bar at bottom */}
                   <div className={`absolute bottom-2 left-4 z-10 text-[10px] font-mono px-3 py-1 rounded-lg border backdrop-blur-xs flex items-center gap-4 ${
                     sldTheme === 'blueprint'
@@ -1351,20 +1335,6 @@ data: {
           )}
         </div>
 
-        {/* Right Info Panel: Informasi Subsistem (Static when in SLD mode, "kaya awal aja") */}
-        {viewMode === 'sld' && showInfoPanel && (
-          <div className="relative w-80 md:w-88 bg-white border-l border-slate-200 p-5 flex flex-col justify-between overflow-y-auto shrink-0 z-20 shadow-sm">
-            <button
-              onClick={() => setShowInfoPanel(false)}
-              className="absolute top-1/2 -translate-y-1/2 -left-3.5 z-30 w-7 h-14 rounded-full bg-white border border-slate-300 shadow-md text-slate-500 hover:text-[#0046ad] hover:border-[#0046ad] flex items-center justify-center transition-all"
-              title="Sembunyikan panel (SLD full)"
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </button>
-            {renderSubsystemInfoContent(false)}
-          </div>
-        )}
-
         {/* Selected item slide-over if clicked inside graph */}
         {viewMode === 'sld' && selectedItem && (
           <div className="absolute right-0 top-0 bottom-0 z-50">
@@ -1380,8 +1350,8 @@ data: {
         )}
       </div>
 
-      {/* Pop-up Overlay: Informasi Subsistem ONLY when in List Kerawanan mode and opened! */}
-      {viewMode === 'list-kerawanan' && showSubsystemInfoOverlay && (
+      {/* Pop-up Overlay: Informasi Subsistem (opens from header trigger in both modes) */}
+      {showSubsystemInfoOverlay && (
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop with click outside to close */}
           <div
