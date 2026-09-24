@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { RiskItem } from '../../types/risk';
+import type { EngineRisk } from '../../lib/sld/types';
 import { RiskDetailContent } from './RiskDetailContent';
 import { NormalLineContent } from './NormalLineContent';
 import { SubstationContent } from './SubstationContent';
@@ -20,6 +21,8 @@ interface RightDetailPanelProps {
   onSelectConnection: (edgeId: string) => void;
   onSelectNode: (nodeId: string) => void;
   onOpenRisk: (riskId: number) => void;
+  /** Engine risks for GI detail lookup (by seq_no). */
+  risks?: EngineRisk[];
 }
 
 export const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
@@ -27,7 +30,8 @@ export const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   onClose,
   onSelectConnection,
   onSelectNode,
-  onOpenRisk
+  onOpenRisk,
+  risks
 }) => {
   if (!selectedItem) return null;
 
@@ -59,6 +63,7 @@ export const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
           node={selectedItem.data}
           onSelectConnection={onSelectConnection}
           onSelectNode={onSelectNode}
+          risks={risks}
         />
       )}
 
