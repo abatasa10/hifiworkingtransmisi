@@ -179,6 +179,21 @@ export function toEngSldGraph(
     const t = typeof n.tier === 'number' ? n.tier : positions[n.id]?.tier;
     return typeof t === 'number' && t >= 0 ? Math.round(t) : 3;
   };
+  // Legacy snapshots store 0-based bands (sources at band 0); the current
+  // pipeline stores 1-based bands (sources at band 1). Normalize so the
+  // lowest band always becomes engine tier 0 — otherwise legacy tier-0
+  // sources and tier-1 busbars would collapse onto one row.
+  const bands = giList.map(bandOf);
+  const minBand = bands.length ? Math.min(...bands) : 1;
+  const sldTierOf = (band: number): number => Math.max(0, band - minBand);
+
+  // Legacy orphan IBT stubs (kept as nodes by old parses) are dropped like
+  // the adapter does: the IBT is drawn as an edge, not a node.
+  const endpointIds = new Set<string>();
+  for (const l of validLines) {
+    endpointIds.add(l.sourceId);
+    endpointIds.add(l.targetId);
+  }
 
   // Bays render as stubs on the parent bus, not as standalone nodes.
   const bays: EngSldBay[] = [];
@@ -212,9 +227,11 @@ export function toEngSldGraph(
   const nodes: EngSldNode[] = [];
   for (const n of giList) {
     if (bayIds.has(n.id)) continue;
+    const aT0 = String(n.assetType || '').toLowerCase();
+    if (aT0 === 'ibt' && !endpointIds.has(n.id)) continue;
     const band = bandOf(n);
-    const tier = Math.max(0, band - 1);
-    const aT = String(n.assetType || '').toLowerCase();
+    const tier = sldTierOf(band);
+    const aT = aT0;
     const type: EngSldNodeType =
       aT === 'gitet' ? 'GITET' : aT === 'pembangkit' ? 'GENERATING_UNIT' : aT === 'beban' ? 'BEBAN' : aT === 'gis' ? 'GIS' : 'GI';
     const voltageKv = kvOf(n.primaryVoltage || n.voltage, type === 'BEBAN' ? 20 : 150);
