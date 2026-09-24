@@ -24,6 +24,8 @@ export type SldSvgSelection =
 interface SldSvgCanvasProps {
   graph: EngSldGraph;
   selection: SldSvgSelection;
+  /** light = putih ala engine, dark = blueprint gelap */
+  theme?: 'light' | 'dark';
   /** riskStatus-style dimming helpers driven by the host filter */
   dimNode?: (code: string) => boolean;
   dimCircuit?: (id: string) => boolean;
@@ -43,6 +45,7 @@ interface SldSvgCanvasProps {
 export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
   graph,
   selection,
+  theme = 'light',
   dimNode,
   dimCircuit,
   dimRisk,
@@ -52,6 +55,22 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
   onSelectRisk,
   onBackgroundClick
 }) => {
+  const dark = theme === 'dark';
+  const pal = {
+    bg: dark ? '#060c18' : '#ffffff',
+    title: dark ? '#e2e8f0' : '#0f274a',
+    tierLine: dark ? '#1e4a6b' : '#b9c6d8',
+    tierBadgeFill: dark ? '#0f274a' : '#eef2f7',
+    tierBadgeStroke: dark ? '#2a5a7f' : '#c9d4e2',
+    tierBadgeText: dark ? '#7dd3fc' : '#5a6b80',
+    halo: dark ? '#060c18' : '#ffffff',
+    label: dark ? '#e2e8f0' : '#0f274a',
+    labelStroke: dark ? '#060c18' : '#ffffff',
+    bayLabel: dark ? '#cbd5e1' : '#334155',
+    subText: dark ? '#94a3b8' : '#64748b',
+    bebanBoxFill: dark ? '#0f172a' : '#ffffff',
+    bebanBoxStroke: dark ? '#475569' : '#94a3b8'
+  };
   const wrapRef = useRef<HTMLDivElement>(null);
   const [vb, setVb] = useState({ x: 0, y: 0, w: 1200, h: 800 });
   const [layers, setLayers] = useState({ tier: true, risk: true, labels: true });
@@ -156,8 +175,8 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
   return (
     <div
       ref={wrapRef}
-      className="relative w-full h-full overflow-hidden bg-white"
-      style={{ cursor: 'grab' }}
+      className="relative w-full h-full overflow-hidden"
+      style={{ cursor: 'grab', background: pal.bg }}
       onMouseDown={onDown}
       onMouseMove={onMove}
       onMouseUp={onUp}
@@ -172,7 +191,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
           if (!moved.current) onBackgroundClick();
         }}
       >
-        <text x={18} y={26} fontSize={14} fontWeight={700} fill="#0f274a">
+        <text x={18} y={26} fontSize={14} fontWeight={700} fill={pal.title}>
           {graph.title} — {graph.viewName}
         </text>
 
@@ -180,9 +199,9 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
           <g id="overlay-tier">
             {tiers.map((t) => (
               <g key={t}>
-                <line x1={16} y1={engTierLineY(t)} x2={bounds.width - 16} y2={engTierLineY(t)} stroke="#b9c6d8" strokeWidth={1.2} strokeDasharray="6 5" />
-                <rect x={14} y={engTierLineY(t) - 9} width={54} height={17} rx={3} fill="#eef2f7" stroke="#c9d4e2" strokeWidth={0.8} />
-                <text x={41} y={engTierLineY(t) + 3} fontSize={10.5} fill="#5a6b80" fontWeight={700} textAnchor="middle">
+                <line x1={16} y1={engTierLineY(t)} x2={bounds.width - 16} y2={engTierLineY(t)} stroke={pal.tierLine} strokeWidth={1.2} strokeDasharray="6 5" />
+                <rect x={14} y={engTierLineY(t) - 9} width={54} height={17} rx={3} fill={pal.tierBadgeFill} stroke={pal.tierBadgeStroke} strokeWidth={0.8} />
+                <text x={41} y={engTierLineY(t) + 3} fontSize={10.5} fill={pal.tierBadgeText} fontWeight={700} textAnchor="middle">
                   TIER {t}
                 </text>
               </g>
@@ -201,7 +220,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
               {c.wires.map((w, i) => (
                 <g key={i}>
                   <path d={w.d} fill="none" stroke="transparent" strokeWidth={16} strokeLinejoin="round" />
-                  <path d={w.d} fill="none" stroke="white" strokeWidth={7} strokeLinejoin="round" />
+                  <path d={w.d} fill="none" stroke={pal.halo} strokeWidth={7} strokeLinejoin="round" />
                   {isSelCircuit(c.circuit.id) && (
                     <path d={w.d} fill="none" stroke="#0046ad" strokeOpacity={0.35} strokeWidth={10} strokeLinejoin="round" />
                   )}
@@ -268,7 +287,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                   <circle cx={g.node.x + 4.5} cy={g.y + 41} r={7.5} fill="#ffffff" stroke="#E0A400" strokeWidth={1.7} />
                   <rect x={g.node.x - 5} y={g.y + 50} width={10} height={10} fill="#C00000" />
                   {layers.labels && (
-                    <text x={g.node.x} y={g.y - 12} fontSize={12.5} fontWeight={700} textAnchor="middle" fill="#0f274a" paintOrder="stroke" stroke="#ffffff" strokeWidth={3} strokeLinejoin="round">
+                    <text x={g.node.x} y={g.y - 12} fontSize={12.5} fontWeight={700} textAnchor="middle" fill={pal.label} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} strokeLinejoin="round">
                       {g.node.label}
                     </text>
                   )}
@@ -284,16 +303,16 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                         y={g.y + 38}
                         width={104}
                         height={26}
-                        fill="#ffffff"
-                        stroke="#94a3b8"
+                        fill={pal.bebanBoxFill}
+                        stroke={pal.bebanBoxStroke}
                         strokeWidth={1}
                         strokeDasharray="4 3"
                         rx={2}
                       />
-                      <text x={g.node.x} y={g.y + 50} fontSize={9.5} fontWeight={700} textAnchor="middle" fill="#0f274a">
+                      <text x={g.node.x} y={g.y + 50} fontSize={9.5} fontWeight={700} textAnchor="middle" fill={pal.label}>
                         {g.node.label}
                       </text>
-                      <text x={g.node.x} y={g.y + 60} fontSize={8} textAnchor="middle" fill="#64748b">
+                      <text x={g.node.x} y={g.y + 60} fontSize={8} textAnchor="middle" fill={pal.subText}>
                         {g.node.voltageKv} kV
                       </text>
                     </g>
@@ -306,7 +325,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                   )}
                   <rect x={g.x1 - 6} y={g.y - 12} width={g.x2 - g.x1 + 12} height={24} fill="transparent" />
                   {layers.labels && (
-                    <text x={g.labelX} y={g.labelY} fontSize={12.5} fontWeight={700} paintOrder="stroke" stroke="#ffffff" strokeWidth={3} strokeLinejoin="round" textAnchor={g.labelAnchor} fill="#0f274a">
+                    <text x={g.labelX} y={g.labelY} fontSize={12.5} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} strokeLinejoin="round" textAnchor={g.labelAnchor} fill={pal.label}>
                       {g.node.label}
                     </text>
                   )}
@@ -340,7 +359,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                 </g>
               ))}
               {layers.labels && (
-                <text x={b.bay.x} y={b.y + ENG_SLD.bayLen + 15} fontSize={10} fontWeight={700} paintOrder="stroke" stroke="#ffffff" strokeWidth={3} textAnchor="middle" fill="#334155">
+                <text x={b.bay.x} y={b.y + ENG_SLD.bayLen + 15} fontSize={10} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} textAnchor="middle" fill={pal.bayLabel}>
                   {b.bay.code}
                 </text>
               )}
@@ -375,7 +394,9 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
             e.stopPropagation();
             zoomAt(1.25);
           }}
-          className="w-7 h-7 rounded-md border border-slate-300 bg-white text-slate-700 font-bold shadow-sm hover:bg-slate-50"
+          className={`w-7 h-7 rounded-md border font-bold shadow-sm ${
+            dark ? 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
           title="Perkecil"
         >
           −
@@ -385,7 +406,9 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
             e.stopPropagation();
             fit();
           }}
-          className="h-7 px-2 rounded-md border border-slate-300 bg-white text-slate-700 font-bold text-[11px] shadow-sm hover:bg-slate-50"
+          className={`h-7 px-2 rounded-md border font-bold text-[11px] shadow-sm ${
+            dark ? 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
           title="Pas ke layar"
         >
           FIT
@@ -395,13 +418,20 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
             e.stopPropagation();
             zoomAt(1 / 1.25);
           }}
-          className="w-7 h-7 rounded-md border border-slate-300 bg-white text-slate-700 font-bold shadow-sm hover:bg-slate-50"
+          className={`w-7 h-7 rounded-md border font-bold shadow-sm ${
+            dark ? 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
           title="Perbesar"
         >
           +
         </button>
       </div>
-      <div className="absolute font-mono font-bold text-[11px] px-2 py-0.5 rounded-md border border-slate-300 bg-white text-slate-600" style={{ left: 12, bottom: 12 }}>
+      <div
+        className={`absolute font-mono font-bold text-[11px] px-2 py-0.5 rounded-md border ${
+          dark ? 'border-slate-700 bg-slate-900 text-slate-400' : 'border-slate-300 bg-white text-slate-600'
+        }`}
+        style={{ left: 12, bottom: 12 }}
+      >
         {zoomPct}%
       </div>
       <div className="absolute flex items-center gap-1" style={{ left: 12, top: 12 }}>
@@ -419,7 +449,11 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
               setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
             }}
             className={`h-6 px-2 rounded-md border font-bold text-[10px] shadow-sm ${
-              layers[key] ? 'border-[#0046ad] bg-[#0046ad] text-white' : 'border-slate-300 bg-white text-slate-500'
+              layers[key]
+                ? 'border-[#0046ad] bg-[#0046ad] text-white'
+                : dark
+                  ? 'border-slate-700 bg-slate-900 text-slate-400'
+                  : 'border-slate-300 bg-white text-slate-500'
             }`}
           >
             {text}

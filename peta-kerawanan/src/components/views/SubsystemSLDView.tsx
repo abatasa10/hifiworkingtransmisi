@@ -20,6 +20,8 @@ import { TierGuides } from '../sld/TierGuides';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { computeEdgeRouteChannels } from '../../lib/sld/layout';
+import { SldSvgCanvas, SldSvgSelection } from '../sld/SldSvgCanvas';
+import { toEngSldGraph } from '../../lib/sld/engineSld';
 import { RightDetailPanel, SelectedItem } from '../panels/RightDetailPanel';
 import { Breadcrumb } from '../layout/Breadcrumb';
 import { subsystemBogorNodes, subsystemBogorEdges } from '../../data/subsystemSLD';
@@ -422,6 +424,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
     onNodesChange(changes.filter((change) => change.type !== 'position'));
   }, [onNodesChange]);
   const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
+  const [sldSelection, setSldSelection] = useState<SldSvgSelection>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // Custom Uploaded SLD Binding
@@ -674,6 +677,103 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
       return () => clearTimeout(timer);
     }
   }, [customConfig, currentSubId, currentSub.name, sldTheme, reactFlow, setNodes, setEdges]);
+
+  // Engine-style SVG graph for saved excel data: same renderer as the upload
+  // review (light) plus dark blueprint theme. Falls back to null when there
+  // is no saved excel dataset.
+  const savedGiList = customConfig?.type === 'excel' ? customConfig.excelData?.giList || [] : [];
+  const savedLineList = customConfig?.type === 'excel' ? customConfig.excelData?.lineList || [] : [];
+  const savedRisks = customConfig?.type === 'excel' ? customConfig.excelData?.risks || [] : [];
+  const savedLayout = useMemo(
+    () => (savedGiList.length ? computeCleanSLDLayout(savedGiList, savedLineList) : {}),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [customConfig, currentSubId]
+  );
+  const sldGraph = useMemo(
+    () =>
+      savedGiList.length
+        ? toEngSldGraph(savedGiList, savedLineList, savedLayout, savedRisks, {
+            title: currentSub.name,
+            viewName: customConfig?.targetName || 'SLD'
+          })
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [customConfig, currentSubId, currentSub.name]
+  );
+
+  useEffect(() => {
+    setSldSelection(null);
+  }, [customConfig, currentSubId]);
+
+  const sldSelectNode = (code: string) => {
+    const gi = savedGiList.find((g) => g.id === code);
+    if (!gi) return;
+    setSldSelection({ kind: 'node', code });
+    setHighlightedId(code);
+    setSelectedItem({
+      type: 'node',
+      data: {
+        id: gi.id,
+        name: gi.name,
+        code: gi.code || gi.id,
+        type: 'gi',
+        voltage: gi.voltage || '150 kV',
+        region: gi.region || currentSub.name,
+        subsystem: gi.subsystem || currentSub.name,
+        riskStatus: gi.riskStatus || 'Normal',
+        uit: gi.uit,
+        condition: gi.condition,
+        impact: gi.impact,
+        mitigation: gi.mitigation,
+        solution: gi.solution
+      } as any
+    });
+  };
+  const sldSelectLine = (id: string, kind: 'circuit' | 'ibt') => {
+    const lineId = id.replace(/^c-/, '');
+    const l = savedLineList.find((x) => x.id === lineId);
+    if (!l) return;
+    setSldSelection({ kind, id });
+    setHighlightedId(id);
+    setSelectedItem({
+      type: 'line',
+      data: {
+        id: l.id,
+        source: l.sourceId,
+        target: l.targetId,
+        name: l.lineName,
+        type: 'transmission',
+        voltage: l.voltage || '150 kV',
+        status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
+        riskLevel: l.riskStatus,
+        riskNumber: l.riskNumber,
+        circuitCount: l.circuitCount || 2,
+        lengthKm: l.lengthKm,
+        operatingStatus: l.operatingStatus || 'Beroperasi',
+        loading: { circuit1: l.loadingCircuit1 || l.loadingPct, circuit2: l.loadingCircuit2 || l.loadingPct },
+        region: l.region || currentSub.name,
+        corridor: l.corridor,
+        uit: l.uit,
+        condition: l.condition,
+        impact: l.impact,
+        mitigation: l.mitigation,
+        solution: l.solution
+      } as any
+    });
+  };
+  const sldSelectRisk = (seq: number) => {
+    const gi = savedGiList.find((g) => Number(g.riskNumber) === seq);
+    if (gi) {
+      sldSelectNode(gi.id);
+      setSldSelection({ kind: 'risk', seq });
+      return;
+    }
+    const line = savedLineList.find((l) => Number(l.riskNumber) === seq);
+    if (line) {
+      sldSelectLine(line.id, line.id.startsWith('INTERNAL_IBT') ? 'ibt' : 'circuit');
+      setSldSelection({ kind: 'risk', seq });
+    }
+  };
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -1169,41 +1269,28 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
                   </div>
                 </div>
               ) : (
-                /* ReactFlow Canvas (Default or Custom Excel) */
+                /* Engine SVG Canvas (same renderer as the upload review; dark in
+                   blueprint theme, light in classic) for saved excel data */
                 <div className={`flex-1 relative overflow-hidden transition-colors duration-300 ${sldTheme === 'blueprint' ? 'bg-[#060c18]' : 'bg-[#ffffff]'}`}>
-                  <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    nodesDraggable={false}
-                    nodesConnectable={false}
-                    onNodesChange={handleNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onNodeClick={onNodeClick}
-                    onEdgeClick={onEdgeClick}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    fitView
-                    fitViewOptions={{ padding: 0.2 }}
-                    className="h-full w-full"
-                  >
-                    <Background
-                      variant={BackgroundVariant.Dots}
-                      gap={20}
-                      size={1.5}
-                      color={sldTheme === 'blueprint' ? 'rgba(0, 210, 211, 0.15)' : '#cbd5e1'}
+                  {sldGraph ? (
+                    <SldSvgCanvas
+                      graph={sldGraph}
+                      selection={sldSelection}
+                      theme={sldTheme === 'blueprint' ? 'dark' : 'light'}
+                      onSelectNode={sldSelectNode}
+                      onSelectCircuit={(id) => sldSelectLine(id, 'circuit')}
+                      onSelectIbt={(id) => sldSelectLine(id, 'ibt')}
+                      onSelectRisk={sldSelectRisk}
+                      onBackgroundClick={() => {
+                        setSldSelection(null);
+                        setSelectedItem(null);
+                      }}
                     />
-
-                    {/* Horizontal Tier Guide Lines (Mulai TIER-0) - Gambar 1 & Gambar 2 */}
-                    <TierGuides theme={sldTheme} />
-
-                    <Controls className={sldTheme === 'blueprint' ? 'bg-slate-900 border border-slate-700 text-slate-300' : 'bg-white border border-slate-300 text-slate-700 shadow-sm'} />
-                    
-                    {/* MiniMap in corner matching Gambar 1 */}
-                    <MiniMap
-                      nodeColor={(n: any) => n.data?.riskStatus && n.data.riskStatus !== 'Normal' ? '#ff4757' : sldTheme === 'blueprint' ? '#00d2d3' : '#1d4ed8'}
-                      className={`rounded-xl border shadow-xl ${sldTheme === 'blueprint' ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-slate-300'}`}
-                    />
-                  </ReactFlow>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 font-mono text-xs">
+                      Belum ada data SLD tersimpan untuk {currentSub.name}
+                    </div>
+                  )}
 
                   {/* Status bar at bottom */}
                   <div className={`absolute bottom-2 left-4 z-10 text-[10px] font-mono px-3 py-1 rounded-lg border backdrop-blur-xs flex items-center gap-4 ${

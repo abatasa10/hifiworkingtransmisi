@@ -65,6 +65,8 @@ export interface ImageHotspot {
   description?: string;
 }
 
+import type { EngineRisk } from '../lib/sld/types';
+
 export interface CustomSLDConfig {
   targetId: string; // e.g. 'sub-bogor', 'sub-depok', 'sld-500kv'
   targetName: string;
@@ -73,6 +75,7 @@ export interface CustomSLDConfig {
   excelData?: {
     giList: ParsedGINode[];
     lineList: ParsedTransmissionLine[];
+    risks?: EngineRisk[];
   };
   imageData?: {
     imageUrl: string;

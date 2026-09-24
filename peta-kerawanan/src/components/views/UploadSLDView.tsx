@@ -1048,7 +1048,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         updatedAt: new Date().toLocaleString('id-ID'),
         excelData: {
           giList,
-          lineList
+          lineList,
+          risks: riskList
         }
       };
       saveCustomSLD(config);
