@@ -28,6 +28,13 @@ export interface ParsedGINode {
   busLvKey?: string;
   isBay?: boolean;
   feederKey?: string;
+  // Related-asset info (explicit template columns + topology derivation)
+  connectedKeys?: string[];
+  connectedNames?: string[];
+  impactedKeys?: string[];
+  impactedNames?: string[];
+  /** Functional Location ID — join key to the asset/bay DB. */
+  functLoc?: string;
 }
 
 export interface ParsedTransmissionLine {
@@ -53,6 +60,10 @@ export interface ParsedTransmissionLine {
   impact?: string;
   mitigation?: string;
   solution?: string;
+  // Related-asset info (endpoints resolved + downstream impact)
+  sourceName?: string;
+  targetName?: string;
+  impactedNames?: string[];
 }
 
 export interface ImageHotspot {
@@ -113,30 +124,14 @@ export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
         // Stale snapshots (saved before the engine pipeline + risk pins)
         // can never match a fresh preview; discard them so the user
         // re-uploads once instead of staring at mismatched data.
+        // NOTE: the old phantom/corruption heuristics lived here and have
+        // been removed — they misfired on correct new data (legit KTT
+        // beban nodes) and deleted every fresh save on read. Versioning
+        // above is now the single staleness gate.
         if (parsed.version !== CUSTOM_SLD_VERSION) {
           localStorage.removeItem(key);
         } else {
-        const hasPhantomNodes = parsed.excelData?.giList?.some(
-          (g) =>
-            (g.id || '').toLowerCase().includes('trafodistribusisrlya') ||
-            (g.name || '').toLowerCase().includes('trafo distribusi srlya') ||
-            (g.name || '').toLowerCase().includes('trafo distribusi clbru')
-        );
-        const hasCorruptedBebanGIs = parsed.excelData?.giList?.some(
-          (g) =>
-            ((g.id || '').toLowerCase().includes('slrda') ||
-              (g.code || '').toLowerCase() === 'slrda' ||
-              (g.name || '').toLowerCase().includes('slrda') ||
-              (g.id || '').toLowerCase().includes('pendo') ||
-              (g.id || '').toLowerCase().includes('peni') ||
-              (g.id || '').toLowerCase().includes('mcci5') ||
-              (g.id || '').toLowerCase().includes('mtsui')) &&
-            g.assetType === 'beban'
-        );
-        if (!hasPhantomNodes && !hasCorruptedBebanGIs) {
           return parsed;
-        }
-        localStorage.removeItem(key);
         }
       } catch {
         localStorage.removeItem(key);

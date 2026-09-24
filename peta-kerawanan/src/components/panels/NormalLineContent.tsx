@@ -10,11 +10,12 @@ interface NormalLineContentProps {
 export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'risk' | 'assets' | 'history'>('info');
 
-  const rawSource = String(line?.source || (line as any)?.from || (line as any)?.sourceName || 'GI Pangkal');
-  const rawTarget = String(line?.target || (line as any)?.to || (line as any)?.targetName || 'GI Ujung');
+  const rawSource = String(line?.source || (line as any)?.from || (line as any)?.sourceName || (line as any)?.sourceId || 'GI Pangkal');
+  const rawTarget = String(line?.target || (line as any)?.to || (line as any)?.targetName || (line as any)?.targetId || 'GI Ujung');
 
-  const sourceName = rawSource.replace(/^(GI_|GEN_|FEED_)/, '') || 'GI Pangkal';
-  const targetName = rawTarget.replace(/^(GI_|GEN_|FEED_)/, '') || 'GI Ujung';
+  const sourceName = (line as any)?.sourceName || rawSource.replace(/^(GI_|GEN_|FEED_)/, '') || 'GI Pangkal';
+  const targetName = (line as any)?.targetName || rawTarget.replace(/^(GI_|GEN_|FEED_)/, '') || 'GI Ujung';
+  const impactedNames = ((line as any)?.impactedNames || []) as string[];
 
   const circuit1 = line?.loading?.circuit1 ?? (line as any)?.loadingPct ?? (line as any)?.loadingCircuit1 ?? 58;
   const circuit2 = line?.loading?.circuit2 ?? (line as any)?.loadingCircuit2 ?? 52;
@@ -25,11 +26,14 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
   const is500 = String(voltage).includes('500');
   const lineType = is500 ? 'SUTET' : 'SUTT';
 
-  // Risk number & status
-  const riskNum = (line as any)?.riskNumber || line?.riskId || (line as any)?.number || 11;
-  const rawRisk = String(line?.riskLevel || (line as any)?.riskStatus || (line.status === 'critical' ? 'Sangat Rawan' : 'Sedang'));
+  // Risk number & status: strictly from the template. Lines without a risk
+  // must not fabricate one (no `|| 11`, no 'Sedang' fallback).
+  const riskNumRaw = (line as any)?.riskNumber ?? line?.riskId ?? (line as any)?.number ?? null;
+  const riskNum = typeof riskNumRaw === 'number' || (typeof riskNumRaw === 'string' && riskNumRaw.trim() !== '') ? riskNumRaw : null;
+  const rawRisk = String(line?.riskLevel || (line as any)?.riskStatus || (line.status === 'critical' ? 'Sangat Rawan' : 'Normal'));
   const isRawan = rawRisk !== 'Normal' && rawRisk !== 'Aman';
   const riskLevel = isRawan ? rawRisk : 'Normal';
+  const hasRisk = isRawan;
 
   const region = (line as any)?.region || 'Jawa Barat - DKI Jakarta';
   const corridor = (line as any)?.corridor || 'Koridor Jakarta Barat - Selatan';
@@ -51,40 +55,65 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
     <div className="flex flex-col h-full bg-white text-slate-800">
       {/* Header (Matching Image 1) */}
       <div className="p-4 border-b border-slate-200 bg-[#f8fafc] flex items-start gap-3">
-        {/* Starburst badge icon */}
-        <div className="relative shrink-0 flex items-center justify-center w-10 h-10 mt-0.5">
-          <svg viewBox="0 0 100 100" className="w-10 h-10 filter drop-shadow-sm">
-            <polygon
-              points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
-              fill={badge.starFill}
-              stroke="#ffffff"
-              strokeWidth="4"
-            />
-          </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-slate-950 font-black text-sm">
-            {riskNum}
-          </span>
-        </div>
+        {hasRisk ? (
+          <>
+            {/* Starburst badge icon */}
+            <div className="relative shrink-0 flex items-center justify-center w-10 h-10 mt-0.5">
+              <svg viewBox="0 0 100 100" className="w-10 h-10 filter drop-shadow-sm">
+                <polygon
+                  points="50,0 63,22 88,12 85,38 100,50 85,62 88,88 63,78 50,100 37,78 12,88 15,62 0,50 15,38 12,12 37,22"
+                  fill={badge.starFill}
+                  stroke="#ffffff"
+                  strokeWidth="4"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-slate-950 font-black text-sm">
+                {riskNum ?? '!'}
+              </span>
+            </div>
 
-        <div className="flex-1 min-w-0 pr-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-[#b45309] font-bold">
-              KERAWANAN #{riskNum}
-            </span>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${badge.bg} ${badge.text} ${badge.border} flex items-center gap-1`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: badge.dot }} />
-              {riskLevel}
-            </span>
-          </div>
-          <h3 className="font-extrabold text-sm text-[#1e293b] mt-0.5 leading-snug">
-            {line?.name || `${lineType} ${sourceName} - ${targetName}`}
-          </h3>
-          <div className="text-[11px] text-slate-500 mt-0.5">
-            {lineType} • {voltage} • {region}
-          </div>
-        </div>
+            <div className="flex-1 min-w-0 pr-6">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#b45309] font-bold">
+                  {riskNum !== null ? `KERAWANAN #${riskNum}` : 'TERINDIKASI KERAWANAN'}
+                </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${badge.bg} ${badge.text} ${badge.border} flex items-center gap-1`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: badge.dot }} />
+                  {riskLevel}
+                </span>
+              </div>
+              <h3 className="font-extrabold text-sm text-[#1e293b] mt-0.5 leading-snug">
+                {line?.name || `${lineType} ${sourceName} - ${targetName}`}
+              </h3>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                {lineType} • {voltage} • {region}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative shrink-0 flex items-center justify-center w-10 h-10 mt-0.5 rounded-full bg-emerald-100 border-2 border-emerald-300">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0 pr-6">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                  Normal
+                </span>
+                <span className="text-[11px] text-slate-500">Tidak ada kerawanan tercatat</span>
+              </div>
+              <h3 className="font-extrabold text-sm text-[#1e293b] mt-0.5 leading-snug">
+                {line?.name || `${lineType} ${sourceName} - ${targetName}`}
+              </h3>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                {lineType} • {voltage} • {region}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 4 Segmented Tabs (Image 1) */}
@@ -100,17 +129,19 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
           <Info className="w-3.5 h-3.5" />
           Informasi
         </button>
-        <button
-          onClick={() => setActiveTab('risk')}
-          className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold border-b-2 transition-colors ${
-            activeTab === 'risk'
-              ? 'border-[#ea580c] text-[#ea580c] font-bold bg-[#ffedd5]/40'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          Kerawanan
-        </button>
+        {hasRisk && (
+          <button
+            onClick={() => setActiveTab('risk')}
+            className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold border-b-2 transition-colors ${
+              activeTab === 'risk'
+                ? 'border-[#ea580c] text-[#ea580c] font-bold bg-[#ffedd5]/40'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            Kerawanan
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('assets')}
           className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold border-b-2 transition-colors ${
@@ -145,7 +176,7 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
               <div className="grid grid-cols-2 gap-y-2.5 gap-x-3">
                 <div>
                   <span className="text-slate-500 block text-[10px]">No. Kerawanan</span>
-                  <span className="font-extrabold text-[#ea580c] text-sm">#{riskNum}</span>
+                  <span className="font-extrabold text-[#ea580c] text-sm">{riskNum !== null ? `#${riskNum}` : '–'}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px]">Tegangan Operasi</span>
@@ -230,7 +261,7 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
         )}
 
         {/* TAB 2: KERAWANAN (Sesuai Gambar 2) */}
-        {activeTab === 'risk' && (
+        {activeTab === 'risk' && hasRisk && (
           <div className="space-y-3.5 text-xs">
             {/* Card 1: KONDISI / PERMASALAHAN */}
             <div className="p-3.5 bg-amber-50/70 border border-amber-300 rounded-xl shadow-xs">
@@ -297,6 +328,23 @@ export const NormalLineContent: React.FC<NormalLineContentProps> = ({ line }) =>
               <span className="text-[10px] text-slate-400 font-mono block">GARDU INDUK UJUNG</span>
               <span className="font-bold text-slate-800 text-sm">{targetName}</span>
               <div className="text-[11px] text-slate-500 mt-0.5">{voltage} • Bay Penerima Interkoneksi</div>
+            </div>
+            <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-xl">
+              <span className="text-[10px] text-amber-700 font-mono block font-bold">
+                GI TERDAMPAK BILA SALURAN GANGGUAN ({impactedNames.length})
+              </span>
+              {impactedNames.length > 0 ? (
+                <ul className="mt-1.5 space-y-1">
+                  {impactedNames.map((nm, i) => (
+                    <li key={i} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      {nm}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-[11px] text-slate-500 mt-1">Tidak ada data dampak.</div>
+              )}
             </div>
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <span className="text-[10px] text-slate-400 font-mono block">PERALATAN PROTEKSI</span>

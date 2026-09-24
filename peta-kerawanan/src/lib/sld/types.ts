@@ -55,6 +55,12 @@ export interface EngineObject {
   bay_circuit_count: number | null;
   risk_seq: number[];
   risk_level: RiskCategory;
+  /** Explicit related-asset keys from the `Terhubung ke` column (cleanKey'd). */
+  connected_keys: string[];
+  /** Explicit impacted-GI keys from the `GI Terdampak` column (cleanKey'd). */
+  impacted_keys: string[];
+  /** Functional Location ID (`ID FunctLoc` column) — join key to the asset DB. */
+  funct_loc: string | null;
 }
 
 export interface EngineConnection {

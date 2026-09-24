@@ -79,6 +79,16 @@ export const riskNumbers = (v: unknown): number[] => {
   return out;
 };
 
+/** Split a `Terhubung ke` / `GI Terdampak` cell into deduped clean keys. */
+export const keyList = (v: unknown): string[] => {
+  const out: string[] = [];
+  for (const t of tokens(v)) {
+    const k = cleanKey(t);
+    if (k && !out.includes(k)) out.push(k);
+  }
+  return out;
+};
+
 const isRawan = (score: RiskCategory): boolean => score !== 'Normal';
 
 export const normalizeRiskLevel = (v: unknown): RiskCategory => {
@@ -382,7 +392,10 @@ export function parseFlexibleSheet(
     bayKind: colIdx(mapping.bayKind),
     viewKey: colIdx(mapping.viewKey),
     status: colIdx(mapping.status),
-    noKerawanan: colIdx(mapping.noKerawanan)
+    noKerawanan: colIdx(mapping.noKerawanan),
+    connectedTo: colIdx(mapping.connectedTo),
+    impactedGis: colIdx(mapping.impactedGis),
+    functLoc: colIdx(mapping.functLoc)
   };
 
   const defaultVoltage = ctx.defaultVoltage || '150 kV';
@@ -414,6 +427,13 @@ export function parseFlexibleSheet(
       for (const rn of extra.risk_seq || []) {
         if (!existing.risk_seq.includes(rn)) existing.risk_seq.push(rn);
       }
+      for (const k of extra.connected_keys || []) {
+        if (!existing.connected_keys.includes(k)) existing.connected_keys.push(k);
+      }
+      for (const k of extra.impacted_keys || []) {
+        if (!existing.impacted_keys.includes(k)) existing.impacted_keys.push(k);
+      }
+      if (!existing.funct_loc && extra.funct_loc) existing.funct_loc = extra.funct_loc;
       return existing;
     }
     const { object_type, is_bay, bay_kind } = resolveObjectType(symbol, name, voltageRaw, bus150Raw);
@@ -443,6 +463,9 @@ export function parseFlexibleSheet(
       bay_circuit_count: null,
       risk_seq: [],
       risk_level: 'Normal',
+      connected_keys: [],
+      impacted_keys: [],
+      funct_loc: null,
       ...extra
     };
     objects.set(key, obj);
@@ -471,7 +494,10 @@ export function parseFlexibleSheet(
       outlet_key: bus150Raw ? str(bus150Raw) : null,
       role_hint: isRawan(riskVal) ? 'RISK' : undefined,
       risk_seq: riskNo,
-      risk_level: riskVal
+      risk_level: riskVal,
+      connected_keys: keyList(col.connectedTo >= 0 ? r[headers[col.connectedTo]] : undefined),
+      impacted_keys: keyList(col.impactedGis >= 0 ? r[headers[col.impactedGis]] : undefined),
+      funct_loc: col.functLoc >= 0 ? str(r[headers[col.functLoc]]) || null : null
     });
     if (norm(shapeVal).includes('panjang') || norm(shapeVal).includes('wide')) {
       obj.has_transformer = true; // marker: treat as wide busbar hint via capacity below
@@ -970,7 +996,10 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
       role_hint: str(get(row, 'Role', 'Peran', 'Peran SLD')).trim().toUpperCase() || null,
       bay_circuit_count: intOr(get(row, 'Jumlah Sirkit Bay', 'Jumlah Sirkit', 'Sirkit', 'Circuit Count')),
       risk_seq: riskNo,
-      risk_level: riskLevel
+      risk_level: riskLevel,
+      connected_keys: [],
+      impacted_keys: [],
+      funct_loc: null
     });
   }
 
@@ -1065,7 +1094,10 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
           role_hint: null,
           bay_circuit_count: intOr(get(row, 'Jumlah Sirkit', 'Sirkit', 'Circuit Count')),
           risk_seq: riskNumbers(get(row, 'No Kerawanan', 'No. Kerawanan')),
-          risk_level: 'Normal'
+          risk_level: 'Normal',
+          connected_keys: [],
+          impacted_keys: [],
+          funct_loc: null
         });
       }
       if (objects.has(feeder)) {

@@ -18,6 +18,13 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
   const connectedEdges = initialEdges500kV.filter(
     (e) => e.source === node.id || e.target === node.id
   );
+  // Data-driven related assets (uploaded template): explicit `Terhubung ke`
+  // / `GI Terdampak` columns plus topology derivation. Falls back to the
+  // static backbone edges when the node carries no enriched data.
+  const dynConnectedNames = ((node as any)?.connectedNames || []) as string[];
+  const dynConnectedKeys = ((node as any)?.connectedKeys || []) as string[];
+  const dynImpactedNames = ((node as any)?.impactedNames || []) as string[];
+  const useDynamic = dynConnectedNames.length > 0 || dynImpactedNames.length > 0;
 
   return (
     <div className="flex flex-col h-full bg-white text-slate-800">
@@ -54,6 +61,12 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
               <span className="text-slate-500 block text-[10px]">Nama GI</span>
               <span className="font-semibold text-slate-800">{node.name}</span>
             </div>
+            {(node as any)?.functLoc && (
+              <div>
+                <span className="text-slate-500 block text-[10px]">ID FunctLoc</span>
+                <span className="font-mono font-semibold text-slate-800">{(node as any).functLoc}</span>
+              </div>
+            )}
             <div>
               <span className="text-slate-500 block text-[10px]">Tegangan</span>
               <span className="font-semibold text-[#0046ad]">{node.voltage}</span>
@@ -109,11 +122,56 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-slate-800 text-xs font-bold uppercase tracking-wider">
-              TERHUBUNG KE:
+              TERHUBUNG KE{dynConnectedNames.length > 0 ? ` (${dynConnectedNames.length})` : ''}:
             </span>
             <span className="text-[10px] text-slate-400">Klik untuk sorot saluran</span>
           </div>
 
+          {useDynamic ? (
+            <div className="space-y-1.5">
+              {dynConnectedNames.map((nm, i) => {
+                const key = dynConnectedKeys[i];
+                return key ? (
+                  <button
+                    key={`${key}-${i}`}
+                    onClick={() => onSelectNode(key)}
+                    className="w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all group shadow-2xs bg-[#f8fafc] border-slate-200 hover:border-[#0046ad] hover:bg-[#eff6ff]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#0046ad] font-bold group-hover:translate-x-1 transition-transform">
+                        →
+                      </span>
+                      <div className="font-bold text-slate-800 group-hover:text-[#0046ad]">{nm}</div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0046ad] transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                ) : (
+                  <div
+                    key={`${nm}-${i}`}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-[#f8fafc] flex items-center gap-2"
+                  >
+                    <span className="text-slate-400 font-bold">→</span>
+                    <div className="font-bold text-slate-800">{nm}</div>
+                  </div>
+                );
+              })}
+              {dynImpactedNames.length > 0 && (
+                <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60">
+                  <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+                    GI Terdampak bila gangguan ({dynImpactedNames.length})
+                  </div>
+                  <ul className="mt-1.5 space-y-1">
+                    {dynImpactedNames.map((nm, i) => (
+                      <li key={i} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        {nm}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="space-y-1.5">
             {connectedEdges.map((edge) => {
               const otherNodeId = edge.source === node.id ? edge.target : edge.source;
@@ -151,11 +209,12 @@ export const SubstationContent: React.FC<SubstationContentProps> = ({
                     </div>
                   </div>
 
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0046ad] transition-transform group-hover:translate-x-0.5" />
-                </button>
-              );
-            })}
-          </div>
+<ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0046ad] transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

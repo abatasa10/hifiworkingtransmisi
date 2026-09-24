@@ -48,7 +48,7 @@ import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { computeEdgeRouteChannels } from '../../lib/sld/layout';
 import { SldSvgCanvas, SldSvgSelection } from '../sld/SldSvgCanvas';
 import { toEngSldGraph } from '../../lib/sld/engineSld';
-import type { EngineRisk } from '../../lib/sld/types';
+import type { EngineRisk, EnginePayload } from '../../lib/sld/types';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
   ParsedGINode,
@@ -56,6 +56,7 @@ import {
   ImageHotspot,
   CustomSLDConfig,
   CUSTOM_SLD_VERSION,
+  getCustomSLD,
   saveCustomSLD,
   defaultTargetOptions
 } from '../../data/customSLDStore';
@@ -185,6 +186,9 @@ export interface ColumnMapping {
   impact: string;     // Kolom Dampak
   mitigation: string; // Kolom Mitigasi
   solution: string;   // Kolom Usulan / Solusi
+  connectedTo: string; // Kolom Terhubung ke (kode GI, pisah ;)
+  impactedGis: string; // Kolom GI Terdampak (kode GI, pisah ;)
+  functLoc: string;    // Kolom ID FunctLoc (kunci join DB aset/bay)
 }
 
 // Initial sample data for immediate test
@@ -233,6 +237,19 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const [lineList, setLineList] = useState<ParsedTransmissionLine[]>(initialSampleLines);
   const [riskList, setRiskList] = useState<EngineRisk[]>([]);
   const [sldSelection, setSldSelection] = useState<SldSvgSelection>(null);
+  // Last successful engine parse: save derives from this (never stale state)
+  const lastPayloadRef = useRef<EnginePayload | null>(null);
+  // Running bundle hash (proves which deployed build is active)
+  const buildHash = useMemo(() => {
+    try {
+      const scripts = Array.from(document.querySelectorAll('script[src*="assets/index-"]'));
+      const src = scripts.map((s) => (s as HTMLScriptElement).src).join(' ');
+      const m = src.match(/index-([A-Za-z0-9_-]+)\.js/);
+      return m ? m[1] : 'dev';
+    } catch {
+      return 'dev';
+    }
+  }, []);
   const [fileName, setFileName] = useState<string>('sample_sld_jamali_500kv.xlsx');
   const [excelViewMode, setExcelViewMode] = useState<'graph' | 'table'>('graph');
   const [filterRisk, setFilterRisk] = useState<string>('Semua');
@@ -275,7 +292,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     condition: '',
     impact: '',
     mitigation: '',
-    solution: ''
+    solution: '',
+    connectedTo: '',
+    impactedGis: '',
+    functLoc: ''
   });
 
   const [showLegendModal, setShowLegendModal] = useState(false);
@@ -750,6 +770,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         setLineList([...vm.ibrLinks, ...vm.lineList]);
         setRiskList(payload.risks);
         setSldSelection(null);
+        lastPayloadRef.current = payload;
         if (vm.giList.length > 0) {
           setUploadStatusMsg({
             type: 'success',
@@ -772,6 +793,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         setGiList([]);
         setLineList([]);
         setRiskList([]);
+        lastPayloadRef.current = null;
         setUploadStatusMsg({ type: 'error', text: 'Lembar kerja (sheet) ini kosong.' });
         return;
       }
@@ -794,6 +816,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       setLineList([...vm.ibrLinks, ...vm.lineList]);
       setRiskList(payload.risks);
       setSldSelection(null);
+      lastPayloadRef.current = payload;
 
       if (vm.giList.length > 0) {
         setUploadStatusMsg({
@@ -810,6 +833,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       }
     } catch (err: any) {
       console.error(err);
+      lastPayloadRef.current = null;
       setUploadStatusMsg({ type: 'error', text: `Gagal parse Excel: ${err.message || 'Format tidak dikenali'}` });
     }
   };
@@ -1038,7 +1062,19 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const targetObj = defaultTargetOptions.find((t) => t.id === selectedTargetId) || defaultTargetOptions[1];
 
     if (activeTab === 'excel') {
-      if (giList.length === 0) {
+      // Derive from the last successful parse (deterministic: byte-identical
+      // to what the preview canvas renders), never from possibly stale state.
+      let saveGi = giList;
+      let saveLines = lineList;
+      let saveRisks = riskList;
+      const last = lastPayloadRef.current;
+      if (last) {
+        const freshVm = toViewModel(last, computeTiers(last), targetObj.name);
+        saveGi = freshVm.giList;
+        saveLines = [...freshVm.ibrLinks, ...freshVm.lineList];
+        saveRisks = last.risks;
+      }
+      if (saveGi.length === 0) {
         alert('Gagal menyimpan: Belum ada data Gardu Induk yang terdeteksi dari file Excel. Silakan pilih kolom Nama GI yang sesuai pada panel Pemetaan Kolom.');
         return;
       }
@@ -1049,12 +1085,26 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         updatedAt: new Date().toLocaleString('id-ID'),
         version: CUSTOM_SLD_VERSION,
         excelData: {
-          giList,
-          lineList,
-          risks: riskList
+          giList: saveGi,
+          lineList: saveLines,
+          risks: saveRisks
         }
       };
       saveCustomSLD(config);
+      // Verify-after-write: read back and prove what landed in storage.
+      const check = getCustomSLD(selectedTargetId);
+      const cg = check?.excelData?.giList?.length ?? -1;
+      const cl = check?.excelData?.lineList?.length ?? -1;
+      if (cg !== saveGi.length || cl !== saveLines.length) {
+        alert(
+          `Verifikasi simpan GAGAL: diminta ${saveGi.length} GI • ${saveLines.length} Jalur, terbaca ${cg} GI • ${cl} Jalur (build ${buildHash}). Screenshot pesan ini dan kirim.`
+        );
+        return;
+      }
+      // Refresh state from the same source so the preview stays identical.
+      setGiList(saveGi);
+      setLineList(saveLines);
+      setRiskList(saveRisks);
     } else {
       const config: CustomSLDConfig = {
         targetId: selectedTargetId,
@@ -1168,12 +1218,16 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         </div>
 
         {/* Big Apply / Save Button */}
+        <span className="font-mono text-[10px] text-slate-400 mr-1" title="Hash bundle yang sedang berjalan di browser ini">
+          build {buildHash}
+        </span>
         <button
           onClick={handleSaveToTarget}
           className="bg-[#0046ad] hover:bg-[#00368a] text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-xs transition-all flex items-center gap-2"
+          title={`Simpan ${giList.length} GI • ${lineList.length} Jalur • ${riskList.length} Risiko ke ${currentTargetObj.name}`}
         >
           <Save className="w-4 h-4" />
-          <span>Simpan & Terapkan ke {currentTargetObj.name}</span>
+          <span>Simpan & Terapkan ke {currentTargetObj.name} ({giList.length} GI • {lineList.length} Jalur)</span>
         </button>
       </div>
 
@@ -1558,6 +1612,57 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                             ))}
                           </select>
                         </div>
+
+                        {/* Terhubung ke Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom Terhubung ke (info aset terkait):
+                          </label>
+                          <select
+                            value={colMapping.connectedTo}
+                            onChange={(e) => handleMappingChange('connectedTo', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: Terhubung ke] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* GI Terdampak Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom GI Terdampak (info dampak):
+                          </label>
+                          <select
+                            value={colMapping.impactedGis}
+                            onChange={(e) => handleMappingChange('impactedGis', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: GI Terdampak] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* ID FunctLoc Column */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                            Kolom ID FunctLoc (kunci DB aset):
+                          </label>
+                          <select
+                            value={colMapping.functLoc}
+                            onChange={(e) => handleMappingChange('functLoc', e.target.value)}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono font-medium focus:ring-2 focus:ring-[#0046ad]"
+                          >
+                            <option value="">-- [Auto: ID FunctLoc] --</option>
+                            {rawHeaders.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1756,6 +1861,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                         <tr>
                           <th className="p-2.5 border-b border-slate-200">ID</th>
                           <th className="p-2.5 border-b border-slate-200">Nama Gardu Induk</th>
+                          <th className="p-2.5 border-b border-slate-200">ID FunctLoc</th>
                           <th className="p-2.5 border-b border-slate-200">Tegangan</th>
                           <th className="p-2.5 border-b border-slate-200">Wilayah / Subsistem</th>
                           <th className="p-2.5 border-b border-slate-200">Status Kerawanan</th>
@@ -1766,6 +1872,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                           <tr key={gi.id || idx} className="hover:bg-slate-50">
                             <td className="p-2.5 font-mono text-slate-500">{gi.id}</td>
                             <td className="p-2.5 font-bold text-slate-800">{gi.name}</td>
+                            <td className="p-2.5 font-mono text-slate-600">{gi.functLoc || '–'}</td>
                             <td className="p-2.5 font-mono text-[#0046ad]">{gi.voltage}</td>
                             <td className="p-2.5 text-slate-600">{gi.region || gi.subsystem || '-'}</td>
                             <td className="p-2.5">
@@ -1853,6 +1960,12 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                       <span className="text-slate-500">Tegangan:</span>
                       <span className="font-bold text-[#0046ad]">{selectedElement.data.voltage}</span>
                     </div>
+                    {selectedElement.data.functLoc && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-500 shrink-0">ID FunctLoc:</span>
+                        <span className="font-mono font-bold text-slate-800 text-right">{selectedElement.data.functLoc}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-slate-500">Wilayah:</span>
                       <span className="text-slate-700">{selectedElement.data.region}</span>
@@ -1869,6 +1982,30 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                         {selectedElement.data.riskStatus}
                       </span>
                     </div>
+                    {selectedElement.data.sourceName && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-500 shrink-0">Dari:</span>
+                        <span className="text-slate-700 text-right">{selectedElement.data.sourceName}</span>
+                      </div>
+                    )}
+                    {selectedElement.data.targetName && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-500 shrink-0">Ke:</span>
+                        <span className="text-slate-700 text-right">{selectedElement.data.targetName}</span>
+                      </div>
+                    )}
+                    {selectedElement.data.connectedNames?.length > 0 && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-500 shrink-0">Terhubung ke:</span>
+                        <span className="text-slate-700 text-right">{selectedElement.data.connectedNames.join('; ')}</span>
+                      </div>
+                    )}
+                    {selectedElement.data.impactedNames?.length > 0 && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-500 shrink-0">Terdampak:</span>
+                        <span className="text-slate-700 text-right">{selectedElement.data.impactedNames.join('; ')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

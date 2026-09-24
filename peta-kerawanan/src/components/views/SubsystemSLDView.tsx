@@ -412,7 +412,7 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
 
   const currentSub = subsystems.find((s) => s.id === currentSubId) || subsystems[0];
 
-  const [sldTheme, setSldTheme] = useState<'blueprint' | 'classic'>('blueprint');
+  const [sldTheme, setSldTheme] = useState<'blueprint' | 'classic'>('classic');
   const [activeTab, setActiveTab] = useState<'500kv' | '150kv'>('500kv');
   const [viewMode, setViewMode] = useState<'sld' | 'list-kerawanan'>('sld');
   const [showSubsystemInfoOverlay, setShowSubsystemInfoOverlay] = useState(false);
@@ -518,6 +518,10 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             name: gi.name,
             code: gi.code || gi.name.replace(/^GITET\s+|^GI\s+/, ''),
             voltage: gi.voltage || (isIBT ? '500/150 kV' : isGen ? '500 kV' : isBeban ? '20 kV' : '150 kV'),
+            connectedKeys: gi.connectedKeys || [],
+            connectedNames: gi.connectedNames || [],
+            impactedKeys: gi.impactedKeys || [],
+            impactedNames: gi.impactedNames || [],
             primaryVoltage: gi.primaryVoltage || (isIBT ? '500 kV' : undefined),
             secondaryVoltage: gi.secondaryVoltage || (isIBT ? '150 kV' : undefined),
             assetType: isGen ? 'pembangkit' : isIBT ? 'ibt' : isTrafo ? 'trafo' : isBeban ? 'beban' : 'busbar',
@@ -636,6 +640,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
             target: l.targetId,
             name: l.lineName,
             voltage: l.voltage || '150 kV',
+            sourceName: l.sourceName,
+            targetName: l.targetName,
+            impactedNames: l.impactedNames || [],
             status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
             riskLevel: l.riskStatus,
             riskId: l.riskNumber || (l.riskStatus !== 'Normal' ? 11 : undefined),
@@ -737,13 +744,16 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
     setHighlightedId(id);
     setSelectedItem({
       type: 'line',
-      data: {
-        id: l.id,
-        source: l.sourceId,
-        target: l.targetId,
-        name: l.lineName,
-        type: 'transmission',
-        voltage: l.voltage || '150 kV',
+data: {
+          id: l.id,
+          source: l.sourceId,
+          target: l.targetId,
+          name: l.lineName,
+          type: 'transmission',
+          voltage: l.voltage || '150 kV',
+          sourceName: l.sourceName,
+          targetName: l.targetName,
+          impactedNames: l.impactedNames || [],
         status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
         riskLevel: l.riskStatus,
         riskNumber: l.riskNumber,
@@ -819,6 +829,9 @@ const SubsystemSLDCanvas: React.FC<SubsystemSLDCanvasProps> = ({
           name: data?.name || (edge as any).label || edge.id,
           type: 'transmission',
           voltage: data?.voltage || '500 kV',
+          sourceName: data?.sourceName,
+          targetName: data?.targetName,
+          impactedNames: data?.impactedNames || [],
           status: data?.status || (data?.riskLevel && data.riskLevel !== 'Normal' ? 'critical' : 'normal'),
           riskLevel: data?.riskLevel || 'Normal',
           riskNumber: data?.riskNumber || (data?.riskLevel && data.riskLevel !== 'Normal' ? 11 : undefined),

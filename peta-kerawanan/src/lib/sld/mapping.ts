@@ -33,6 +33,9 @@ export interface ColumnMapping {
   viewKey: string;    // Kolom Sudut Pandang / View [engine]
   status: string;     // Kolom Status Operasi [engine]
   noKerawanan: string; // Kolom No Kerawanan [engine]
+  connectedTo: string; // Kolom Terhubung ke (kode GI, pisah ;) — info aset terkait
+  impactedGis: string; // Kolom GI Terdampak (kode GI, pisah ;) — info dampak gangguan
+  functLoc: string;    // Kolom ID FunctLoc — kunci join ke DB aset/bay
 }
 
 export const emptyColumnMapping = (): ColumnMapping => ({
@@ -41,7 +44,8 @@ export const emptyColumnMapping = (): ColumnMapping => ({
   from: '', to: '', lineName: '', voltage: '', risk: '', riskNumber: '',
   load: '', loadC2: '', circuits: '', circuitNumber: '', lengthKm: '',
   corridor: '', uit: '', condition: '', impact: '', mitigation: '', solution: '',
-  bus150: '', feeder: '', bayKind: '', viewKey: '', status: '', noKerawanan: ''
+  bus150: '', feeder: '', bayKind: '', viewKey: '', status: '', noKerawanan: '',
+  connectedTo: '', impactedGis: '', functLoc: ''
 });
 
 export const cleanKey = (str: unknown): string => {
@@ -118,6 +122,13 @@ export const autoDetectMapping = (headers: string[]): ColumnMapping => {
   const statusCol = findHeader(['statusoperasi', 'status'],
     riskCol && riskCol === 'status' ? [riskCol] : []);
   const noKerawananCol = findHeader(['nokerawanan', 'nomorkerawanan', 'norisik', 'norisk']);
+  // Explicit related-asset columns. Headers must be specific ('Terhubung ke',
+  // 'GI Terdampak'): bare 'ke'/'dampak' belong to the line/risk detectors.
+  const connectedToCol = findHeader(['terhubungke', 'terhubung', 'koneksi', 'connectedto', 'connected']);
+  const impactedGisCol = findHeader(['giterdampak', 'dampakgi', 'zonaterdampak', 'affectedgis']);
+  // ID FunctLoc (kunci join DB aset/bay). Header spesifik dulu; pola umum
+  // 'functloc'/'funtloc' terakhir agar tidak mencuri kolom nama.
+  const functLocCol = findHeader(['idfunctloc', 'functlocid', 'idfuntloc', 'funtlocid', 'functionallocation', 'functloc', 'funtloc']);
 
   return {
     gi: giCol,
@@ -153,6 +164,9 @@ export const autoDetectMapping = (headers: string[]): ColumnMapping => {
     bayKind: bayKindCol,
     viewKey: viewKeyCol,
     status: statusCol,
-    noKerawanan: noKerawananCol
+    noKerawanan: noKerawananCol,
+    connectedTo: connectedToCol,
+    impactedGis: impactedGisCol,
+    functLoc: functLocCol
   };
 };

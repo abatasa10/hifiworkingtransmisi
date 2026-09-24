@@ -79,6 +79,38 @@ export function toViewModel(
       .map((o) => o.external_key)
   );
 
+  const objByKey = new Map(payload.objects.map((o) => [o.external_key, o]));
+  const prettyKey = (k: string): string => k.toUpperCase();
+
+  // adjacency over kept connections
+  const adj = new Map<string, Set<string>>();
+  for (const o of payload.objects) adj.set(o.external_key, new Set());
+  for (const c of payload.connections) {
+    if (droppedIbt.has(c.from_external_key) || droppedIbt.has(c.to_external_key)) continue;
+    adj.get(c.from_external_key)?.add(c.to_external_key);
+    adj.get(c.to_external_key)?.add(c.from_external_key);
+  }
+  const tierOfKey = (key: string): number => tierMap.get(key) ?? 99;
+  /** Nodes fed downstream: walk only to strictly higher tiers (no loops). */
+  const downstreamFrom = (start: string): string[] => {
+    const seen = new Set<string>([start]);
+    const out: string[] = [];
+    const queue: string[] = [start];
+    while (queue.length) {
+      const cur = queue.shift()!;
+      const ct = tierOfKey(cur);
+      for (const nb of adj.get(cur) ?? []) {
+        if (seen.has(nb) || tierOfKey(nb) <= ct) continue;
+        seen.add(nb);
+        out.push(nb);
+        queue.push(nb);
+      }
+    }
+    return out;
+  };
+  const displayNameOf = (key: string): string =>
+    objByKey.get(key)?.raw_label || objByKey.get(key)?.site_name || prettyKey(key);
+
   const nodeByKey = new Map<string, ParsedGINode>();
   for (const o of payload.objects) {
     if (droppedIbt.has(o.external_key)) continue;
@@ -110,8 +142,22 @@ export function toViewModel(
       feederKey: o.bay_feeder_key ?? undefined,
       objectType: o.object_type,
       unitNo: o.unit_no ?? undefined,
-      busLvKey: o.outlet_key ?? undefined
+      busLvKey: o.outlet_key ?? undefined,
+      functLoc: o.funct_loc ?? undefined
     };
+    // related assets: explicit template columns win, topology fills the rest
+    const connKeys = o.connected_keys.filter((k) => k !== o.external_key);
+    for (const k of adj.get(o.external_key) ?? []) {
+      if (k !== o.external_key && !connKeys.includes(k)) connKeys.push(k);
+    }
+    const impKeys = o.impacted_keys.filter((k) => k !== o.external_key);
+    for (const k of downstreamFrom(o.external_key)) {
+      if (!impKeys.includes(k)) impKeys.push(k);
+    }
+    node.connectedKeys = connKeys;
+    node.connectedNames = connKeys.map(displayNameOf);
+    node.impactedKeys = impKeys;
+    node.impactedNames = impKeys.map(displayNameOf);
     nodeByKey.set(o.external_key, node);
     giList.push(node);
   }
@@ -146,6 +192,23 @@ export function toViewModel(
   for (const c of payload.connections) {
     if (droppedIbt.has(c.from_external_key) || droppedIbt.has(c.to_external_key)) continue;
     const line = lineFrom(c);
+    line.sourceName = nodeByKey.get(c.from_external_key)?.name || prettyKey(c.from_external_key);
+    line.targetName = nodeByKey.get(c.to_external_key)?.name || prettyKey(c.to_external_key);
+    // outage impact = the fed side (higher tier) plus everything below it
+    const sT = tierOfKey(c.from_external_key);
+    const tT = tierOfKey(c.to_external_key);
+    let affected: string[];
+    if (sT === tT) {
+      affected = [...downstreamFrom(c.from_external_key), ...downstreamFrom(c.to_external_key)].filter(
+        (k) => k !== c.from_external_key && k !== c.to_external_key
+      );
+    } else {
+      const fed = sT > tT ? c.from_external_key : c.to_external_key;
+      affected = [fed, ...downstreamFrom(fed)];
+    }
+    line.impactedNames = [...new Set(affected)].map(
+      (k) => nodeByKey.get(k)?.name || prettyKey(k)
+    );
     if (c.relation_type === 'IBT_LINK') ibrLinks.push(line);
     else lineList.push(line);
   }
