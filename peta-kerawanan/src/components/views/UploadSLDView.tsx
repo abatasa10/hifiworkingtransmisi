@@ -1003,10 +1003,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   };
 
   // Download Sample Excel Template (Mendukung Gambar 1 & Gambar 2: 2 Line, Tier 0-3, IBT, Pembangkit, Tab Kerawanan)
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = (file: string) => {
     const link = document.createElement('a');
-    link.href = './template_kerawanan_subsistem_suralaya_cilegon.xlsx';
-    link.download = 'template_kerawanan_subsistem_suralaya_cilegon.xlsx';
+    link.href = `./${file}`;
+    link.download = file;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1709,10 +1709,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                     <span>Template Standar Excel PLN</span>
                   </div>
                   <p className="text-[10px] text-slate-500 leading-relaxed">
-                    Format resmi PLN: Mendukung <strong>2 Line (Double Circuit)</strong>, Tier 0–3, Bay Pembangkit, IBT, dan Laporan Kerawanan Tabel 2.1.
+                    Format resmi PLN: <strong>Template Sistem</strong> untuk level sistem (Tier 1–6, 500 kV) dan <strong>Template Subsistem</strong> untuk level subsistem (2 Line/Double Circuit, Tier 0–3, Bay Pembangkit, IBT, Laporan Kerawanan Tabel 2.1).
                   </p>
+                  <a
+                    href="./template_sistem_500kv_jamali.xlsx"
+                    download="template_sistem_500kv_jamali.xlsx"
+                    className="w-full py-1.5 px-3 bg-[#0046ad] hover:bg-[#00388a] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer text-center"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>Template Sistem Jamali 500 kV (Gambar Sistem)</span>
+                  </a>
                   <button
-                    onClick={handleDownloadTemplate}
+                    onClick={() => handleDownloadTemplate('template_kerawanan_subsistem_suralaya_cilegon.xlsx')}
                     className="w-full py-1.5 px-3 bg-[#0046ad] hover:bg-[#00388a] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
