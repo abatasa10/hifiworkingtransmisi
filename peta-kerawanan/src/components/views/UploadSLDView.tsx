@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
-import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
+import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { computeEdgeRouteChannels } from '../../lib/sld/layout';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
@@ -303,10 +303,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
   // Auto-layout calculation for React Flow
   const { flowNodes, flowEdges } = useMemo(() => {
-    // Compute optimal, non-overlapping hierarchical coordinates
-    // Uploaded data must use computed positions, even when its assets match
-    // the built-in demo subsystem's names.
-    const layoutPositions = computeTieredLayout(giList, lineList);
+    // Compute optimal, non-overlapping hierarchical coordinates.
+    // Suralaya-Cilegon-shaped uploads snap to the hand-authored blueprint
+    // (taps rebuilt from the actual edges); anything else uses the generic
+    // engine layout.
+    const layoutPositions = computeCleanSLDLayout(giList, lineList);
     const edgeRouteChannels = computeEdgeRouteChannels(giList, lineList, layoutPositions);
 
     const calculatedNodes: Node[] = giList.map((node) => {

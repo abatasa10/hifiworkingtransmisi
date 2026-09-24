@@ -87,9 +87,13 @@ const SURALAYA_BLUEPRINT: Record<string, NodePosition> = {
 function looksLikeSuralayaCilegon(nodes: ParsedGINode[], lines: ParsedTransmissionLine[]): boolean {
   const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const known = Object.keys(SURALAYA_BLUEPRINT).map(clean);
-  let matched = 0;
   const ids = new Set(nodes.map((n) => clean(n.id)));
-  const names = new Set(nodes.map((n) => clean(n.name || '')));
+  // Signature guard: at least 3 Suralaya-Cilegon landmark buses must be
+  // present, so unrelated subsystems never snap to this blueprint.
+  const signature = ['suralayabaru', 'suralaya', 'cilegonbaru', 'srlya', 'clbru'];
+  const sigHit = signature.filter((s) => ids.has(s) || [...ids].some((n) => n.includes(s) || s.includes(n))).length;
+  if (sigHit < 3 || nodes.length < 10) return false;
+  let matched = 0;
   for (const n of ids) {
     for (const k of known) {
       if (n.includes(k) || k.includes(n)) {
@@ -98,6 +102,7 @@ function looksLikeSuralayaCilegon(nodes: ParsedGINode[], lines: ParsedTransmissi
       }
     }
   }
+  const names = new Set(nodes.map((n) => clean(n.name || '')));
   for (const n of names) {
     if (known.some((k) => n.includes(k) || k.includes(n))) {
       matched++;
@@ -105,18 +110,77 @@ function looksLikeSuralayaCilegon(nodes: ParsedGINode[], lines: ParsedTransmissi
     }
   }
   void lines;
-  return matched >= Math.min(nodes.length, 12) && nodes.length >= 10;
+  return matched >= Math.min(nodes.length, 12);
+}
+
+/**
+ * Rebuild per-bay taps on wide blueprint busbars from the actual edges, so
+ * taps never dangle: IBT-era snapshots keep their IBT taps, while the new
+ * pipeline (direct 500kV -> 150kV IBT_LINK edges, no IBT nodes) gets taps
+ * pointing at the real HV buses. Neighbours are spread evenly, ordered by
+ * their own x so drops stay vertical and crossings stay minimal.
+ */
+function rebuildBlueprintTaps(
+  nodes: ParsedGINode[],
+  lines: ParsedTransmissionLine[],
+  positions: Record<string, NodePosition>
+): void {
+  const tierOf = (id: string): number => {
+    const n = nodes.find((x) => x.id === id);
+    if (typeof n?.tier === 'number') return n.tier;
+    return positions[id]?.tier ?? 3;
+  };
+  for (const [id, pos] of Object.entries(positions)) {
+    if (!pos.isWideBusbar) continue;
+    const top = new Map<string, number>();
+    const bottom = new Map<string, number>();
+    for (const l of lines) {
+      let other: string | null = null;
+      let side: 'top' | 'bottom' | null = null;
+      if (l.targetId === id && l.sourceId !== id) {
+        other = l.sourceId;
+        const dt = tierOf(other) - tierOf(id);
+        side = dt < 0 ? 'top' : dt > 0 ? 'bottom' : 'top';
+      } else if (l.sourceId === id && l.targetId !== id) {
+        other = l.targetId;
+        const dt = tierOf(other) - tierOf(id);
+        side = dt < 0 ? 'top' : dt > 0 ? 'bottom' : 'bottom';
+      }
+      if (!other || !side || !positions[other]) continue;
+      const bucket = side === 'top' ? top : bottom;
+      if (!bucket.has(other)) bucket.set(other, positions[other].x);
+    }
+    const width = pos.busbarWidth || 150;
+    const taps: BusbarTap[] = [];
+    const addTaps = (bucket: Map<string, number>, side: 'top' | 'bottom') => {
+      const sorted = [...bucket.entries()].sort((a, b) => a[1] - b[1]);
+      sorted.forEach(([nid], index) => {
+        taps.push({
+          id: `tap-${side}-${nid}`,
+          connectedNodeId: nid,
+          x: (width * (index + 1)) / (sorted.length + 1),
+          position: side,
+          label: `Bay ${nid}`
+        });
+      });
+    };
+    addTaps(top, 'top');
+    addTaps(bottom, 'bottom');
+    pos.taps = taps;
+  }
 }
 
 /**
  * Intelligent SLD layout engine.
  *
- * For the legacy Suralaya–Cilegon demo dataset the hand-authored blueprint
- * (the engine's equivalent of a persisted per-view position) is honoured so
- * the flagship subsystem keeps its authentic look. Every other dataset --
- * including anything uploaded through the Excel template -- is laid out
- * generically by the engine: tier BFS + barycentric alignment + wide busbars
- * with per-bay taps, no hardcoded landmarks.
+ * For the Suralaya-Cilegon dataset the hand-authored blueprint (the engine's
+ * equivalent of a persisted per-view position) is honoured so the flagship
+ * subsystem keeps its authentic look: tier rows at y 60/330/480/640/800 with
+ * ordered wide busbars. Per-bay taps are always rebuilt from the actual
+ * edges, so both legacy snapshots (with IBT nodes) and fresh uploads
+ * (direct IBT_LINK edges, no IBT nodes) get consistent, dangling-free taps.
+ * Every other dataset falls through to the generic engine layout: tier BFS +
+ * barycentric alignment + wide busbars, no hardcoded landmarks.
  */
 export function computeCleanSLDLayout(
   nodes: ParsedGINode[],
@@ -132,7 +196,7 @@ export function computeCleanSLDLayout(
       const variants = [clean(n.id), clean(n.name || ''), clean(n.code || '')];
       for (const [k, coord] of Object.entries(SURALAYA_BLUEPRINT)) {
         if (variants.some((v) => v === k || v === `gi${k}` || v === `gitet${k}` || v === `garduinduk${k}`)) {
-          positions[n.id] = coord;
+          positions[n.id] = { ...coord, taps: coord.taps ? [...coord.taps] : undefined };
           matchedCount++;
           break;
         }
@@ -144,6 +208,7 @@ export function computeCleanSLDLayout(
           positions[n.id] = { x: 1050 + idx * 160, y: 480, tier: n.tier ?? 3 };
         }
       });
+      rebuildBlueprintTaps(nodes, lines, positions);
       return positions;
     }
   }
