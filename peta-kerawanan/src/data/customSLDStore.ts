@@ -67,11 +67,15 @@ export interface ImageHotspot {
 
 import type { EngineRisk } from '../lib/sld/types';
 
+/** Bumped whenever the saved shape changes; older snapshots are discarded. */
+export const CUSTOM_SLD_VERSION = 2;
+
 export interface CustomSLDConfig {
   targetId: string; // e.g. 'sub-bogor', 'sub-depok', 'sld-500kv'
   targetName: string;
   type: 'excel' | 'image';
   updatedAt: string;
+  version?: number;
   excelData?: {
     giList: ParsedGINode[];
     lineList: ParsedTransmissionLine[];
@@ -106,6 +110,12 @@ export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
     if (data) {
       try {
         const parsed = JSON.parse(data) as CustomSLDConfig;
+        // Stale snapshots (saved before the engine pipeline + risk pins)
+        // can never match a fresh preview; discard them so the user
+        // re-uploads once instead of staring at mismatched data.
+        if (parsed.version !== CUSTOM_SLD_VERSION) {
+          localStorage.removeItem(key);
+        } else {
         const hasPhantomNodes = parsed.excelData?.giList?.some(
           (g) =>
             (g.id || '').toLowerCase().includes('trafodistribusisrlya') ||
@@ -127,6 +137,7 @@ export const getCustomSLD = (targetId: string): CustomSLDConfig | null => {
           return parsed;
         }
         localStorage.removeItem(key);
+        }
       } catch {
         localStorage.removeItem(key);
       }

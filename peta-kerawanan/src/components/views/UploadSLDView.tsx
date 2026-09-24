@@ -55,6 +55,7 @@ import {
   ParsedTransmissionLine,
   ImageHotspot,
   CustomSLDConfig,
+  CUSTOM_SLD_VERSION,
   saveCustomSLD,
   defaultTargetOptions
 } from '../../data/customSLDStore';
@@ -1046,6 +1047,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         targetName: targetObj.name,
         type: 'excel',
         updatedAt: new Date().toLocaleString('id-ID'),
+        version: CUSTOM_SLD_VERSION,
         excelData: {
           giList,
           lineList,
@@ -1059,6 +1061,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         targetName: targetObj.name,
         type: 'image',
         updatedAt: new Date().toLocaleString('id-ID'),
+        version: CUSTOM_SLD_VERSION,
         imageData: {
           imageUrl: uploadedImageUrl || '',
           imageFileName: imageFileName || 'blueprint_skema_sld.png',
