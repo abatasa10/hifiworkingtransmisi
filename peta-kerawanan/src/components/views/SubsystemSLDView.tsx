@@ -1352,6 +1352,7 @@ data: {
               onSelectConnection={() => {}}
               onSelectNode={() => {}}
               onOpenRisk={() => {}}
+              risks={savedRisks}
             />
           </div>
         )}

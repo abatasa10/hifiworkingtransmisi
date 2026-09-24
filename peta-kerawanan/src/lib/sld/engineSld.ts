@@ -51,6 +51,8 @@ export interface EngSldNode {
   x: number;
   halfWidth: number;
   labelTop: boolean;
+  /** Generator drawn stacked directly above its bus (dense tier-0 rows). */
+  stackedAbove?: boolean;
 }
 
 export interface EngSldCircuit {
@@ -140,18 +142,29 @@ const bebanLabel = (name: string, code: string): string => {
 
 const cleanId = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-const findTapPort = (pos: NodePosition | undefined, otherId: string): number => {
-  if (!pos?.isWideBusbar || !pos.taps?.length) return 0;
+interface TapEntry {
+  w: number;
+  taps: { connectedNodeId: string; x: number }[];
+}
+
+const findTapPort = (
+  tapTable: Map<string, TapEntry>,
+  byCode: Map<string, EngSldNode>,
+  code: string,
+  otherId: string
+): number => {
+  const entry = tapTable.get(code);
+  const node = byCode.get(code);
+  if (!entry || !node || !entry.taps.length) return 0;
   const want = cleanId(otherId);
-  const tap = pos.taps.find((t) => {
+  const tap = entry.taps.find((t) => {
     const c = cleanId(t.connectedNodeId);
     return want.includes(c) || c.includes(want);
   });
   if (!tap) return 0;
-  const width = pos.busbarWidth || 150;
-  const port = pos.x + tap.x - (pos.x + width / 2);
-  const half = width / 2;
-  return Math.max(-(half - 10), Math.min(half - 10, port));
+  // tap.x is relative to the busbar left edge; node.x is the center
+  const port = tap.x - entry.w / 2;
+  return Math.max(-(node.halfWidth - 10), Math.min(node.halfWidth - 10, port));
 };
 
 /**
@@ -263,6 +276,95 @@ export function toEngSldGraph(
     });
   }
   const nodeSet = new Set(nodes.map((n) => n.code));
+  const byCode = new Map(nodes.map((n) => [n.code, n]));
+
+  // Dense tier-0 rows (system backbones): stack each generator directly above
+  // its bus so the row collapses to one slot per station, like the book
+  // figures. Sparse rows (Suralaya) keep their own slots and diagonal feeds.
+  const neighOf = new Map<string, string[]>();
+  for (const n of nodes) neighOf.set(n.code, []);
+  for (const l of validLines) {
+    if (!nodeSet.has(l.sourceId) || !nodeSet.has(l.targetId)) continue;
+    neighOf.get(l.sourceId)?.push(l.targetId);
+    neighOf.get(l.targetId)?.push(l.sourceId);
+  }
+  const genPair = new Map<string, string>();
+  const tier0Count = nodes.filter((n) => n.tier === 0).length;
+  if (tier0Count > 12) {
+    const usedSlots = new Map<string, number>();
+    for (const g of nodes) {
+      if (g.type !== 'GENERATING_UNIT') continue;
+      const cands = [...new Set(neighOf.get(g.code) ?? [])]
+        .map((c) => byCode.get(c))
+        .filter((n): n is EngSldNode => !!n && n.type !== 'GENERATING_UNIT')
+        .sort((a, b) => a.tier - b.tier || a.x - b.x);
+      const bus = cands[0];
+      if (!bus) continue;
+      const k = usedSlots.get(bus.code) ?? 0;
+      usedSlots.set(bus.code, k + 1);
+      genPair.set(g.code, bus.code);
+      g.x = bus.x + (k === 0 ? 0 : k % 2 === 1 ? 44 : -44);
+      g.label = '';
+      g.stackedAbove = true;
+    }
+  }
+
+  // Tap table copied from layout positions; dense-row compaction below
+  // rescales it together with the busbars so wires stay attached.
+  const tapTable = new Map<string, TapEntry>();
+  for (const n of nodes) {
+    const pos = positions[n.code];
+    if (pos?.isWideBusbar && pos.taps?.length) {
+      tapTable.set(n.code, {
+        w: pos.busbarWidth || 150,
+        taps: pos.taps.map((t) => ({ connectedNodeId: t.connectedNodeId, x: t.x }))
+      });
+    }
+  }
+
+  // Dense tier rows (>10 nodes): compact to book-like pitch, preserving the
+  // crossing-minimized order and centering every row on x=0 like the
+  // generic layout does. Sparse rows (blueprints, small diagrams) keep
+  // their authored geometry untouched.
+  const DENSE_N = 10;
+  const DENSE_MAX_HALF = 70;
+  const DENSE_GAP = 40;
+  const tierGroups = new Map<number, EngSldNode[]>();
+  for (const n of nodes) {
+    const arr = tierGroups.get(n.tier) ?? [];
+    arr.push(n);
+    tierGroups.set(n.tier, arr);
+  }
+  for (const members of tierGroups.values()) {
+    const buses = members.filter((m) => !(m.type === 'GENERATING_UNIT' && genPair.has(m.code)));
+    if (buses.length <= DENSE_N) continue;
+const sorted = [...buses].sort((a, b) => a.x - b.x);
+    let cursor = 0;
+    for (const n of sorted) {
+      const entry = tapTable.get(n.code);
+      const oldW = entry?.w ?? n.halfWidth * 2;
+      const newHalf = Math.min(n.halfWidth, DENSE_MAX_HALF);
+      if (entry && oldW > 0) {
+        const k = (newHalf * 2) / oldW;
+        entry.taps = entry.taps.map((tp) => ({ ...tp, x: tp.x * k }));
+        entry.w = newHalf * 2;
+      }
+      n.halfWidth = newHalf;
+      n.x = cursor + newHalf;
+      cursor += newHalf * 2 + DENSE_GAP;
+    }
+    const shift = -(cursor - DENSE_GAP) / 2;
+    for (const n of sorted) n.x += shift;
+    // paired generators follow their bus to its compacted slot
+    const slotUse = new Map<string, number>();
+    for (const gm of members) {
+      if (!(gm.type === 'GENERATING_UNIT' && genPair.has(gm.code))) continue;
+      const bus = byCode.get(genPair.get(gm.code)!)!;
+      const k = slotUse.get(bus.code) ?? 0;
+      slotUse.set(bus.code, k + 1);
+      gm.x = bus.x + (k === 0 ? 0 : k % 2 === 1 ? 44 : -44);
+    }
+  }
 
   // Parallel sirkit rows collapse into one bundled circuit (engine style).
   const pairGroups = new Map<string, ParsedTransmissionLine[]>();
@@ -275,7 +377,12 @@ export function toEngSldGraph(
   }
   const circuits: EngSldCircuit[] = [];
   for (const group of pairGroups.values()) {
-    const rep = group[0];
+    // Stacked generator feeds are drawn by the glyph stub; drop them here.
+    const members = group.filter(
+      (l) => genPair.get(l.sourceId) !== l.targetId && genPair.get(l.targetId) !== l.sourceId
+    );
+    if (!members.length) continue;
+    const rep = members[0];
     const sldType = /sktt|kabel/i.test(rep.lineName || '') ? 'SKTT' : 'SUTT';
     circuits.push({
       id: `c-${rep.id}`,
@@ -285,9 +392,9 @@ export function toEngSldGraph(
       voltageKv: kvOf(rep.voltage, 150),
       from: rep.sourceId,
       to: rep.targetId,
-      fromPort: findTapPort(positions[rep.sourceId], rep.targetId),
-      toPort: findTapPort(positions[rep.targetId], rep.sourceId),
-      circuitCount: Math.min(group.length, 2),
+      fromPort: findTapPort(tapTable, byCode, rep.sourceId, rep.targetId),
+      toPort: findTapPort(tapTable, byCode, rep.targetId, rep.sourceId),
+      circuitCount: Math.min(members.length, 2),
       status: opStatus(rep.operatingStatus),
       loadingPct: rep.loadingPct ?? 0
     });
@@ -500,6 +607,34 @@ export function engPinGeoms(
 
 export function engGraphTiers(graph: EngSldGraph): number[] {
   return Array.from({ length: graph.tierCount }, (_, i) => i + 1);
+}
+
+export interface EngTierGuide {
+  tier: number;
+  y: number;
+  label: string;
+}
+
+/**
+ * Tier guide rows. When the top row steps voltage down into the rest
+ * (500 kV sources feeding 150 kV tiers, like Suralaya) the source row stays
+ * unlabeled and guides read TIER n, matching that book. When every row is
+ * the same class (a pure 500 kV backbone, like Jamali) guides cover all
+ * rows with top-to-bottom band numbers, matching that book instead.
+ */
+export function engTierGuides(graph: EngSldGraph): EngTierGuide[] {
+  const present = [...new Set(graph.nodes.map((n) => n.tier))].sort((a, b) => a - b);
+  if (!present.length) return [];
+  const maxKv = (t: number): number =>
+    Math.max(0, ...graph.nodes.filter((n) => n.tier === t).map((n) => n.voltageKv));
+  const stepped =
+    present.includes(0) && present.some((t) => t >= 1) && maxKv(0) - maxKv(1) >= 100;
+  const rows = stepped ? present.filter((t) => t >= 1) : present;
+  return rows.map((t) => ({
+    tier: t,
+    y: t === 0 ? engBusY(0) - 60 : engTierLineY(t),
+    label: stepped ? `TIER ${t}` : `TIER ${t + 1}`
+  }));
 }
 
 export function engGraphBounds(graph: EngSldGraph): { width: number; height: number } {

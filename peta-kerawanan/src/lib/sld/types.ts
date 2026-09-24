@@ -61,6 +61,11 @@ export interface EngineObject {
   impacted_keys: string[];
   /** Functional Location ID (`ID FunctLoc` column) — join key to the asset DB. */
   funct_loc: string | null;
+  /** Free-text detail columns (`Kondisi / Permasalahan`, `Dampak`, ...). */
+  condition: string | null;
+  impact: string | null;
+  mitigation: string | null;
+  follow_up: string | null;
 }
 
 export interface EngineConnection {
@@ -88,6 +93,11 @@ export interface EngineConnection {
   tier_to_hint: number | null;
   risk_seq: number[];
   risk_level: RiskCategory;
+  /** Free-text detail columns (`Kondisi / Permasalahan`, `Dampak`, ...). */
+  condition: string | null;
+  impact: string | null;
+  mitigation: string | null;
+  follow_up: string | null;
 }
 
 export interface EngineRisk {

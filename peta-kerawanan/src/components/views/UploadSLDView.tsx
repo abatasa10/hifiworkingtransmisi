@@ -1,21 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import {
-  ReactFlow,
-  MiniMap,
-  Controls,
-  Background,
-  BackgroundVariant,
-  Node,
-  Edge,
-  ReactFlowProvider,
-  useReactFlow,
-  MarkerType,
-  Handle,
-  Position
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import {
   UploadCloud,
   FileSpreadsheet,
   Image as ImageIcon,
@@ -43,9 +28,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ActiveView } from '../layout/Header';
-import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
-import { computeEdgeRouteChannels } from '../../lib/sld/layout';
 import { SldSvgCanvas, SldSvgSelection } from '../sld/SldSvgCanvas';
 import { toEngSldGraph } from '../../lib/sld/engineSld';
 import type { EngineRisk, EnginePayload } from '../../lib/sld/types';
@@ -81,80 +64,6 @@ const cleanKey = (str: any): string => {
   return String(str || '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
-};
-
-const UploadCustomNode: React.FC<any> = ({ data }) => {
-  return (
-    <div className="relative group">
-      {/* Default handles without explicit IDs for seamless edge routing */}
-      <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <Handle type="source" position={Position.Bottom} className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <Handle type="target" position={Position.Left} id="left" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <Handle type="source" position={Position.Right} id="right" className="!w-2.5 !h-2.5 !bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-      {data?.label}
-    </div>
-  );
-};
-
-const uploadNodeTypes = {
-  default: UploadCustomNode,
-  custom: UploadCustomNode
-};
-
-const uploadEdgeTypes = {
-  default: TransmissionEdge,
-  transmission: TransmissionEdge,
-  transformer_link: TransmissionEdge
-};
-
-const UploadSLDCanvas: React.FC<{
-  nodes: Node[];
-  edges: Edge[];
-  uploadNodeTypes: any;
-  uploadEdgeTypes: any;
-}> = ({ nodes, edges, uploadNodeTypes, uploadEdgeTypes }) => {
-  const { fitView } = useReactFlow();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fitView({ padding: 0.18, duration: 450 });
-    }, 120);
-    return () => clearTimeout(timer);
-  }, [nodes, edges, fitView]);
-
-  return (
-    <div className="relative w-full h-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        nodeTypes={uploadNodeTypes}
-        edgeTypes={uploadEdgeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.18 }}
-        attributionPosition="bottom-left"
-        className="h-full w-full"
-      >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-        <Controls />
-        <MiniMap
-          nodeColor={(n) => (n.data?.label ? '#0046ad' : '#94a3b8')}
-          className="rounded-xl border border-slate-200 shadow-md bg-white/90"
-        />
-      </ReactFlow>
-
-      {/* Floating Fit View Quick Action Button */}
-      <button
-        onClick={() => fitView({ padding: 0.18, duration: 350 })}
-        className="absolute top-3 right-3 z-10 px-3 py-1.5 bg-white/95 hover:bg-white text-slate-700 hover:text-[#0046ad] border border-slate-300 rounded-lg shadow-md font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-        title="Pas ke Layar (Fit View)"
-      >
-        <Maximize2 className="w-3.5 h-3.5 text-[#0046ad]" />
-        <span>Fit ke Layar</span>
-      </button>
-    </div>
-  );
 };
 
 export interface ColumnMapping {
@@ -256,6 +165,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   const [selectedElement, setSelectedElement] = useState<any | null>(null);
   const [uploadStatusMsg, setUploadStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  // Upload/parse progress overlay (null = idle). Parsing + layout run on the
+  // main thread, so we yield between stages to let the overlay paint.
+  const [parseLoading, setParseLoading] = useState<string | null>(null);
+  const yieldUi = () => new Promise<void>((r) => setTimeout(r, 30));
 
   // Advanced Excel Workbook & Multi-sheet mapping states
   const [rawWorkbook, setRawWorkbook] = useState<XLSX.WorkBook | null>(null);
@@ -327,359 +240,6 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
   const currentTargetObj = defaultTargetOptions.find((t) => t.id === selectedTargetId) || defaultTargetOptions[1];
 
-  // Auto-layout calculation for React Flow
-  const { flowNodes, flowEdges } = useMemo(() => {
-    // Compute optimal, non-overlapping hierarchical coordinates.
-    // Suralaya-Cilegon-shaped uploads snap to the hand-authored blueprint
-    // (taps rebuilt from the actual edges); anything else uses the generic
-    // engine layout.
-    const layoutPositions = computeCleanSLDLayout(giList, lineList);
-    const edgeRouteChannels = computeEdgeRouteChannels(giList, lineList, layoutPositions);
-
-    const calculatedNodes: Node[] = giList.map((node) => {
-      const pos = layoutPositions[node.id] || { x: 100, y: 100, tier: node.tier ?? 2 };
-      const isRawan = node.riskStatus !== 'Normal';
-      const isMatched = filterRisk === 'Semua' || node.riskStatus === filterRisk;
-      const nameL = (node.name || '').toLowerCase();
-      const typeL = String(node.assetType || '').toLowerCase();
-
-      const isBusbarExplicitNode =
-        typeL === 'busbar' ||
-        typeL.includes('busbar') ||
-        typeL === 'gitet' ||
-        typeL === 'gi' ||
-        nameL.includes('busbar') ||
-        nameL.includes('rel') ||
-        nameL.includes('suralaya') ||
-        nameL.includes('cilegon') ||
-        nameL.includes('slrda') ||
-        nameL.includes('pendo') ||
-        nameL.includes('peni') ||
-        nameL.includes('mcci') ||
-        nameL.includes('mtsui') ||
-        nameL.includes('kstel') ||
-        nameL.includes('posco');
-
-      const isBebanNode =
-        !isBusbarExplicitNode &&
-        typeL !== 'busbar' &&
-        (typeL.includes('beban') ||
-          typeL.includes('ktt') ||
-          nameL.includes('ktt') ||
-          nameL.includes('konsumen'));
-
-      const isTrafoExplicitNode = typeL === 'trafo';
-      const isIBTNode =
-        !isBusbarExplicitNode &&
-        !isBebanNode &&
-        !isTrafoExplicitNode &&
-        (typeL === 'ibt' ||
-          (nameL.startsWith('ibt') || (nameL.includes('ibt') && !nameL.includes('bay') && !nameL.includes('ktt'))));
-
-      const isTrafoNode = isTrafoExplicitNode || (!isBusbarExplicitNode && !isBebanNode && !isIBTNode && (typeL === 'trafo' || nameL.includes('trafo')));
-
-      const isPembangkitNode =
-        typeL === 'pembangkit' ||
-        typeL === 'generator' ||
-        nameL.includes('plt') ||
-        nameL.includes('pembangkit') ||
-        nameL.includes('unit') ||
-        nameL.startsWith('g_');
-
-      const nodeIbtNum =
-        node.ibtNumber ||
-        (node.name || '').match(/ibt\s*([0-9&]+)/i)?.[1] ||
-        '1';
-
-      const isWide = Boolean(pos.isWideBusbar || (typeof pos.busbarWidth === 'number' && pos.busbarWidth > 180));
-      const busbarWidth = typeof pos.busbarWidth === 'number' ? pos.busbarWidth : 150;
-      const taps = pos.taps || [];
-
-      return {
-        id: node.id,
-        type: 'custom',
-        draggable: false,
-        position: { x: pos.x, y: pos.y },
-        data: {
-          label: isIBTNode ? (
-            /* Tampilan Khusus IBT pada Preview Canvas (3 Lingkaran Interlocking + Badge) */
-            <div
-              onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[140px] ${
-                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#2563eb] shadow-blue-500/20'
-              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-[10px] font-bold text-cyan-300 font-mono truncate">
-                  {node.name || `IBT ${nodeIbtNum}`}
-                </span>
-                {isRawan && (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                    {node.riskStatus}
-                  </span>
-                )}
-              </div>
-              {/* Simbol 3 Lingkaran IBT */}
-              <div className="relative w-14 h-12 flex items-center justify-center my-0.5">
-                <svg viewBox="0 0 74 66" className="w-14 h-12 filter drop-shadow-md">
-                  <circle cx="37" cy="23" r="16.5" fill="none" stroke="#2563eb" strokeWidth="3.6" />
-                  <circle cx="26" cy="42" r="16.5" fill="none" stroke="#ef4444" strokeWidth="3.6" />
-                  <circle cx="48" cy="42" r="16.5" fill="none" stroke="#f59e0b" strokeWidth="3.6" />
-                  <rect x="47" y="14" width="22" height="22" rx="6" fill="rgba(226, 232, 240, 0.92)" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.8" />
-                  <text x="58" y="26" textAnchor="middle" dominantBaseline="central" fill="#0f172a" fontWeight="900" fontSize="13" fontFamily="system-ui, sans-serif">
-                    {nodeIbtNum}
-                  </text>
-                </svg>
-              </div>
-              <span className="text-[9px] font-mono text-slate-400 mt-0.5">{node.voltage || '500/150 kV'}</span>
-            </div>
-          ) : isPembangkitNode ? (
-            /* Tampilan Khusus Pembangkit (Gambar 2: Lingkaran Hijau dengan Gelombang AC ~) */
-            <div
-              onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`flex flex-col items-center cursor-pointer group p-2 rounded-xl border-2 transition-transform hover:scale-105 shadow-md bg-slate-950/90 min-w-[120px] ${
-                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#16a34a] shadow-emerald-500/20'
-              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-[10px] font-bold text-emerald-300 font-mono truncate">
-                  {node.code || (node.name?.match(/unit\s*[0-9A-Za-z\-]+/i)?.[0] || node.name)}
-                </span>
-                {isRawan && (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                    {node.riskStatus}
-                  </span>
-                )}
-              </div>
-              {/* Lingkaran Hijau Generator dengan ~ */}
-              <div className="relative flex flex-col items-center justify-center my-0.5">
-                <div className="relative flex items-center justify-center">
-                  <svg viewBox="0 0 44 44" className="w-10 h-10 filter drop-shadow-md">
-                    <circle cx="22" cy="22" r="18" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" strokeWidth="3" />
-                    <text x="22" y="22" textAnchor="middle" dominantBaseline="central" fill="#22c55e" fontSize="24" fontFamily="sans-serif" fontWeight="900">~</text>
-                  </svg>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-[2px] h-1.5 bg-red-500" />
-                  <div className="w-2.5 h-3 bg-red-600 rounded-[1px] border border-red-800" />
-                  <div className="w-[2px] h-1.5 bg-red-500" />
-                </div>
-              </div>
-              <span className="text-[9px] font-mono text-emerald-400 mt-0.5">{node.voltage || '500 kV'}</span>
-            </div>
-          ) : isBebanNode ? (
-            /* Tampilan Konsumen Beban KTT (Standar PLN: Segitiga Terbalik dengan bulatan koneksi) */
-            <div
-              onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-900 text-white flex flex-col items-center ${
-                isRawan ? 'border-red-500 shadow-red-500/20' : 'border-amber-500/50 shadow-amber-500/10'
-              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <div className="font-bold text-xs truncate mb-1 text-center w-full" title={node.name}>
-                {node.code || node.name}
-              </div>
-              <div className="relative flex flex-col items-center justify-center my-0.5">
-                <div className="w-2 h-2 rounded-full border border-amber-400 bg-slate-950 -mb-1 z-10 shadow-xs" />
-                <svg viewBox="0 0 36 36" className="w-8 h-8">
-                  <polygon
-                    points="4,8 32,8 18,32"
-                    fill="rgba(245, 158, 11, 0.15)"
-                    stroke="#f59e0b"
-                    strokeWidth="2.8"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800/80 border border-amber-500/30 mt-1">
-                <span className="text-[9.5px] text-amber-300 font-mono font-bold">{node.capacityMVA || 60} MVA</span>
-              </div>
-              <div className="text-[8.5px] font-mono text-slate-400 mt-0.5">{node.voltage || '20 kV'}</div>
-            </div>
-          ) : isTrafoNode ? (
-            /* Tampilan Trafo Distribusi 150/20 kV (Standar PLN: 2 Interlocking Rings dengan bulatan terminal) */
-            <div
-              onClick={() => setSelectedElement({ type: 'node', data: node })}
-              className={`p-2 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[120px] bg-slate-950 text-white flex flex-col items-center ${
-                isRawan ? 'border-red-500' : 'border-blue-500/60'
-              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <div className="font-bold text-xs truncate mb-1 text-center w-full" title={node.name}>{node.code || node.name}</div>
-              <div className="relative flex flex-col items-center justify-center my-0.5">
-                <div className="w-1.5 h-1.5 rounded-full border border-red-400 bg-slate-900 -mb-1 z-10" />
-                <svg viewBox="0 0 40 48" className="w-8 h-10">
-                  <circle cx="20" cy="17" r="12" fill="none" stroke="#ef4444" strokeWidth="2.8" />
-                  <circle cx="20" cy="31" r="12" fill="none" stroke="#22c55e" strokeWidth="2.8" />
-                </svg>
-                <div className="w-1.5 h-1.5 rounded-full border border-emerald-400 bg-slate-900 -mt-1 z-10" />
-              </div>
-              <div className="text-[9px] text-slate-400 font-mono text-center">{node.voltage || '150/20 kV'}</div>
-            </div>
-          ) : (
-            /* Tampilan Standar GI Simpul / Wide Busbar */
-            <div
-              onClick={() => setSelectedElement({ type: 'node', data: node })}
-              style={isWide ? { width: `${busbarWidth}px` } : undefined}
-              className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer shadow-md min-w-[150px] ${
-                node.voltage?.includes('500') ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-800'
-              } ${
-                isRawan ? 'border-[#dc2626] shadow-[#dc2626]/20' : 'border-[#0046ad] shadow-slate-200'
-              } ${!isMatched ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <div className="flex items-center gap-1">
-                  <span className={`w-2 h-2 rounded-full ${node.voltage?.includes('500') ? 'bg-[#38bdf8]' : 'bg-[#16a34a]'}`} />
-                  <span className="text-[10px] font-mono font-bold text-slate-400">{node.voltage}</span>
-                </div>
-                {isRawan ? (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-[#dc2626] text-white">
-                    {node.riskStatus}
-                  </span>
-                ) : (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-semibold bg-[#16a34a]/20 text-[#16a34a]">
-                    Normal
-                  </span>
-                )}
-              </div>
-              <div className="font-bold text-xs truncate" title={node.name}>{node.name}</div>
-              <div className="text-[9px] text-slate-400 truncate mt-0.5">{node.subsystem || node.region || 'Subsistem'}</div>
-              {/* Visual horizontal busbar line inside wide GI preview */}
-              {isWide && (
-                <div className="mt-2 w-full h-2 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 relative">
-                  {taps.map((t) => (
-                    <div
-                      key={`preview-dot-${t.id}`}
-                      className="absolute -translate-x-1/2 top-0 w-2 h-2 rounded-full bg-slate-950 border border-cyan-300"
-                      style={{ left: `${t.x}px` }}
-                      title={t.label || t.id}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        }
-      };
-    });
-
-    // Track duplicate pairs to offset parallel 2-line circuits automatically
-    const pairCount: Record<string, number> = {};
-    const pairIndex: Record<string, number> = {};
-
-    lineList.forEach((line) => {
-      const pairKey = [line.sourceId, line.targetId].sort().join('___');
-      pairCount[pairKey] = (pairCount[pairKey] || 0) + 1;
-    });
-
-    const calculatedEdges: Edge[] = lineList.map((line) => {
-      const isRawan = line.riskStatus !== 'Normal';
-      const isMatched = filterRisk === 'Semua' || line.riskStatus === filterRisk;
-      const pairKey = [line.sourceId, line.targetId].sort().join('___');
-      const totalInPair = pairCount[pairKey] || 1;
-      const currentIdx = pairIndex[pairKey] || 0;
-      pairIndex[pairKey] = currentIdx + 1;
-
-      // Detect circuit number: explicit property, or text in line name, or pair index.
-      // IBT links never carry a hard-coded circuit number so paired IBTs fan out (±14).
-      const isIbt = line.id.startsWith('INTERNAL_IBT');
-      let cNum: number | undefined = isIbt ? undefined : line.circuitNumber;
-      if (!cNum) {
-        const circuitText = `${line.circuit || ''} ${line.lineName || ''}`.toLowerCase();
-        if (/(sirkit|sirkuit|skt|circuit|line)\s*[-#]?\s*1\b/.test(circuitText) || /#1\b/.test(circuitText)) {
-          cNum = 1;
-        } else if (/(sirkit|sirkuit|skt|circuit|line)\s*[-#]?\s*2\b/.test(circuitText) || /#2\b/.test(circuitText)) {
-          cNum = 2;
-        } else if (totalInPair > 1) {
-          cNum = currentIdx === 0 ? 1 : 2;
-        }
-      }
-
-      // Keep parallel circuits visibly separated at both ends of the route.
-      const offsetVal = cNum === 1 ? -24 : cNum === 2 ? 24 : 0;
-
-      // Resolve taps on wide busbars
-      const targetPos = layoutPositions[line.targetId];
-      const sourcePos = layoutPositions[line.sourceId];
-      let targetHandleId: string | undefined = undefined;
-      let sourceHandleId: string | undefined = undefined;
-
-      if (targetPos?.isWideBusbar && targetPos.taps) {
-        const cleanSrc = line.sourceId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
-        const foundTap = targetPos.taps.find((t) => {
-          const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
-          return cleanSrc.includes(cleanConn) || cleanConn.includes(cleanSrc);
-        });
-        if (foundTap) targetHandleId = foundTap.id;
-      }
-
-      if (sourcePos?.isWideBusbar && sourcePos.taps) {
-        const cleanTgt = line.targetId.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^gi/, '');
-        const foundTap = sourcePos.taps.find((t) => {
-          const cleanConn = t.connectedNodeId.toLowerCase().replace(/[^a-z0-9]/g, '');
-          return cleanTgt.includes(cleanConn) || cleanConn.includes(cleanTgt);
-        });
-        if (foundTap) sourceHandleId = foundTap.id;
-      }
-
-      return {
-        id: line.id,
-        source: line.sourceId,
-        target: line.targetId,
-        sourceHandle: sourceHandleId,
-        targetHandle: targetHandleId,
-        type: 'transmission',
-        animated: isRawan,
-        style: {
-          stroke: isRawan ? '#dc2626' : '#0046ad',
-          strokeWidth: isRawan ? 3.5 : 2.5,
-          opacity: isMatched ? 1 : 0.2
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: isRawan ? '#dc2626' : '#0046ad',
-          width: 14,
-          height: 14
-        },
-        label: `${line.lineName} (${line.loadingPct}%)`,
-        labelStyle: { fill: isRawan ? '#dc2626' : '#475569', fontSize: 10, fontWeight: 700 },
-        labelBgPadding: [4, 2],
-        labelBgBorderRadius: 4,
-        labelBgStyle: { fill: '#ffffff', color: '#fff', fillOpacity: 0.9 },
-        data: {
-          id: line.id,
-          type: isIbt ? 'transformer_link' : 'transmission',
-          source: line.sourceId,
-          target: line.targetId,
-          name: line.lineName,
-          voltage: line.voltage || '150 kV',
-          status: isRawan ? 'critical' : 'normal',
-          riskLevel: line.riskStatus,
-          riskId: line.riskNumber,
-          // A row resolved to one specific circuit is one edge. Keeping the
-          // source row's total count here makes the edge renderer draw a
-          // second pair of tracks on top of the separately uploaded circuit.
-          circuitCount: cNum ? 1 : line.circuitCount || 2,
-          circuitNumber: cNum,
-            offset: offsetVal,
-            routePoints: edgeRouteChannels[line.id],
-          isDoubleLine: line.circuitCount === 2 && !cNum,
-          operatingStatus: line.operatingStatus || 'Beroperasi',
-          loading: {
-            circuit1: line.loadingCircuit1 || line.loadingPct,
-            circuit2: line.loadingCircuit2 || line.loadingPct
-          },
-          region: line.region,
-          corridor: line.corridor,
-          uit: line.uit,
-          condition: line.condition,
-          impact: line.impact,
-          mitigation: line.mitigation,
-          solution: line.solution
-        }
-      };
-    });
-
-    return { flowNodes: calculatedNodes, flowEdges: calculatedEdges };
-  }, [giList, lineList, filterRisk]);
 
   // Engine-style SVG graph (opsys-ui/SLD-engine design) derived from the same
   // view-model: blueprint/generic X from computeCleanSLDLayout, tiers from
@@ -738,7 +298,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   };
 
   // EXECUTE PARSING WITH COLUMN MAPPING (engine-backed)
-  const executeParsingWithMapping = (
+  const executeParsingWithMapping = async (
     sheet: XLSX.WorkSheet,
     mapping: ColumnMapping,
     currentTargetName: string,
@@ -762,7 +322,11 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         setPreviewRows(preview.previewRows);
         if (preview.headers.length) setColMapping(autoDetectMapping(preview.headers));
 
+        setParseLoading('Menormalisasi template engine…');
+        await yieldUi();
         const { payload, issues } = parseWorkbookToPayload(workbookOpt, fileName);
+        setParseLoading('Menghitung tier & menyusun diagram…');
+        await yieldUi();
         const tierMap = computeTiers(payload);
         const vm = toViewModel(payload, tierMap, currentTargetName);
         const warnings = issues.filter((i) => i.level === 'warning').length;
@@ -785,6 +349,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       }
 
       // FLEXIBLE 1-SHEET TEMPLATE: auto header detection + explicit column mapping.
+      setParseLoading('Membaca lembar kerja…');
+      await yieldUi();
       const preview = readSheetPreview(sheet);
       setRawHeaders(preview.headers);
       setPreviewRows(preview.previewRows);
@@ -799,6 +365,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       }
 
       const ctx = { filename: fileName, subsystem: currentTargetName, defaultVoltage: '150 kV' };
+      setParseLoading('Memparsing workbook & menggabung sheet…');
+      await yieldUi();
       const { payload, issues } = workbookOpt
         ? (() => {
             const activeName = Object.keys(workbookOpt.Sheets).find((k) => workbookOpt.Sheets[k] === sheet);
@@ -809,6 +377,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
             );
           })()
         : parseFlexibleSheet(sheet, { ...emptyColumnMapping(), ...mapping }, ctx);
+      setParseLoading('Menghitung tier & menyusun diagram…');
+      await yieldUi();
       const tierMap = computeTiers(payload);
       const vm = toViewModel(payload, tierMap, currentTargetName);
       const warnings = issues.filter((i) => i.level === 'warning');
@@ -835,12 +405,16 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       console.error(err);
       lastPayloadRef.current = null;
       setUploadStatusMsg({ type: 'error', text: `Gagal parse Excel: ${err.message || 'Format tidak dikenali'}` });
+    } finally {
+      setParseLoading(null);
     }
   };
 
   // SMART UNIVERSAL EXCEL PARSER (FILE LOAD ENTRY)
-  const processExcelBuffer = (buffer: ArrayBuffer, name: string) => {
+  const processExcelBuffer = async (buffer: ArrayBuffer, name: string) => {
     try {
+      setParseLoading('Membaca file Excel…');
+      await yieldUi();
       const data = new Uint8Array(buffer);
       const workbook = XLSX.read(data, { type: 'array' });
 
@@ -900,9 +474,10 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       const initialMapping = autoDetectMapping(headers);
       setColMapping(initialMapping);
 
-      executeParsingWithMapping(worksheet, initialMapping, currentTargetObj.name, workbook);
+      await executeParsingWithMapping(worksheet, initialMapping, currentTargetObj.name, workbook);
     } catch (err: any) {
       console.error(err);
+      setParseLoading(null);
       setUploadStatusMsg({
         type: 'error',
         text: `Gagal membaca file Excel: ${err.message || 'Format tidak didukung'}`
@@ -949,7 +524,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     const headers: string[] = (rawGrid[headerRowIndex] || []).map((h) => String(h || '').trim()).filter(Boolean);
     const newMapping = autoDetectMapping(headers);
     setColMapping(newMapping);
-    executeParsingWithMapping(worksheet, newMapping, currentTargetObj.name, rawWorkbook);
+    void executeParsingWithMapping(worksheet, newMapping, currentTargetObj.name, rawWorkbook);
   };
 
   // Handler when user customizes column mapping dropdowns
@@ -959,7 +534,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     if (rawWorkbook && activeSheetName) {
       const worksheet = rawWorkbook.Sheets[activeSheetName];
       if (worksheet) {
-        executeParsingWithMapping(worksheet, updatedMapping, currentTargetObj.name, rawWorkbook);
+        void executeParsingWithMapping(worksheet, updatedMapping, currentTargetObj.name, rawWorkbook);
       }
     }
   };
@@ -973,7 +548,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     reader.onload = (event) => {
       const buffer = event.target?.result as ArrayBuffer;
       if (buffer) {
-        processExcelBuffer(buffer, file.name);
+        void processExcelBuffer(buffer, file.name);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -996,7 +571,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     reader.onload = (event) => {
       const buffer = event.target?.result as ArrayBuffer;
       if (buffer) {
-        processExcelBuffer(buffer, file.name);
+        void processExcelBuffer(buffer, file.name);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -1144,6 +719,18 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col bg-[#f4f7fa] overflow-hidden relative">
+      {/* Upload/parse progress overlay */}
+      {parseLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-[1px]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 px-6 py-5 flex items-center gap-4 min-w-[300px]">
+            <span className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-[#0046ad] animate-spin shrink-0" />
+            <div>
+              <div className="font-bold text-sm text-slate-800">Memproses file Excel…</div>
+              <div className="text-xs text-slate-500 mt-0.5">{parseLoading}</div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top Header Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs z-20">
         <div>

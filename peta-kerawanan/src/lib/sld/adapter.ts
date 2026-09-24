@@ -137,7 +137,10 @@ export function toViewModel(
       riskNumber: o.risk_seq[0],
       subsystem: subsystemName,
       uit: undefined,
-      condition: undefined,
+      condition: o.condition ?? undefined,
+      impact: o.impact ?? undefined,
+      mitigation: o.mitigation ?? undefined,
+      solution: o.follow_up ?? undefined,
       isBay: o.is_bay,
       feederKey: o.bay_feeder_key ?? undefined,
       objectType: o.object_type,
@@ -185,7 +188,11 @@ export function toViewModel(
       riskNumber: c.risk_seq[0],
       region: c.corridor || payload.subsystem.name,
       corridor: c.corridor ?? undefined,
-      uit: c.uit ?? undefined
+      uit: c.uit ?? undefined,
+      condition: c.condition ?? undefined,
+      impact: c.impact ?? undefined,
+      mitigation: c.mitigation ?? undefined,
+      solution: c.follow_up ?? undefined
     };
   };
 

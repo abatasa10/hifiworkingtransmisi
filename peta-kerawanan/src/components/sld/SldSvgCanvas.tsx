@@ -3,14 +3,12 @@ import {
   ENG_SLD,
   EngSldGraph,
   engBayGeoms,
-  engBusY,
   engCircuitGeoms,
   engGraphBounds,
-  engGraphTiers,
+  engTierGuides,
   engIbtGeoms,
   engNodeGeoms,
-  engPinGeoms,
-  engTierLineY
+  engPinGeoms
 } from '../../lib/sld/engineSld';
 
 export type SldSvgSelection =
@@ -76,6 +74,12 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
   const [layers, setLayers] = useState({ tier: true, risk: true, labels: true });
   const drag = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
   const moved = useRef(false);
+  // hovered element key (node code, or `bay:<id>`) → label enlarges in place
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const hoverIn = (key: string) => () => {
+    if (!drag.current) setHoverKey(key);
+  };
+  const hoverOut = () => setHoverKey(null);
 
   const nodeGeoms = useMemo(() => engNodeGeoms(graph), [graph]);
   const circuitGeoms = useMemo(() => engCircuitGeoms(graph), [graph]);
@@ -85,7 +89,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
     () => engPinGeoms(graph, nodeGeoms, circuitGeoms, ibtGeoms, bayGeoms),
     [graph, nodeGeoms, circuitGeoms, ibtGeoms, bayGeoms]
   );
-  const tiers = useMemo(() => engGraphTiers(graph), [graph]);
+  const tiers = useMemo(() => engTierGuides(graph), [graph]);
   const bounds = useMemo(() => engGraphBounds(graph), [graph]);
 
   const fit = useCallback(() => {
@@ -144,6 +148,7 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
   const onDown = (e: React.MouseEvent) => {
     drag.current = { x: e.clientX, y: e.clientY, vx: vb.x, vy: vb.y };
     moved.current = false;
+    setHoverKey(null);
   };
   const onMove = (e: React.MouseEvent) => {
     const d = drag.current;
@@ -170,6 +175,14 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
     if (!moved.current) fn();
   };
 
+  // Solid backdrop behind a label so no wire can ever show through the text.
+  // Width is estimated from the string (Arial bold ≈ 0.62em per char).
+  const labelBox = (x: number, y: number, text: string, fontSize: number, anchor: 'start' | 'middle') => {
+    const w = text.length * fontSize * 0.62 + 14;
+    const bx = anchor === 'middle' ? x - w / 2 : x - 7;
+    return <rect x={bx} y={y - fontSize * 0.95} width={w} height={fontSize * 1.3} fill={pal.halo} rx={3} />;
+  };
+
   const zoomPct = wrapRef.current ? Math.round((wrapRef.current.clientWidth / vb.w) * 100) : 100;
 
   return (
@@ -180,7 +193,10 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
       onMouseDown={onDown}
       onMouseMove={onMove}
       onMouseUp={onUp}
-      onMouseLeave={onUp}
+      onMouseLeave={() => {
+        onUp();
+        setHoverKey(null);
+      }}
     >
       <style>{`@keyframes sld-ping { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.8); opacity: 0; } } .sld-ping { animation: sld-ping 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; } .sld-hit { cursor: pointer; }`}</style>
       <svg
@@ -191,21 +207,26 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
           if (!moved.current) onBackgroundClick();
         }}
       >
-        <text x={18} y={26} fontSize={14} fontWeight={700} fill={pal.title}>
+        <text x={vb.x + 18} y={26} fontSize={14} fontWeight={700} fill={pal.title}>
           {graph.title} — {graph.viewName}
         </text>
 
         {layers.tier && (
           <g id="overlay-tier">
-            {tiers.map((t) => (
-              <g key={t}>
-                <line x1={16} y1={engTierLineY(t)} x2={bounds.width - 16} y2={engTierLineY(t)} stroke={pal.tierLine} strokeWidth={1.2} strokeDasharray="6 5" />
-                <rect x={14} y={engTierLineY(t) - 9} width={54} height={17} rx={3} fill={pal.tierBadgeFill} stroke={pal.tierBadgeStroke} strokeWidth={0.8} />
-                <text x={41} y={engTierLineY(t) + 3} fontSize={10.5} fill={pal.tierBadgeText} fontWeight={700} textAnchor="middle">
-                  TIER {t}
-                </text>
-              </g>
-            ))}
+            {tiers.map((g) => {
+              // frozen gutter: badge always at the visible left corner,
+              // guide line always spans the viewport
+              const badgeX = vb.x + 10;
+              return (
+                <g key={g.tier}>
+                  <line x1={vb.x - 100} y1={g.y} x2={vb.x + vb.w + 100} y2={g.y} stroke={pal.tierLine} strokeWidth={1.2} strokeDasharray="6 5" />
+                  <rect x={badgeX} y={g.y - 9} width={54} height={17} rx={3} fill={pal.tierBadgeFill} stroke={pal.tierBadgeStroke} strokeWidth={0.8} />
+                  <text x={badgeX + 27} y={g.y + 3} fontSize={10.5} fill={pal.tierBadgeText} fontWeight={700} textAnchor="middle">
+                    {g.label}
+                  </text>
+                </g>
+              );
+            })}
           </g>
         )}
 
@@ -271,11 +292,24 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
               className="sld-hit"
               opacity={dimNode?.(g.node.code) ? 0.2 : 1}
               onClick={clickWrap(() => onSelectNode(g.node.code))}
+              onMouseEnter={hoverIn(g.node.code)}
+              onMouseLeave={hoverOut}
             >
-              <title>
-                {g.node.name} [{g.node.code}] {g.node.type} {g.node.voltageKv} kV - {g.node.status} - role {g.node.role}
-              </title>
               {g.node.type === 'GENERATING_UNIT' ? (
+                g.node.stackedAbove ? (
+                  <g>
+                    <title>{g.node.name}</title>
+                    <line x1={g.node.x} y1={g.y - 20} x2={g.node.x} y2={g.y} stroke="#16a34a" strokeWidth={2} />
+                    <circle cx={g.node.x} cy={g.y - 37} r={7.5} fill="#ffffff" stroke="#16a34a" strokeWidth={1.7} />
+                    <circle cx={g.node.x - 4.5} cy={g.y - 29} r={7.5} fill="#ffffff" stroke="#C00000" strokeWidth={1.7} />
+                    <circle cx={g.node.x + 4.5} cy={g.y - 29} r={7.5} fill="#ffffff" stroke="#E0A400" strokeWidth={1.7} />
+                    <circle cx={g.node.x} cy={g.y - 54} r={9} fill="#ffffff" stroke="#16a34a" strokeWidth={1.7} />
+                    <text x={g.node.x} y={g.y - 50.5} fontSize={10} fontWeight={700} textAnchor="middle" fill="#16a34a">
+                      ~
+                    </text>
+                    <rect x={g.node.x - 5} y={g.y - 71} width={10} height={10} fill="#C00000" />
+                  </g>
+                ) : (
                 <g>
                   <line x1={g.node.x} y1={g.y} x2={g.node.x} y2={g.y + 8} stroke="#16a34a" strokeWidth={2} />
                   <circle cx={g.node.x} cy={g.y + 17} r={9} fill="#ffffff" stroke="#16a34a" strokeWidth={1.7} />
@@ -286,12 +320,16 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                   <circle cx={g.node.x - 4.5} cy={g.y + 41} r={7.5} fill="#ffffff" stroke="#C00000" strokeWidth={1.7} />
                   <circle cx={g.node.x + 4.5} cy={g.y + 41} r={7.5} fill="#ffffff" stroke="#E0A400" strokeWidth={1.7} />
                   <rect x={g.node.x - 5} y={g.y + 50} width={10} height={10} fill="#C00000" />
-                  {layers.labels && (
-                    <text x={g.node.x} y={g.y - 12} fontSize={12.5} fontWeight={700} textAnchor="middle" fill={pal.label} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} strokeLinejoin="round">
-                      {g.node.label}
-                    </text>
+                  {layers.labels && g.node.label && (
+                    <>
+                      {labelBox(g.node.x, g.y - 12, g.node.label, hoverKey === g.node.code ? 26 : 12.5, 'middle')}
+                      <text x={g.node.x} y={g.y - 12} fontSize={hoverKey === g.node.code ? 26 : 12.5} fontWeight={700} textAnchor="middle" fill={pal.label} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={hoverKey === g.node.code ? 6 : 3} strokeLinejoin="round">
+                        {g.node.label}
+                      </text>
+                    </>
                   )}
                 </g>
+                )
               ) : g.node.type === 'BEBAN' ? (
                 <g>
                   <circle cx={g.node.x} cy={g.y + 19} r={9} fill="#ffffff" stroke={g.color} strokeWidth={1.7} />
@@ -299,9 +337,9 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                   {layers.labels && (
                     <g>
                       <rect
-                        x={g.node.x - 52}
+                        x={g.node.x - (hoverKey === g.node.code ? 95 : 52)}
                         y={g.y + 38}
-                        width={104}
+                        width={hoverKey === g.node.code ? 190 : 104}
                         height={26}
                         fill={pal.bebanBoxFill}
                         stroke={pal.bebanBoxStroke}
@@ -309,10 +347,10 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                         strokeDasharray="4 3"
                         rx={2}
                       />
-                      <text x={g.node.x} y={g.y + 50} fontSize={9.5} fontWeight={700} textAnchor="middle" fill={pal.label}>
+                      <text x={g.node.x} y={g.y + 50} fontSize={hoverKey === g.node.code ? 19 : 9.5} fontWeight={700} textAnchor="middle" fill={pal.label}>
                         {g.node.label}
                       </text>
-                      <text x={g.node.x} y={g.y + 60} fontSize={8} textAnchor="middle" fill={pal.subText}>
+                      <text x={g.node.x} y={g.y + 60} fontSize={hoverKey === g.node.code ? 11 : 8} textAnchor="middle" fill={pal.subText}>
                         {g.node.voltageKv} kV
                       </text>
                     </g>
@@ -325,9 +363,12 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                   )}
                   <rect x={g.x1 - 6} y={g.y - 12} width={g.x2 - g.x1 + 12} height={24} fill="transparent" />
                   {layers.labels && (
-                    <text x={g.labelX} y={g.labelY} fontSize={12.5} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} strokeLinejoin="round" textAnchor={g.labelAnchor} fill={pal.label}>
-                      {g.node.label}
-                    </text>
+                    <>
+                      {labelBox(g.labelX, g.labelY, g.node.label, hoverKey === g.node.code ? 26 : 12.5, g.labelAnchor)}
+                      <text x={g.labelX} y={g.labelY} fontSize={hoverKey === g.node.code ? 26 : 12.5} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={hoverKey === g.node.code ? 6 : 3} strokeLinejoin="round" textAnchor={g.labelAnchor} fill={pal.label}>
+                        {g.node.label}
+                      </text>
+                    </>
                   )}
                   <line x1={g.x1} x2={g.x2} y1={g.y} y2={g.y} stroke={g.node.status === 'ENERGIZED' ? g.color : '#9AA0A6'} strokeWidth={ENG_SLD.busStroke} />
                   {g.node.role === 'BOUNDARY' && (
@@ -343,13 +384,10 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
 
         <g id="bays">
           {bayGeoms.map((b) => (
-            <g key={b.bay.id} className="sld-hit" onClick={clickWrap(() => onSelectNode(b.bay.busCode))}>
+            <g key={b.bay.id} className="sld-hit" onClick={clickWrap(() => onSelectNode(b.bay.busCode))} onMouseEnter={hoverIn(`bay:${b.bay.id}`)} onMouseLeave={hoverOut}>
               {isSelBay(b.bay.id) && (
                 <rect x={b.bay.x - 20} y={b.y + 4} width={40} height={ENG_SLD.bayLen + 20} rx={4} fill="#0046ad" fillOpacity={0.08} stroke="#0046ad" strokeWidth={1.5} strokeDasharray="4 3" />
               )}
-              <title>
-                {b.bay.name} [{b.bay.code}] - bay di bus {b.bay.busCode} ({b.bay.status})
-              </title>
               <rect x={b.bay.x - 16} y={b.y + 3} width={32} height={ENG_SLD.bayLen + 18} fill="transparent" />
               {b.xs.map((x) => (
                 <g key={x}>
@@ -359,9 +397,12 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
                 </g>
               ))}
               {layers.labels && (
-                <text x={b.bay.x} y={b.y + ENG_SLD.bayLen + 15} fontSize={10} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} textAnchor="middle" fill={pal.bayLabel}>
-                  {b.bay.code}
-                </text>
+                <>
+                  {labelBox(b.bay.x, b.y + ENG_SLD.bayLen + 15, b.bay.code, hoverKey === `bay:${b.bay.id}` ? 20 : 10, 'middle')}
+                  <text x={b.bay.x} y={b.y + ENG_SLD.bayLen + 15} fontSize={hoverKey === `bay:${b.bay.id}` ? 20 : 10} fontWeight={700} paintOrder="stroke" stroke={pal.labelStroke} strokeWidth={3} textAnchor="middle" fill={pal.bayLabel}>
+                    {b.bay.code}
+                  </text>
+                </>
               )}
             </g>
           ))}

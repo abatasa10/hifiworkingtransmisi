@@ -28,8 +28,9 @@ import { risksData } from '../../data/risks';
 import { SLDFilterOptions, SLDNodeData, SLDEdgeData } from '../../types/graph';
 import { ActiveView } from '../layout/Header';
 import { getCustomSLD, removeCustomSLD, CustomSLDConfig } from '../../data/customSLDStore';
-import { computeTieredLayout } from '../sld/layout/sldLayoutEngine';
-import { computeEdgeRouteChannels } from '../../lib/sld/layout';
+import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
+import { SldSvgCanvas, SldSvgSelection } from '../sld/SldSvgCanvas';
+import { toEngSldGraph } from '../../lib/sld/engineSld';
 import {
   Maximize2,
   RotateCcw,
@@ -161,6 +162,8 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
   const [highlightedAssetId, setHighlightedAssetId] = useState<string | null>(() => {
     return initialSelectedRiskId ? `LINE_GNDUL_DKSBI` : 'LINE_GNDUL_DKSBI';
   });
+  const [sldSelection, setSldSelection] = useState<SldSvgSelection>(null);
+  const [canvasTheme, setCanvasTheme] = useState<'dark' | 'light'>('light');
 
   // Custom Uploaded SLD Binding for 500 kV System
   const [customConfig, setCustomConfig] = useState<CustomSLDConfig | null>(() => getCustomSLD('sld-500kv'));
@@ -277,85 +280,93 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
     customConfig.excelData.giList.length > 0
   );
 
+  // Engine SVG graph for saved custom excel: same renderer as the upload
+  // review and the subsystem view (dark theme to match this view).
+  const customGiList = isCustomExcelValid ? customConfig?.excelData?.giList || [] : [];
+  const customLineList = isCustomExcelValid ? customConfig?.excelData?.lineList || [] : [];
+  const customRisks = isCustomExcelValid ? customConfig?.excelData?.risks || [] : [];
+  const customLayout = useMemo(
+    () => (customGiList.length ? computeCleanSLDLayout(customGiList, customLineList) : {}),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [customConfig]
+  );
+  const customGraph = useMemo(
+    () =>
+      customGiList.length
+        ? toEngSldGraph(customGiList, customLineList, customLayout, customRisks, {
+            title: customConfig?.targetName || 'Sistem 500 kV',
+            viewName: 'SLD'
+          })
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [customConfig]
+  );
+
+  useEffect(() => {
+    setSldSelection(null);
+  }, [customConfig]);
+
+  const sldSelectNode = (code: string) => {
+    const gi = customGiList.find((g) => g.id === code);
+    if (!gi) return;
+    setSldSelection({ kind: 'node', code });
+    setHighlightedAssetId(code);
+    setSelectedItem({
+      type: 'node',
+      data: {
+        id: gi.id,
+        name: gi.name,
+        code: gi.code || gi.id,
+        type: 'gi',
+        voltage: gi.voltage || '500 kV',
+        region: gi.region || 'Jamali',
+        riskStatus: gi.riskStatus || 'Normal'
+      } as any
+    });
+  };
+  const sldSelectLine = (id: string, kind: 'circuit' | 'ibt') => {
+    const lineId = id.replace(/^c-/, '');
+    const l = customLineList.find((x) => x.id === lineId);
+    if (!l) return;
+    setSldSelection({ kind, id });
+    setHighlightedAssetId(id);
+    setSelectedItem({
+      type: 'line',
+      data: {
+        id: l.id,
+        name: l.lineName,
+        type: 'transmission',
+        voltage: l.voltage || '500 kV',
+        status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
+        riskLevel: l.riskStatus,
+        riskNumber: l.riskNumber,
+        sourceName: l.sourceName,
+        targetName: l.targetName,
+        impactedNames: l.impactedNames || []
+      } as any
+    });
+  };
+  const sldSelectRisk = (seq: number) => {
+    const gi = customGiList.find((g) => Number(g.riskNumber) === seq);
+    if (gi) {
+      sldSelectNode(gi.id);
+      setSldSelection({ kind: 'risk', seq });
+      return;
+    }
+    const line = customLineList.find((l) => Number(l.riskNumber) === seq);
+    if (line) {
+      sldSelectLine(line.id, line.id.startsWith('INTERNAL_IBT') ? 'ibt' : 'circuit');
+      setSldSelection({ kind: 'risk', seq });
+    }
+  };
+
   // Synchronize state when custom config or computed nodes/edges change
   React.useEffect(() => {
-    if (isCustomExcelValid && customConfig?.excelData?.giList && customConfig.excelData.giList.length > 0) {
-      const giList = customConfig.excelData.giList;
-      const lineList = customConfig.excelData.lineList || [];
-      const layout = computeTieredLayout(giList, lineList);
-      const edgeRouteChannels = computeEdgeRouteChannels(giList, lineList, layout);
-      const newNodes: Node[] = giList.map((gi) => {
-        const pos = layout[gi.id] || { x: 0, y: 0, tier: gi.tier ?? 1 };
-        const name = (gi.name || '').toLowerCase();
-        const assetType = String(gi.assetType || '').toLowerCase();
-        const isGenerator = assetType === 'pembangkit' || name.includes('plt') || name.includes('unit');
-        const isIbt = assetType === 'ibt' || name.includes('ibt');
-        const isTrafo = assetType === 'trafo' || name.includes('trafo');
-        const isLoad = assetType === 'beban' || name.includes('ktt');
-        const type = isGenerator ? 'generator' : isIbt || isTrafo ? 'ibt' : isLoad ? 'custom' : 'busbar';
-        return {
-          id: gi.id,
-          type,
-          draggable: false,
-          position: { x: pos.x, y: pos.y },
-          data: {
-            id: gi.id,
-            name: gi.name,
-            code: gi.code || gi.name,
-            voltage: gi.voltage || '150 kV',
-            tier: pos.tier,
-            assetType: gi.assetType,
-            ibtNumber: gi.ibtNumber,
-            capacityMVA: gi.capacityMVA,
-            isWideBusbar: pos.isWideBusbar,
-            busbarWidth: pos.busbarWidth,
-            taps: pos.taps,
-            region: gi.region || 'Jamali',
-            riskStatus: gi.riskStatus,
-            riskNumber: gi.riskNumber
-          }
-        };
-      });
-
-      const newEdges: Edge[] = lineList.map((l) => ({
-        id: l.id,
-        source: l.sourceId,
-        target: l.targetId,
-        type: 'transmission',
-        animated: l.riskStatus !== 'Normal',
-        style: {
-          stroke: l.riskStatus !== 'Normal' ? '#dc2626' : '#00d2d3',
-          strokeWidth: l.riskStatus !== 'Normal' ? 3 : 2
-        },
-        label: `${l.lineName} (${l.loadingPct}%)`,
-        labelStyle: { fill: l.riskStatus !== 'Normal' ? '#dc2626' : '#94a3b8', fontSize: 10, fontWeight: 700 },
-        labelBgPadding: [4, 2],
-        labelBgBorderRadius: 4,
-        labelBgStyle: { fill: '#0f172a', color: '#fff', fillOpacity: 0.9 },
-        data: {
-          id: l.id,
-          name: l.lineName,
-          voltage: l.voltage || '150 kV',
-          status: l.riskStatus !== 'Normal' ? 'critical' : 'normal',
-          riskLevel: l.riskStatus,
-          riskId: l.riskNumber,
-          circuitCount: l.circuitCount,
-          circuitNumber: l.circuitNumber,
-          routePoints: edgeRouteChannels[l.id],
-          loading: { circuit1: l.loadingCircuit1 || l.loadingPct, circuit2: l.loadingCircuit2 }
-        }
-      }));
-
-      setNodes(newNodes as any);
-      setEdges(newEdges as any);
-      const timer = setTimeout(() => {
-        reactFlow.fitView({ padding: 0.25, duration: 400 });
-      }, 150);
-      return () => clearTimeout(timer);
-    } else {
-      setNodes(computedNodes);
-      setEdges(computedEdges);
-    }
+    // Custom excel renders through the engine SVG canvas (own layout);
+    // skip the React Flow node/edge build and its expensive routing.
+    if (isCustomExcelValid) return;
+    setNodes(computedNodes);
+    setEdges(computedEdges);
   }, [isCustomExcelValid, customConfig, computedNodes, computedEdges, reactFlow, setNodes, setEdges]);
 
   // Click on Node (GI, GITET, IBT, Generator, or Custom Excel Node)
@@ -706,6 +717,53 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
           ) : (
             /* Interactive Graph Canvas */
             <div className="flex-1 relative h-full min-w-0">
+              {isCustomExcelValid && customGraph && (
+                <div className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-slate-100/90 p-0.5 rounded-lg border border-slate-200">
+                  <button
+                    onClick={() => setCanvasTheme('light')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
+                      canvasTheme === 'light' ? 'bg-white text-[#dc2626] shadow-xs border border-slate-200' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Skema terang"
+                  >
+                    📄 Terang
+                  </button>
+                  <button
+                    onClick={() => setCanvasTheme('dark')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
+                      canvasTheme === 'dark' ? 'bg-[#0f172a] text-cyan-400 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Blueprint gelap"
+                  >
+                    🌙 Gelap
+                  </button>
+                </div>
+              )}
+              {isCustomExcelValid && customGraph ? (
+                <SldSvgCanvas
+                  graph={customGraph}
+                  selection={sldSelection}
+                  theme={canvasTheme}
+                  dimNode={(code) => {
+                    if (filters.riskLevel === 'Semua') return false;
+                    return (customGiList.find((g) => g.id === code)?.riskStatus || 'Normal') !== filters.riskLevel;
+                  }}
+                  dimCircuit={(id) => {
+                    if (filters.riskLevel === 'Semua') return false;
+                    const lineId = id.replace(/^c-/, '');
+                    return (customLineList.find((l) => l.id === lineId)?.riskStatus || 'Normal') !== filters.riskLevel;
+                  }}
+                  onSelectNode={sldSelectNode}
+                  onSelectCircuit={(id) => sldSelectLine(id, 'circuit')}
+                  onSelectIbt={(id) => sldSelectLine(id, 'ibt')}
+                  onSelectRisk={sldSelectRisk}
+                  onBackgroundClick={() => {
+                    setSldSelection(null);
+                    setSelectedItem(null);
+                    setHighlightedAssetId(null);
+                  }}
+                />
+              ) : (
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -782,6 +840,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
               className="!bottom-16 !right-18 !w-44 !h-28"
             />
           </ReactFlow>
+          )}
         </div>
       )}
 
@@ -795,6 +854,7 @@ const SLD500kVCanvas: React.FC<SLD500kVCanvasProps> = ({
           onSelectConnection={handleSelectConnection}
           onSelectNode={handleSelectNode}
           onOpenRisk={handleOpenRisk}
+          risks={customRisks}
         />
       </div>
     </div>

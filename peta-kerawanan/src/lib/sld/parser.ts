@@ -434,6 +434,10 @@ export function parseFlexibleSheet(
         if (!existing.impacted_keys.includes(k)) existing.impacted_keys.push(k);
       }
       if (!existing.funct_loc && extra.funct_loc) existing.funct_loc = extra.funct_loc;
+      if (!existing.condition && extra.condition) existing.condition = extra.condition;
+      if (!existing.impact && extra.impact) existing.impact = extra.impact;
+      if (!existing.mitigation && extra.mitigation) existing.mitigation = extra.mitigation;
+      if (!existing.follow_up && extra.follow_up) existing.follow_up = extra.follow_up;
       return existing;
     }
     const { object_type, is_bay, bay_kind } = resolveObjectType(symbol, name, voltageRaw, bus150Raw);
@@ -466,6 +470,10 @@ export function parseFlexibleSheet(
       connected_keys: [],
       impacted_keys: [],
       funct_loc: null,
+      condition: null,
+      impact: null,
+      mitigation: null,
+      follow_up: null,
       ...extra
     };
     objects.set(key, obj);
@@ -497,7 +505,11 @@ export function parseFlexibleSheet(
       risk_level: riskVal,
       connected_keys: keyList(col.connectedTo >= 0 ? r[headers[col.connectedTo]] : undefined),
       impacted_keys: keyList(col.impactedGis >= 0 ? r[headers[col.impactedGis]] : undefined),
-      funct_loc: col.functLoc >= 0 ? str(r[headers[col.functLoc]]) || null : null
+      funct_loc: col.functLoc >= 0 ? str(r[headers[col.functLoc]]) || null : null,
+      condition: col.condition >= 0 ? str(r[headers[col.condition]]) || null : null,
+      impact: col.impact >= 0 ? str(r[headers[col.impact]]) || null : null,
+      mitigation: col.mitigation >= 0 ? str(r[headers[col.mitigation]]) || null : null,
+      follow_up: col.solution >= 0 ? str(r[headers[col.solution]]) || null : null
     });
     if (norm(shapeVal).includes('panjang') || norm(shapeVal).includes('wide')) {
       obj.has_transformer = true; // marker: treat as wide busbar hint via capacity below
@@ -558,6 +570,10 @@ export function parseFlexibleSheet(
     const loadVal = col.load >= 0 ? pcOr(r[headers[col.load]]) : null;
     const loadC2Val = col.loadC2 >= 0 ? pcOr(r[headers[col.loadC2]]) : null;
     const circuitsVal = col.circuits >= 0 ? intOr(r[headers[col.circuits]]) ?? 2 : 2;
+    const condVal = col.condition >= 0 ? str(r[headers[col.condition]]) || null : null;
+    const impactVal = col.impact >= 0 ? str(r[headers[col.impact]]) || null : null;
+    const mitigVal = col.mitigation >= 0 ? str(r[headers[col.mitigation]]) || null : null;
+    const solVal = col.solution >= 0 ? str(r[headers[col.solution]]) || null : null;
     const corridorVal = col.corridor >= 0 ? str(r[headers[col.corridor]]) : null;
     const uitVal = col.uit >= 0 ? str(r[headers[col.uit]]) : null;
     if (corridorVal && !regionHint) regionHint = corridorVal;
@@ -594,7 +610,11 @@ export function parseFlexibleSheet(
         tier_from_hint: tierFromVal,
         tier_to_hint: tierToVal,
         risk_seq: riskNo,
-        risk_level: riskLevelVal
+        risk_level: riskLevelVal,
+        condition: condVal,
+        impact: impactVal,
+        mitigation: mitigVal,
+        follow_up: solVal
       });
       continue;
     }
@@ -622,7 +642,11 @@ export function parseFlexibleSheet(
       tier_from_hint: tierFromVal,
       tier_to_hint: tierToVal,
       risk_seq: riskNo,
-      risk_level: riskLevelVal
+      risk_level: riskLevelVal,
+      condition: condVal,
+      impact: impactVal,
+      mitigation: mitigVal,
+      follow_up: solVal
     });
   }
 
@@ -669,7 +693,11 @@ export function parseFlexibleSheet(
         tier_from_hint: o.tier_hint,
         tier_to_hint: null,
         risk_seq: [...o.risk_seq],
-        risk_level: o.risk_level
+        risk_level: o.risk_level,
+        condition: null,
+        impact: null,
+        mitigation: null,
+        follow_up: null
       });
       o.risk_seq = [];
       o.risk_level = 'Normal';
@@ -999,7 +1027,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
       risk_level: riskLevel,
       connected_keys: [],
       impacted_keys: [],
-      funct_loc: null
+      funct_loc: null,
+      condition: null,
+      impact: null,
+      mitigation: null,
+      follow_up: null
     });
   }
 
@@ -1048,7 +1080,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
         tier_from_hint: 0,
         tier_to_hint: 1,
         risk_seq: riskNo,
-        risk_level: normalizeRiskLevel(get(row, 'Status Kerawanan', 'Tingkat Kerawanan'))
+        risk_level: normalizeRiskLevel(get(row, 'Status Kerawanan', 'Tingkat Kerawanan')),
+        condition: null,
+        impact: null,
+        mitigation: null,
+        follow_up: null
       });
     }
   }
@@ -1097,7 +1133,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
           risk_level: 'Normal',
           connected_keys: [],
           impacted_keys: [],
-          funct_loc: null
+          funct_loc: null,
+          condition: null,
+          impact: null,
+          mitigation: null,
+          follow_up: null
         });
       }
       if (objects.has(feeder)) {
@@ -1124,7 +1164,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
           tier_from_hint: null,
           tier_to_hint: null,
           risk_seq: [],
-          risk_level: 'Normal'
+          risk_level: 'Normal',
+          condition: null,
+          impact: null,
+          mitigation: null,
+          follow_up: null
         });
       }
     }
@@ -1173,7 +1217,11 @@ export function parseEngineWorkbook(wb: XLSX.WorkBook, filename: string): Engine
         tier_from_hint: intOr(get(row, 'Tier Dari', 'Tier Dari GI')),
         tier_to_hint: intOr(get(row, 'Tier Ke', 'Tier Ke GI')),
         risk_seq: riskNo,
-        risk_level: riskLevel
+        risk_level: riskLevel,
+        condition: str(get(row, 'Kondisi / Permasalahan', 'Kondisi')).trim() || null,
+        impact: str(get(row, 'Dampak')).trim() || null,
+        mitigation: str(get(row, 'Mitigasi')).trim() || null,
+        follow_up: str(get(row, 'Usulan / Solusi', 'Usulan', 'Solusi')).trim() || null
       });
     }
   }
