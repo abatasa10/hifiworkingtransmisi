@@ -46,6 +46,9 @@ import { ActiveView } from '../layout/Header';
 import { TransmissionEdge } from '../sld/edges/TransmissionEdge';
 import { computeCleanSLDLayout } from '../sld/layout/sldLayoutEngine';
 import { computeEdgeRouteChannels } from '../../lib/sld/layout';
+import { SldSvgCanvas, SldSvgSelection } from '../sld/SldSvgCanvas';
+import { toEngSldGraph } from '../../lib/sld/engineSld';
+import type { EngineRisk } from '../../lib/sld/types';
 import { SLDLegendModal } from '../sld/SLDLegendModal';
 import {
   ParsedGINode,
@@ -227,6 +230,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
   // Excel mode states
   const [giList, setGiList] = useState<ParsedGINode[]>(initialSampleGINodes);
   const [lineList, setLineList] = useState<ParsedTransmissionLine[]>(initialSampleLines);
+  const [riskList, setRiskList] = useState<EngineRisk[]>([]);
+  const [sldSelection, setSldSelection] = useState<SldSvgSelection>(null);
   const [fileName, setFileName] = useState<string>('sample_sld_jamali_500kv.xlsx');
   const [excelViewMode, setExcelViewMode] = useState<'graph' | 'table'>('graph');
   const [filterRisk, setFilterRisk] = useState<string>('Semua');
@@ -655,6 +660,62 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
     return { flowNodes: calculatedNodes, flowEdges: calculatedEdges };
   }, [giList, lineList, filterRisk]);
 
+  // Engine-style SVG graph (opsys-ui/SLD-engine design) derived from the same
+  // view-model: blueprint/generic X from computeCleanSLDLayout, tiers from
+  // the tier engine, risks pinned by seq.
+  const engineLayoutPositions = useMemo(() => computeCleanSLDLayout(giList, lineList), [giList, lineList]);
+  const sldGraph = useMemo(
+    () =>
+      toEngSldGraph(giList, lineList, engineLayoutPositions, riskList, {
+        title: currentTargetObj.name,
+        viewName: activeSheetName || 'SLD'
+      }),
+    [giList, lineList, engineLayoutPositions, riskList, currentTargetObj.name, activeSheetName]
+  );
+
+  const sldSelectNode = (code: string) => {
+    const gi = giList.find((n) => n.id === code);
+    if (!gi) return;
+    setSldSelection({ kind: 'node', code });
+    setSelectedElement({ type: 'node', data: gi });
+  };
+  const sldSelectLine = (id: string, kind: 'circuit' | 'ibt') => {
+    const line = lineList.find((l) => l.id === id);
+    if (!line) return;
+    setSldSelection({ kind, id });
+    setSelectedElement({ type: 'line', data: { ...line, name: line.lineName } });
+  };
+  const sldSelectRisk = (seq: number) => {
+    const gi = giList.find((n) => n.riskNumber === seq);
+    if (gi) {
+      sldSelectNode(gi.id);
+      setSldSelection({ kind: 'risk', seq });
+      return;
+    }
+    const line = lineList.find((l) => l.riskNumber === seq);
+    if (line) {
+      sldSelectLine(line.id, line.id.startsWith('INTERNAL_IBT') ? 'ibt' : 'circuit');
+      setSldSelection({ kind: 'risk', seq });
+    }
+  };
+  const sldClearSelection = () => {
+    setSldSelection(null);
+    setSelectedElement(null);
+  };
+  const sldDimNode = (code: string) => {
+    if (filterRisk === 'Semua') return false;
+    return (giList.find((n) => n.id === code)?.riskStatus || 'Normal') !== filterRisk;
+  };
+  const sldDimCircuit = (id: string) => {
+    if (filterRisk === 'Semua') return false;
+    const lineId = id.replace(/^c-/, '');
+    return (lineList.find((l) => l.id === lineId)?.riskStatus || 'Normal') !== filterRisk;
+  };
+  const sldDimRisk = (seq: number) => {
+    if (filterRisk === 'Semua') return false;
+    return (riskList.find((r) => r.seq_no === seq)?.category || 'Normal') !== filterRisk;
+  };
+
   // EXECUTE PARSING WITH COLUMN MAPPING (engine-backed)
   const executeParsingWithMapping = (
     sheet: XLSX.WorkSheet,
@@ -686,6 +747,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
         const warnings = issues.filter((i) => i.level === 'warning').length;
         setGiList(vm.giList);
         setLineList([...vm.ibrLinks, ...vm.lineList]);
+        setRiskList(payload.risks);
+        setSldSelection(null);
         if (vm.giList.length > 0) {
           setUploadStatusMsg({
             type: 'success',
@@ -707,6 +770,7 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       if (!preview.headers.length) {
         setGiList([]);
         setLineList([]);
+        setRiskList([]);
         setUploadStatusMsg({ type: 'error', text: 'Lembar kerja (sheet) ini kosong.' });
         return;
       }
@@ -727,6 +791,8 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
       const warnings = issues.filter((i) => i.level === 'warning');
       setGiList(vm.giList);
       setLineList([...vm.ibrLinks, ...vm.lineList]);
+      setRiskList(payload.risks);
+      setSldSelection(null);
 
       if (vm.giList.length > 0) {
         setUploadStatusMsg({
@@ -1652,17 +1718,21 @@ export const UploadSLDView: React.FC<UploadSLDViewProps> = ({
                 </div>
               </div>
 
-              {/* SUB-VIEW 1: GRAPH VIEW */}
+              {/* SUB-VIEW 1: GRAPH VIEW (engine-style SVG canvas) */}
               {excelViewMode === 'graph' && (
                 <div className="flex-1 relative w-full h-full">
-                  <ReactFlowProvider>
-                    <UploadSLDCanvas
-                      nodes={flowNodes}
-                      edges={flowEdges}
-                      uploadNodeTypes={uploadNodeTypes}
-                      uploadEdgeTypes={uploadEdgeTypes}
-                    />
-                  </ReactFlowProvider>
+                  <SldSvgCanvas
+                    graph={sldGraph}
+                    selection={sldSelection}
+                    dimNode={sldDimNode}
+                    dimCircuit={sldDimCircuit}
+                    dimRisk={sldDimRisk}
+                    onSelectNode={sldSelectNode}
+                    onSelectCircuit={(id) => sldSelectLine(id, 'circuit')}
+                    onSelectIbt={(id) => sldSelectLine(id, 'ibt')}
+                    onSelectRisk={sldSelectRisk}
+                    onBackgroundClick={sldClearSelection}
+                  />
                 </div>
               )}
 
