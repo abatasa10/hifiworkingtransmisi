@@ -1,0 +1,24 @@
+import { readFileSync } from 'node:fs';
+import * as XLSX from 'xlsx';
+import { parseFlexibleWorkbook } from '../../src/lib/sld/parser';
+import { autoDetectMapping, emptyColumnMapping } from '../../src/lib/sld/mapping';
+import { computeTiers } from '../../src/lib/sld/tier';
+import { toViewModel } from '../../src/lib/sld/adapter';
+import { toEngSldGraph, engGraphBounds, engBusY, engTierLineY } from '../../src/lib/sld/engineSld';
+import { computeCleanSLDLayout } from '../../src/components/sld/layout/sldLayoutEngine';
+
+const wb = XLSX.read(readFileSync('/Users/ridwanalaziz/Kerja/ICON+/PROJECT/POWER INSPECT/DESIGN/peta-kerawanan/peta-kerawanan/public/template_sistem_500kv_jamali.xlsx'));
+const uiMapping = autoDetectMapping(XLSX.utils.sheet_to_json(wb.Sheets['Jalur_Transmisi'], { header: 1 })[0] as string[]);
+const { payload } = parseFlexibleWorkbook(wb, { filename: 't.xlsx', subsystem: 'Jamali', defaultVoltage: '500 kV' }, { sheetName: 'Jalur_Transmisi', mapping: { ...emptyColumnMapping(), ...uiMapping } });
+const vm = toViewModel(payload, computeTiers(payload), 'Jamali');
+const pos = computeCleanSLDLayout(vm.giList, [...vm.ibrLinks, ...vm.lineList]);
+const g = toEngSldGraph(vm.giList, [...vm.ibrLinks, ...vm.lineList], pos, payload.risks, { title: 'Jamali', viewName: 'test' });
+const b = engGraphBounds(g);
+console.log('bounds:', JSON.stringify(b), 'tierCount:', g.tierCount);
+const xs = g.nodes.map((n) => n.x);
+console.log('x range:', Math.round(Math.min(...xs)), '..', Math.round(Math.max(...xs)));
+const rows: Record<number, number> = {};
+for (const n of g.nodes) rows[n.tier] = (rows[n.tier] ?? 0) + 1;
+console.log('rows per sldTier:', JSON.stringify(rows));
+console.log('guides would be: tiers 1..' + g.tierCount + ' at y=' + Array.from({length: g.tierCount}, (_, i) => engTierLineY(i+1)).join(','));
+console.log('bus rows at y=' + [0,1,2,3,4,5].map(engBusY).join(','));
