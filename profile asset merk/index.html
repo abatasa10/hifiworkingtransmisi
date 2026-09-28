@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil Aset Transmisi – MANTAPS PLN</title>
+  <meta name="description" content="Dashboard Profil Aset Transmisi PLN MANTAPS dengan Seamless Progressive Drill-Down dari Peta Nasional, Wilayah, Jenis Aset, Merk, hingga Detail Unit Aset.">
+  <link rel="icon" type="image/svg+xml" href="assets/pln-logo.svg">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="css/leaflet.css">
+  
+  <!-- Custom Modern Design System -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Leaflet JS -->
+  <script src="js/leaflet.js"></script>
+  
+  <!-- Chart.js -->
+  <script src="js/chart.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="js/lucide.min.js"></script>
+</head>
+<body>
+
+  <!-- ======================================================================
+       1. TOP APP NAVBAR (MANTAPS Corporate Header)
+       ====================================================================== -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <a href="index.html" class="mantaps-logo">
+        <div class="mantaps-icon-box">
+          <i data-lucide="activity" style="width:20px;height:20px;"></i>
+        </div>
+        <div class="brand-titles">
+          <span class="brand-tag">DASHBOARD</span>
+          <span class="brand-name">MANTAPS</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Center Navigation Links -->
+    <nav class="nav-links">
+      <a href="#" class="nav-item">
+        <span>Peta Risiko</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <span>Profil Aset</span>
+        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+      </a>
+    </nav>
+
+    <!-- Header Right User Info -->
+    <div class="header-right">
+      <div style="text-align: right; display: flex; flex-direction: column;">
+        <span style="font-size: 12.5px; font-weight: 700; color: var(--text-main);">PT PLN (Persero)</span>
+        <span style="font-size: 11px; color: var(--text-muted);">Divisi Pengelolaan Aset Transmisi</span>
+      </div>
+      <button class="user-avatar-btn" title="Profil Pengguna">
+        <i data-lucide="user" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       2. SUBHEADER METADATA & BREADCRUMB BAR
+       ====================================================================== -->
+  <div class="subheader-bar">
+    <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <div class="page-title-badge">
+        <i data-lucide="layers" style="color: var(--brand-primary); width:18px; height:18px;"></i>
+        <span id="subHeaderTitle">Profil Aset Transmisi</span>
+      </div>
+
+      <!-- Dynamic Clickable Breadcrumbs -->
+      <div class="breadcrumb-container" id="globalBreadcrumbs">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <div class="last-update-text">
+      <i data-lucide="clock" style="width:14px;height:14px;"></i>
+      <span>Last Update: 31/8/2026, 00.00.00</span>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       3. GLOBAL FILTER STRIP (Primary for Level 1)
+       ====================================================================== -->
+  <section class="filter-strip" id="filterStripLevel1">
+    <!-- ROW 1: FOKUS ANALITIK UTAMA (ASET, MERK & HEALTH INDEX / AHI) -->
+    <div class="filter-strip-row filter-tier-primary">
+      <div class="filter-tier-badge asset-badge">
+        <i data-lucide="shield-check"></i>
+        <span>Fokus Analitik:</span>
+      </div>
+
+      <div class="filter-group">
+        <!-- Jenis Aset -->
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Jenis Aset</span>
+          <select class="filter-select filter-select-prominent" id="filterJenisAset">
+            <option value="Power Transformer" selected>⚡ Power Transformer (Trafo)</option>
+            <option value="PMT">🔌 PMT (Circuit Breaker)</option>
+            <option value="CT">⚡ CT (Current Transformer)</option>
+            <option value="PT">⚡ PT (Potential Transformer)</option>
+            <option value="PMS">🔄 PMS (Disconnector)</option>
+            <option value="Lightning Arrester">🛡️ Lightning Arrester (LA)</option>
+            <option value="GIS">🏢 GIS (Gas Insulated Switchgear)</option>
+          </select>
+        </div>
+
+        <!-- Merk Pabrikan -->
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Merk Pabrikan</span>
+          <select class="filter-select filter-select-prominent" id="filterMerk">
+            <option value="Semua">Semua Merk (24 Pabrikan)</option>
+            <optgroup label="5 Merk Terbesar (82% Populasi)">
+              <option value="ABB">ABB</option>
+              <option value="Siemens">Siemens</option>
+              <option value="Toshiba">Toshiba</option>
+              <option value="GE / Alstom">GE / Alstom</option>
+              <option value="Hitachi">Hitachi</option>
+            </optgroup>
+            <optgroup label="Pabrikan Lainnya (19 Merk)">
+              <option value="Hyundai">Hyundai</option>
+              <option value="Hyosung">Hyosung</option>
+              <option value="Mitsubishi">Mitsubishi</option>
+              <option value="XD Electric">XD Electric</option>
+              <option value="Meidensha">Meidensha</option>
+              <option value="Pauwels">Pauwels</option>
+              <option value="Fuji Electric">Fuji Electric</option>
+              <option value="BHEL">BHEL</option>
+              <option value="TBEA">TBEA</option>
+              <option value="Lainnya">Lainnya (19 Merk)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Health Index / AHI -->
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Health Index (AHI)</span>
+          <select class="filter-select filter-select-prominent" id="filterHI">
+            <option value="Semua">Semua Kategori AHI (1–5)</option>
+            <option value="HI 1">🟢 HI 1 — Sangat Baik (Normal)</option>
+            <option value="HI 2">🔵 HI 2 — Baik (Normal)</option>
+            <option value="HI 3">🟡 HI 3 — Cukup (Waspada Ringan)</option>
+            <option value="HI 4">🟠 HI 4 — Perlu Perhatian (Waspada)</option>
+            <option value="HI 5">🔴 HI 5 — Buruk (Kritis)</option>
+            <option value="HI 4-5">⚠️ Prioritas: HI 4 & HI 5 (Waspada/Kritis)</option>
+          </select>
+        </div>
+
+        <!-- Level Tegangan -->
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Level Tegangan</span>
+          <select class="filter-select" id="filterTegangan">
+            <option value="Semua">Semua Tegangan</option>
+            <option value="500 kV">500 kV (Extra High Voltage)</option>
+            <option value="150 kV" selected>150 kV (High Voltage)</option>
+            <option value="70 kV">70 kV</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Active Metrics Pill on the Right -->
+      <div class="filter-active-summary" id="filterActiveSummary">
+        <span class="summary-dot"></span>
+        <span id="filterActiveSummaryText">Fokus: Power Transformer • Semua Merk • Semua AHI</span>
+      </div>
+    </div>
+
+    <!-- ROW 2: LINGKUP WILAYAH ORGANISASI & PENCARIAN -->
+    <div class="filter-strip-row filter-tier-secondary">
+      <div class="filter-tier-badge geo-badge">
+        <i data-lucide="map-pin"></i>
+        <span>Lingkup Wilayah:</span>
+      </div>
+
+      <!-- Search Input & Button at the beginning -->
+      <div class="search-input-group">
+        <div class="search-input-wrapper">
+          <i data-lucide="search" class="search-input-icon"></i>
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Cari Unit Induk, UPT, ULTG, GI, Bay..." autocomplete="off">
+          <button type="button" id="globalSearchClear" class="search-clear-btn" onclick="clearGlobalSearch()" title="Hapus pencarian" aria-label="Hapus pencarian" hidden>
+            <i data-lucide="x"></i>
+          </button>
+          <div id="globalSearchResults" class="search-results" hidden></div>
+        </div>
+        <button type="button" class="btn-search-submit" id="btnSearchSubmit" onclick="triggerSearchSubmit()" title="Mulai pencarian">
+          <i data-lucide="search"></i>
+          <span>Cari</span>
+        </button>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <!-- Hierarki Lokasi: Unit Induk -> Unit Pelaksana -> ULTG -> GI -> Bay -->
+      <div class="filter-group">
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Unit Induk</span>
+          <select class="filter-select" id="filterUnitInduk">
+            <option value="Semua">Semua Unit Induk</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Unit Pelaksana <span class="filter-hint" id="hintUPT">(pilih Unit Induk dulu)</span></span>
+          <select class="filter-select is-disabled" id="filterUPT" disabled>
+            <option value="Semua">Semua</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <span class="filter-label">ULTG <span class="filter-hint" id="hintULTG">(pilih Unit Pelaksana dulu)</span></span>
+          <select class="filter-select is-disabled" id="filterULTG" disabled>
+            <option value="Semua">Semua</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <span class="filter-label">GI <span class="filter-hint" id="hintGI">(pilih ULTG dulu)</span></span>
+          <select class="filter-select is-disabled" id="filterGI" disabled>
+            <option value="Semua">Semua</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <span class="filter-label">Bay <span class="filter-hint" id="hintBay">(pilih GI dulu)</span></span>
+          <select class="filter-select is-disabled" id="filterBay" disabled>
+            <option value="Semua">Semua</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-reset-filter" id="btnResetFilter" title="Kembalikan semua filter ke awal">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Reset Filter</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       MAIN CONTENT CONTAINER
+       ====================================================================== -->
+  <main class="dashboard-main">
+
+    <!-- Description Bar -->
+    <div style="margin-bottom: 12px;">
+      <p id="subHeaderDesc" style="font-size: 13.5px; color: var(--text-muted);">
+        Analisis kondisi aset berdasarkan lokasi, jenis aset, merk, umur, dan Health Index.
+      </p>
+    </div>
+
+    <!-- ====================================================================
+         DASHBOARD ANALYTICS DIRECTION & QUICK NAV BAR (4 Core Pillars + Map)
+         ==================================================================== -->
+    <div class="dashboard-analytics-nav" id="dashboardAnalyticsNav">
+      <div class="analytics-nav-title">
+        <i data-lucide="compass" style="width:16px;height:16px;color:var(--brand-primary);"></i>
+        <span>Navigasi Profil Aset:</span>
+      </div>
+      <div class="analytics-nav-pills">
+        <button type="button" class="analytics-pill-btn active" data-nav-target="peta-transmisi" onclick="scrollToDashboardSection('mainMapViewport')">
+          <i data-lucide="map" style="width:15px;height:15px;"></i>
+          <span>Peta Transmisi</span>
+        </button>
+        <button type="button" class="analytics-pill-btn" data-nav-target="sebaran-aset" onclick="activateAndScrollToTab('sebaran-aset')">
+          <i data-lucide="layers" style="width:15px;height:15px;"></i>
+          <span>Sebaran Aset</span>
+        </button>
+        <button type="button" class="analytics-pill-btn" data-nav-target="profil-merk" onclick="activateAndScrollToTab('profil-merk')">
+          <i data-lucide="award" style="width:15px;height:15px;"></i>
+          <span>Profil Merk</span>
+        </button>
+        <button type="button" class="analytics-pill-btn" data-nav-target="profil-jenis" onclick="activateAndScrollToTab('profil-jenis')">
+          <i data-lucide="package" style="width:15px;height:15px;"></i>
+          <span>Profil Jenis Aset</span>
+        </button>
+        <button type="button" class="analytics-pill-btn" data-nav-target="umur-aset" onclick="activateAndScrollToTab('umur-aset')">
+          <i data-lucide="calendar" style="width:15px;height:15px;"></i>
+          <span>Umur Aset</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         LEVEL 1 & LEVEL 2: MAP WORKSPACE (SEAMLESS REUSED MAP CONTAINER)
+         ==================================================================== -->
+    <section id="viewMapSection" class="view-panel active">
+
+      <!-- Level 2 Regional Header & KPI (Visible ONLY on Level 2) -->
+      <div id="level2HeaderBlock" style="display: none; margin-bottom: 18px;">
+        <div class="view-header" style="margin-bottom: 14px;">
+          <div class="view-title-block">
+            <div class="view-icon-badge">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <div>
+              <h1 class="view-main-title" id="regionalTitle">Profil Aset — Jawa</h1>
+              <p class="view-sub-title">Peta melakukan zoom ke wilayah terpilih dan menampilkan ringkasan aset di wilayah tersebut.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <!-- Quick filters on Level 2 per Image 2 Step 2 -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select class="filter-select" style="height: 34px;">
+                <option>Jenis Aset: Power Transformer</option>
+              </select>
+              <select class="filter-select" style="height: 34px;">
+                <option>Merk: Semua</option>
+                <option>ABB</option>
+                <option>Siemens</option>
+              </select>
+              <select class="filter-select" style="height: 34px;">
+                <option>Tegangan: Semua</option>
+                <option>150 kV</option>
+                <option>500 kV</option>
+              </select>
+            </div>
+
+            <button class="btn-action-secondary" onclick="navigateTo(1)">
+              <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+              <span>Kembali ke Nasional</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 6 KPI Cards Level 2, mengikuti scope aktif -->
+        <div class="kpi-cards-grid">
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Power Transformer</span>
+              <div class="kpi-icon-small"><i data-lucide="zap"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiPt">2.514</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Jumlah Merk</span>
+              <div class="kpi-icon-small"><i data-lucide="award"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiBrands">24</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Rata-rata Health Index</span>
+              <div class="kpi-icon-small"><i data-lucide="activity"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiAvgHI">2,74</span>
+              <span class="kpi-badge brand" id="l2KpiAvgHIBadge">Cukup</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Unit HI 4–5</span>
+              <div class="kpi-icon-small"><i data-lucide="alert-triangle"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiHi45">508</span>
+              <span class="kpi-badge danger" id="l2KpiHi45Pct">20,2%</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Rata-rata Umur</span>
+              <div class="kpi-icon-small"><i data-lucide="clock"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiAvgAge">17,8</span>
+              <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">thn</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <span class="kpi-label">Gardu Induk</span>
+              <div class="kpi-icon-small"><i data-lucide="map-pin"></i></div>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="l2KpiGi">27</span>
+              <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">lokasi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN LEAFLET MAP VIEWPORT (Permanently retained & smoothly zoomed) -->
+      <div class="map-viewport-wrapper" id="mainMapViewport">
+        <div id="mainLeafletMap"></div>
+
+        <!-- Kontrol ukuran peta (hanya di level 2) -->
+        <button type="button" class="map-size-toggle" id="mapSizeToggle" onclick="toggleMapSize()" style="display: none;">
+          <i data-lucide="maximize-2" id="mapSizeToggleIcon"></i>
+          <span id="mapSizeToggleLabel">Perbesar Peta</span>
+        </button>
+
+        <!-- Floating Navigation & Back Button on Map (Active on drill-down) -->
+        <div class="map-floating-nav" id="mapFloatingNav" style="display: none;">
+          <button type="button" class="btn-map-back" id="btnMapBack" onclick="handleMapBackNavigation()" title="Kembali ke level sebelumnya">
+            <i data-lucide="arrow-left"></i>
+            <span id="mapBackLabel">Kembali ke Nasional</span>
+          </button>
+          <div class="map-nav-divider"></div>
+          <div class="map-nav-breadcrumbs" id="mapNavBreadcrumbs"></div>
+        </div>
+
+        <!-- Top-Left Statistics Pill (Visible on Level 1) -->
+        <div class="map-overlay-stat-pill" id="nationalStatPill">
+          <div class="overlay-pill-header">
+            <div class="overlay-pill-icon">
+              <i data-lucide="bar-chart-2"></i>
+            </div>
+            <div>
+              <div class="overlay-pill-title">Statistik Nasional Sistem Transmisi</div>
+              <div class="overlay-pill-subtitle">Pantau kondisi Sistem Transmisi Nasional</div>
+            </div>
+          </div>
+          <div class="overlay-stat-grid">
+            <div class="overlay-stat-item">
+              <span class="overlay-stat-label">Unit Induk</span>
+              <span class="overlay-stat-val" id="pillUnitInduk">6</span>
+            </div>
+            <div class="overlay-stat-item">
+              <span class="overlay-stat-label">UPT</span>
+              <span class="overlay-stat-val">38</span>
+            </div>
+            <div class="overlay-stat-item">
+              <span class="overlay-stat-label">ULTG</span>
+              <span class="overlay-stat-val">84</span>
+            </div>
+            <div class="overlay-stat-item">
+              <span class="overlay-stat-label">GI</span>
+              <span class="overlay-stat-val">290</span>
+            </div>
+            <div class="overlay-stat-item" style="grid-column: span 2;">
+              <span class="overlay-stat-label">Total Aset</span>
+              <span class="overlay-stat-val" id="pillTotalAset">—</span>
+            </div>
+            <div class="overlay-stat-item" style="grid-column: span 2;">
+              <span class="overlay-stat-label">Kapasitas (MVA)</span>
+              <span class="overlay-stat-val">31.137</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom-Left Health Index Legend -->
+        <div class="map-hi-legend" id="mapHIlegend">
+          <div class="legend-title">Kategori Health Index</div>
+          <div class="legend-items">
+            <div class="legend-row">
+              <span class="hi-dot hi-dot-1"></span>
+              <span>HI 1 — Sangat Baik</span>
+            </div>
+            <div class="legend-row">
+              <span class="hi-dot hi-dot-2"></span>
+              <span>HI 2 — Baik</span>
+            </div>
+            <div class="legend-row">
+              <span class="hi-dot hi-dot-3"></span>
+              <span>HI 3 — Cukup</span>
+            </div>
+            <div class="legend-row">
+              <span class="hi-dot hi-dot-4"></span>
+              <span>HI 4 — Perlu Perhatian</span>
+            </div>
+            <div class="legend-row">
+              <span class="hi-dot hi-dot-5"></span>
+              <span>HI 5 — Buruk</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legenda warna wilayah (hanya level 1) -->
+        <div class="map-region-legend" id="nationalRegionLegend" style="display: none;"></div>
+
+        <!-- Right Floating Context Card (Indonesia at Level 1, Jawa Barat at Level 2) -->
+        <div class="map-context-card" id="mapContextCard">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- Notice untuk provinsi tanpa data drill-down -->
+      <div class="front-page-notice" id="frontPageNotice" hidden></div>
+
+      <!-- Analytics Tabs & Panels (4 Core Pillars: Sebaran Aset, Profil Merk, Profil Jenis, Umur Aset) -->
+      <div id="level2BottomSection" style="display: block; margin-top: 24px;">
+        <div class="tab-bar-container">
+          <button class="tab-btn active" data-level2-tab="sebaran-aset" onclick="switchLevel2Tab('sebaran-aset')">
+            <i data-lucide="map" style="width:14px;height:14px;"></i>
+            <span>Sebaran Aset</span>
+          </button>
+          <button class="tab-btn" data-level2-tab="profil-merk" onclick="switchLevel2Tab('profil-merk')">
+            <i data-lucide="award" style="width:14px;height:14px;"></i>
+            <span>Profil Merk</span>
+          </button>
+          <button class="tab-btn" data-level2-tab="profil-jenis" onclick="switchLevel2Tab('profil-jenis')">
+            <i data-lucide="package" style="width:14px;height:14px;"></i>
+            <span>Profil Jenis Aset</span>
+          </button>
+          <button class="tab-btn" data-level2-tab="umur-aset" onclick="switchLevel2Tab('umur-aset')">
+            <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+            <span>Umur Aset</span>
+          </button>
+        </div>
+
+        <!-- Tab 1 Content: Sebaran Aset -->
+        <div id="l2tab-sebaran-aset" class="level2-tab-panel active">
+          <div class="content-card" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #ffffff; flex-wrap: wrap;">
+            <div style="min-width: 260px; flex: 1;">
+              <h3 id="sebaranAsetTitle" style="font-size: 15px; font-weight: 700; color: var(--text-main);">Sebaran Wilayah: Nasional (Seluruh Unit Induk)</h3>
+              <p id="sebaranAsetDesc" style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+                Total 30.784 aset tersebar di seluruh Indonesia (6 Unit Induk Transmisi). Klik salah satu unit pada peta atau tabel untuk melihat rincian wilayah.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-action-secondary" style="white-space: nowrap;" onclick="switchLevel2Tab('profil-jenis')">
+                <i data-lucide="package" style="width:16px;height:16px;"></i>
+                <span>Detail Jenis Aset</span>
+              </button>
+              <button id="sebaranAsetBtn" class="btn-action-primary" style="width: auto; padding: 0 20px; white-space: nowrap;" onclick="navigateTo(3, { assetType: 'Power Transformer' })">
+                <span id="sebaranAsetBtnLabel">Eksplorasi Power Transformer</span>
+                <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="l2-grid" style="margin-top: 16px;">
+            <div class="content-card">
+              <div class="l2-card-title-row">
+                <h3 class="card-title">
+                  <i data-lucide="bar-chart-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  <span id="chartProvTitle">Power Transformer per Unit / Wilayah</span>
+                </h3>
+                <span class="card-subtitle" id="chartProvSubtitle">Klik batang untuk memfokuskan wilayah / unit</span>
+              </div>
+              <div class="l2-chart-box">
+                <canvas id="canvasL2Provinsi"></canvas>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="l2-card-title-row">
+                <h3 class="card-title">
+                  <i data-lucide="shield-check" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Distribusi Health Index
+                </h3>
+                <span class="card-subtitle" id="l2HiSubtitle">Nasional (agregat)</span>
+              </div>
+              <div class="mini-stat-grid">
+                <div class="mini-stat">
+                  <div class="mini-stat-label">HI 1–2</div>
+                  <div class="mini-stat-value" id="l2Hi12Val">—</div>
+                  <div class="mini-stat-sub" id="l2Hi12Sub">Baik</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-label">HI 3</div>
+                  <div class="mini-stat-value" id="l2Hi3Val">—</div>
+                  <div class="mini-stat-sub">Cukup</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-label">HI 4–5</div>
+                  <div class="mini-stat-value" id="l2Hi45Val">—</div>
+                  <div class="mini-stat-sub">Perlu perhatian</div>
+                </div>
+              </div>
+              <div class="metric-list" id="l2HiList"></div>
+            </div>
+          </div>
+
+          <div class="content-card" style="margin-top: 16px;">
+            <div class="l2-card-title-row">
+              <h3 class="card-title">
+                <i data-lucide="table-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                <span id="tableProvTitle">Ringkasan Per Wilayah / Unit</span>
+              </h3>
+              <span class="card-subtitle" id="tableProvSubtitle">Klik baris atau peta untuk memfokuskan wilayah / unit</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th id="thScopeName">Wilayah / Unit</th>
+                    <th style="text-align: right;">Total Aset</th>
+                    <th style="text-align: right;">Power Transformer</th>
+                    <th style="text-align: right;">Merk PT</th>
+                    <th style="text-align: right;">HI Rata-rata¹</th>
+                    <th style="text-align: right;">Unit HI 4–5¹</th>
+                    <th style="text-align: right;">Rata-rata Umur</th>
+                    <th style="text-align: right;">Gardu Induk</th>
+                    <th style="text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="l2ProvTableBody"></tbody>
+              </table>
+              <p style="font-size: 11px; color: var(--text-subtle); margin-top: 8px;">
+                ¹ Rata-rata HI dan Unit HI 4–5 pada tabel ini mencakup seluruh jenis aset, sedangkan kolom Power Transformer dan Merk PT khusus Power Transformer.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2 Content: Profil Merk di Wilayah Jawa -->
+        <div id="l2tab-profil-merk" class="level2-tab-panel" style="display: none;">
+          <div class="l2-grid">
+            <div class="content-card">
+              <div class="l2-card-title-row">
+                <h3 class="card-title">
+                  <i data-lucide="bar-chart-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Komposisi Merk Power Transformer
+                </h3>
+                <span class="card-subtitle" id="l2MerkSubtitle">Jawa (agregat)</span>
+              </div>
+              <div id="l2BrandBarContainer"></div>
+            </div>
+
+            <div class="content-card">
+              <div class="l2-card-title-row">
+                <h3 class="card-title">
+                  <i data-lucide="shield-alert" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Unit HI 4–5 per Merk
+                </h3>
+                <span class="card-subtitle">Prioritas perbaikan</span>
+              </div>
+              <div class="l2-chart-box-sm">
+                <canvas id="canvasL2BrandRisk"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card" style="margin-top: 16px;">
+            <div class="l2-card-title-row">
+              <h3 class="card-title">
+                <i data-lucide="table-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Rincian per Merk
+              </h3>
+              <span class="card-subtitle">Angka mengikuti scope aktif</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Merk / Pabrikan</th>
+                    <th style="text-align: right;">Unit</th>
+                    <th style="text-align: right;">Pangsa Pasar</th>
+                    <th style="text-align: right;">Rata-rata HI</th>
+                    <th style="text-align: right;">HI 1–2</th>
+                    <th style="text-align: right;">HI 4–5</th>
+                    <th style="text-align: right;">Avg. Umur</th>
+                    <th>Kondisi Dominan</th>
+                    <th style="text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="l2BrandTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3 Content: Profil Jenis Aset di Wilayah Jawa (fokus Power Transformer) -->
+        <div id="l2tab-profil-jenis" class="level2-tab-panel" style="display: none;">
+          <div class="l2-grid">
+            <div class="content-card" style="border-top: 4px solid var(--brand-primary);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                  <h4 style="font-size: 16px; font-weight: 800; color: var(--text-main);">Power Transformer</h4>
+                  <span style="font-size: 12px; color: var(--text-muted);" id="l2PtSubtitle">Transformator Daya 150/500 kV</span>
+                </div>
+                <div class="kpi-icon-small" style="background: var(--brand-primary-light); color: var(--brand-primary);"><i data-lucide="zap"></i></div>
+              </div>
+              <div style="margin: 12px 0;">
+                <div style="font-size: 24px; font-weight: 800; font-family: var(--font-mono); color: var(--text-main);"><span id="l2PtCount">842</span> <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">unit</span></div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="l2PtMeta">Rata-rata HI: 2,74 • 12 Merk</div>
+              </div>
+              <div class="metric-list" id="l2PtSpecList"></div>
+              <button class="btn-action-primary" style="margin-top: 12px;" onclick="navigateTo(3, { assetType: 'Power Transformer' })">
+                <span>Eksplorasi Power Transformer</span>
+                <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+              </button>
+            </div>
+
+            <div class="content-card">
+              <div class="l2-card-title-row">
+                <h3 class="card-title">
+                  <i data-lucide="activity" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Sebaran Health Index
+                </h3>
+                <span class="card-subtitle" id="l2PtHiSubtitle">Jawa (agregat)</span>
+              </div>
+              <div class="l2-chart-box-sm">
+                <canvas id="canvasL2HI"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card" style="margin-top: 16px;">
+            <div class="l2-card-title-row">
+              <h3 class="card-title">
+                <i data-lucide="table-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Sebaran Unit per UPT
+              </h3>
+              <span class="card-subtitle" id="l2UptSubtitle">Unit, kapasitas MVA, dan unit HI 4–5</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>UPT</th>
+                    <th style="text-align: right;">Unit</th>
+                    <th style="text-align: right;">Kapasitas (MVA)</th>
+                    <th style="text-align: right;">Unit HI 4–5</th>
+                    <th style="text-align: right;">Rasio HI 4–5</th>
+                    <th>Kondisi</th>
+                  </tr>
+                </thead>
+                <tbody id="l2UptTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4 Content: Umur Aset Power Transformer di Wilayah Jawa -->
+        <div id="l2tab-umur-aset" class="level2-tab-panel" style="display: none;">
+          <div class="l2-grid">
+            <div class="content-card">
+              <div class="card-title-bar">
+                <div>
+                  <h3 class="card-title">
+                    <i data-lucide="calendar" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                    <span id="l2UmurTitle">Sebaran Umur Aset Power Transformer</span>
+                  </h3>
+                  <span class="card-subtitle" id="l2UmurSubtitle">Distribusi kelompok umur Power Transformer di wilayah Jawa</span>
+                </div>
+              </div>
+              <div class="l2-chart-box">
+                <canvas id="canvasL2UmurAset"></canvas>
+              </div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-title-bar">
+                <div>
+                  <h3 class="card-title">
+                    <i data-lucide="trending-up" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                    Tren Health Index
+                  </h3>
+                  <span class="card-subtitle" id="l2TrenSubtitle">Perkembangan 2021 – 2026</span>
+                </div>
+              </div>
+              <div class="l2-chart-box">
+                <canvas id="canvasL2Tren"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card" style="margin-top: 16px;">
+            <div class="l2-card-title-row">
+              <h3 class="card-title">
+                <i data-lucide="table-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Rincian Kelompok Umur
+              </h3>
+              <span class="card-subtitle">Jumlah unit, pangsa, danbadge kondisi</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Kelompok Umur</th>
+                    <th style="text-align: right;">Unit</th>
+                    <th style="text-align: right;">Pangsa</th>
+                    <th style="text-align: right;">Kapasitas (MVA)</th>
+                    <th>Kondisi</th>
+                    <th style="text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="l2AgeTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         LEVEL 3: KLIK JENIS ASET (POWER TRANSFORMER)
+         ==================================================================== -->
+    <section id="viewLevel3" class="view-panel">
+      <!-- Level 3 Header -->
+      <div class="view-header">
+        <div class="view-title-block">
+          <div class="view-icon-badge">
+            <i data-lucide="zap"></i>
+          </div>
+          <div>
+            <h1 class="view-main-title" id="l3Title">Power Transformer</h1>
+            <p class="view-sub-title" id="l3Subtitle">Profil Aset — Power Transformer • Jawa Barat</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn-action-secondary" onclick="backFromLevel3()">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+            <span>Kembali ke Wilayah</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5 Key KPI Cards -->
+      <div class="kpi-cards-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Jumlah Asset</span>
+            <div class="kpi-icon-small"><i data-lucide="database"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l3KpiTotal">842</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Jumlah Merk</span>
+            <div class="kpi-icon-small"><i data-lucide="award"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l3KpiBrands">12</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Rata-rata HI</span>
+            <div class="kpi-icon-small"><i data-lucide="activity"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l3KpiAvgHI">2,74</span>
+            <span class="kpi-badge brand">Baik</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Asset HI 4–5</span>
+            <div class="kpi-icon-small"><i data-lucide="alert-triangle"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l3KpiHI45Value">170</span>
+            <span class="kpi-badge danger" id="l3KpiHI45Pct">20,2%</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Rata-rata Umur</span>
+            <div class="kpi-icon-small"><i data-lucide="clock"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l3KpiAvgAge">18,4</span>
+            <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">thn</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar for Level 3 -->
+      <div class="tab-bar-container">
+        <button class="tab-btn active" data-level3-tab="sebaran-merk" onclick="switchLevel3Tab('sebaran-merk')">
+          <i data-lucide="bar-chart-horizontal" style="width:14px;height:14px;"></i>
+          <span>Sebaran Merk</span>
+        </button>
+        <button class="tab-btn" data-level3-tab="sebaran-hi" onclick="switchLevel3Tab('sebaran-hi')">
+          <i data-lucide="activity" style="width:14px;height:14px;"></i>
+          <span>Sebaran Health Index</span>
+        </button>
+        <button class="tab-btn" data-level3-tab="sebaran-umur" onclick="switchLevel3Tab('sebaran-umur')">
+          <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+          <span>Sebaran Umur</span>
+        </button>
+        <button class="tab-btn" data-level3-tab="sebaran-lokasi" onclick="switchLevel3Tab('sebaran-lokasi')">
+          <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+          <span>Sebaran Lokasi</span>
+        </button>
+      </div>
+
+      <!-- Level 3 Tab 1: Sebaran Merk -->
+      <div id="l3tab-sebaran-merk" class="level3-tab-panel active">
+        <div class="charts-grid-2col">
+          <!-- Chart 1: Jumlah Aset per Merk (Horizontal Interactive Bars) -->
+          <div class="content-card">
+            <div class="card-title-bar">
+              <div>
+                <h2 class="card-title">
+                  <i data-lucide="bar-chart-horizontal" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Jumlah Aset per Merk
+                </h2>
+                <span class="card-subtitle">Klik merk untuk eksplorasi profil mendalam (Drill-Down)</span>
+              </div>
+            </div>
+            <div id="brandBarContainer" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Chart 2: Distribusi Health Index per Merk (100% Stacked Horizontal Bars) -->
+          <div class="content-card">
+            <div class="card-title-bar">
+              <div>
+                <h2 class="card-title">
+                  <i data-lucide="sliders" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Distribusi Health Index per Merk
+                </h2>
+                <span class="card-subtitle">Diagram batang horizontal bertumpuk 100% (HI 1 s.d HI 5)</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 11px;">
+                <span style="display: flex; align-items:center; gap:3px;"><span class="hi-dot hi-dot-1"></span>HI 1</span>
+                <span style="display: flex; align-items:center; gap:3px;"><span class="hi-dot hi-dot-2"></span>HI 2</span>
+                <span style="display: flex; align-items:center; gap:3px;"><span class="hi-dot hi-dot-3"></span>HI 3</span>
+                <span style="display: flex; align-items:center; gap:3px;"><span class="hi-dot hi-dot-4"></span>HI 4</span>
+                <span style="display: flex; align-items:center; gap:3px;"><span class="hi-dot hi-dot-5"></span>HI 5</span>
+              </div>
+            </div>
+            <div id="stackedHIContainer" style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 3 Tab 2: Sebaran Health Index -->
+      <div id="l3tab-sebaran-hi" class="level3-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="activity" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Rincian Evaluasi Health Index (Power Transformer)
+              </h2>
+              <span class="card-subtitle" id="l3HITableSubtitle">Tabel analisis kondisi per merk di wilayah Jawa Barat</span>
+            </div>
+            <span id="l3ScopeBadge" style="font-size: 11px; font-weight:700; color: var(--brand-primary); background:var(--brand-primary-light); padding:2px 8px; border-radius:4px;">Jawa Barat</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Merk</th>
+                <th>HI 1 (Sangat Baik)</th>
+                <th>HI 2 (Baik)</th>
+                <th>HI 3 (Cukup)</th>
+                <th>HI 4 (Perhatian)</th>
+                <th>HI 5 (Buruk)</th>
+                <th>Rata-rata HI</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="l3HITableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Level 3 Tab 3: Sebaran Umur -->
+      <div id="l3tab-sebaran-umur" class="level3-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="calendar" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Sebaran Umur Aset per Merk
+              </h2>
+              <span class="card-subtitle">Pengelompokan umur 0–5 thn, 6–10 thn, 11–20 thn, 21–30 thn, dan &gt;30 thn</span>
+            </div>
+          </div>
+          <div style="height: 280px; width: 100%;">
+            <canvas id="canvasUmurMerk"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 3 Tab 4: Sebaran Lokasi -->
+      <div id="l3tab-sebaran-lokasi" class="level3-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="map-pin" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                <span id="l3LokasiTitle">Persebaran Power Transformer per UPT di Jawa Barat</span>
+              </h2>
+              <span class="card-subtitle">Jumlah unit trafo dan rasio kondisi HI 4–5</span>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Unit Pelaksana Transmisi (UPT)</th>
+                <th>Total Trafo</th>
+                <th>Kapasitas (MVA)</th>
+                <th>HI 4–5 (Kritis)</th>
+                <th>Rasio Kritis</th>
+              </tr>
+            </thead>
+            <tbody id="l3UptTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         LEVEL 4: KLIK MERK / PABRIKAN (ABB)
+         ==================================================================== -->
+    <section id="viewLevel4" class="view-panel">
+      <!-- Header Level 4 -->
+      <div class="view-header">
+        <div class="view-title-block">
+          <div class="brand-pill-badge" id="l4BrandBadge">ABB</div>
+          <div>
+            <h1 class="view-main-title" id="l4Title">Profil Merk — ABB</h1>
+            <p class="view-sub-title" id="l4Subtitle">Power Transformer — Jawa Barat</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn-action-secondary" onclick="navigateTo(3)">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+            <span>Kembali ke Jenis Aset</span>
+          </button>
+          <button class="btn-action-secondary" onclick="openBrandComparisonModal()">
+            <i data-lucide="git-pull-request" style="width:16px;height:16px;"></i>
+            <span>Bandingkan Merk</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 7 Objective Analytical KPI Cards -->
+      <div class="kpi-cards-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Jumlah Asset</span>
+            <div class="kpi-icon-small"><i data-lucide="database"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiTotal">182</span>
+            <span class="kpi-badge brand" id="l4KpiTotalPct">21,6%</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Rata-rata HI</span>
+            <div class="kpi-icon-small"><i data-lucide="activity"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiAvgHI">2,78</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">HI 1–2 (Baik)</span>
+            <div class="kpi-icon-small"><i data-lucide="check-circle-2"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiHI12Pct">60%</span>
+            <span class="kpi-badge success" id="l4KpiHI12Count">109 unit</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">HI 3 (Cukup)</span>
+            <div class="kpi-icon-small"><i data-lucide="help-circle"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiHI3Pct">22%</span>
+            <span style="font-size: 12px; color: var(--text-muted); font-weight:600;" id="l4KpiHI3Count">40 unit</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">HI 4–5 (Kritis)</span>
+            <div class="kpi-icon-small"><i data-lucide="alert-triangle"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiHI45Pct">18%</span>
+            <span class="kpi-badge danger" id="l4KpiHI45Count">33 unit</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Avg Umur</span>
+            <div class="kpi-icon-small"><i data-lucide="clock"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiAvgAge">18,4</span>
+            <span style="font-size: 13px; color: var(--text-muted); font-weight:600;">thn</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">&gt;20 Tahun</span>
+            <div class="kpi-icon-small"><i data-lucide="calendar"></i></div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-value" id="l4KpiOver20">68</span>
+            <span class="kpi-badge danger" id="l4KpiOver20Pct">37%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar for Level 4 -->
+      <div class="tab-bar-container">
+        <button class="tab-btn active" data-level4-tab="ringkasan" onclick="switchLevel4Tab('ringkasan')">
+          <i data-lucide="pie-chart" style="width:14px;height:14px;"></i>
+          <span>Ringkasan</span>
+        </button>
+        <button class="tab-btn" data-level4-tab="sebaran-lokasi" onclick="switchLevel4Tab('sebaran-lokasi')">
+          <i data-lucide="map" style="width:14px;height:14px;"></i>
+          <span>Sebaran Lokasi</span>
+        </button>
+        <button class="tab-btn" data-level4-tab="umur-aset" onclick="switchLevel4Tab('umur-aset')">
+          <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+          <span>Umur Aset</span>
+        </button>
+        <button class="tab-btn" data-level4-tab="tren-hi" onclick="switchLevel4Tab('tren-hi')">
+          <i data-lucide="trending-up" style="width:14px;height:14px;"></i>
+          <span>Tren Health Index</span>
+        </button>
+        <button class="tab-btn" data-level4-tab="daftar-aset" onclick="navigateTo(5)">
+          <i data-lucide="table" style="width:14px;height:14px;"></i>
+          <span>Daftar Aset</span>
+        </button>
+      </div>
+
+      <!-- Level 4 Tab 1: Ringkasan (Donut, Umur, Mini Map) -->
+      <div id="l4tab-ringkasan" class="level4-tab-panel active">
+        <div class="charts-grid-3col">
+          <!-- Widget 1: Distribusi Health Index -->
+          <div class="content-card">
+            <div class="card-title-bar">
+              <div>
+                <h2 class="card-title">
+                  <i data-lucide="pie-chart" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Distribusi Health Index
+                </h2>
+                <span class="card-subtitle" id="l4DonutSubtitle">Komposisi kondisi kesehatan trafo ABB</span>
+              </div>
+            </div>
+            <div class="donut-chart-container">
+              <canvas id="canvasDonutHI"></canvas>
+              <div class="donut-center-text">
+                <div class="donut-center-val" id="donutCenterVal">182</div>
+                <div class="donut-center-sub">ASET</div>
+              </div>
+            </div>
+            <div id="donutLegendList" style="margin-top: 14px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Widget 2: Sebaran Umur Aset -->
+          <div class="content-card">
+            <div class="card-title-bar">
+              <div>
+                <h2 class="card-title">
+                  <i data-lucide="calendar" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Sebaran Umur Aset
+                </h2>
+                <span class="card-subtitle">Distribusi persentase per kelompok umur</span>
+              </div>
+            </div>
+            <div style="height: 250px; width: 100%;">
+              <canvas id="canvasBrandAge"></canvas>
+            </div>
+          </div>
+
+          <!-- Widget 3: Sebaran Lokasi Mini Map -->
+          <div class="content-card">
+            <div class="card-title-bar">
+              <div>
+                <h2 class="card-title">
+                  <i data-lucide="map-pin" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                  Sebaran Lokasi
+                </h2>
+                <span class="card-subtitle" id="l4MiniMapSubtitle">Peta GIS Gardu Induk Trafo ABB (Jawa Barat)</span>
+              </div>
+              <span id="l4ScopeBadge" style="font-size: 11px; font-weight:700; color: var(--brand-primary); background:var(--brand-primary-light); padding:2px 8px; border-radius:4px;">Jawa Barat</span>
+            </div>
+            <div style="height: 250px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+              <div id="miniMapJabar" style="height: 100%; width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget 4: Tren Health Index -->
+        <div class="content-card mt-4">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="trending-up" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Tren Health Index dari Tahun ke Tahun
+              </h2>
+              <span class="card-subtitle" id="l4TrenSubtitle">Perkembangan rata-rata kondisi degradasi aset ABB periode 2021 s.d 2026</span>
+            </div>
+            <span style="font-size: 12px; color: #ea580c; font-weight: 700; background: #fff7ed; padding: 4px 10px; border-radius: 20px; border: 1px solid #fed7aa;">
+              <i data-lucide="arrow-up-right" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i>
+              Tren Meningkat (Degradasi Akumulatif)
+            </span>
+          </div>
+          <div style="height: 220px; width: 100%;">
+            <canvas id="canvasTrenHI"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 4 Tab 2: Sebaran Lokasi Dedicated View -->
+      <div id="l4tab-sebaran-lokasi" class="level4-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="map-pin" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                <span id="l4ExpandedMapTitle">Peta Lengkap Sebaran Gardu Induk Trafo ABB (Jawa Barat)</span>
+              </h2>
+              <span class="card-subtitle">Titik lokasi gardu induk beserta status Health Index</span>
+            </div>
+          </div>
+          <div style="height: 480px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+            <div id="miniMapJabarExpanded" style="height: 100%; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 4 Tab 3: Umur Aset Dedicated View -->
+      <div id="l4tab-umur-aset" class="level4-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="calendar" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                <span id="l4AgeTitle">Analisis Mendalam Umur Operasi Trafo ABB</span>
+              </h2>
+              <span class="card-subtitle">Evaluasi masa pakai teknis dan kesiapan peremajaan aset</span>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kelompok Umur</th>
+                <th>Jumlah Aset</th>
+                <th>Persentase</th>
+                <th>Rata-rata HI</th>
+                <th>Rekomendasi Pemeliharaan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>0–5 tahun</strong></td>
+                <td class="font-mono">22 unit</td>
+                <td>12%</td>
+                <td><span class="badge-hi hi-1"><span class="hi-dot hi-dot-1"></span> HI 1 (1,8)</span></td>
+                <td>Inspeksi berkala dan garansi pabrikan</td>
+              </tr>
+              <tr>
+                <td><strong>6–10 tahun</strong></td>
+                <td class="font-mono">33 unit</td>
+                <td>18%</td>
+                <td><span class="badge-hi hi-2"><span class="hi-dot hi-dot-2"></span> HI 2 (2,2)</span></td>
+                <td>Uji dielektrik rutin 2 tahunan</td>
+              </tr>
+              <tr>
+                <td><strong>11–20 tahun</strong></td>
+                <td class="font-mono">58 unit</td>
+                <td>32%</td>
+                <td><span class="badge-hi hi-3"><span class="hi-dot hi-dot-3"></span> HI 3 (2,8)</span></td>
+                <td>Uji DGA tahunan & perawatan tap changer</td>
+              </tr>
+              <tr>
+                <td><strong>21–30 tahun</strong></td>
+                <td class="font-mono">47 unit</td>
+                <td>26%</td>
+                <td><span class="badge-hi hi-4"><span class="hi-dot hi-dot-4"></span> HI 4 (3,7)</span></td>
+                <td>Purifikasi minyak, monitoring gas online berkala</td>
+              </tr>
+              <tr>
+                <td><strong>&gt; 30 tahun</strong></td>
+                <td class="font-mono">22 unit</td>
+                <td>12%</td>
+                <td><span class="badge-hi hi-5"><span class="hi-dot hi-dot-5"></span> HI 5 (4,3)</span></td>
+                <td>Prioritas perencanaan penggantian unit (RKAP)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Level 4 Tab 4: Tren HI Dedicated View -->
+      <div id="l4tab-tren-hi" class="level4-tab-panel" style="display: none;">
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="trending-up" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Histori Perkembangan Health Index Trafo ABB (2021–2026)
+              </h2>
+              <span class="card-subtitle">Analisis laju degradasi kondisi isolasi dan komponen mekanik</span>
+            </div>
+          </div>
+          <div style="height: 320px; width: 100%;">
+            <canvas id="canvasTrenHIDedicated"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Banner: Buka Daftar Aset -->
+      <div class="content-card mt-4" style="background: linear-gradient(135deg, #f0f7ff, #ffffff); border-color: #bfdbfe; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #0056b3; color: white; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="table"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #003d82;" id="l4ListHeading">Ingin melihat rincian setiap unit trafo ABB?</h3>
+            <p style="font-size: 12.5px; color: var(--text-muted);" id="l4ListDesc">Jelajahi daftar 182 aset trafo lengkap dengan lokasi GI, tegangan operasi, status, dan riwayat pemeliharaan.</p>
+          </div>
+        </div>
+        <button class="btn-action-primary" style="width: auto; padding: 0 20px;" onclick="navigateTo(5)">
+          <span id="l4ListBtn">Buka Daftar Aset ABB</span>
+          <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         LEVEL 5: DAFTAR ASET (DRILL-DOWN TABEL)
+         ==================================================================== -->
+    <section id="viewLevel5" class="view-panel">
+      <!-- Header Level 5 -->
+      <div class="view-header">
+        <div class="view-title-block">
+          <div class="view-icon-badge">
+            <i data-lucide="table"></i>
+          </div>
+          <div>
+            <h1 class="view-main-title" id="l5Title">Daftar Aset — ABB</h1>
+            <p class="view-sub-title" id="l5Subtitle">Daftar aset dari merk terpilih, lengkap dengan lokasi, umur, Health Index, dan status.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn-action-secondary" onclick="navigateTo(4)">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+            <span>Kembali ke Profil Merk</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Card with Toolbar -->
+      <div class="content-card">
+        <div class="table-toolbar">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1; max-width: 420px;">
+            <div class="search-input-wrapper" style="width: 100%;">
+              <i data-lucide="search"></i>
+              <input type="text" id="tableSearchInput" class="search-input" placeholder="Cari asset, GI, atau lokasi...">
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="assetTableCount" style="font-size: 12.5px; color: var(--text-muted); font-weight: 600;">Menampilkan 12 aset</span>
+            <button class="btn-action-secondary" onclick="openAssetFilterInfo()">
+              <i data-lucide="filter" style="width:14px;height:14px;"></i>
+              <span>Filter</span>
+            </button>
+            <button class="btn-action-secondary" onclick="exportAssetListCSV()">
+              <i data-lucide="download" style="width:14px;height:14px;"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>ID Asset</th>
+                <th>Nama Asset</th>
+                <th>GI</th>
+                <th>Bay</th>
+                <th>Tegangan</th>
+                <th>Tahun Operasi</th>
+                <th>Umur (Thn)</th>
+                <th>Health Index</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="assetTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         LEVEL 6: DETAIL ASSET (TRF-ABB-001)
+         ==================================================================== -->
+    <section id="viewLevel6" class="view-panel">
+      <!-- Header Level 6 -->
+      <div class="view-header">
+        <div class="view-title-block">
+          <div class="view-icon-badge" style="background:#fee2e2; color:#dc2626;">
+            <i data-lucide="cpu"></i>
+          </div>
+          <div>
+            <h1 class="view-main-title">Detail Asset</h1>
+            <p class="view-sub-title">Informasi detail aset, histori health index, hasil inspeksi, dan rekomendasi tindakan.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn-action-secondary" onclick="navigateTo(5)">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+            <span>Kembali ke Daftar Aset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3-Column Top Grid: Photo, Technical Info, and Historical Line Chart -->
+      <div class="detail-top-grid">
+        <!-- Column 1: Asset Photo Card -->
+        <div class="asset-photo-card">
+          <img src="assets/transformer.jpg" alt="High Voltage Power Transformer" class="asset-photo-img">
+          <div class="asset-photo-gradient"></div>
+          <div class="asset-photo-caption">
+            <span class="asset-badge-overlay" id="detailAssetId">TRF-ABB-001</span>
+            <div class="asset-photo-title" id="detailAssetName">Trafo 1</div>
+            <div class="asset-photo-sub">GI Cibatu — 150 kV • 60 MVA</div>
+          </div>
+        </div>
+
+        <!-- Column 2: Technical Specs (Informasi Aset) -->
+        <div class="content-card">
+          <div class="card-title-bar">
+            <h2 class="card-title">
+              <i data-lucide="info" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+              Informasi Aset
+            </h2>
+          </div>
+          <div class="spec-grid">
+            <div class="spec-item">
+              <span class="spec-label">Merk</span>
+              <span class="spec-val" id="detailAssetMerk">ABB</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Jenis Aset</span>
+              <span class="spec-val" id="detailAssetType">Power Transformer</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Tegangan</span>
+              <span class="spec-val" id="detailAssetVoltage">150 kV</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Tahun Operasi</span>
+              <span class="spec-val" id="detailAssetYear">1998</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Umur</span>
+              <span class="spec-val" id="detailAssetAge">28 tahun</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Lokasi GI</span>
+              <span class="spec-val" id="detailAssetGI">GI Cibatu</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Bay Penempatan</span>
+              <span class="spec-val" id="detailAssetBay">Bay Trafo 1</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Unit Pengelola</span>
+              <span class="spec-val" id="detailAssetUnit">UPT Jawa Barat</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Health Index</span>
+              <div>
+                <span class="badge-hi hi-4" id="detailAssetHI">
+                  <span class="hi-dot hi-dot-4"></span> HI 4 (Perlu Perhatian)
+                </span>
+              </div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <span class="spec-label">Status Operasional</span>
+              <span class="spec-val" id="detailAssetStatus" style="color: #ea580c; font-weight:800;">
+                ● Perlu Perhatian
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Riwayat Health Index (Line Chart) -->
+        <div class="content-card">
+          <div class="card-title-bar">
+            <div>
+              <h2 class="card-title">
+                <i data-lucide="line-chart" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+                Riwayat Health Index
+              </h2>
+              <span class="card-subtitle">Perubahan skor HI 2021 s.d 2026</span>
+            </div>
+          </div>
+          <div style="height: 200px; width: 100%;">
+            <canvas id="canvasDetailTrenHI"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Inspection & Maintenance Grid -->
+      <div class="charts-grid-2col">
+        <!-- Riwayat Inspeksi -->
+        <div class="content-card">
+          <div class="card-title-bar">
+            <h2 class="card-title">
+              <i data-lucide="clipboard-check" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+              Riwayat Inspeksi
+            </h2>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Hasil Inspeksi</th>
+                <th>Kondisi</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-mono text-muted">14/01/2026</td>
+                <td><strong>Inspeksi Level 1 (Visual & IR)</strong></td>
+                <td><span class="badge-hi hi-3"><span class="hi-dot hi-dot-3"></span> Cukup</span></td>
+                <td>Suhu terminal fasa R normal 42°C</td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">05/11/2025</td>
+                <td><strong>Uji DGA & Furan Level 2</strong></td>
+                <td><span class="badge-hi hi-4"><span class="hi-dot hi-dot-4"></span> Perlu Perhatian</span></td>
+                <td>Kenaikan gas CO & CO2 pada minyak isolasi</td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">22/05/2025</td>
+                <td><strong>Thermovisi Bushing 150kV</strong></td>
+                <td><span class="badge-hi hi-3"><span class="hi-dot hi-dot-3"></span> Cukup</span></td>
+                <td>Delta T terminal fasa S sebesar 8°C</td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">10/12/2024</td>
+                <td><strong>Pengujian Dielektrik Minyak</strong></td>
+                <td><span class="badge-hi hi-2"><span class="hi-dot hi-dot-2"></span> Baik</span></td>
+                <td>Tegangan tembus minyak 55 kV/2.5mm</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Riwayat Pemeliharaan -->
+        <div class="content-card">
+          <div class="card-title-bar">
+            <h2 class="card-title">
+              <i data-lucide="wrench" style="color: var(--brand-primary); width:18px;height:18px;"></i>
+              Riwayat Pemeliharaan
+            </h2>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Jenis Pemeliharaan</th>
+                <th>Pelaksana</th>
+                <th>Hasil</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-mono text-muted">18/11/2025</td>
+                <td><strong>Purifikasi Minyak Isolasi</strong></td>
+                <td>Tim Har UPT Cirebon</td>
+                <td><span class="status-badge good">Selesai Normal</span></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">12/03/2024</td>
+                <td><strong>Penggantian Gasket & Seal Bushing</strong></td>
+                <td>Mitra Har Jabar</td>
+                <td><span class="status-badge good">Selesai Normal</span></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">15/08/2022</td>
+                <td><strong>Overhaul Tap Changer (OLTC)</strong></td>
+                <td>Spesialis OEM ABB</td>
+                <td><span class="status-badge good">Selesai Normal</span></td>
+              </tr>
+              <tr>
+                <td class="font-mono text-muted">04/02/2021</td>
+                <td><strong>Pembersihan & Pengeringan Silica Gel</strong></td>
+                <td>Tim Har ULTG Garut</td>
+                <td><span class="status-badge good">Selesai Normal</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Decision Support Card (Dukungan Keputusan) -->
+      <div class="decision-support-card">
+        <div class="decision-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i data-lucide="shield-alert" style="color:#ea580c; width:20px;height:20px;"></i>
+              <h2 style="font-size: 16px; font-weight: 800; color: #7c2d12;">Dukungan Keputusan (Decision Support Analysis)</h2>
+            </div>
+            <p class="decision-disclaimer">
+              Informasi tersebut merupakan dukungan analisis berbasis tren degradasi kondisi aset, bukan keputusan otomatis sistem.
+            </p>
+          </div>
+          <span class="decision-badge-alert">
+            <i data-lucide="alert-octagon" style="width:14px;height:14px;"></i>
+            Prioritas Perhatian Tinggi
+          </span>
+        </div>
+
+        <div class="decision-recommendation-box">
+          <strong>Rekomendasi Tindakan:</strong>
+          Lakukan inspeksi lanjutan (analisis gas terlarut DGA berkala 3 bulanan & uji degradasi kertas isolasi Furan) dan evaluasi rencana penggantian dalam 3 tahun (Target RKAP 2027–2028).
+        </div>
+
+        <div class="decision-actions-grid">
+          <div class="decision-action-item checked">
+            <i data-lucide="check-circle" class="decision-check-icon"></i>
+            <div>
+              <strong>1. Monitoring Rutin</strong>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Frekuensi thermovisi ditingkatkan dari 6 bulan ke 1 bulan sekali.</div>
+            </div>
+          </div>
+          <div class="decision-action-item checked">
+            <i data-lucide="check-circle" class="decision-check-icon"></i>
+            <div>
+              <strong>2. Inspeksi Lanjutan</strong>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Uji acoustic partial discharge & Sweep Frequency Response (SFRA).</div>
+            </div>
+          </div>
+          <div class="decision-action-item checked">
+            <i data-lucide="check-circle" class="decision-check-icon"></i>
+            <div>
+              <strong>3. Pemeliharaan Preventif</strong>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Penggantian silica gel & degasifikasi total sebelum beban puncak musim kemarau.</div>
+            </div>
+          </div>
+          <div class="decision-action-item checked">
+            <i data-lucide="check-circle" class="decision-check-icon"></i>
+            <div>
+              <strong>4. Evaluasi Penggantian</strong>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Masuk dalam daftar longlist peremajaan aset PLN UIT JBT (Umur 28 thn).</div>
+            </div>
+          </div>
+          <div class="decision-action-item">
+            <i data-lucide="clock" style="color: var(--text-subtle); flex-shrink: 0; margin-top:1px;"></i>
+            <div>
+              <strong>5. Prioritas Perencanaan</strong>
+              <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">Siapkan rencana kontinjensi trafo mobile (Mobile Substation) cadangan.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================
+       BRAND COMPARISON MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="brandComparisonModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="compareModalTitle">Perbandingan Merk — Power Transformer (Jawa Barat)</h2>
+          <span style="font-size: 12.5px; color: var(--text-muted);">Komparasi obyektif metrik teknis ABB, Siemens, dan Toshiba</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeBrandComparisonModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Comparison Metrics Table -->
+      <table class="data-table mb-4">
+        <thead>
+          <tr id="compareTableHead">
+            <th>Parameter Komparasi</th>
+            <th>ABB</th>
+            <th>Siemens</th>
+            <th>Toshiba</th>
+          </tr>
+        </thead>
+        <tbody id="compareTableBody">
+          <!-- Rendered by JS -->
+        </tbody>
+      </table>
+
+      <!-- Radar Chart -->
+      <div class="content-card">
+        <h3 style="font-size: 13.5px; font-weight: 700; margin-bottom: 10px;">Radar Evaluasi Kinerja Multi-Indikator</h3>
+        <div style="height: 280px; width: 100%;">
+          <canvas id="canvasCompareRadar"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       GENERIC BRAND LIST MODAL (rincian kategori "Lainnya")
+       ====================================================================== -->
+  <div class="modal-backdrop" id="brandListModal">
+    <div class="modal-content modal-content-wide">
+      <div class="modal-header">
+        <div>
+          <div class="modal-eyebrow" id="brandListEyebrow"></div>
+          <h2 class="modal-title" id="brandListTitle"></h2>
+          <span style="font-size: 12.5px; color: var(--text-muted);" id="brandListSubtitle"></span>
+        </div>
+        <button class="modal-close-btn" onclick="closeBrandModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead id="brandListHead"></thead>
+          <tbody id="brandListBody"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer-note" id="brandListFooter"></div>
+    </div>
+  </div>
+
+  <!-- Application Controller Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>

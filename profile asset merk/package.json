@@ -1,0 +1,11 @@
+{
+  "name": "profile-asset-merk",
+  "version": "1.0.0",
+  "description": "Profil Aset Transmisi - Dashboard MANTAPS PLN",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 7789",
+    "dev": "python3 -m http.server 7789"
+  },
+  "keywords": ["mantaps", "pln", "transmisi", "health-index", "dashboard"]
+}
