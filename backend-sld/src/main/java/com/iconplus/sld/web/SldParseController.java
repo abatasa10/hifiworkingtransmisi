@@ -1,8 +1,10 @@
 package com.iconplus.sld.web;
 
 import com.iconplus.sld.dto.EngineDto;
+import com.iconplus.sld.dto.EnginePayloadDto;
 import com.iconplus.sld.mapping.ColumnMapping;
 import com.iconplus.sld.mapping.MappingDetector;
+import com.iconplus.sld.parser.Parser;
 import com.iconplus.sld.reader.ExcelReader;
 import com.iconplus.sld.service.SldEngineService;
 import java.io.InputStream;
@@ -30,6 +32,7 @@ public class SldParseController {
   private final SldEngineService service;
   private final ExcelReader excel = new ExcelReader();
   private final MappingDetector detector = new MappingDetector();
+  private final Parser parser = new Parser();
 
   public SldParseController(SldEngineService service) {
     this.service = service;
@@ -101,5 +104,18 @@ public class SldParseController {
   @PostMapping("/api/sld/parse")
   public EngineDto.ApiResponse parse(@RequestParam("file") MultipartFile file) {
     return service.parse(file);
+  }
+
+  /**
+   * Tahap 3 (verifikasi): parse workbook menjadi EnginePayload asli — objek GI,
+   * connection, dan risk — tanpa layout/tier. Dipakai untuk membandingkan hasil
+   * Java dengan pipeline-test FE (parser.ts).
+   */
+  @PostMapping("/api/sld/payload")
+  public EnginePayloadDto.ParseResult payload(@RequestParam("file") MultipartFile file) throws Exception {
+    try (InputStream in = file.getInputStream();
+         Workbook wb = excel.open(in)) {
+      return parser.parseWorkbookToPayload(wb, file.getOriginalFilename());
+    }
   }
 }
