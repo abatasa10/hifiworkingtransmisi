@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { jamaliUPBs } from '../../data/upbs';
 import { subsystems } from '../../data/subsystems';
 import { ActiveView } from '../layout/Header';
@@ -16,6 +16,86 @@ import {
   Info,
   X
 } from 'lucide-react';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+type SubstationStatus = 'red' | 'yellow' | 'orange' | 'green';
+
+interface Substation {
+  name: string;
+  lat: number;
+  lng: number;
+  status: SubstationStatus;
+  voltage: string;
+}
+
+const computeContainerPoints = (map: L.Map, substations: Substation[]): Record<string, L.Point> => {
+  const next: Record<string, L.Point> = {};
+  for (const s of substations) next[s.name] = map.latLngToContainerPoint(L.latLng(s.lat, s.lng));
+  return next;
+};
+
+/** Fit the map to the current UPB's GI region whenever it changes */
+const UpbRegionExtent: React.FC<{ substations: Substation[] }> = ({ substations }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (substations.length === 0) return;
+    const bounds = L.latLngBounds(substations.map((s) => [s.lat, s.lng] as [number, number]));
+    map.fitBounds(bounds.pad(0.35), { padding: [20, 20], maxZoom: 11 });
+    map.setMaxBounds(bounds.pad(1.5));
+  }, [map, substations]);
+  return null;
+};
+
+/** Repositions the GI node cards following the Leaflet map pan/zoom */
+const PositionedGiNodes: React.FC<{
+  substations: Substation[];
+  onNavigate: (view: ActiveView) => void;
+}> = ({ substations, onNavigate }) => {
+  const map = useMap();
+  const [points, setPoints] = useState<Record<string, L.Point>>(() =>
+    computeContainerPoints(map, substations)
+  );
+
+  useEffect(() => {
+    const update = () => setPoints(computeContainerPoints(map, substations));
+    update();
+    map.on('move zoom', update);
+    return () => {
+      map.off('move zoom', update);
+    };
+  }, [map, substations]);
+
+  return (
+    <>
+      {substations.map((gi) => {
+        const pt = points[gi.name];
+        if (!pt) return null;
+        const isCritical = gi.status === 'red';
+        const isWarning = gi.status === 'orange' || gi.status === 'yellow';
+
+        return (
+          <div
+            key={gi.name}
+            style={{ left: pt.x, top: pt.y, transform: 'translate(-50%, -50%)' }}
+            className="absolute z-[900] flex flex-col items-center cursor-pointer group"
+            onClick={() => onNavigate('subsystem-sld')}
+          >
+            <div
+              className={`w-4 h-4 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-transform group-hover:scale-125 ${
+                isCritical ? 'bg-[#dc2626] animate-pulse' : isWarning ? 'bg-[#f1c40f]' : 'bg-[#16a34a]'
+              }`}
+            />
+            <span className="text-[11px] font-bold text-slate-800 group-hover:text-[#0046ad] bg-white px-2 py-0.5 rounded-md border border-slate-200 mt-1 whitespace-nowrap shadow-xs">
+              {gi.name}
+            </span>
+          </div>
+        );
+      })}
+    </>
+  );
+};
 
 interface UPBViewProps {
   selectedUpbId?: string;
@@ -33,52 +113,49 @@ export const UPBView: React.FC<UPBViewProps> = ({
   const [showUpbInfoOverlay, setShowUpbInfoOverlay] = useState(false);
   const currentUPB = jamaliUPBs.find((u) => u.id === currentUpbId) || jamaliUPBs[0];
 
-  const substationsByUPB: Record<
-    string,
-    Array<{ name: string; x: number; y: number; status: 'red' | 'yellow' | 'orange' | 'green'; voltage: string }>
-  > = {
+  const substationsByUPB: Record<string, Substation[]> = {
     'upb-jakarta': [
-      { name: 'GITET Gandul 500 kV', x: 380, y: 260, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Duri Kosambi 500 kV', x: 280, y: 160, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Kembangan 500 kV', x: 330, y: 200, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Muara Karang 500 kV', x: 380, y: 120, status: 'yellow', voltage: '500 kV' },
-      { name: 'GITET Cawang 500 kV', x: 480, y: 230, status: 'green', voltage: '500 kV' },
-      { name: 'GITET Balaraja 500 kV', x: 200, y: 220, status: 'orange', voltage: '500 kV' },
-      { name: 'GITET Suralaya 500 kV', x: 120, y: 150, status: 'green', voltage: '500 kV' }
+      { name: 'GITET Gandul 500 kV', lat: -6.3, lng: 106.75, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Duri Kosambi 500 kV', lat: -6.12, lng: 106.7, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Kembangan 500 kV', lat: -6.18, lng: 106.74, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Muara Karang 500 kV', lat: -6.11, lng: 106.79, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Cawang 500 kV', lat: -6.25, lng: 106.87, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Balaraja 500 kV', lat: -6.21, lng: 106.43, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Suralaya 500 kV', lat: -6.05, lng: 106.03, status: 'green', voltage: '500 kV' }
     ],
     'upb-jabar': [
-      { name: 'GI Cibinong', x: 260, y: 120, status: 'red', voltage: '500 kV' },
-      { name: 'GI Bekasi', x: 400, y: 130, status: 'red', voltage: '500 kV' },
-      { name: 'GI Cikarang', x: 530, y: 150, status: 'green', voltage: '150 kV' },
-      { name: 'GI Cirata', x: 440, y: 220, status: 'orange', voltage: '500 kV' },
-      { name: 'GI Saguling', x: 380, y: 270, status: 'green', voltage: '500 kV' },
-      { name: 'GI Bandung', x: 480, y: 290, status: 'yellow', voltage: '150 kV' },
-      { name: 'GI Tasikmalaya', x: 560, y: 350, status: 'red', voltage: '500 kV' }
+      { name: 'GI Cibinong', lat: -6.48, lng: 106.85, status: 'red', voltage: '500 kV' },
+      { name: 'GI Bekasi', lat: -6.24, lng: 106.99, status: 'red', voltage: '500 kV' },
+      { name: 'GI Cikarang', lat: -6.34, lng: 107.15, status: 'green', voltage: '150 kV' },
+      { name: 'GI Cirata', lat: -6.7, lng: 107.35, status: 'orange', voltage: '500 kV' },
+      { name: 'GI Saguling', lat: -6.92, lng: 107.37, status: 'green', voltage: '500 kV' },
+      { name: 'GI Bandung', lat: -6.92, lng: 107.6, status: 'yellow', voltage: '150 kV' },
+      { name: 'GI Tasikmalaya', lat: -7.33, lng: 108.22, status: 'red', voltage: '500 kV' }
     ],
     'upb-jateng': [
-      { name: 'GITET Ungaran', x: 420, y: 180, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Pedan', x: 450, y: 280, status: 'yellow', voltage: '500 kV' },
-      { name: 'GITET Kesugihan', x: 240, y: 300, status: 'green', voltage: '500 kV' },
-      { name: 'GITET Pemalang', x: 280, y: 170, status: 'orange', voltage: '500 kV' },
-      { name: 'GITET Tanjung Jati', x: 490, y: 120, status: 'green', voltage: '500 kV' }
+      { name: 'GITET Ungaran', lat: -7.13, lng: 110.39, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Pedan', lat: -7.69, lng: 110.7, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Kesugihan', lat: -7.63, lng: 109.12, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Pemalang', lat: -6.89, lng: 109.38, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Tanjung Jati', lat: -6.5, lng: 110.7, status: 'green', voltage: '500 kV' }
     ],
     'upb-jatim': [
-      { name: 'GITET Krian', x: 380, y: 220, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Gresik', x: 400, y: 150, status: 'orange', voltage: '500 kV' },
-      { name: 'GITET Ngimbang', x: 280, y: 200, status: 'yellow', voltage: '500 kV' },
-      { name: 'GITET Grati', x: 500, y: 240, status: 'green', voltage: '500 kV' },
-      { name: 'GITET Paiton', x: 620, y: 230, status: 'red', voltage: '500 kV' }
+      { name: 'GITET Krian', lat: -7.41, lng: 112.59, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Gresik', lat: -7.16, lng: 112.65, status: 'orange', voltage: '500 kV' },
+      { name: 'GITET Ngimbang', lat: -7.3, lng: 112.16, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Grati', lat: -7.74, lng: 113.0, status: 'green', voltage: '500 kV' },
+      { name: 'GITET Paiton', lat: -7.72, lng: 113.58, status: 'red', voltage: '500 kV' }
     ],
     'upb-bali': [
-      { name: 'GIS Kapal', x: 400, y: 200, status: 'yellow', voltage: '150 kV' },
-      { name: 'GI Pesanggaran', x: 430, y: 270, status: 'orange', voltage: '150 kV' },
-      { name: 'GI Gilimanuk', x: 220, y: 170, status: 'red', voltage: '150 kV' },
-      { name: 'GI Antosari', x: 330, y: 230, status: 'green', voltage: '150 kV' }
+      { name: 'GIS Kapal', lat: -8.57, lng: 115.16, status: 'yellow', voltage: '150 kV' },
+      { name: 'GI Pesanggaran', lat: -8.72, lng: 115.21, status: 'orange', voltage: '150 kV' },
+      { name: 'GI Gilimanuk', lat: -8.17, lng: 114.44, status: 'red', voltage: '150 kV' },
+      { name: 'GI Antosari', lat: -8.53, lng: 115.07, status: 'green', voltage: '150 kV' }
     ],
     'p2b-sistem': [
-      { name: 'P2B Gandul 500 kV', x: 280, y: 220, status: 'red', voltage: '500 kV' },
-      { name: 'GITET Ungaran 500 kV', x: 450, y: 230, status: 'yellow', voltage: '500 kV' },
-      { name: 'GITET Krian 500 kV', x: 620, y: 220, status: 'orange', voltage: '500 kV' }
+      { name: 'P2B Gandul 500 kV', lat: -6.3, lng: 106.75, status: 'red', voltage: '500 kV' },
+      { name: 'GITET Ungaran 500 kV', lat: -7.13, lng: 110.39, status: 'yellow', voltage: '500 kV' },
+      { name: 'GITET Krian 500 kV', lat: -7.41, lng: 112.59, status: 'orange', voltage: '500 kV' }
     ]
   };
 
@@ -357,15 +434,6 @@ export const UPBView: React.FC<UPBViewProps> = ({
 
         {/* Center: Regional Power Grid Map Canvas OR List Kerawanan */}
         <div className="flex-1 relative flex items-center justify-center bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden min-w-0">
-          {/* Subtle grid */}
-          <div
-            className="absolute inset-0 opacity-40 pointer-events-none"
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0)`,
-              backgroundSize: '24px 24px'
-            }}
-          />
-
 
           {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
           {upbCanvasMode === 'list-kerawanan' && (
@@ -381,84 +449,62 @@ export const UPBView: React.FC<UPBViewProps> = ({
             </button>
           )}
 
-          {/* MODE 1: MAPS VIEW */}
+          {/* MODE 1: MAPS VIEW (Leaflet + OpenStreetMap of the UPB region) */}
           {upbCanvasMode === 'maps' && (
-            <div className="w-full h-full relative flex items-center justify-center p-6">
-              {/* Region boundary shape */}
-              <svg viewBox="0 0 800 500" className="w-full h-full max-h-[75vh] filter drop-shadow-sm">
-                <path
-                  d="M 160,90 Q 350,50 580,90 Q 710,180 670,350 Q 560,430 380,410 Q 180,390 120,260 Z"
-                  fill="#cbd5e1"
-                  stroke="#94a3b8"
-                  strokeWidth="1.5"
+            <div className="absolute inset-0 overflow-hidden">
+              <MapContainer
+                className="w-full h-full z-0"
+                center={[-6.5, 107]}
+                zoom={8}
+                minZoom={6}
+                maxZoom={13}
+                scrollWheelZoom
+                attributionControl
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="&copy; OpenStreetMap contributors"
                 />
+                <UpbRegionExtent substations={currentSubstations} />
 
                 {/* Interconnecting Transmission Lines */}
-                <g stroke="#0046ad" strokeWidth="2.5" opacity="0.8">
-                  {currentSubstations.map((gi, idx) => {
-                    const next = currentSubstations[(idx + 1) % currentSubstations.length];
-                    const isCritical = gi.status === 'red' && next.status === 'red';
-                    const isWarning = gi.status === 'yellow' || next.status === 'yellow';
-
-                    return (
-                      <line
-                        key={`${gi.name}-${next.name}`}
-                        x1={gi.x}
-                        y1={gi.y}
-                        x2={next.x}
-                        y2={next.y}
-                        stroke={isCritical ? '#dc2626' : isWarning ? '#f1c40f' : '#0046ad'}
-                        strokeWidth={isCritical ? 3.5 : 2.5}
-                        strokeDasharray={isCritical ? '4 2' : undefined}
-                      />
-                    );
-                  })}
-                </g>
-              </svg>
-
-              {/* Substation Nodes */}
-              {currentSubstations.map((gi) => {
-                const isCritical = gi.status === 'red';
-                const isWarning = gi.status === 'orange' || gi.status === 'yellow';
-
-                return (
-                  <div
-                    key={gi.name}
-                    style={{
-                      position: 'absolute',
-                      left: `${(gi.x / 800) * 100}%`,
-                      top: `${(gi.y / 500) * 100}%`,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                    className="z-30 flex flex-col items-center cursor-pointer group"
-                    onClick={() => onNavigate('subsystem-sld')}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-transform group-hover:scale-125 ${
-                        isCritical
-                          ? 'bg-[#dc2626] animate-pulse'
-                          : isWarning
-                          ? 'bg-[#f1c40f]'
-                          : 'bg-[#16a34a]'
-                      }`}
+                {currentSubstations.map((gi, idx) => {
+                  const next = currentSubstations[(idx + 1) % currentSubstations.length];
+                  const isCritical = gi.status === 'red' && next.status === 'red';
+                  const isWarning = gi.status === 'yellow' || next.status === 'yellow';
+                  const positions: [number, number][] = [
+                    [gi.lat, gi.lng],
+                    [next.lat, next.lng]
+                  ];
+                  return (
+                    <Polyline
+                      key={`${gi.name}-${next.name}`}
+                      positions={positions}
+                      pathOptions={{
+                        color: isCritical ? '#dc2626' : isWarning ? '#f1c40f' : '#0046ad',
+                        weight: isCritical ? 3.5 : 2.5,
+                        dashArray: isCritical ? '4 2' : undefined,
+                        opacity: 0.85
+                      }}
                     />
-                    <span className="text-[11px] font-bold text-slate-800 group-hover:text-[#0046ad] bg-white px-2 py-0.5 rounded-md border border-slate-200 mt-1 whitespace-nowrap shadow-xs">
-                      {gi.name}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+
+                <PositionedGiNodes substations={currentSubstations} onNavigate={onNavigate} />
+              </MapContainer>
 
               {/* Top Title Overlay */}
-              <div className="absolute top-4 left-6">
-                <h2 className="text-xl font-black text-[#1e293b] tracking-tight">
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[950] text-center pointer-events-none">
+                <h2 className="text-lg font-black text-[#1e293b] tracking-tight bg-white/90 inline-block px-3 py-0.5 rounded-lg border border-slate-200 shadow-sm">
                   {currentUPB.name.toUpperCase()}
                 </h2>
-                <div className="text-xs text-slate-500">Jaringan Interkoneksi Gardu Induk & Transmisi</div>
+                <div className="text-[11px] text-slate-600 bg-white/90 px-3 py-0.5 mt-1 rounded-full border border-slate-200 inline-block shadow-xs">
+                  Jaringan Interkoneksi Gardu Induk & Transmisi
+                </div>
               </div>
 
               {/* Legend Overlay at bottom right */}
-              <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 shadow-sm">
+              <div className="absolute bottom-6 right-6 z-[950] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 shadow-sm">
                 <div className="font-bold text-slate-700 text-[11px]">Legenda</div>
                 <div className="flex items-center gap-2 text-[11px] text-slate-500">
                   <span className="w-2.5 h-2.5 rounded-full border border-slate-400 bg-slate-200" />
