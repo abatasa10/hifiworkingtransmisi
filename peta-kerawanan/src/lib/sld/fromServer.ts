@@ -31,10 +31,10 @@ const pinKind = (v: unknown): EngSldPin['kind'] =>
 export function coerceServerGraph(json: unknown): EngSldGraph {
   const g = (json ?? {}) as Record<string, unknown>;
   const rawNodes = Array.isArray(g.nodes) ? g.nodes : [];
-  const nodes: EngSldNode[] = rawNodes.map((n) => {
+  const nodes: EngSldNode[] = rawNodes.map((n, idx) => {
     const r = (n ?? {}) as Record<string, unknown>;
     return {
-      code: str(r.code, `N${nodes.length + 1}`),
+      code: str(r.code, `N${idx + 1}`),
       label: str(r.label, str(r.code, '')),
       name: str(r.name, str(r.code, '')),
       type: nodeType(r.type),
