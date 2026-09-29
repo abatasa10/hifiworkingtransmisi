@@ -2740,7 +2740,11 @@ function renderL2ChartForTab(tabId) {
     if (!provCanvas) return;
     if (chartL2Provinsi) chartL2Provinsi.destroy();
     const rows = getProvinceSummaries();
-    const isAgg = scope.isAggregate;
+    const hasActive = rows.some(p => p.isActive);
+    const colorPrimary = '#0056b3';
+    const colorWarning = '#f97316';
+    const colorPrimaryMuted = '#cbd5e1';
+    const colorWarningMuted = '#fed7aa';
 
     chartL2Provinsi = new Chart(provCanvas, {
       type: 'bar',
@@ -2750,13 +2754,17 @@ function renderL2ChartForTab(tabId) {
           {
             label: stats.name || 'Unit Aset',
             data: rows.map(p => p.pt),
-            backgroundColor: rows.map(p => (isAgg || p.isActive ? '#0056b3' : '#cbd5e1')),
+            backgroundColor: hasActive
+              ? rows.map(p => (p.isActive ? colorPrimary : colorPrimaryMuted))
+              : colorPrimary,
             borderRadius: 4
           },
           {
             label: 'Unit HI 4–5',
             data: rows.map(p => p.hi45),
-            backgroundColor: rows.map(p => (isAgg || p.isActive ? '#f97316' : '#e2e8f0')),
+            backgroundColor: hasActive
+              ? rows.map(p => (p.isActive ? colorWarning : colorWarningMuted))
+              : colorWarning,
             borderRadius: 4
           }
         ]
@@ -2770,7 +2778,31 @@ function renderL2ChartForTab(tabId) {
           onTableRowClick(p);
         },
         plugins: {
-          legend: { position: 'top', labels: { boxWidth: 12, font } },
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font,
+              generateLabels: (chart) => [
+                {
+                  text: stats.name || 'Unit Aset',
+                  fillStyle: colorPrimary,
+                  strokeStyle: colorPrimary,
+                  lineWidth: 0,
+                  hidden: !chart.isDatasetVisible(0),
+                  datasetIndex: 0
+                },
+                {
+                  text: 'Unit HI 4–5',
+                  fillStyle: colorWarning,
+                  strokeStyle: colorWarning,
+                  lineWidth: 0,
+                  hidden: !chart.isDatasetVisible(1),
+                  datasetIndex: 1
+                }
+              ]
+            }
+          },
           tooltip: {
             callbacks: {
               afterBody: (items) => {
