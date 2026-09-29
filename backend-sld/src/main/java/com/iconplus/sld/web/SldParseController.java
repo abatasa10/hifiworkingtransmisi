@@ -166,7 +166,7 @@ public class SldParseController {
   }
 
   @PostMapping("/api/sld/parse")
-  public EngineDto.ApiResponse parse(@RequestParam("file") MultipartFile file) {
+  public EngineDto.ApiResponse parse(@RequestParam("file") MultipartFile file) throws Exception {
     return service.parse(file);
   }
 }

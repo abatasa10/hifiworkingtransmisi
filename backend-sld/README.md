@@ -24,7 +24,7 @@ lalu Spring Boot menerima koneksi di **http://localhost:8080**.
 | POST   | `/api/sld/preview` | Upload Excel → nama sheet + header + deteksi kolom (tahap 1–2) |
 | POST   | `/api/sld/payload` | Upload Excel → `EnginePayload` asli: objek GI, connection, risk (tahap 3) |
 | POST   | `/api/sld/viewmodel` | Upload Excel → parse+tier+view-model → node/line + ringkasan parity (tahap 4) |
-| POST   | `/api/sld/parse` | Upload Excel (`multipart`, field `file`) → JSON graf SLD |
+| POST   | `/api/sld/parse` | Upload Excel (`multipart`, field `file`) → **graf `EngSldGraph` asli** (tahap 5, bukan lagi mock) |
 
 Response `/api/sld/parse`:
 
@@ -46,7 +46,7 @@ jadi `SldSvgCanvas` front-end langsung bisa merender tanpa perubahan.
 - [x] Pemetaan kolom (porting `mapping.ts`) — **MappingDetector** ✅ (diuji vs template Suralaya)
 - [x] Parse → payload (porting `parser.ts` + `types.ts`) — **Parser** ✅ (parity FE=BE teruji)
 - [x] Tier & view-model (porting `tier.ts`, `adapter.ts`) — **TierEngine + Adapter** ✅ (parity FE=BE teruji)
-- [ ] Layout & geometri (porting `layout.ts`, `engineSld.ts`)
+- [x] Layout & graf akhir (porting `layout.ts`, `engineSld.ts`) — **LayoutEngine + GraphEngine** ✅ (parity FE=BE teruji)
 - [ ] Deployment
 
 ## Panduan porting engine (5 tahap) — untuk rekan BE
@@ -78,8 +78,9 @@ pmt=10, bayLen=42, padX=60`, fungsi `engBusY`, `engTierLineY`, warna tegangan
 (parse → tier → view-model → layout) lalu mencetak ringkasan (jumlah GI, jumlah
 line, tier range, sample ID). Untuk membandingkan hasil **tahap 3** saja, pakai
 `scripts/pipeline-test/parse-only.ts <file.xlsx>` (cetak seluruh objek,
-connection, risk + isu). Buat ekuivalennya di Java (atau tes JUnit) dan
-bandingkan angka & sample ID-nya dengan file Excel yang sama.
+connection, risk + isu). Untuk **tahap 5**, pakai `parity-graph.ts <file.xlsx>`
+(yang memanggil `/api/sld/parse` dan membandingkan graf FE vs BE) — lihat
+bagian "Hasil verifikasi tahap 5".
 
 **Hasil verifikasi tahap 3 (29-09-2026)** — Java `Parser` vs FE `parse-only.ts`:
 
@@ -107,9 +108,25 @@ Sample ID node, sample ID IBR link, dan set risiko juga identik. Cara mengulang:
 `POST /api/sld/viewmodel` → lihat `summary`; bandingkan dengan
 `npx tsx scripts/pipeline-test/main.ts <file.xlsx>`.
 
+**Hasil verifikasi tahap 5 (29-09-2026)** — Java `LayoutEngine+GraphEngine`
+vs FE `toEngSldGraph` (parity-graph.ts membandingkan seluruh `EngSldGraph`):
+
 **Tes pakai fixture asli** (di repo React):
 `public/template_kerawanan_subsistem_suralaya_cilegon.xlsx` dan
 `public/template_sistem_500kv_jamali.xlsx`.
+
+| Fixture | Node | Circuit | IBT | Bay | Pin | TierCount | Status |
+|--------|------|---------|-----|-----|-----|-----------|--------|
+| Suralaya | 21 | 15 | 3 | 0 | 3 | 4 | ✅ identik |
+| Jamali | 64 | 40 | 0 | 0 | 0 | 5 | ✅ identik |
+
+Cara mengulang: `npx tsx scripts/pipeline-test/parity-graph.ts <file.xlsx>`
+(memanggil `/api/sld/parse` backend, membandingkan node/circuit/ibt/bay/pin
+satu-per-satu). Server harus sudah jalan di `:8080`.
+
+Catatan: `SldSvgCanvas` merender via `coerceServerGraph` (lib/sld/fromServer.ts)
+yang mengubah label kosong bertumpuk → code saat JSON dari server diproses;
+beda tampilan kecil ini berasal dari sisi front-end, bukan hasil porting.
 
 ## Struktur
 
@@ -127,6 +144,8 @@ backend-sld/
     ├── parser/Parser.java         # Excel → EnginePayload (tahap 3)
     ├── tier/TierEngine.java       # hitung tier (tahap 4)
     ├── adapter/Adapter.java       # payload → view-model node/line (tahap 4)
-    ├── service/SldEngineService.java   # engine (tahap 1–5: parse masih mock)
+    ├── layout/LayoutEngine.java   # posisi node + tap busbar (tahap 5, port layout.ts)
+    ├── graph/GraphEngine.java     # payload+layout → EngSldGraph (tahap 5, port engineSld.ts)
+    ├── service/SldEngineService.java   # pipeline end-to-end (tahap 1–5 selesai)
     └── web/SldParseController.java     # REST API
 ```
