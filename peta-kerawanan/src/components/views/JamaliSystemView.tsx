@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { jamaliUPBs } from '../../data/upbs';
 import { UPB } from '../../types/system';
 import { ActiveView } from '../layout/Header';
@@ -23,6 +23,114 @@ import {
   Info,
   UploadCloud
 } from 'lucide-react';
+import L from 'leaflet';
+import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Real coordinates for regional UP2B/APB pins over Java-Bali
+const UPB_COORDS: Record<string, [number, number]> = {
+  'upb-jakarta': [-6.2, 106.8],
+  'upb-jabar': [-6.9, 107.6],
+  'upb-jateng': [-6.98, 110.42],
+  'upb-jatim': [-7.24, 112.75],
+  'upb-bali': [-8.65, 115.22]
+};
+
+const JAVA_BALI_BOUNDS: L.LatLngBoundsLiteral = [
+  [-9.0, 105.0],
+  [-5.5, 115.9]
+];
+
+/** Fit the map to the Java-Bali system area once on mount */
+const JavaBaliExtent: React.FC = () => {
+  const map = useMap();
+  useEffect(() => {
+    map.fitBounds(JAVA_BALI_BOUNDS, { padding: [24, 24] });
+    map.setMaxBounds(L.latLngBounds(JAVA_BALI_BOUNDS).pad(0.5));
+  }, [map]);
+  return null;
+};
+
+/** Repositions the HTML UP2B pin cards following the Leaflet map pan/zoom */
+const PositionedUpbMarkers: React.FC<{
+  upbs: UPB[];
+  coords: Record<string, [number, number]>;
+  hoveredUPB: UPB | null;
+  onHover: (upb: UPB | null) => void;
+  onSelect: (upbId: string) => void;
+}> = ({ upbs, coords, hoveredUPB, onHover, onSelect }) => {
+  const map = useMap();
+  const [points, setPoints] = useState<Record<string, L.Point>>(() => {
+    const next: Record<string, L.Point> = {};
+    for (const [id, ll] of Object.entries(coords)) next[id] = map.latLngToContainerPoint(L.latLng(ll));
+    return next;
+  });
+
+  useEffect(() => {
+    const update = () => {
+      const next: Record<string, L.Point> = {};
+      for (const [id, ll] of Object.entries(coords)) next[id] = map.latLngToContainerPoint(L.latLng(ll));
+      setPoints(next);
+    };
+    update();
+    map.on('move zoom', update);
+    return () => {
+      map.off('move zoom', update);
+    };
+  }, [map, coords]);
+
+  return (
+    <>
+      {upbs.map((upb) => {
+        const pt = points[upb.id];
+        if (!pt) return null;
+        const isHovered = hoveredUPB?.id === upb.id;
+
+        return (
+          <div
+            key={upb.id}
+            style={{ left: pt.x, top: pt.y, transform: 'translate(-50%, -50%)' }}
+            className="absolute z-[900] cursor-pointer group"
+            onMouseEnter={() => onHover(upb)}
+            onMouseLeave={() => onHover(null)}
+            onClick={() => onSelect(upb.id)}
+          >
+            {/* Pin Card in MANTAPS style with Pin Point & Total Kerawanan */}
+            <div
+              className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
+                isHovered
+                  ? 'border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
+                  : 'border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] shrink-0">
+                  <MapPin className="w-3.5 h-3.5 fill-current" />
+                </div>
+                <div>
+                  <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block whitespace-nowrap">
+                    {upb.name}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
+                    <span>{upb.subsystemCount} Subsistem</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Kerawanan (Warna seragam semua) */}
+              <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
+                <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
+                <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
+                  {upb.riskCount} Kerawanan
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+};
 
 interface JamaliSystemViewProps {
   onSelectUPB: (upbId: string) => void;
@@ -67,15 +175,6 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
       );
     });
   }, [riskSearchQuery]);
-
-  // Map coordinates for regional APBs/UP2Bs (Banten merged into P2B Jakban)
-  const upbMapCoords: Record<string, { x: number; y: number }> = {
-    'upb-jakarta': { x: 200, y: 175 },
-    'upb-jabar': { x: 350, y: 240 },
-    'upb-jateng': { x: 540, y: 230 },
-    'upb-jatim': { x: 740, y: 230 },
-    'upb-bali': { x: 910, y: 260 }
-  };
 
   // Filter regional UPBs to display on map pins
   const regionalUPBs = jamaliUPBs.filter((u) => u.id !== 'p2b-sistem');
@@ -400,15 +499,6 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
       <div className="flex-1 flex relative overflow-hidden">
         {/* Left / Center: Interactive Map of Java-Bali OR List Kerawanan SLD 500 kV */}
         <div className="flex-1 relative flex items-center justify-center bg-gradient-to-b from-[#f8fafc] via-[#edf2f7] to-[#f1f5f9] overflow-hidden min-w-0">
-          {/* Subtle grid */}
-          <div
-            className="absolute inset-0 opacity-40 pointer-events-none"
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0)`,
-              backgroundSize: '24px 24px'
-            }}
-          />
-
 
           {/* Floating Tab Button on Right Edge for Instant Access (Only when list-kerawanan) */}
           {canvasMode === 'list-kerawanan' && (
@@ -424,102 +514,31 @@ export const JamaliSystemView: React.FC<JamaliSystemViewProps> = ({
             </button>
           )}
 
-          {/* MODE 1: MAPS VIEW */}
+          {/* MODE 1: MAPS VIEW (Leaflet + OpenStreetMap of Java-Bali) */}
           {canvasMode === 'maps' && (
-            <div className="w-full h-full relative flex items-center justify-center p-6">
-              {/* Java, Madura & Bali Vector Map */}
-              <svg
-                viewBox="0 0 1000 400"
-                className="w-full h-full max-h-[75vh] filter drop-shadow-sm"
+            <div className="absolute inset-0 overflow-hidden">
+              <MapContainer
+                className="w-full h-full z-0"
+                center={[-7, 110]}
+                zoom={6}
+                minZoom={5}
+                maxZoom={12}
+                scrollWheelZoom
+                attributionControl
               >
-                {/* Java Silhouette */}
-                <path
-                  d="M 80,180 Q 150,150 240,160 Q 320,180 420,190 Q 520,200 620,190 Q 720,170 820,190 L 840,240 Q 760,250 680,260 Q 580,270 480,260 Q 380,270 280,270 Q 180,260 100,240 Z"
-                  fill="#cbd5e1"
-                  stroke="#94a3b8"
-                  strokeWidth="1.5"
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="&copy; OpenStreetMap contributors"
                 />
-                {/* Madura */}
-                <path
-                  d="M 720,140 Q 780,130 830,145 Q 810,170 740,165 Z"
-                  fill="#cbd5e1"
-                  stroke="#94a3b8"
-                  strokeWidth="1.5"
+                <JavaBaliExtent />
+                <PositionedUpbMarkers
+                  upbs={regionalUPBs}
+                  coords={UPB_COORDS}
+                  hoveredUPB={hoveredUPB}
+                  onHover={setHoveredUPB}
+                  onSelect={onSelectUPB}
                 />
-                {/* Bali */}
-                <path
-                  d="M 880,220 Q 940,210 960,240 Q 930,270 890,260 Z"
-                  fill="#cbd5e1"
-                  stroke="#94a3b8"
-                  strokeWidth="1.5"
-                />
-
-                {/* Submarine Cable */}
-                <line x1="760" y1="190" x2="760" y2="165" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
-                <line x1="835" y1="230" x2="880" y2="235" stroke="#0046ad" strokeWidth="2" strokeDasharray="4 4" />
-
-                {/* Backbone 500 kV Transmission Lines */}
-                <path
-                  d="M 120,190 L 220,180 L 330,220 L 520,220 L 730,210 L 820,210"
-                  fill="none"
-                  stroke="#0046ad"
-                  strokeWidth="3"
-                  strokeOpacity="0.8"
-                />
-              </svg>
-
-              {/* UP2B Region Markers with Pin Point and Total Kerawanan (No Classifications) */}
-              {regionalUPBs.map((upb) => {
-                const coord = upbMapCoords[upb.id] || { x: 500, y: 200 };
-                const isHovered = hoveredUPB?.id === upb.id;
-
-                return (
-                  <div
-                    key={upb.id}
-                    style={{
-                      position: 'absolute',
-                      left: `${(coord.x / 1000) * 100}%`,
-                      top: `${(coord.y / 400) * 100}%`,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                    className="z-30 cursor-pointer group"
-                    onMouseEnter={() => setHoveredUPB(upb)}
-                    onMouseLeave={() => setHoveredUPB(null)}
-                    onClick={() => onSelectUPB(upb.id)}
-                  >
-                    {/* Pin Card in MANTAPS style with Pin Point & Total Kerawanan */}
-                    <div
-                      className={`transition-all duration-200 rounded-xl p-2.5 border flex flex-col shadow-md bg-white ${
-                        isHovered
-                          ? 'border-[#0046ad] shadow-[0_4px_16px_rgba(0,70,173,0.25)] scale-105 ring-2 ring-[#0046ad]/30'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[#eff6ff] text-[#0046ad] border border-[#dbeafe] shrink-0">
-                          <MapPin className="w-3.5 h-3.5 fill-current" />
-                        </div>
-                        <div>
-                          <span className="font-bold text-xs text-slate-800 group-hover:text-[#0046ad] transition-colors block whitespace-nowrap">
-                            {upb.name}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
-                            <span>{upb.subsystemCount} Subsistem</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Total Kerawanan (Warna seragam semua) */}
-                      <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs gap-3">
-                        <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Total Kerawanan:</span>
-                        <span className="px-2 py-0.5 rounded-md font-extrabold text-xs font-mono whitespace-nowrap bg-[#fee2e2] text-[#dc2626] border border-[#fca5a5]">
-                          {upb.riskCount} Kerawanan
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              </MapContainer>
             </div>
           )}
 
