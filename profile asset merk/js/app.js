@@ -538,78 +538,637 @@ function findGiByName(name, ultgName, uptName, unitIndukCode) {
   return ultg.gis.find(g => g.name === name) || null;
 }
 
-// Power Transformer — bentuk dasar (Jawa Barat).
-// `hi` = persentase HI 1..5 per merk, `age` = sebaran umur 0–5 / 6–10 / 11–20 / 21–30 / >30 (%).
-// Seluruh angka turunan level 3/4 dihitung dari data ini, diskalakan ke scope terpilih.
-const assetTypeStats = {
-  name: 'Power Transformer',
-  total: 842,
-  // 5 merk utama — ditampilkan langsung di grafik & tabel merk.
-  brands: [
-    { name: 'ABB', count: 182, hi: [28, 32, 22, 12, 6], avgHI: 2.78, avgAge: 18.4, age: [12, 18, 32, 26, 12] },
-    { name: 'Siemens', count: 138, hi: [32, 34, 20, 10, 4], avgHI: 2.54, avgAge: 16.2, age: [14, 20, 30, 24, 12] },
-    { name: 'Toshiba', count: 112, hi: [24, 29, 28, 14, 5], avgHI: 2.69, avgAge: 19.1, age: [10, 16, 32, 28, 14] },
-    { name: 'GE', count: 98, hi: [20, 31, 27, 16, 6], avgHI: 2.74, avgAge: 20.3, age: [8, 14, 30, 30, 18] },
-    { name: 'Hitachi', count: 72, hi: [22, 30, 24, 18, 6], avgHI: 2.70, avgAge: 17.8, age: [16, 22, 32, 20, 10] }
-  ],
-  groupName: 'Lainnya',
-  // 19 merk sisanya. `weight` = bobot unit di dalam grup "Lainnya";
-  // sebaran HI & umur diturunkan dari `avgHI`/`avgAge` supaya grup selalu konsisten.
-  minorBrands: [
-    { name: 'Hyundai', weight: 13, avgHI: 2.86, avgAge: 20.4 },
-    { name: 'Hyosung', weight: 12, avgHI: 2.83, avgAge: 19.8 },
-    { name: 'S&C Electric', weight: 11, avgHI: 2.81, avgAge: 21.2 },
-    { name: 'Plus Celcom', weight: 11, avgHI: 2.88, avgAge: 22.0 },
-    { name: 'Ecowatt', weight: 10, avgHI: 2.79, avgAge: 18.6 },
-    { name: 'Victor', weight: 10, avgHI: 2.90, avgAge: 23.4 },
-    { name: 'Merlin Gerin', weight: 9, avgHI: 2.76, avgAge: 24.1 },
-    { name: 'Aichi', weight: 9, avgHI: 2.82, avgAge: 20.9 },
-    { name: 'Elin', weight: 8, avgHI: 2.85, avgAge: 19.4 },
-    { name: 'Fuji Electric', weight: 8, avgHI: 2.74, avgAge: 17.9 },
-    { name: 'Schneider Electric', weight: 8, avgHI: 2.71, avgAge: 16.8 },
-    { name: 'Sunlight', weight: 7, avgHI: 2.87, avgAge: 21.7 },
-    { name: 'Star', weight: 7, avgHI: 2.80, avgAge: 19.1 },
-    { name: 'Megapower', weight: 7, avgHI: 2.89, avgAge: 22.6 },
-    { name: 'Tosis', weight: 6, avgHI: 2.84, avgAge: 20.2 },
-    { name: 'Japan Electric', weight: 6, avgHI: 2.78, avgAge: 18.8 },
-    { name: 'Kobe Steel', weight: 5, avgHI: 2.81, avgAge: 19.9 },
-    { name: 'Nitto Kogyo', weight: 4, avgHI: 2.86, avgAge: 20.6 },
-    { name: 'Daewoo', weight: 4, avgHI: 2.92, avgAge: 24.8 }
-  ]
+// =============================================================
+// KONFIGURASI KATALOG JENIS ASET TRANSMISI (MANTAPS / POWER INSPECT)
+// =============================================================
+const ASSET_TYPE_CONFIGS = {
+  'Power Transformer': {
+    name: 'Power Transformer',
+    label: 'Power Transformer (Trafo Tenaga)',
+    shortCode: 'TRF',
+    icon: 'zap',
+    unitName: 'Unit Trafo',
+    total: 842,
+    totalJawa: 2514,
+    totalNasional: 10214,
+    avgAge: 18.4,
+    avgHI: 2.74,
+    voltageDesc: 'Transformator Daya 150/500 kV',
+    unitCapacityLabel: 'Kapasitas terpasang',
+    unitCapacityUnit: 'MVA',
+    capacityMultiplier: 60,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 182, hi: [28, 32, 22, 12, 6], avgHI: 2.78, avgAge: 18.4, age: [12, 18, 32, 26, 12] },
+      { name: 'Siemens', count: 138, hi: [32, 34, 20, 10, 4], avgHI: 2.54, avgAge: 16.2, age: [14, 20, 30, 24, 12] },
+      { name: 'Toshiba', count: 112, hi: [24, 29, 28, 14, 5], avgHI: 2.69, avgAge: 19.1, age: [10, 16, 32, 28, 14] },
+      { name: 'GE', count: 98, hi: [20, 31, 27, 16, 6], avgHI: 2.74, avgAge: 20.3, age: [8, 14, 30, 30, 18] },
+      { name: 'Hitachi', count: 72, hi: [22, 30, 24, 18, 6], avgHI: 2.70, avgAge: 17.8, age: [16, 22, 32, 20, 10] }
+    ],
+    minorBrands: [
+      { name: 'Hyundai', weight: 13, avgHI: 2.86, avgAge: 20.4 },
+      { name: 'Hyosung', weight: 12, avgHI: 2.83, avgAge: 19.8 },
+      { name: 'S&C Electric', weight: 11, avgHI: 2.81, avgAge: 21.2 },
+      { name: 'Plus Celcom', weight: 11, avgHI: 2.88, avgAge: 22.0 },
+      { name: 'Ecowatt', weight: 10, avgHI: 2.79, avgAge: 18.6 },
+      { name: 'Victor', weight: 10, avgHI: 2.90, avgAge: 23.4 },
+      { name: 'Merlin Gerin', weight: 9, avgHI: 2.76, avgAge: 24.1 },
+      { name: 'Aichi', weight: 9, avgHI: 2.82, avgAge: 20.9 },
+      { name: 'Elin', weight: 8, avgHI: 2.85, avgAge: 19.4 },
+      { name: 'Fuji Electric', weight: 8, avgHI: 2.74, avgAge: 17.9 },
+      { name: 'Schneider Electric', weight: 8, avgHI: 2.71, avgAge: 16.8 },
+      { name: 'Sunlight', weight: 7, avgHI: 2.87, avgAge: 21.7 },
+      { name: 'Star', weight: 7, avgHI: 2.80, avgAge: 19.1 },
+      { name: 'Megapower', weight: 7, avgHI: 2.89, avgAge: 22.6 },
+      { name: 'Tosis', weight: 6, avgHI: 2.84, avgAge: 20.2 },
+      { name: 'Japan Electric', weight: 6, avgHI: 2.78, avgAge: 18.8 },
+      { name: 'Kobe Steel', weight: 5, avgHI: 2.81, avgAge: 19.9 },
+      { name: 'Nitto Kogyo', weight: 4, avgHI: 2.86, avgAge: 20.6 },
+      { name: 'Daewoo', weight: 4, avgHI: 2.92, avgAge: 24.8 }
+    ]
+  },
+  'PMT': {
+    name: 'PMT',
+    label: 'PMT (Pemutus Tenaga / Circuit Breaker)',
+    shortCode: 'PMT',
+    icon: 'toggle-right',
+    unitName: 'Bay PMT',
+    total: 2980,
+    totalJawa: 8850,
+    totalNasional: 28400,
+    avgAge: 16.5,
+    avgHI: 2.62,
+    voltageDesc: '70/150/500 kV • Media Gas SF6 & Vakum',
+    unitCapacityLabel: 'Kapasitas Pemutusan',
+    unitCapacityUnit: 'kA',
+    capacityMultiplier: 40,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 780, hi: [34, 35, 18, 9, 4], avgHI: 2.48, avgAge: 15.2, age: [18, 24, 32, 18, 8] },
+      { name: 'Siemens', count: 690, hi: [36, 34, 18, 8, 4], avgHI: 2.42, avgAge: 14.8, age: [20, 26, 30, 16, 8] },
+      { name: 'Alstom / GE', count: 480, hi: [25, 33, 24, 13, 5], avgHI: 2.68, avgAge: 18.6, age: [12, 18, 34, 24, 12] },
+      { name: 'Mitsubishi', count: 390, hi: [30, 32, 23, 11, 4], avgHI: 2.58, avgAge: 16.9, age: [15, 22, 33, 20, 10] },
+      { name: 'Hyundai', count: 280, hi: [26, 32, 25, 12, 5], avgHI: 2.65, avgAge: 17.4, age: [14, 20, 32, 22, 12] }
+    ],
+    minorBrands: [
+      { name: 'Crompton Greaves', weight: 14, avgHI: 2.78, avgAge: 19.2 },
+      { name: 'XD Electric', weight: 13, avgHI: 2.82, avgAge: 20.1 },
+      { name: 'Hitachi', weight: 12, avgHI: 2.60, avgAge: 16.5 },
+      { name: 'Hyosung', weight: 11, avgHI: 2.71, avgAge: 18.0 },
+      { name: 'Fuji Electric', weight: 10, avgHI: 2.66, avgAge: 17.5 },
+      { name: 'Meidensha', weight: 9, avgHI: 2.74, avgAge: 19.8 },
+      { name: 'Schneider Electric', weight: 8, avgHI: 2.55, avgAge: 15.0 },
+      { name: 'Toshiba', weight: 8, avgHI: 2.62, avgAge: 16.8 },
+      { name: 'Areva', weight: 6, avgHI: 2.85, avgAge: 22.4 },
+      { name: 'Daelim', weight: 5, avgHI: 2.88, avgAge: 21.0 },
+      { name: 'Pinggao', weight: 4, avgHI: 2.80, avgAge: 18.2 }
+    ]
+  },
+  'PMS': {
+    name: 'PMS',
+    label: 'PMS (Pemisah / Disconnector Switch)',
+    shortCode: 'PMS',
+    icon: 'git-commit',
+    unitName: 'Set PMS',
+    total: 5800,
+    totalJawa: 17200,
+    totalNasional: 48500,
+    avgAge: 19.2,
+    avgHI: 2.81,
+    voltageDesc: '70/150/500 kV • Rel, Line & Tanah',
+    unitCapacityLabel: 'Arus Pengenal',
+    unitCapacityUnit: 'A',
+    capacityMultiplier: 2000,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 1450, hi: [26, 32, 24, 13, 5], avgHI: 2.65, avgAge: 17.8, age: [14, 18, 34, 22, 12] },
+      { name: 'Siemens', count: 1280, hi: [28, 34, 22, 11, 5], avgHI: 2.58, avgAge: 17.2, age: [15, 20, 33, 20, 12] },
+      { name: 'HAPAM', count: 980, hi: [22, 30, 27, 15, 6], avgHI: 2.78, avgAge: 19.6, age: [10, 16, 32, 26, 16] },
+      { name: 'Coelme / EGIC', count: 780, hi: [20, 29, 28, 16, 7], avgHI: 2.84, avgAge: 20.4, age: [8, 15, 30, 28, 19] },
+      { name: 'GE / Alstom', count: 620, hi: [21, 31, 26, 15, 7], avgHI: 2.80, avgAge: 20.1, age: [9, 15, 31, 27, 18] }
+    ],
+    minorBrands: [
+      { name: 'Daelim', weight: 15, avgHI: 2.86, avgAge: 20.8 },
+      { name: 'Taikai', weight: 14, avgHI: 2.88, avgAge: 21.2 },
+      { name: 'Iljin Electric', weight: 12, avgHI: 2.82, avgAge: 19.5 },
+      { name: 'Hitachi', weight: 11, avgHI: 2.70, avgAge: 18.2 },
+      { name: 'Schneider Electric', weight: 10, avgHI: 2.68, avgAge: 17.4 },
+      { name: 'Chint Electric', weight: 9, avgHI: 2.92, avgAge: 22.0 },
+      { name: 'Fuji Electric', weight: 9, avgHI: 2.75, avgAge: 18.9 },
+      { name: 'S&C Electric', weight: 8, avgHI: 2.79, avgAge: 19.8 },
+      { name: 'XD Group', weight: 7, avgHI: 2.89, avgAge: 21.6 },
+      { name: 'Elin', weight: 5, avgHI: 2.91, avgAge: 23.0 }
+    ]
+  },
+  'CT': {
+    name: 'CT',
+    label: 'CT (Current Transformer / Trafo Arus)',
+    shortCode: 'CT',
+    icon: 'activity',
+    unitName: 'Fasa CT',
+    total: 8200,
+    totalJawa: 24500,
+    totalNasional: 68200,
+    avgAge: 17.5,
+    avgHI: 2.60,
+    voltageDesc: '70/150/500 kV • Kelas Proteksi & Metering',
+    unitCapacityLabel: 'Rasio Arus Nominal',
+    unitCapacityUnit: 'A',
+    capacityMultiplier: 1200,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Trench', count: 2100, hi: [32, 36, 19, 9, 4], avgHI: 2.45, avgAge: 15.6, age: [18, 22, 34, 18, 8] },
+      { name: 'ABB', count: 1850, hi: [34, 34, 20, 8, 4], avgHI: 2.46, avgAge: 15.8, age: [18, 22, 33, 19, 8] },
+      { name: 'Koncar', count: 1420, hi: [28, 33, 23, 11, 5], avgHI: 2.62, avgAge: 17.4, age: [14, 19, 33, 22, 12] },
+      { name: 'Arteche', count: 1100, hi: [30, 34, 22, 10, 4], avgHI: 2.54, avgAge: 16.5, age: [16, 21, 33, 20, 10] },
+      { name: 'Alstom / GE', count: 920, hi: [24, 32, 26, 13, 5], avgHI: 2.70, avgAge: 18.8, age: [12, 17, 33, 24, 14] }
+    ],
+    minorBrands: [
+      { name: 'Emek', weight: 16, avgHI: 2.74, avgAge: 19.2 },
+      { name: 'Balteau', weight: 14, avgHI: 2.79, avgAge: 20.4 },
+      { name: 'Siemens', weight: 14, avgHI: 2.50, avgAge: 15.4 },
+      { name: 'Pfiffner', weight: 12, avgHI: 2.58, avgAge: 16.8 },
+      { name: 'Nissin Electric', weight: 11, avgHI: 2.68, avgAge: 18.0 },
+      { name: 'XD Electric', weight: 10, avgHI: 2.82, avgAge: 21.0 },
+      { name: 'BHEL', weight: 8, avgHI: 2.88, avgAge: 22.6 },
+      { name: 'Chint', weight: 8, avgHI: 2.84, avgAge: 20.8 },
+      { name: 'Ritrans', weight: 7, avgHI: 2.72, avgAge: 18.5 }
+    ]
+  },
+  'PT': {
+    name: 'PT',
+    label: 'PT / CVT (Potential Transformer)',
+    shortCode: 'PT',
+    icon: 'zap-off',
+    unitName: 'Fasa PT/CVT',
+    total: 4750,
+    totalJawa: 14200,
+    totalNasional: 41200,
+    avgAge: 17.2,
+    avgHI: 2.58,
+    voltageDesc: '70/150/500 kV • Induktif & Kapasitif (CVT)',
+    unitCapacityLabel: 'Tegangan Sekunder',
+    unitCapacityUnit: 'V',
+    capacityMultiplier: 100,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Trench', count: 1250, hi: [33, 35, 19, 9, 4], avgHI: 2.47, avgAge: 15.8, age: [18, 22, 33, 19, 8] },
+      { name: 'ABB', count: 1080, hi: [35, 33, 20, 8, 4], avgHI: 2.45, avgAge: 15.5, age: [19, 23, 32, 18, 8] },
+      { name: 'Koncar', count: 820, hi: [27, 33, 24, 11, 5], avgHI: 2.64, avgAge: 17.8, age: [13, 18, 34, 23, 12] },
+      { name: 'Haefely Trench', count: 620, hi: [31, 34, 21, 10, 4], avgHI: 2.52, avgAge: 16.4, age: [16, 21, 33, 20, 10] },
+      { name: 'Arteche', count: 540, hi: [29, 34, 22, 11, 4], avgHI: 2.58, avgAge: 16.9, age: [15, 20, 33, 21, 11] }
+    ],
+    minorBrands: [
+      { name: 'Alstom', weight: 18, avgHI: 2.72, avgAge: 19.0 },
+      { name: 'Emek', weight: 15, avgHI: 2.76, avgAge: 19.8 },
+      { name: 'Siemens', weight: 14, avgHI: 2.51, avgAge: 15.6 },
+      { name: 'Nissin', weight: 13, avgHI: 2.69, avgAge: 18.2 },
+      { name: 'Balteau', weight: 12, avgHI: 2.80, avgAge: 20.6 },
+      { name: 'Pfiffner', weight: 11, avgHI: 2.61, avgAge: 17.0 },
+      { name: 'XD Electric', weight: 9, avgHI: 2.85, avgAge: 21.5 },
+      { name: 'Chint', weight: 8, avgHI: 2.86, avgAge: 21.0 }
+    ]
+  },
+  'Lightning Arrester': {
+    name: 'Lightning Arrester',
+    label: 'Lightning Arrester (Surge Arrester / LA)',
+    shortCode: 'LA',
+    icon: 'shield',
+    unitName: 'Fasa LA',
+    total: 5280,
+    totalJawa: 15800,
+    totalNasional: 43600,
+    avgAge: 15.8,
+    avgHI: 2.52,
+    voltageDesc: '70/150/500 kV • Metal Oxide (ZnO) Gapless',
+    unitCapacityLabel: 'Arus Pelepasan Nominal',
+    unitCapacityUnit: 'kA',
+    capacityMultiplier: 10,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 1420, hi: [36, 35, 17, 8, 4], avgHI: 2.41, avgAge: 14.6, age: [20, 24, 32, 16, 8] },
+      { name: 'Siemens', count: 1210, hi: [37, 34, 18, 8, 3], avgHI: 2.39, avgAge: 14.2, age: [22, 25, 31, 15, 7] },
+      { name: 'Meidensha', count: 810, hi: [30, 34, 22, 10, 4], avgHI: 2.56, avgAge: 16.5, age: [16, 21, 33, 20, 10] },
+      { name: 'Bowthorpe / TE', count: 660, hi: [28, 33, 24, 11, 4], avgHI: 2.61, avgAge: 17.2, age: [14, 19, 34, 22, 11] },
+      { name: 'Toshiba', count: 540, hi: [26, 32, 25, 12, 5], avgHI: 2.66, avgAge: 18.0, age: [13, 18, 33, 24, 12] }
+    ],
+    minorBrands: [
+      { name: 'Lamco', weight: 16, avgHI: 2.76, avgAge: 19.4 },
+      { name: 'Cooper Power', weight: 15, avgHI: 2.70, avgAge: 18.2 },
+      { name: 'Hubbell', weight: 14, avgHI: 2.65, avgAge: 17.5 },
+      { name: 'Hitachi', weight: 13, avgHI: 2.58, avgAge: 16.2 },
+      { name: 'Tridelta', weight: 12, avgHI: 2.64, avgAge: 17.0 },
+      { name: 'Chint', weight: 11, avgHI: 2.82, avgAge: 20.8 },
+      { name: 'XD Electric', weight: 10, avgHI: 2.85, avgAge: 21.4 },
+      { name: 'Daelim', weight: 9, avgHI: 2.88, avgAge: 22.0 }
+    ]
+  },
+  'GIS': {
+    name: 'GIS',
+    label: 'GIS (Gas Insulated Switchgear)',
+    shortCode: 'GIS',
+    icon: 'server',
+    unitName: 'Bay GIS',
+    total: 180,
+    totalJawa: 540,
+    totalNasional: 1420,
+    avgAge: 14.1,
+    avgHI: 2.38,
+    voltageDesc: '150/500 kV Indoor Substation • SF6 Enclosed',
+    unitCapacityLabel: 'Tekanan Gas SF6',
+    unitCapacityUnit: 'bar',
+    capacityMultiplier: 6,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 62, hi: [42, 36, 14, 6, 2], avgHI: 2.22, avgAge: 12.8, age: [26, 28, 28, 14, 4] },
+      { name: 'Siemens', count: 48, hi: [44, 35, 14, 5, 2], avgHI: 2.18, avgAge: 12.4, age: [28, 30, 27, 12, 3] },
+      { name: 'Toshiba', count: 26, hi: [34, 35, 20, 8, 3], avgHI: 2.45, avgAge: 15.2, age: [18, 24, 32, 18, 8] },
+      { name: 'Mitsubishi', count: 20, hi: [36, 34, 19, 8, 3], avgHI: 2.40, avgAge: 14.6, age: [20, 25, 31, 17, 7] },
+      { name: 'Hyosung', count: 14, hi: [30, 34, 23, 10, 3], avgHI: 2.52, avgAge: 16.0, age: [16, 22, 34, 20, 8] }
+    ],
+    minorBrands: [
+      { name: 'Hyundai', weight: 22, avgHI: 2.58, avgAge: 16.8 },
+      { name: 'XD Electric', weight: 20, avgHI: 2.66, avgAge: 18.2 },
+      { name: 'Hitachi', weight: 18, avgHI: 2.44, avgAge: 14.8 },
+      { name: 'Pinggao', weight: 15, avgHI: 2.70, avgAge: 19.0 },
+      { name: 'TBEA', weight: 14, avgHI: 2.72, avgAge: 19.5 },
+      { name: 'NHVS', weight: 11, avgHI: 2.75, avgAge: 20.0 }
+    ]
+  },
+  'Rele Proteksi': {
+    name: 'Rele Proteksi',
+    label: 'Rele Proteksi & IED (Protection Relay)',
+    shortCode: 'REL',
+    icon: 'cpu',
+    unitName: 'Unit IED',
+    total: 3280,
+    totalJawa: 9800,
+    totalNasional: 29500,
+    avgAge: 12.8,
+    avgHI: 2.35,
+    voltageDesc: 'Transmisi 70/150/500 kV • Line Diff, Distansi, Trafo & Busbar Diff',
+    unitCapacityLabel: 'Fungsi ANSI & IED',
+    unitCapacityUnit: 'Point',
+    capacityMultiplier: 64,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'SEL (Schweitzer)', count: 980, hi: [45, 35, 13, 5, 2], avgHI: 2.16, avgAge: 11.2, age: [30, 32, 26, 10, 2] },
+      { name: 'ABB (Relion)', count: 860, hi: [40, 36, 15, 6, 3], avgHI: 2.26, avgAge: 12.5, age: [25, 30, 29, 13, 3] },
+      { name: 'Siemens (SIPROTEC)', count: 790, hi: [42, 35, 14, 6, 3], avgHI: 2.24, avgAge: 12.2, age: [26, 31, 28, 12, 3] },
+      { name: 'Schneider / MiCOM', count: 580, hi: [35, 35, 19, 8, 3], avgHI: 2.42, avgAge: 14.4, age: [20, 26, 32, 17, 5] },
+      { name: 'GE Multilin / UR', count: 420, hi: [32, 34, 21, 9, 4], avgHI: 2.50, avgAge: 15.6, age: [18, 23, 33, 20, 6] }
+    ],
+    minorBrands: [
+      { name: 'Toshiba', weight: 20, avgHI: 2.54, avgAge: 16.2 },
+      { name: 'NR Electric', weight: 18, avgHI: 2.48, avgAge: 14.8 },
+      { name: 'Reyrolle', weight: 16, avgHI: 2.76, avgAge: 19.8 },
+      { name: 'Woodward', weight: 14, avgHI: 2.62, avgAge: 17.5 },
+      { name: 'Arcteq', weight: 12, avgHI: 2.40, avgAge: 13.0 },
+      { name: 'VAMP', weight: 11, avgHI: 2.58, avgAge: 16.8 },
+      { name: 'ZIV', weight: 9, avgHI: 2.65, avgAge: 18.2 }
+    ]
+  },
+  'Baterai': {
+    name: 'Baterai',
+    label: 'Baterai & Rectifier (Sistem DC 110V/220V)',
+    shortCode: 'BAT',
+    icon: 'battery-charging',
+    unitName: 'Bank Baterai',
+    total: 490,
+    totalJawa: 1480,
+    totalNasional: 4200,
+    avgAge: 9.6,
+    avgHI: 2.42,
+    voltageDesc: 'DC 110V / 220V Gardu Induk • Ni-Cd & VRLA Lead Acid',
+    unitCapacityLabel: 'Kapasitas Baterai',
+    unitCapacityUnit: 'Ah',
+    capacityMultiplier: 200,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Saft', count: 140, hi: [40, 36, 15, 6, 3], avgHI: 2.26, avgAge: 8.8, age: [32, 34, 24, 8, 2] },
+      { name: 'Yuasa', count: 120, hi: [36, 35, 18, 8, 3], avgHI: 2.38, avgAge: 9.4, age: [28, 32, 27, 11, 2] },
+      { name: 'Hoppecke', count: 95, hi: [38, 35, 17, 7, 3], avgHI: 2.32, avgAge: 9.1, age: [30, 33, 26, 9, 2] },
+      { name: 'Enersys', count: 75, hi: [34, 34, 20, 8, 4], avgHI: 2.45, avgAge: 10.2, age: [25, 30, 29, 13, 3] },
+      { name: 'Panasonic', count: 60, hi: [32, 35, 21, 9, 3], avgHI: 2.48, avgAge: 10.5, age: [24, 29, 31, 13, 3] }
+    ],
+    minorBrands: [
+      { name: 'Chloride', weight: 18, avgHI: 2.60, avgAge: 11.8 },
+      { name: 'Benning', weight: 17, avgHI: 2.50, avgAge: 10.6 },
+      { name: 'GNB Industrial', weight: 16, avgHI: 2.58, avgAge: 11.4 },
+      { name: 'Exide', weight: 14, avgHI: 2.65, avgAge: 12.2 },
+      { name: 'BBI', weight: 13, avgHI: 2.54, avgAge: 11.0 },
+      { name: 'Fiamm', weight: 12, avgHI: 2.62, avgAge: 12.0 },
+      { name: 'Coslight', weight: 10, avgHI: 2.70, avgAge: 13.0 }
+    ]
+  },
+  'Kabel SKTT': {
+    name: 'Kabel SKTT',
+    label: 'Saluran Kabel SKTT & Kabel Laut',
+    shortCode: 'SKTT',
+    icon: 'activity',
+    unitName: 'Kms Sirkit',
+    total: 620,
+    totalJawa: 1860,
+    totalNasional: 4200,
+    avgAge: 15.2,
+    avgHI: 2.49,
+    voltageDesc: '150 kV XLPE Bawah Tanah & Kabel Laut Selat Madura/Bali',
+    unitCapacityLabel: 'Panjang Sirkit',
+    unitCapacityUnit: 'kms',
+    capacityMultiplier: 12,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Prysmian', count: 180, hi: [35, 36, 18, 8, 3], avgHI: 2.40, avgAge: 14.2, age: [22, 28, 32, 14, 4] },
+      { name: 'LS Cable', count: 150, hi: [33, 35, 20, 9, 3], avgHI: 2.46, avgAge: 14.8, age: [20, 26, 34, 16, 4] },
+      { name: 'Sumitomo', count: 120, hi: [36, 35, 18, 8, 3], avgHI: 2.38, avgAge: 13.9, age: [24, 28, 31, 14, 3] },
+      { name: 'Nexans', count: 95, hi: [32, 34, 21, 9, 4], avgHI: 2.51, avgAge: 15.6, age: [18, 25, 33, 18, 6] },
+      { name: 'Supreme Cable (PT SC)', count: 75, hi: [30, 34, 23, 10, 3], avgHI: 2.54, avgAge: 16.0, age: [17, 24, 34, 19, 6] }
+    ],
+    minorBrands: [
+      { name: 'Kabel Metal Indonesia (KMI)', weight: 20, avgHI: 2.58, avgAge: 16.5 },
+      { name: 'Taihan', weight: 18, avgHI: 2.55, avgAge: 16.0 },
+      { name: 'J-Power Systems', weight: 16, avgHI: 2.42, avgAge: 14.5 },
+      { name: 'Furukawa', weight: 15, avgHI: 2.48, avgAge: 15.2 },
+      { name: 'Voksel Electric', weight: 14, avgHI: 2.62, avgAge: 17.2 },
+      { name: 'Jembo Cable', weight: 10, avgHI: 2.66, avgAge: 17.8 },
+      { name: 'Iljin Cable', weight: 7, avgHI: 2.59, avgAge: 16.4 }
+    ]
+  },
+  'Kompensator': {
+    name: 'Kompensator',
+    label: 'Shunt Reactor & Kapasitor Bank',
+    shortCode: 'REA',
+    icon: 'cpu',
+    unitName: 'Bank',
+    total: 280,
+    totalJawa: 860,
+    totalNasional: 2150,
+    avgAge: 16.4,
+    avgHI: 2.64,
+    voltageDesc: '150/500 kV • Kompensasi Daya Reaktif MVAr',
+    unitCapacityLabel: 'Daya Reaktif',
+    unitCapacityUnit: 'MVAr',
+    capacityMultiplier: 50,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB', count: 80, hi: [30, 34, 22, 10, 4], avgHI: 2.52, avgAge: 15.5, age: [18, 22, 33, 19, 8] },
+      { name: 'Siemens', count: 68, hi: [32, 34, 20, 10, 4], avgHI: 2.48, avgAge: 15.0, age: [20, 24, 32, 17, 7] },
+      { name: 'Trench', count: 52, hi: [28, 33, 24, 11, 4], avgHI: 2.58, avgAge: 16.2, age: [16, 21, 34, 21, 8] },
+      { name: 'Nissin Electric', count: 40, hi: [26, 32, 25, 12, 5], avgHI: 2.65, avgAge: 17.1, age: [14, 19, 33, 23, 11] },
+      { name: 'Cooper Power', count: 30, hi: [24, 31, 26, 13, 6], avgHI: 2.72, avgAge: 18.0, age: [12, 17, 34, 24, 13] }
+    ],
+    minorBrands: [
+      { name: 'ZEZ Silko', weight: 22, avgHI: 2.75, avgAge: 18.5 },
+      { name: 'Hilkar', weight: 20, avgHI: 2.68, avgAge: 17.2 },
+      { name: 'Hitachi', weight: 18, avgHI: 2.56, avgAge: 16.0 },
+      { name: 'GE', weight: 16, avgHI: 2.70, avgAge: 17.8 },
+      { name: 'Meidensha', weight: 14, avgHI: 2.64, avgAge: 16.8 },
+      { name: 'Daelim', weight: 10, avgHI: 2.78, avgAge: 19.2 }
+    ]
+  },
+  'NGR': {
+    name: 'NGR',
+    label: 'NGR (Neutral Grounding Resistance)',
+    shortCode: 'NGR',
+    icon: 'shield-alert',
+    unitName: 'Unit NGR',
+    total: 370,
+    totalJawa: 1120,
+    totalNasional: 3100,
+    avgAge: 18.1,
+    avgHI: 2.68,
+    voltageDesc: '70/150 kV Sisi Netral Trafo Daya • 40 Ω / 500 A',
+    unitCapacityLabel: 'Nilai Resistansi & Arus',
+    unitCapacityUnit: 'Ohm',
+    capacityMultiplier: 40,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Cressall', count: 110, hi: [30, 35, 22, 9, 4], avgHI: 2.50, avgAge: 16.2, age: [16, 22, 34, 20, 8] },
+      { name: 'Post Glover', count: 92, hi: [28, 34, 23, 11, 4], avgHI: 2.58, avgAge: 16.8, age: [15, 20, 33, 22, 10] },
+      { name: 'Hilkar', count: 74, hi: [27, 33, 24, 11, 5], avgHI: 2.62, avgAge: 17.4, age: [14, 19, 34, 22, 11] },
+      { name: 'ABB', count: 65, hi: [32, 34, 21, 9, 4], avgHI: 2.48, avgAge: 15.8, age: [18, 23, 33, 18, 8] },
+      { name: 'Siemens', count: 55, hi: [34, 33, 20, 9, 4], avgHI: 2.46, avgAge: 15.5, age: [19, 24, 32, 18, 7] }
+    ],
+    minorBrands: [
+      { name: 'Aktif Elektroteknik', weight: 20, avgHI: 2.70, avgAge: 18.2 },
+      { name: 'Microelettrica Scientifica', weight: 18, avgHI: 2.66, avgAge: 17.8 },
+      { name: 'Avtron', weight: 16, avgHI: 2.68, avgAge: 18.0 },
+      { name: 'Spiroll', weight: 14, avgHI: 2.74, avgAge: 19.0 },
+      { name: 'Toshiba', weight: 12, avgHI: 2.60, avgAge: 17.0 },
+      { name: 'Hitachi', weight: 10, avgHI: 2.58, avgAge: 16.6 },
+      { name: 'Lainnya Lokal', weight: 10, avgHI: 2.82, avgAge: 20.4 }
+    ]
+  },
+  'SUTT SUTET': {
+    name: 'SUTT SUTET',
+    label: 'Menara SUTT / SUTET & Konduktor',
+    shortCode: 'TWR',
+    icon: 'navigation',
+    unitName: 'Tower',
+    total: 10700,
+    totalJawa: 32000,
+    totalNasional: 96000,
+    avgAge: 22.4,
+    avgHI: 2.85,
+    voltageDesc: '70/150/500 kV Saluran Udara • Lattice Tower & Monopole',
+    unitCapacityLabel: 'Tinggi Rata-rata Tower',
+    unitCapacityUnit: 'm',
+    capacityMultiplier: 38,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Bukaka Teknik Utama', count: 2800, hi: [24, 32, 26, 12, 6], avgHI: 2.74, avgAge: 20.5, age: [10, 16, 32, 26, 16] },
+      { name: 'Karya Logam', count: 2200, hi: [22, 30, 27, 14, 7], avgHI: 2.82, avgAge: 22.0, age: [8, 14, 31, 28, 19] },
+      { name: 'Danusari Mitra Sejahtera', count: 1800, hi: [25, 31, 26, 12, 6], avgHI: 2.72, avgAge: 20.1, age: [11, 17, 32, 25, 15] },
+      { name: 'Armindo Cipta', count: 1400, hi: [23, 30, 28, 13, 6], avgHI: 2.79, avgAge: 21.6, age: [9, 15, 32, 27, 17] },
+      { name: 'Wijaya Karya (WIKA)', count: 1200, hi: [28, 33, 24, 10, 5], avgHI: 2.65, avgAge: 19.2, age: [14, 18, 34, 22, 12] }
+    ],
+    minorBrands: [
+      { name: 'Amarta Karya', weight: 18, avgHI: 2.80, avgAge: 22.5 },
+      { name: 'Citramas', weight: 17, avgHI: 2.78, avgAge: 21.8 },
+      { name: 'Boma Bisma Indra', weight: 16, avgHI: 2.86, avgAge: 23.4 },
+      { name: 'Cilegon Fabricators', weight: 15, avgHI: 2.72, avgAge: 20.8 },
+      { name: 'Sediver (Insulator)', weight: 14, avgHI: 2.68, avgAge: 19.5 },
+      { name: 'NGK (Insulator)', weight: 12, avgHI: 2.62, avgAge: 18.8 },
+      { name: 'MacLean Power', weight: 8, avgHI: 2.66, avgAge: 19.0 }
+    ]
+  },
+  'RTU SCADA': {
+    name: 'RTU SCADA',
+    label: 'RTU & Gateway SCADATEL',
+    shortCode: 'RTU',
+    icon: 'monitor',
+    unitName: 'Unit RTU',
+    total: 420,
+    totalJawa: 1250,
+    totalNasional: 3600,
+    avgAge: 10.4,
+    avgHI: 2.32,
+    voltageDesc: 'Teleinformasi GI & Gardu Hubung • Protokol IEC 60870-5-104 / DNP3',
+    unitCapacityLabel: 'Kapasitas I/O Point',
+    unitCapacityUnit: 'I/O',
+    capacityMultiplier: 256,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'ABB (RTU500)', count: 120, hi: [44, 35, 13, 6, 2], avgHI: 2.18, avgAge: 9.6, age: [32, 33, 24, 9, 2] },
+      { name: 'Schneider (Foxboro/Easergy)', count: 100, hi: [40, 36, 15, 6, 3], avgHI: 2.28, avgAge: 10.2, age: [28, 32, 27, 11, 2] },
+      { name: 'Siemens (SICAM)', count: 85, hi: [42, 35, 14, 6, 3], avgHI: 2.25, avgAge: 9.9, age: [30, 32, 26, 10, 2] },
+      { name: 'GE (D20 / Reason)', count: 68, hi: [34, 34, 20, 8, 4], avgHI: 2.45, avgAge: 11.5, age: [22, 28, 32, 15, 3] },
+      { name: 'SEL (Real Time Automation)', count: 58, hi: [46, 35, 12, 5, 2], avgHI: 2.12, avgAge: 8.9, age: [35, 34, 22, 7, 2] }
+    ],
+    minorBrands: [
+      { name: 'Telvent', weight: 20, avgHI: 2.65, avgAge: 13.5 },
+      { name: 'Moxa', weight: 18, avgHI: 2.36, avgAge: 10.0 },
+      { name: 'Advantech', weight: 16, avgHI: 2.40, avgAge: 10.8 },
+      { name: 'Yokogawa', weight: 15, avgHI: 2.35, avgAge: 10.2 },
+      { name: 'Ingeteam', weight: 14, avgHI: 2.42, avgAge: 11.0 },
+      { name: 'Brodersen', weight: 10, avgHI: 2.50, avgAge: 12.0 },
+      { name: 'Lainnya', weight: 7, avgHI: 2.60, avgAge: 13.0 }
+    ]
+  },
+  'Wave Trap': {
+    name: 'Wave Trap',
+    label: 'Wave Trap & PLC (Line Trap Komunikasi)',
+    shortCode: 'WVT',
+    icon: 'radio',
+    unitName: 'Unit Trap',
+    total: 1070,
+    totalJawa: 3200,
+    totalNasional: 8900,
+    avgAge: 18.6,
+    avgHI: 2.70,
+    voltageDesc: '70/150/500 kV • Carrier Komunikasi Proteksi & Teleprotection SUTT',
+    unitCapacityLabel: 'Induktansi Wave Trap',
+    unitCapacityUnit: 'mH',
+    capacityMultiplier: 1,
+    groupName: 'Lainnya',
+    brands: [
+      { name: 'Trench', count: 320, hi: [30, 34, 22, 10, 4], avgHI: 2.55, avgAge: 16.8, age: [16, 21, 33, 21, 9] },
+      { name: 'ABB', count: 280, hi: [32, 34, 21, 9, 4], avgHI: 2.50, avgAge: 16.4, age: [18, 22, 33, 19, 8] },
+      { name: 'Siemens', count: 230, hi: [33, 33, 21, 9, 4], avgHI: 2.49, avgAge: 16.2, age: [18, 23, 32, 19, 8] },
+      { name: 'Haefely', count: 160, hi: [28, 33, 24, 11, 4], avgHI: 2.62, avgAge: 17.5, age: [14, 19, 34, 22, 11] },
+      { name: 'Alstom', count: 130, hi: [26, 32, 25, 12, 5], avgHI: 2.68, avgAge: 18.2, age: [13, 18, 33, 24, 12] }
+    ],
+    minorBrands: [
+      { name: 'Koncar', weight: 22, avgHI: 2.68, avgAge: 18.4 },
+      { name: 'Nissin', weight: 20, avgHI: 2.70, avgAge: 18.8 },
+      { name: 'XD Electric', weight: 18, avgHI: 2.80, avgAge: 20.6 },
+      { name: 'Chint', weight: 15, avgHI: 2.82, avgAge: 21.0 },
+      { name: 'Daelim', weight: 14, avgHI: 2.85, avgAge: 21.5 },
+      { name: 'Lainnya', weight: 11, avgHI: 2.88, avgAge: 22.0 }
+    ]
+  }
 };
+
+// Helper untuk mendapatkan konfigurasi jenis aset aktif
+function getActiveAssetConfig() {
+  const jenis = (typeof document !== 'undefined' && document.getElementById('filterJenisAset')?.value) ||
+                (typeof appState !== 'undefined' && appState.assetType) ||
+                'Power Transformer';
+  return ASSET_TYPE_CONFIGS[jenis] || ASSET_TYPE_CONFIGS['Power Transformer'];
+}
 
 // Turunkan profil HI 1..5 dari rata-rata HI (bobot digeser sesuai kondisi merk).
 function hiProfile(avgHI) {
-  const d = avgHI - 2.7;
+  const d = (avgHI || 2.7) - 2.7;
   return distribute(100, [22 + d * 10, 30 - d * 2, 28, 14 - d * 6, 6 + d * 2].map(w => Math.max(w, 1.5)));
 }
 
 // Turunkan sebaran umur 0–5 / 6–10 / 11–20 / 21–30 / >30 dari rata-rata umur.
 function ageProfile(avgAge) {
-  const d = avgAge - 18;
+  const d = (avgAge || 18) - 18;
   return distribute(100, [30 - d * 1.6, 22 - d * 0.6, 26, 14 + d * 0.8, 8 + d * 0.8].map(w => Math.max(w, 2)));
 }
 
-// Rakit 24 merk utuh: 5 merk utama + 19 merk minor yang dihitung dari bobotnya.
-const BRAND_CATALOG = (() => {
-  const minorTotal = 240;
-  const weights = assetTypeStats.minorBrands.map(b => b.weight);
-  const weightSum = weights.reduce((s, w) => s + w, 0);
+// Rakit katalog merk utuh (5 merk utama + merk minor) untuk konfigurasi jenis aset
+function getBrandCatalogForConfig(cfg) {
+  if (!cfg) cfg = ASSET_TYPE_CONFIGS['Power Transformer'];
+  const minorTotal = Math.round(cfg.brands.reduce((s, b) => s + b.count, 0) * 0.38);
+  const minorBrands = cfg.minorBrands || [];
+  const weights = minorBrands.map(b => b.weight || 10);
+  const weightSum = weights.reduce((s, w) => s + w, 0) || 1;
   const counts = distribute(minorTotal, weights.map(w => (w / weightSum) * 100));
 
-  const minors = assetTypeStats.minorBrands.map((b, i) => ({
+  const minors = minorBrands.map((b, i) => ({
     name: b.name,
     count: counts[i],
-    avgHI: b.avgHI,
-    avgAge: b.avgAge,
-    // Persentase bulat 0–100, sama satuan dengan 5 merk utama di atas
-    hi: hiProfile(b.avgHI),
-    age: ageProfile(b.avgAge),
+    avgHI: b.avgHI || 2.75,
+    avgAge: b.avgAge || 18,
+    hi: hiProfile(b.avgHI || 2.75),
+    age: ageProfile(b.avgAge || 18),
     minor: true
   }));
 
-  return [...assetTypeStats.brands, ...minors];
-})();
+  return [...cfg.brands, ...minors];
+}
+
+// Dynamic Proxy agar variabel global assetTypeStats & BRAND_CATALOG selalu merefleksikan jenis aset aktif
+const assetTypeStats = new Proxy({}, {
+  get(target, prop) {
+    const cfg = getActiveAssetConfig();
+    return cfg[prop];
+  }
+});
+
+const BRAND_CATALOG = new Proxy([], {
+  get(target, prop) {
+    const cat = getBrandCatalogForConfig(getActiveAssetConfig());
+    if (prop === 'length') return cat.length;
+    if (prop === Symbol.iterator) return cat[Symbol.iterator].bind(cat);
+    if (!isNaN(prop)) return cat[prop];
+    if (typeof cat[prop] === 'function') return cat[prop].bind(cat);
+    return cat[prop];
+  }
+});
+
+// Update isi dropdown filterMerk secara dinamis mengikuti jenis aset terpilih
+function populateBrandDropdown(assetType) {
+  const brandSelect = document.getElementById('filterMerk');
+  if (!brandSelect) return;
+
+  const currentBrand = brandSelect.value;
+  const cfg = ASSET_TYPE_CONFIGS[assetType] || ASSET_TYPE_CONFIGS['Power Transformer'];
+  const majorBrands = cfg.brands.map(b => b.name);
+  const minorBrands = (cfg.minorBrands || []).map(b => b.name);
+  const allBrandNames = [...majorBrands, ...minorBrands];
+
+  let html = `<option value="Semua">Semua Merk (${allBrandNames.length} Pabrikan)</option>`;
+  html += `<optgroup label="5 Merk Terbesar (Populasi Utama)">`;
+  majorBrands.forEach(b => {
+    html += `<option value="${b}">${b}</option>`;
+  });
+  html += `</optgroup>`;
+
+  if (minorBrands.length > 0) {
+    html += `<optgroup label="Pabrikan Lainnya (${minorBrands.length} Merk)">`;
+    minorBrands.forEach(b => {
+      html += `<option value="${b}">${b}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+
+  brandSelect.innerHTML = html;
+
+  if (allBrandNames.includes(currentBrand)) {
+    brandSelect.value = currentBrand;
+  } else {
+    brandSelect.value = 'Semua';
+    if (typeof appState !== 'undefined' && appState.filters) {
+      appState.filters.merk = 'Semua';
+    }
+  }
+}
+window.populateBrandDropdown = populateBrandDropdown;
+
+function onJenisAsetChanged() {
+  const jenis = document.getElementById('filterJenisAset')?.value || 'Power Transformer';
+  if (typeof appState !== 'undefined') {
+    appState.assetType = jenis;
+    if (appState.filters) appState.filters.jenisAset = jenis;
+  }
+  populateBrandDropdown(jenis);
+  onAssetFiltersChanged();
+}
+window.onJenisAsetChanged = onJenisAsetChanged;
 
 // Katalog unit/assets dasar untuk scope Jawa Barat + merk ABB.
 // `lat`/`lng` dipakai sebagai koordinat marker pada mini map level 4.
@@ -755,21 +1314,27 @@ function aggregateUpt(provs) {
 function getScopeStats() {
   const uiCode = document.getElementById('filterUnitInduk')?.value || 'Semua';
   const uptName = document.getElementById('filterUPT')?.value || 'Semua';
+  const cfg = getActiveAssetConfig();
+  const scale = (cfg.totalJawa || 2514) / 2514;
+  const brandCountTotal = cfg.brands.length + (cfg.minorBrands ? cfg.minorBrands.length : 0);
 
   // 1. NASIONAL (Semua Unit Induk)
   if (uiCode === 'Semua') {
-    const totalPT = 3124;
+    const totalPT = Math.round(3124 * scale);
     const allGis = typeof ORG_HIERARCHY !== 'undefined'
       ? ORG_HIERARCHY.flatMap(ui => ui.upts.flatMap(u => u.ultgs.flatMap(x => x.gis)))
       : [];
     const allUpts = typeof ORG_HIERARCHY !== 'undefined'
-      ? ORG_HIERARCHY.flatMap(ui => ui.upts).map(u => ({
-          name: u.name,
-          count: Math.round(50 + hashSeed(u.name) * 60),
-          mva: Math.round(2000 + hashSeed(u.name) * 3000),
-          hi45: Math.round(10 + hashSeed(u.name) * 15),
-          ratio: 21.0
-        }))
+      ? ORG_HIERARCHY.flatMap(ui => ui.upts).map(u => {
+          const uCnt = Math.round((50 + hashSeed(u.name) * 60) * scale);
+          return {
+            name: u.name,
+            count: uCnt,
+            mva: Math.round(uCnt * (cfg.capacityMultiplier || 35)),
+            hi45: Math.round(uCnt * 0.21),
+            ratio: 21.0
+          };
+        })
       : [];
 
     return {
@@ -777,9 +1342,9 @@ function getScopeStats() {
       label: 'Nasional (Seluruh Unit Induk)',
       isAggregate: true,
       pt: totalPT,
-      brandCount: 24,
-      avgHI: 2.64,
-      avgAge: 17.6,
+      brandCount: brandCountTotal,
+      avgHI: cfg.avgHI || 2.64,
+      avgAge: cfg.avgAge || 17.6,
       center: { lat: -1.2, lng: 118.0, zoom: 5 },
       gis: allGis,
       upt: allUpts
@@ -796,9 +1361,10 @@ function getScopeStats() {
       hiAvg: 2.62,
       center: [-2, 118]
     };
-    const pt = uiCode === 'UIT JBT' ? 842 : uiCode === 'UIT JBB' ? 520 : uiCode === 'UIP3B SUM' ? 680 : uiCode === 'UIT JBM' ? 480 : uiCode === 'UIP3B KAL' ? 310 : 292;
-    const brandCount = uiCode === 'UIT JBT' ? 20 : uiCode === 'UIT JBB' ? 16 : 15;
-    const avgAge = uiCode === 'UIT JBT' ? 18.4 : 16.5;
+    const basePt = uiCode === 'UIT JBT' ? 842 : uiCode === 'UIT JBB' ? 520 : uiCode === 'UIP3B SUM' ? 680 : uiCode === 'UIT JBM' ? 480 : uiCode === 'UIP3B KAL' ? 310 : 292;
+    const pt = Math.round(basePt * scale);
+    const brandCount = Math.min(brandCountTotal, uiCode === 'UIT JBT' ? 20 : uiCode === 'UIT JBB' ? 16 : 15);
+    const avgAge = uiCode === 'UIT JBT' ? cfg.avgAge : Number((cfg.avgAge - 1.2).toFixed(1));
 
     const uptList = ui ? ui.upts.map(u => {
       const uPt = Math.round(pt / ui.upts.length);
@@ -806,7 +1372,7 @@ function getScopeStats() {
       return {
         name: u.name,
         count: uPt,
-        mva: uPt * 35,
+        mva: Math.round(uPt * (cfg.capacityMultiplier || 35)),
         hi45,
         ratio: 20.0
       };
@@ -829,14 +1395,15 @@ function getScopeStats() {
   // 3. UPT SCOPE (UPT terpilih)
   if (uptName !== 'Semua') {
     const upt = findUptByName(uptName, uiCode);
-    const uPt = Math.round(65 + (hashSeed(uptName) * 85));
+    const baseUpt = Math.round(65 + (hashSeed(uptName) * 85));
+    const uPt = Math.round(baseUpt * scale);
     const ultgList = upt ? upt.ultgs.map(ultg => {
       const cnt = Math.round(uPt / upt.ultgs.length);
       const hi45 = Math.round(cnt * 0.20);
       return {
         name: ultg.name,
         count: cnt,
-        mva: cnt * 35,
+        mva: Math.round(cnt * (cfg.capacityMultiplier || 35)),
         hi45,
         ratio: 20.0
       };
@@ -847,9 +1414,9 @@ function getScopeStats() {
       label: `${uptName} (${uiCode})`,
       isAggregate: false,
       pt: uPt,
-      brandCount: Math.round(7 + hashSeed(uptName + 'b') * 5),
-      avgHI: Number((2.52 + hashSeed(uptName + 'h') * 0.22).toFixed(2)),
-      avgAge: Number((14.5 + hashSeed(uptName + 'a') * 5).toFixed(1)),
+      brandCount: Math.min(brandCountTotal, Math.round(7 + hashSeed(uptName + 'b') * 5)),
+      avgHI: Number((cfg.avgHI - 0.1 + hashSeed(uptName + 'h') * 0.2).toFixed(2)),
+      avgAge: Number((cfg.avgAge - 2 + hashSeed(uptName + 'a') * 4).toFixed(1)),
       center: { lat: upt ? upt.lat : -6.2, lng: upt ? upt.lng : 106.8, zoom: 9 },
       gis: upt ? upt.ultgs.flatMap(x => x.gis) : [],
       upt: ultgList
@@ -864,46 +1431,45 @@ function getScopeStats() {
     key: slugify(prov.name),
     label: prov.name,
     isAggregate: false,
-    pt: prov.pt,
-    brandCount: prov.brandCount,
-    avgHI: prov.avgHI,
-    avgAge: prov.avgAge,
+    pt: Math.round(prov.pt * scale),
+    brandCount: Math.min(brandCountTotal, prov.brandCount),
+    avgHI: cfg.avgHI || prov.avgHI,
+    avgAge: cfg.avgAge || prov.avgAge,
     center: { lat: prov.lat, lng: prov.lng, zoom: 9 },
     gis: prov.gis,
-    upt: prov.upt.map(u => ({ ...u, mva: mvaValue(u.mva) }))
+    upt: prov.upt.map(u => ({ ...u, count: Math.round(u.count * scale), mva: mvaValue(u.mva) }))
   };
 }
 
-// Statistik Power Transformer untuk scope aktif (KPI level 3 + tabel per merk)
+// Statistik Jenis Aset aktif untuk scope terpilih (KPI level 3 + tabel per merk)
 function getAssetTypeStats() {
   const scope = getScopeStats();
-  const baseTotal = assetTypeStats.total;
-  const basePcts = BRAND_CATALOG.map(b => (b.count / baseTotal) * 100);
+  const cfg = getActiveAssetConfig();
+  const catalog = getBrandCatalogForConfig(cfg);
+  const baseTotal = cfg.total || catalog.reduce((s, b) => s + b.count, 0);
+  const basePcts = catalog.map(b => (b.count / (baseTotal || 1)) * 100);
   const brandCounts = distribute(scope.pt, basePcts);
 
-  const brands = BRAND_CATALOG.map((b, i) => {
+  const brands = catalog.map((b, i) => {
     const count = brandCounts[i];
     return {
       name: b.name,
       count,
-      pct: (count / scope.pt) * 100,
+      pct: (count / (scope.pt || 1)) * 100,
       minor: Boolean(b.minor),
       hi: b.hi.slice(),
       hiCounts: distribute(count, b.hi),
       avgHI: b.avgHI,
       avgAge: b.avgAge,
       age: b.age.slice(),
-      // "Di atas 20 tahun" = kelompok umur 21–30 dan >30 tahun
       over20: Math.round((b.age[3] + b.age[4]) / 100 * count)
     };
   });
 
-  // Grup ringkas untuk grafik/tabel: 5 merk utama + 1 baris "Lainnya" (klik untuk dirinci).
   const majors = brands.filter(b => !b.minor);
   const minors = brands.filter(b => b.minor);
   const minorCount = minors.reduce((s, b) => s + b.count, 0);
 
-  // Persentase grup = rata-rata tertimbang, dibulatkan ke persen bulat yang tetap berjumlah 100.
   const groupPct = key => {
     if (!minorCount) return [20, 20, 20, 20, 20];
     const weights = [0, 1, 2, 3, 4].map(i => minors.reduce((s, b) => s + b[key][i] * b.count, 0) / minorCount);
@@ -914,9 +1480,9 @@ function getAssetTypeStats() {
   const groupAgePct = groupPct('age');
 
   const group = {
-    name: assetTypeStats.groupName,
+    name: cfg.groupName || 'Lainnya',
     count: minorCount,
-    pct: (minorCount / scope.pt) * 100,
+    pct: (minorCount / (scope.pt || 1)) * 100,
     minor: true,
     isGroup: true,
     members: minors,
@@ -937,17 +1503,18 @@ function getAssetTypeStats() {
   const hi45Count = brands.reduce((sum, b) => sum + b.hiCounts[3] + b.hiCounts[4], 0);
 
   return {
-    name: assetTypeStats.name,
+    name: cfg.name,
+    cfg,
     scope,
     total: scope.pt,
-    brandCount: scope.brandCount,
+    brandCount: brands.length,
     brands,
     brandsGrouped,
-    groupName: assetTypeStats.groupName,
-    avgHI: weighted.hi / scope.pt,
+    groupName: cfg.groupName || 'Lainnya',
+    avgHI: weighted.hi / (scope.pt || 1),
     avgAge: scope.avgAge,
     hi45Count,
-    hi45Pct: (hi45Count / scope.pt) * 100
+    hi45Pct: (hi45Count / (scope.pt || 1)) * 100
   };
 }
 
@@ -981,50 +1548,55 @@ function getScopeHIDistribution() {
   return { rows, total: stats.total, hi12, hi3, hi45 };
 }
 
-// Distribusi kelompok umur level scope + kapasitas MVA per kelompok
+// Distribusi kelompok umur level scope + kapasitas per kelompok
 function getScopeAgeBuckets() {
   const stats = getAssetTypeStats();
-  const baseTotal = BRAND_CATALOG.reduce((sum, b) => sum + b.count, 0);
-  const pcts = BRAND_CATALOG.reduce(
+  const cfg = getActiveAssetConfig();
+  const catalog = getBrandCatalogForConfig(cfg);
+  const baseTotal = catalog.reduce((sum, b) => sum + b.count, 0);
+  const pcts = catalog.reduce(
     (acc, b) => acc.map((v, i) => v + b.age[i] * b.count),
     [0, 0, 0, 0, 0]
-  ).map(v => v / baseTotal);
+  ).map(v => v / (baseTotal || 1));
 
   const counts = distribute(stats.total, pcts);
-  const mvaPerUnit = getScopeMvaPerUnit();
+  const capPerUnit = cfg.capacityMultiplier || 35;
   const rows = counts.map((count, i) => ({
     range: AGE_BUCKETS[i],
     count,
     pct: pcts[i],
-    mva: count * mvaPerUnit,
+    mva: count * capPerUnit,
     status: i <= 1 ? 'Baik' : i === 2 ? 'Cukup' : 'Perlu Perhatian',
     hiLevel: i <= 1 ? 2 : i === 2 ? 3 : 4
   }));
 
-  return { rows, total: stats.total, mvaTotal: stats.total * mvaPerUnit };
+  return { rows, total: stats.total, mvaTotal: stats.total * capPerUnit, capUnit: cfg.unitCapacityUnit || 'MVA' };
 }
 
-// Rata-rata kapasitas (MVA) per unit pada scope aktif
+// Rata-rata kapasitas per unit pada scope aktif
 function getScopeMvaPerUnit() {
   const scope = getScopeStats();
-  const totalUnit = scope.upt.reduce((sum, u) => sum + u.count, 0);
-  const totalMva = scope.upt.reduce((sum, u) => sum + u.mva, 0);
-  return totalUnit ? totalMva / totalUnit : 0;
+  const cfg = getActiveAssetConfig();
+  return cfg.capacityMultiplier || 35;
 }
 
 // Ringkasan tiap unit / provinsi untuk tabel & grafik perbandingan
 function getProvinceSummaries() {
   const uiCode = document.getElementById('filterUnitInduk')?.value || 'Semua';
   const uptName = document.getElementById('filterUPT')?.value || 'Semua';
+  const cfg = getActiveAssetConfig();
+  const scale = (cfg.totalJawa || 2514) / 2514;
+  const brandCountBase = cfg.brands.length + (cfg.minorBrands ? cfg.minorBrands.length : 0);
 
   if (uiCode === 'Semua') {
     if (typeof UNIT_INDUK_METRICS !== 'undefined') {
       return UNIT_INDUK_METRICS.map(ui => {
-        const pt = ui.code === 'UIT JBT' ? 842 : ui.code === 'UIT JBB' ? 520 : ui.code === 'UIP3B SUM' ? 680 : ui.code === 'UIT JBM' ? 480 : ui.code === 'UIP3B KAL' ? 310 : 292;
-        const brandCount = ui.code === 'UIT JBT' ? 20 : ui.code === 'UIT JBB' ? 16 : 15;
+        const basePt = ui.code === 'UIT JBT' ? 842 : ui.code === 'UIT JBB' ? 520 : ui.code === 'UIP3B SUM' ? 680 : ui.code === 'UIT JBM' ? 480 : ui.code === 'UIP3B KAL' ? 310 : 292;
+        const pt = Math.round(basePt * scale);
+        const brandCount = Math.min(brandCountBase, ui.code === 'UIT JBT' ? 20 : ui.code === 'UIT JBB' ? 16 : 15);
         const hi45 = Math.round(pt * 0.21);
         const hi45Pct = 21.0;
-        const avgAge = ui.code === 'UIT JBT' ? 18.4 : 16.5;
+        const avgAge = ui.code === 'UIT JBT' ? cfg.avgAge : Number((cfg.avgAge - 1.2).toFixed(1));
 
         return {
           name: ui.code,
@@ -1051,11 +1623,12 @@ function getProvinceSummaries() {
     return ui.upts.map(u => {
       const gis = u.ultgs.flatMap(x => x.gis);
       const seed = hashSeed(u.name);
-      const pt = Math.round(65 + seed * 85);
-      const brandCount = Math.round(6 + hashSeed(u.name + 'b') * 6);
-      const avgHI = Number((2.52 + hashSeed(u.name + 'h') * 0.22).toFixed(2));
+      const basePt = Math.round(65 + seed * 85);
+      const pt = Math.round(basePt * scale);
+      const brandCount = Math.min(brandCountBase, Math.round(6 + hashSeed(u.name + 'b') * 6));
+      const avgHI = Number((cfg.avgHI - 0.15 + hashSeed(u.name + 'h') * 0.3).toFixed(2));
       const hi45 = Math.round(pt * 0.20);
-      const avgAge = Number((14.5 + hashSeed(u.name + 'a') * 5).toFixed(1));
+      const avgAge = Number((cfg.avgAge - 2 + hashSeed(u.name + 'a') * 4).toFixed(1));
 
       return {
         name: u.name,
@@ -1079,17 +1652,18 @@ function getProvinceSummaries() {
   const upt = typeof findUptByName === 'function' ? findUptByName(uptName, uiCode) : null;
   if (upt) {
     return upt.ultgs.map(ultg => {
-      const pt = Math.round(ultg.gis.length * 18);
+      const basePt = Math.round(ultg.gis.length * 18);
+      const pt = Math.round(basePt * scale);
       return {
         name: ultg.name,
         fullName: ultg.name,
         totalAset: fmtInt(pt * 3 + 45),
         pt,
-        brandCount: Math.min(ultg.gis.length * 3, 10),
-        avgHI: 2.60,
+        brandCount: Math.min(ultg.gis.length * 3, brandCountBase),
+        avgHI: Number((cfg.avgHI - 0.1).toFixed(2)),
         hi45: Math.round(pt * 0.19),
         hi45Pct: 19.0,
-        avgAge: 16.2,
+        avgAge: Number((cfg.avgAge - 1).toFixed(1)),
         gi: ultg.gis.length,
         upt: 1,
         color: '#0d9488',
@@ -1103,12 +1677,12 @@ function getProvinceSummaries() {
     name: p.name,
     fullName: p.name,
     totalAset: p.count,
-    pt: p.pt,
-    brandCount: p.brandCount,
-    avgHI: p.avgHI,
-    hi45: p.hi45Count,
+    pt: Math.round(p.pt * scale),
+    brandCount: Math.min(brandCountBase, p.brandCount),
+    avgHI: cfg.avgHI || p.avgHI,
+    hi45: Math.round(p.hi45Count * scale * 0.22),
     hi45Pct: p.hi45Pct,
-    avgAge: p.avgAge,
+    avgAge: cfg.avgAge || p.avgAge,
     gi: p.gis.length,
     upt: p.upt.length,
     color: p.color,
@@ -1160,9 +1734,11 @@ function getBrandStats(brandName) {
 // Daftar unit aset untuk scope + merk aktif (level 5 & 6)
 function getScopeAssets() {
   const scope = getScopeStats();
-  const brand = appState.brand;
+  const brand = appState.brand || 'ABB';
+  const cfg = getActiveAssetConfig();
+  const prefix = cfg.shortCode || 'AST';
 
-  if (scope.key === SCOPE_BASE_KEY && brand === 'ABB') return assetList;
+  if (scope.key === SCOPE_BASE_KEY && brand === 'ABB' && cfg.name === 'Power Transformer') return assetList;
 
   const perGi = scope.isAggregate ? 1 : 2;
   const rows = [];
@@ -1170,17 +1746,18 @@ function getScopeAssets() {
 
   scope.gis.forEach((g, gi) => {
     for (let i = 0; i < perGi; i++) {
-      const seed = hashSeed(`${scope.key}|${brand}|${g.name}|${i}`);
+      const seed = hashSeed(`${scope.key}|${cfg.name}|${brand}|${g.name}|${i}`);
       const hi = 1 + Math.floor(seed * 5);
       const year = 1993 + Math.floor(hashSeed(`${seed}|year`) * 26);
       const upt = scope.upt.length ? scope.upt[gi % scope.upt.length].name : 'UPT Regional';
       const code = brand.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+      const bayName = cfg.name === 'PMT' ? `Bay Line ${i + 1} 150kV` : cfg.name === 'PMS' ? `Bay PMS Rel ${i + 1}` : cfg.name === 'Baterai' ? `Ruang DC Baterai ${i + 1}` : cfg.name === 'Rele Proteksi' ? `Panel Proteksi ${i + 1}` : `Bay ${cfg.name} ${i + 1}`;
 
       rows.push({
-        id: `TRF-${code}-${String(++seq).padStart(3, '0')}`,
-        name: `Trafo ${i + 1}`,
+        id: `${prefix}-${code}-${String(++seq).padStart(3, '0')}`,
+        name: `${cfg.name} ${i + 1}`,
         gi: g.name,
-        bay: `Bay Trafo ${i + 1}`,
+        bay: bayName,
         lat: g.lat,
         lng: g.lng,
         voltage: hashSeed(`${seed}|kv`) > 0.85 ? '500 kV' : '150 kV',
@@ -1235,8 +1812,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // Support direct deep-linking to filters: ?ui=UIT JBB &upt=UPT Cawang &merk=ABB &hi=HI 4
   const uiParam = urlParams.get('ui');
   const uptParam = urlParams.get('upt');
+  const jenisParam = urlParams.get('jenis') || urlParams.get('assetType');
   const merkParam = urlParams.get('merk');
   const hiParam = urlParams.get('hi');
+
+  if (jenisParam) {
+    setTimeout(() => {
+      const jSel = document.getElementById('filterJenisAset');
+      if (jSel) {
+        jSel.value = jenisParam;
+        if (typeof onJenisAsetChanged === 'function') {
+          onJenisAsetChanged();
+        }
+      }
+    }, 150);
+  }
 
   if (uiParam) {
     setTimeout(() => {
@@ -1568,7 +2158,11 @@ function clearJenisFilter() {
   const sel = document.getElementById('filterJenisAset');
   if (sel) {
     sel.value = 'Power Transformer';
-    onAssetFiltersChanged();
+    if (typeof onJenisAsetChanged === 'function') {
+      onJenisAsetChanged();
+    } else {
+      onAssetFiltersChanged();
+    }
   }
 }
 window.clearJenisFilter = clearJenisFilter;
@@ -2061,17 +2655,31 @@ function renderLevel2() {
 // Semua ringkasan level 2 mengikuti scope aktif (agregat Jawa atau provinsi)
 function renderL2AssetTypeSummary() {
   const stats = getAssetTypeStats();
+  const cfg = getActiveAssetConfig();
   const scope = stats.scope;
   const scopeText = scope.isAggregate ? `${scope.label} (agregat)` : scope.label;
   const age = getScopeAgeBuckets();
 
+  const capUnit = age.capUnit || 'MVA';
+  setText('l2KpiLabelPt', cfg.name);
+  setText('l2ActiveAssetText', `Jenis Aset: ${cfg.name}`);
+  setText('thColJenisAset', cfg.name);
+  setText('thColMerkJenis', `Merk ${cfg.shortCode || 'Aset'}`);
+  setText('l2BrandTabTitle', `Komposisi Merk ${cfg.name}`);
+  setText('l2PtCardTitle', cfg.name);
+  setText('tab3BtnLabel', `Eksplorasi ${cfg.name}`);
+  setText('thKapasitasUpt', `Kapasitas (${capUnit})`);
+  setText('thKapasitasAge', `Kapasitas (${capUnit})`);
+  setText('overlayKapasitasLabel', `Kapasitas (${capUnit})`);
+  setText('thKapasitasLevel3', `Kapasitas (${capUnit})`);
+
   setText('l2PtCount', fmtInt(stats.total));
   setText('l2PtMeta', `Rata-rata HI: ${fmtNum(stats.avgHI, 2)} • ${fmtInt(stats.brandCount)} Merk`);
-  setText('l2PtSubtitle', `Transformator Daya 150/500 kV • ${scope.label}`);
+  setText('l2PtSubtitle', `${cfg.voltageDesc || 'Transformator Daya 150/500 kV'} • ${scope.label}`);
   setText('l2HiSubtitle', scopeText);
   setText('l2MerkSubtitle', scopeText);
   setText('l2PtHiSubtitle', scopeText);
-  setText('l2UptSubtitle', `${scope.upt.length} UPT • ${fmtInt(age.mvaTotal)} MVA`);
+  setText('l2UptSubtitle', `${scope.upt.length} UPT • ${fmtInt(age.mvaTotal)} ${age.capUnit || 'MVA'}`);
   setText('l2TrenSubtitle', `Rata-rata HI ${scopeText}, 2021 – 2026`);
 
   // KPI header
@@ -2083,14 +2691,14 @@ function renderL2AssetTypeSummary() {
   setText('l2KpiAvgAge', fmtNum(stats.avgAge, 1));
   setText('l2KpiGi', fmtInt(scope.gis.length));
 
-  // Ringkasan teknis Power Transformer
+  // Ringkasan teknis jenis aset terpilih
   const specList = document.getElementById('l2PtSpecList');
   if (specList) {
     const specs = [
       { icon: 'activity', label: 'Rata-rata HI', value: `${fmtNum(stats.avgHI, 2)} — ${highestHiLabel(stats.avgHI)}` },
       { icon: 'alert-triangle', label: 'Unit HI 4–5', value: `${fmtInt(stats.hi45Count)} (${fmtPct(stats.hi45Pct)})` },
       { icon: 'clock', label: 'Rata-rata umur', value: `${fmtNum(stats.avgAge, 1)} tahun` },
-      { icon: 'zap', label: 'Kapasitas terpasang', value: `${fmtInt(age.mvaTotal)} MVA` },
+      { icon: 'zap', label: cfg.unitCapacityLabel || 'Kapasitas terpasang', value: `${fmtInt(age.mvaTotal)} ${age.capUnit || 'MVA'}` },
       { icon: 'map-pin', label: 'Gardu Induk', value: `${fmtInt(scope.gis.length)} lokasi` },
       { icon: 'award', label: 'Merk aktif', value: `${fmtInt(stats.brandCount)} pabrikan` }
     ];
@@ -2140,7 +2748,7 @@ function renderL2ChartForTab(tabId) {
         labels: rows.map(p => p.name),
         datasets: [
           {
-            label: 'Power Transformer',
+            label: stats.name || 'Unit Aset',
             data: rows.map(p => p.pt),
             backgroundColor: rows.map(p => (isAgg || p.isActive ? '#0056b3' : '#cbd5e1')),
             borderRadius: 4
@@ -2459,7 +3067,7 @@ function openOtherBrandsModal() {
         </td>
       </tr>
     `).join(''),
-    footer: `${group.memberCount} merk menyumbang ${fmtInt(group.count)} unit (${fmtPct(group.pct)} dari total ${fmtInt(scope.pt)} Power Transformer di ${scope.label}). Rata-rata grup: HI ${fmtNum(group.avgHI, 2)}, umur ${fmtNum(group.avgAge, 1)} tahun.`
+    footer: `${group.memberCount} merk menyumbang ${fmtInt(group.count)} unit (${fmtPct(group.pct)} dari total ${fmtInt(scope.pt)} ${getAssetTypeStats().name} di ${scope.label}). Rata-rata grup: HI ${fmtNum(group.avgHI, 2)}, umur ${fmtNum(group.avgAge, 1)} tahun.`
   });
 }
 
@@ -2574,10 +3182,11 @@ function selectProvince(provName, fly = true) {
   const card = document.getElementById('mapContextCard');
   if (!card) return;
 
+  const activeCfg = getActiveAssetConfig();
   const topTypes = prov.topTypes || [
-    { name: 'Power Transformer', count: 842 },
-    { name: 'CB (Circuit Breaker)', count: 526 },
-    { name: 'CT (Current Transformer)', count: 418 }
+    { name: activeCfg.name, count: prov.pt },
+    { name: 'PMT (Circuit Breaker)', count: Math.round(prov.pt * 0.7) },
+    { name: 'PMS (Disconnecting Switch)', count: Math.round(prov.pt * 1.4) }
   ];
 
   card.innerHTML = `
@@ -2618,7 +3227,7 @@ function selectProvince(provName, fly = true) {
       `).join('')}
     </div>
     <div style="display:flex; gap:8px; margin-top:12px; flex-direction:column;">
-      <button class="btn-action-primary" onclick="navigateTo(3, { subRegion: '${prov.name}', assetType: 'Power Transformer' })">
+      <button class="btn-action-primary" onclick="navigateTo(3, { subRegion: '${prov.name}', assetType: '${activeCfg.name}' })">
         <span>Lihat Profil Jenis Aset</span>
         <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
       </button>
@@ -2634,6 +3243,7 @@ function selectProvince(provName, fly = true) {
 
 // Update tab Sebaran Aset berdasarkan objek provinsi
 function updateSebaranAsetTab(prov) {
+  const stats = getAssetTypeStats();
   const titleEl = document.getElementById('sebaranAsetTitle');
   const descEl = document.getElementById('sebaranAsetDesc');
   const btnLabel = document.getElementById('sebaranAsetBtnLabel');
@@ -2641,13 +3251,14 @@ function updateSebaranAsetTab(prov) {
 
   if (titleEl) titleEl.textContent = `Sebaran Wilayah Terpilih: ${prov.name}`;
   if (descEl) descEl.textContent = `Total ${prov.count} aset tersebar di wilayah ${prov.name}. Rata-rata HI semua jenis aset: ${fmtNum(prov.avgHI, 2)}. Aset kritis (HI 4–5): ${hi45Text(prov)}. Klik tombol untuk eksplorasi jenis aset.`;
-  if (btnLabel) btnLabel.textContent = `Eksplorasi Power Transformer — ${prov.name} (${fmtInt(prov.pt)} Unit)`;
+  if (btnLabel) btnLabel.textContent = `Eksplorasi ${stats.name} — ${prov.name} (${fmtInt(prov.pt)} Unit)`;
   // Update onclick button agar gunakan provinsi yang dipilih
-  if (btn) btn.onclick = () => navigateTo(3, { subRegion: prov.name, assetType: 'Power Transformer' });
+  if (btn) btn.onclick = () => navigateTo(3, { subRegion: prov.name, assetType: stats.name });
 }
 
 // Reset tab Sebaran Aset ke Jawa (tidak ada provinsi dipilih)
 function resetSebaranAsetTab() {
+  const stats = getAssetTypeStats();
   const titleEl = document.getElementById('sebaranAsetTitle');
   const descEl = document.getElementById('sebaranAsetDesc');
   const btnLabel = document.getElementById('sebaranAsetBtnLabel');
@@ -2655,10 +3266,10 @@ function resetSebaranAsetTab() {
   const totalPT = jawaStats.provinces.reduce((sum, p) => sum + p.pt, 0);
 
   if (titleEl) titleEl.textContent = `Sebaran Wilayah: ${appState.region}`;
-  if (descEl) descEl.textContent = `Total ${jawaStats.totalAssets} aset tersebar di seluruh wilayah ${appState.region}. Pilih provinsi di peta untuk melihat detail, atau eksplorasi Power Transformer seluruh wilayah.`;
-  if (btnLabel) btnLabel.textContent = `Eksplorasi Power Transformer — ${appState.region} (${fmtInt(totalPT)} Unit)`;
+  if (descEl) descEl.textContent = `Total ${jawaStats.totalAssets} aset tersebar di seluruh wilayah ${appState.region}. Pilih provinsi di peta untuk melihat detail, atau eksplorasi ${stats.name} seluruh wilayah.`;
+  if (btnLabel) btnLabel.textContent = `Eksplorasi ${stats.name} — ${appState.region} (${fmtInt(totalPT)} Unit)`;
   // Scope agregat: subRegion diisi dengan nama wilayah agar breadcrumb tidak dobel
-  if (btn) btn.onclick = () => navigateTo(3, { subRegion: appState.region, assetType: 'Power Transformer' });
+  if (btn) btn.onclick = () => navigateTo(3, { subRegion: appState.region, assetType: stats.name });
 }
 
 // Update tab Sebaran Aset berdasarkan nama provinsi
@@ -2713,9 +3324,10 @@ function renderChartUmurAsetL2() {
   const scope = stats.scope;
   const scopeText = scope.isAggregate ? `${scope.label} (agregat)` : scope.label;
   const age = getScopeAgeBuckets();
+  const capUnit = age.capUnit || 'MVA';
 
-  setText('l2UmurTitle', `Sebaran Umur Aset Power Transformer — ${scope.label}`);
-  setText('l2UmurSubtitle', `Distribusi kelompok umur Power Transformer (${fmtInt(stats.total)} unit) di ${scopeText}`);
+  setText('l2UmurTitle', `Sebaran Umur Aset ${stats.name} — ${scope.label}`);
+  setText('l2UmurSubtitle', `Distribusi kelompok umur ${stats.name} (${fmtInt(stats.total)} unit) di ${scopeText}`);
 
   if (chartUmurAsetL2) chartUmurAsetL2.destroy();
 
@@ -2725,7 +3337,7 @@ function renderChartUmurAsetL2() {
       labels: age.rows.map(r => r.range),
       datasets: [
         {
-          label: `Power Transformer — ${scope.label}`,
+          label: `${stats.name} — ${scope.label}`,
           data: age.rows.map(r => r.count),
           backgroundColor: ['#10b981', '#10b981', '#f59e0b', '#f97316', '#ef4444'],
           borderRadius: 4
@@ -2741,7 +3353,7 @@ function renderChartUmurAsetL2() {
           callbacks: {
             label: (item) => {
               const row = age.rows[item.dataIndex];
-              return `${fmtInt(row.count)} unit (${fmtPct((row.count / age.total) * 100)}) • ${fmtInt(row.mva)} MVA`;
+              return `${fmtInt(row.count)} unit (${fmtPct((row.count / age.total) * 100)}) • ${fmtInt(row.mva)} ${capUnit}`;
             }
           }
         }
@@ -4642,6 +5254,9 @@ function resetOrgFilter() {
   if (hiSelect) hiSelect.value = 'Semua';
   const jSelect = document.getElementById('filterJenisAset');
   if (jSelect) jSelect.value = 'Power Transformer';
+  if (typeof populateBrandDropdown === 'function') {
+    populateBrandDropdown('Power Transformer');
+  }
   const tSelect = document.getElementById('filterTegangan');
   if (tSelect) tSelect.value = 'Semua';
 
@@ -4690,32 +5305,10 @@ function initOrgFilter() {
   cascadeUnitInduk();
 }
 
-// Isi dropdown Merk: 5 merk utama + grup "Lainnya" yang memuat 19 merk.
+// Isi dropdown Merk: 5 merk utama + grup "Lainnya" yang dinamis per jenis aset.
 function populateBrandFilter() {
-  const select = document.getElementById('filterMerk');
-  if (!select) return;
-
-  const group = getAssetTypeStats().brandsGrouped.find(b => b.isGroup);
-  const majors = getAssetTypeStats().brandsGrouped.filter(b => !b.isGroup);
-
-  const options = [
-    '<option value="Semua">Semua</option>',
-    ...majors.map(b => `<option value="${b.name}">${b.name}</option>`)
-  ];
-
-  if (group) {
-    options.push(
-      `<optgroup label="${group.name} — ${group.memberCount} merk">` +
-      group.members
-        .slice()
-        .sort((a, b) => b.count - a.count)
-        .map(b => `<option value="${b.name}">${b.name}</option>`)
-        .join('') +
-      '</optgroup>'
-    );
-  }
-
-  select.innerHTML = options.join('');
+  const jenis = document.getElementById('filterJenisAset')?.value || 'Power Transformer';
+  populateBrandDropdown(jenis);
 }
 
 function triggerSearchSubmit() {
@@ -4803,7 +5396,7 @@ function setupFilterListeners() {
 
   const jSelect = document.getElementById('filterJenisAset');
   if (jSelect) {
-    jSelect.addEventListener('change', onAssetFiltersChanged);
+    jSelect.addEventListener('change', onJenisAsetChanged);
   }
 
   const tSelect = document.getElementById('filterTegangan');

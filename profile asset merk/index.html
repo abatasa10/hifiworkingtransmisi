@@ -100,21 +100,35 @@
         <!-- Jenis Aset -->
         <div class="filter-select-wrapper">
           <span class="filter-label">Jenis Aset</span>
-          <select class="filter-select filter-select-prominent" id="filterJenisAset">
-            <option value="Power Transformer" selected>⚡ Power Transformer (Trafo)</option>
-            <option value="PMT">🔌 PMT (Circuit Breaker)</option>
-            <option value="CT">⚡ CT (Current Transformer)</option>
-            <option value="PT">⚡ PT (Potential Transformer)</option>
-            <option value="PMS">🔄 PMS (Disconnector)</option>
-            <option value="Lightning Arrester">🛡️ Lightning Arrester (LA)</option>
-            <option value="GIS">🏢 GIS (Gas Insulated Switchgear)</option>
+          <select class="filter-select filter-select-prominent" id="filterJenisAset" onchange="onJenisAsetChanged()">
+            <optgroup label="⚡ Peralatan Primer Gardu Induk (Primary Equipment)">
+              <option value="Power Transformer" selected>⚡ Power Transformer (Trafo Tenaga)</option>
+              <option value="PMT">🔌 PMT (Pemutus Tenaga / Circuit Breaker)</option>
+              <option value="PMS">🔄 PMS (Pemisah / Disconnector Switch)</option>
+              <option value="CT">⚡ CT (Current Transformer / Trafo Arus)</option>
+              <option value="PT">⚡ PT / CVT (Capacitor Voltage Transformer)</option>
+              <option value="Lightning Arrester">🛡️ Lightning Arrester (Surge Arrester / LA)</option>
+              <option value="GIS">🏢 GIS (Gas Insulated Switchgear)</option>
+              <option value="Kompensator">⚙️ Shunt Reactor & Kapasitor Bank</option>
+              <option value="NGR">⚡ NGR (Neutral Grounding Resistance)</option>
+            </optgroup>
+            <optgroup label="🛡️ Peralatan Sekunder & Proteksi (Secondary & Aux)">
+              <option value="Rele Proteksi">🎯 Rele Proteksi & IED (Protection Relay)</option>
+              <option value="Baterai">🔋 Baterai & Rectifier (Sistem DC 110V/220V)</option>
+              <option value="RTU SCADA">💻 RTU & Gateway SCADATEL</option>
+              <option value="Wave Trap">📻 Wave Trap & PLC (Line Trap Komunikasi)</option>
+            </optgroup>
+            <optgroup label="🗼 Transmisi Saluran Udara & Kabel (Lines & Cables)">
+              <option value="Kabel SKTT">〰️ Saluran Kabel SKTT & Kabel Laut</option>
+              <option value="SUTT SUTET">🗼 Menara SUTT / SUTET & Konduktor</option>
+            </optgroup>
           </select>
         </div>
 
         <!-- Merk Pabrikan -->
         <div class="filter-select-wrapper">
           <span class="filter-label">Merk Pabrikan</span>
-          <select class="filter-select filter-select-prominent" id="filterMerk">
+          <select class="filter-select filter-select-prominent" id="filterMerk" onchange="onAssetFiltersChanged()">
             <option value="Semua">Semua Merk (24 Pabrikan)</option>
             <optgroup label="5 Merk Terbesar (82% Populasi)">
               <option value="ABB">ABB</option>
@@ -141,7 +155,7 @@
         <!-- Health Index / AHI -->
         <div class="filter-select-wrapper">
           <span class="filter-label">Health Index (AHI)</span>
-          <select class="filter-select filter-select-prominent" id="filterHI">
+          <select class="filter-select filter-select-prominent" id="filterHI" onchange="onAssetFiltersChanged()">
             <option value="Semua">Semua Kategori AHI (1–5)</option>
             <option value="HI 1">🟢 HI 1 — Sangat Baik (Normal)</option>
             <option value="HI 2">🔵 HI 2 — Baik (Normal)</option>
@@ -155,7 +169,7 @@
         <!-- Level Tegangan -->
         <div class="filter-select-wrapper">
           <span class="filter-label">Level Tegangan</span>
-          <select class="filter-select" id="filterTegangan">
+          <select class="filter-select" id="filterTegangan" onchange="onAssetFiltersChanged()">
             <option value="Semua">Semua Tegangan</option>
             <option value="500 kV">500 kV (Extra High Voltage)</option>
             <option value="150 kV" selected>150 kV (High Voltage)</option>
@@ -303,21 +317,12 @@
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <!-- Quick filters on Level 2 per Image 2 Step 2 -->
+            <!-- Quick asset type indicator on Level 2 -->
             <div style="display: flex; align-items: center; gap: 8px;">
-              <select class="filter-select" style="height: 34px;">
-                <option>Jenis Aset: Power Transformer</option>
-              </select>
-              <select class="filter-select" style="height: 34px;">
-                <option>Merk: Semua</option>
-                <option>ABB</option>
-                <option>Siemens</option>
-              </select>
-              <select class="filter-select" style="height: 34px;">
-                <option>Tegangan: Semua</option>
-                <option>150 kV</option>
-                <option>500 kV</option>
-              </select>
+              <span class="badge" id="l2ActiveAssetBadge" style="background:#e0f2fe;color:#0056b3;border:1px solid #bfdbfe;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+                <i data-lucide="cpu" style="width:14px;height:14px;"></i>
+                <span id="l2ActiveAssetText">Jenis Aset: Power Transformer</span>
+              </span>
             </div>
 
             <button class="btn-action-secondary" onclick="navigateTo(1)">
@@ -331,7 +336,7 @@
         <div class="kpi-cards-grid">
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <span class="kpi-label">Power Transformer</span>
+              <span class="kpi-label" id="l2KpiLabelPt">Power Transformer</span>
               <div class="kpi-icon-small"><i data-lucide="zap"></i></div>
             </div>
             <div class="kpi-value-row">
@@ -587,8 +592,8 @@
                   <tr>
                     <th id="thScopeName">Wilayah / Unit</th>
                     <th style="text-align: right;">Total Aset</th>
-                    <th style="text-align: right;">Power Transformer</th>
-                    <th style="text-align: right;">Merk PT</th>
+                    <th style="text-align: right;" id="thColJenisAset">Power Transformer</th>
+                    <th style="text-align: right;" id="thColMerkJenis">Merk Aset</th>
                     <th style="text-align: right;">HI Rata-rata¹</th>
                     <th style="text-align: right;">Unit HI 4–5¹</th>
                     <th style="text-align: right;">Rata-rata Umur</th>
@@ -598,8 +603,8 @@
                 </thead>
                 <tbody id="l2ProvTableBody"></tbody>
               </table>
-              <p style="font-size: 11px; color: var(--text-subtle); margin-top: 8px;">
-                ¹ Rata-rata HI dan Unit HI 4–5 pada tabel ini mencakup seluruh jenis aset, sedangkan kolom Power Transformer dan Merk PT khusus Power Transformer.
+              <p style="font-size: 11px; color: var(--text-subtle); margin-top: 8px;" id="tableProvFootnote">
+                ¹ Rata-rata HI dan Unit HI 4–5 pada tabel ini mencakup seluruh aset di wilayah tersebut, sedangkan kolom di samping mencerminkan rincian jenis aset terpilih.
               </p>
             </div>
           </div>
@@ -612,7 +617,7 @@
               <div class="l2-card-title-row">
                 <h3 class="card-title">
                   <i data-lucide="bar-chart-2" style="color: var(--brand-primary); width:18px;height:18px;"></i>
-                  Komposisi Merk Power Transformer
+                  <span id="l2BrandTabTitle">Komposisi Merk Power Transformer</span>
                 </h3>
                 <span class="card-subtitle" id="l2MerkSubtitle">Jawa (agregat)</span>
               </div>
@@ -668,7 +673,7 @@
             <div class="content-card" style="border-top: 4px solid var(--brand-primary);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                 <div>
-                  <h4 style="font-size: 16px; font-weight: 800; color: var(--text-main);">Power Transformer</h4>
+                  <h4 style="font-size: 16px; font-weight: 800; color: var(--text-main);" id="l2PtCardTitle">Power Transformer</h4>
                   <span style="font-size: 12px; color: var(--text-muted);" id="l2PtSubtitle">Transformator Daya 150/500 kV</span>
                 </div>
                 <div class="kpi-icon-small" style="background: var(--brand-primary-light); color: var(--brand-primary);"><i data-lucide="zap"></i></div>
@@ -678,8 +683,8 @@
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="l2PtMeta">Rata-rata HI: 2,74 • 12 Merk</div>
               </div>
               <div class="metric-list" id="l2PtSpecList"></div>
-              <button class="btn-action-primary" style="margin-top: 12px;" onclick="navigateTo(3, { assetType: 'Power Transformer' })">
-                <span>Eksplorasi Power Transformer</span>
+              <button class="btn-action-primary" id="l2PtCardBtn" style="margin-top: 12px;" onclick="navigateTo(3)">
+                <span id="tab3BtnLabel">Eksplorasi Power Transformer</span>
                 <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
               </button>
             </div>
@@ -712,7 +717,7 @@
                   <tr>
                     <th>UPT</th>
                     <th style="text-align: right;">Unit</th>
-                    <th style="text-align: right;">Kapasitas (MVA)</th>
+                    <th style="text-align: right;" id="thKapasitasUpt">Kapasitas (MVA)</th>
                     <th style="text-align: right;">Unit HI 4–5</th>
                     <th style="text-align: right;">Rasio HI 4–5</th>
                     <th>Kondisi</th>
@@ -773,7 +778,7 @@
                     <th>Kelompok Umur</th>
                     <th style="text-align: right;">Unit</th>
                     <th style="text-align: right;">Pangsa</th>
-                    <th style="text-align: right;">Kapasitas (MVA)</th>
+                    <th style="text-align: right;" id="thKapasitasAge">Kapasitas (MVA)</th>
                     <th>Kondisi</th>
                     <th style="text-align: right;">Aksi</th>
                   </tr>
@@ -1737,6 +1742,6 @@
   </div>
 
   <!-- Application Controller Script -->
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260929b"></script>
 </body>
 </html>
