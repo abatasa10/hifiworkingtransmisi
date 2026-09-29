@@ -47,7 +47,7 @@ jadi `SldSvgCanvas` front-end langsung bisa merender tanpa perubahan.
 - [x] Parse → payload (porting `parser.ts` + `types.ts`) — **Parser** ✅ (parity FE=BE teruji)
 - [x] Tier & view-model (porting `tier.ts`, `adapter.ts`) — **TierEngine + Adapter** ✅ (parity FE=BE teruji)
 - [x] Layout & graf akhir (porting `layout.ts`, `engineSld.ts`) — **LayoutEngine + GraphEngine** ✅ (parity FE=BE teruji)
-- [ ] Deployment
+- [ ] Deployment (lihat catatan bagian akhir README)
 
 ## Panduan porting engine (5 tahap) — untuk rekan BE
 
@@ -124,9 +124,12 @@ Cara mengulang: `npx tsx scripts/pipeline-test/parity-graph.ts <file.xlsx>`
 (memanggil `/api/sld/parse` backend, membandingkan node/circuit/ibt/bay/pin
 satu-per-satu). Server harus sudah jalan di `:8080`.
 
-Catatan: `SldSvgCanvas` merender via `coerceServerGraph` (lib/sld/fromServer.ts)
-yang mengubah label kosong bertumpuk → code saat JSON dari server diproses;
-beda tampilan kecil ini berasal dari sisi front-end, bukan hasil porting.
+Tool yang sama juga memverifikasi **jalur render**: `coerceServerGraph` (persis
+yang dipakai halaman "SLD Server Mode") lalu geometri canvas `eng*Geoms` +
+`engGraphBounds` (node y/x1/x2/warna, path wire, titik PMT, pin, guide, bounds).
+Hasilnya identik untuk kedua fixture (bounds Suralaya 1340×1010, Jamali
+1785×1230) — artinya `SldSvgCanvas` menerima input piksel-identik dari graf
+Java maupun pipeline FE native.
 
 ## Struktur
 
@@ -149,3 +152,20 @@ backend-sld/
     ├── service/SldEngineService.java   # pipeline end-to-end (tahap 1–5 selesai)
     └── web/SldParseController.java     # REST API
 ```
+
+## Deployment (catatan produksi)
+
+- **Backend**: `./mvnw package` → jalankan `java -jar target/sld-server-*.jar`
+  (atau gunakan Docker/systemd). Server berdiri sendiri di `:8080`; CORS sudah
+  terbuka (`*`) di controller supaya bisa dipanggil dari `:5173` (dev) maupun
+  asal yang sama saat build production dipakai.
+- **Front-end**: `npm run build` → berkas `dist/` di-track di repo. Halaman
+  "SLD Server Mode" memakai `apiBase = http://localhost:8080` secara default —
+  sesuaikan konstanta `DEFAULT_API` di `ServerSLDView.tsx` bila host produksi
+  backend berbeda.
+- **File yang dipakai**: template Excel yang sama dengan halaman Upload SLD
+  (`template_kerawanan_subsistem_suralaya_cilegon.xlsx`,
+  `template_sistem_500kv_jamali.xlsx`).
+- **Verifikasi rutin**: `npx tsx scripts/pipeline-test/parity-graph.ts <file.xlsx>`
+  setelah ada perubahan parser/layout di salah satu sisi, agar graf FE dan BE
+  tidak menyimpang.

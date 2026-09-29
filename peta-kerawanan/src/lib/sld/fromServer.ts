@@ -35,7 +35,9 @@ export function coerceServerGraph(json: unknown): EngSldGraph {
     const r = (n ?? {}) as Record<string, unknown>;
     return {
       code: str(r.code, `N${idx + 1}`),
-      label: str(r.label, str(r.code, '')),
+      // keep an explicit empty label (stacked generators render glyph-only);
+      // only fall back to the code when the label is missing entirely.
+      label: typeof r.label === 'string' ? r.label : str(r.code, ''),
       name: str(r.name, str(r.code, '')),
       type: nodeType(r.type),
       voltageKv: num(r.voltageKv, 150),

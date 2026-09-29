@@ -4,7 +4,8 @@ import { parseWorkbookToPayload } from '../../src/lib/sld/parser';
 import { computeTiers } from '../../src/lib/sld/tier';
 import { toViewModel } from '../../src/lib/sld/adapter';
 import { computeEngineLayout } from '../../src/lib/sld/layout';
-import { toEngSldGraph, EngSldGraph } from '../../src/lib/sld/engineSld';
+import { toEngSldGraph, EngSldGraph, engNodeGeoms, engCircuitGeoms, engIbtGeoms, engBayGeoms, engPinGeoms, engTierGuides, engGraphBounds } from '../../src/lib/sld/engineSld';
+import { coerceServerGraph } from '../../src/lib/sld/fromServer';
 
 const sample = process.argv[2];
 if (!sample) {
@@ -53,34 +54,74 @@ console.log('sample:', name);
 console.log('FE: nodes', fe.nodes.length, 'circuits', fe.circuits.length, 'ibts', fe.ibts.length, 'bays', fe.bays.length, 'pins', fe.pins.length, 'tierCount', fe.tierCount);
 console.log('BE: nodes', be.nodes.length, 'circuits', be.circuits.length, 'ibts', be.ibts.length, 'bays', be.bays.length, 'pins', be.pins.length, 'tierCount', be.tierCount);
 
-if (feS === beS) {
-  console.log('PARITY: EXACT MATCH');
+if (feS !== beS) {
+  console.log('PARITY: MISMATCH — first diff line:');
+  const fl = feS.split('\n');
+  const bl = beS.split('\n');
+  for (let i = 0; i < Math.max(fl.length, bl.length); i++) {
+    if (fl[i] !== bl[i]) {
+      console.log('FE line ' + (i + 1) + ':', fl[i]);
+      console.log('BE line ' + (i + 1) + ':', bl[i]);
+      break;
+    }
+  }
+  // per-array diff
+  const showDiff = (label: string, a: unknown[], b: unknown[]) => {
+    console.log(`-- ${label}: FE=${a.length} BE=${b.length}`);
+    const n = Math.max(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+      if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) {
+        console.log(`  idx ${i}\n    FE ${JSON.stringify(a[i])}\n    BE ${JSON.stringify(b[i])}`);
+      }
+    }
+  };
+  showDiff('nodes', fe.nodes, be.nodes);
+  showDiff('circuits', fe.circuits, be.circuits);
+  showDiff('ibts', fe.ibts, be.ibts);
+  showDiff('bays', fe.bays, be.bays);
+  showDiff('pins', fe.pins, be.pins);
+  process.exit(1);
+}
+console.log('PARITY: EXACT MATCH (raw EngSldGraph)');
+
+// Render path: the page feeds coerceServerGraph(BE json) into SldSvgCanvas,
+// which computes geometry via the eng* helpers — prove that path is identical
+// to the native FE graph too.
+const geomNorm = (g: EngSldGraph) => {
+  const nodeGeoms = engNodeGeoms(g);
+  const circuitGeoms = engCircuitGeoms(g);
+  const ibtGeoms = engIbtGeoms(g);
+  const bayGeoms = engBayGeoms(g);
+  const pinGeoms = engPinGeoms(g, nodeGeoms, circuitGeoms, ibtGeoms, bayGeoms);
+  return JSON.stringify({
+    bounds: engGraphBounds(g),
+    guides: engTierGuides(g),
+    nodeGeoms: nodeGeoms.map((n) => [n.node.code, n.y, n.x1, n.x2, n.color, n.labelX, n.labelY, n.labelAnchor]),
+    circuitGeoms: circuitGeoms.map((c) => [c.circuit.id, c.color, c.dash ?? '', c.wires.map((w) => [w.d, w.mid, w.pmts])]),
+    ibtGeoms: ibtGeoms.map((i) => [i.ibt.id, i.y1, i.y2]),
+    bayGeoms: bayGeoms.map((b) => [b.bay.id, b.y, b.color, b.xs]),
+    pinGeoms: pinGeoms.map((p) => [p.pin.seq, p.pin.code, p.x, p.y])
+  }, null, 1);
+};
+const feR = coerceServerGraph(fe);
+const beR = coerceServerGraph(be);
+const feG = geomNorm(feR);
+const beG = geomNorm(beR);
+const sameRender = feG === beG;
+console.log('RENDER: nodes', feR.nodes.length, 'circuits', feR.circuits.length, 'ibts', feR.ibts.length, 'bays', feR.bays.length, 'pins', feR.pins.length);
+if (sameRender) {
+  console.log('RENDER PATH: EXACT MATCH (coerce → eng* geometry)');
+  console.log('bounds:', JSON.stringify(engGraphBounds(feR)));
   process.exit(0);
 }
-
-console.log('PARITY: MISMATCH — first diff line:');
-const fl = feS.split('\n');
-const bl = beS.split('\n');
-for (let i = 0; i < Math.max(fl.length, bl.length); i++) {
-  if (fl[i] !== bl[i]) {
-    console.log('FE line ' + (i + 1) + ':', fl[i]);
-    console.log('BE line ' + (i + 1) + ':', bl[i]);
+console.log('RENDER PATH: MISMATCH (coerce → geometry) — first diff line:');
+const rl = feG.split('\n');
+const rlb = beG.split('\n');
+for (let i = 0; i < Math.max(rl.length, rlb.length); i++) {
+  if (rl[i] !== rlb[i]) {
+    console.log('FE line ' + (i + 1) + ':', rl[i]);
+    console.log('BE line ' + (i + 1) + ':', rlb[i]);
     break;
   }
 }
-// per-array diff
-const showDiff = (label: string, a: unknown[], b: unknown[]) => {
-  console.log(`-- ${label}: FE=${a.length} BE=${b.length}`);
-  const n = Math.max(a.length, b.length);
-  for (let i = 0; i < n; i++) {
-    if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) {
-      console.log(`  idx ${i}\n    FE ${JSON.stringify(a[i])}\n    BE ${JSON.stringify(b[i])}`);
-    }
-  }
-};
-showDiff('nodes', fe.nodes, be.nodes);
-showDiff('circuits', fe.circuits, be.circuits);
-showDiff('ibts', fe.ibts, be.ibts);
-showDiff('bays', fe.bays, be.bays);
-showDiff('pins', fe.pins, be.pins);
 process.exit(1);
