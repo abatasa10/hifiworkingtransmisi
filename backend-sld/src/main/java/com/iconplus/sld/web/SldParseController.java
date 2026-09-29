@@ -1,17 +1,21 @@
 package com.iconplus.sld.web;
 
+import com.iconplus.sld.adapter.Adapter;
 import com.iconplus.sld.dto.EngineDto;
 import com.iconplus.sld.dto.EnginePayloadDto;
+import com.iconplus.sld.dto.ViewModelDto;
 import com.iconplus.sld.mapping.ColumnMapping;
 import com.iconplus.sld.mapping.MappingDetector;
 import com.iconplus.sld.parser.Parser;
 import com.iconplus.sld.reader.ExcelReader;
+import com.iconplus.sld.tier.TierEngine;
 import com.iconplus.sld.service.SldEngineService;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -101,21 +105,68 @@ public class SldParseController {
     return map;
   }
 
-  @PostMapping("/api/sld/parse")
-  public EngineDto.ApiResponse parse(@RequestParam("file") MultipartFile file) {
-    return service.parse(file);
-  }
-
-  /**
-   * Tahap 3 (verifikasi): parse workbook menjadi EnginePayload asli — objek GI,
-   * connection, dan risk — tanpa layout/tier. Dipakai untuk membandingkan hasil
-   * Java dengan pipeline-test FE (parser.ts).
-   */
-  @PostMapping("/api/sld/payload")
+@PostMapping("/api/sld/payload")
   public EnginePayloadDto.ParseResult payload(@RequestParam("file") MultipartFile file) throws Exception {
     try (InputStream in = file.getInputStream();
          Workbook wb = excel.open(in)) {
       return parser.parseWorkbookToPayload(wb, file.getOriginalFilename());
     }
+  }
+
+  /**
+   * Tahap 4 (verifikasi): parse → tier → view-model, sekaligus ringkasan
+   * yang bisa dibandingkan langsung dengan scripts/pipeline-test/main.ts.
+   */
+  @PostMapping("/api/sld/viewmodel")
+  public Map<String, Object> viewmodel(@RequestParam("file") MultipartFile file) throws Exception {
+    try (InputStream in = file.getInputStream();
+         Workbook wb = excel.open(in)) {
+      EnginePayloadDto.ParseResult pr = parser.parseWorkbookToPayload(wb, file.getOriginalFilename());
+      Map<String, Integer> tierMap = TierEngine.computeTiers(pr.payload);
+      String subsystemName = pr.payload.subsystem.name == null ? "SLD" : pr.payload.subsystem.name;
+      ViewModelDto.Result vm = Adapter.toViewModel(pr.payload, tierMap, subsystemName);
+
+      int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
+      for (int v : tierMap.values()) {
+        lo = Math.min(lo, v);
+        hi = Math.max(hi, v);
+      }
+      if (tierMap.isEmpty()) { lo = 0; hi = 0; }
+
+      List<String> sampleIds = new ArrayList<>();
+      for (int i = 0; i < Math.min(6, vm.giList.size()); i++) {
+        ViewModelDto.GiNode n = vm.giList.get(i);
+        sampleIds.add(n.id + ":" + n.assetType + ":t" + n.tier);
+      }
+      List<String> ibrSample = new ArrayList<>();
+      for (int i = 0; i < Math.min(3, vm.ibrLinks.size()); i++) {
+        ibrSample.add(vm.ibrLinks.get(i).id);
+      }
+      Set<String> risks = new java.util.LinkedHashSet<>();
+      for (ViewModelDto.GiNode n : vm.giList) risks.add(n.riskStatus);
+
+      Map<String, Object> summary = new LinkedHashMap<>();
+      summary.put("objects", vm.giList.size());
+      summary.put("lines", vm.lineList.size());
+      summary.put("ibrLinks", vm.ibrLinks.size());
+      summary.put("tierRange", List.of(lo, hi));
+      summary.put("sampleIds", sampleIds);
+      summary.put("ibrSample", ibrSample);
+      summary.put("risks", new ArrayList<>(risks));
+
+      Map<String, Object> out = new LinkedHashMap<>();
+      out.put("subsystemName", subsystemName);
+      out.put("issues", pr.issues);
+      out.put("giList", vm.giList);
+      out.put("lineList", vm.lineList);
+      out.put("ibrLinks", vm.ibrLinks);
+      out.put("summary", summary);
+      return out;
+    }
+  }
+
+  @PostMapping("/api/sld/parse")
+  public EngineDto.ApiResponse parse(@RequestParam("file") MultipartFile file) {
+    return service.parse(file);
   }
 }

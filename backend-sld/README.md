@@ -23,6 +23,7 @@ lalu Spring Boot menerima koneksi di **http://localhost:8080**.
 | GET    | `/api/health`    | Cek koneksi engine (dipakai tombol "Cek Koneksi")   |
 | POST   | `/api/sld/preview` | Upload Excel → nama sheet + header + deteksi kolom (tahap 1–2) |
 | POST   | `/api/sld/payload` | Upload Excel → `EnginePayload` asli: objek GI, connection, risk (tahap 3) |
+| POST   | `/api/sld/viewmodel` | Upload Excel → parse+tier+view-model → node/line + ringkasan parity (tahap 4) |
 | POST   | `/api/sld/parse` | Upload Excel (`multipart`, field `file`) → JSON graf SLD |
 
 Response `/api/sld/parse`:
@@ -44,7 +45,7 @@ jadi `SldSvgCanvas` front-end langsung bisa merender tanpa perubahan.
 - [x] Parsing Excel asli dengan Apache POI (porting `parser.ts`) — **ExcelReader + preview** ✅
 - [x] Pemetaan kolom (porting `mapping.ts`) — **MappingDetector** ✅ (diuji vs template Suralaya)
 - [x] Parse → payload (porting `parser.ts` + `types.ts`) — **Parser** ✅ (parity FE=BE teruji)
-- [ ] Tier & graf (porting `tier.ts`, `adapter.ts`)
+- [x] Tier & view-model (porting `tier.ts`, `adapter.ts`) — **TierEngine + Adapter** ✅ (parity FE=BE teruji)
 - [ ] Layout & geometri (porting `layout.ts`, `engineSld.ts`)
 - [ ] Deployment
 
@@ -64,7 +65,7 @@ yang sudah berjalan (front-end), untuk file Excel yang sama.
 | **1. Baca Excel** | `parser.ts` bagian `readHeaderRows`/`sheetHeaders` | kelas baca workbook → grid baris/kolom via **Apache POI** | `POST /api/sld/preview` → nama sheet + header terdeteksi |
 | **2. Deteksi kolom** | `mapping.ts` (`autoDetectMapping`, `cleanKey`) | `MappingDetector` → mapping kolom | bandingkan hasil preview FE vs BE untuk sheet sama |
 | **3. Parse → payload** | `parser.ts` (`parseFlexibleSheet`, `parseEngineWorkbook`) + `types.ts` | `Parser` → objek GI, connection, risk (normalisasi) | `POST /api/sld/payload` → bandingkan `objects`/`connections`/`risks` dengan `scripts/pipeline-test/parse-only.ts` |
-| **4. Tier + view-model** | `tier.ts` (`computeTiers`) + `adapter.ts` (`toViewModel`) | tier BFS multi-source + flatten node/line | bandingkan jumlah GI, line, tier range |
+| **4. Tier + view-model** | `tier.ts` (`computeTiers`) + `adapter.ts` (`toViewModel`) | `TierEngine` + `Adapter` → node/line flat model | `POST /api/sld/viewmodel` → bandingkan `summary` dgn `scripts/pipeline-test/main.ts` |
 | **5. Layout + graf akhir** | `layout.ts` (`computeEngineLayout`) + `engineSld.ts` (`toEngSldGraph`) | JSON `EngSldGraph` (yang dipakai canvas) | bandingkan JSON graf FE vs BE |
 
 **Konstanta geometri yang wajib sama** (`engineSld.ts`):
@@ -95,6 +96,17 @@ curl -s -X POST -F "file=@public/template_sistem_500kv_jamali.xlsx" http://local
 npx tsx scripts/pipeline-test/parse-only.ts public/template_sistem_500kv_jamali.xlsx
 ```
 
+**Hasil verifikasi tahap 4 (29-09-2026)** — `Java TierEngine+Adapter` vs FE `main.ts`:
+
+| Fixture | GI | Line | IBR link | Tier range | Risiko | Status |
+|--------|-----|------|----------|------------|--------|--------|
+| Suralaya | 21 | 17 | 3 | 1–5 | Normal, N-1 | ✅ identik |
+| Jamali | 64 | 58 | 0 | 1–6 | Normal | ✅ identik |
+
+Sample ID node, sample ID IBR link, dan set risiko juga identik. Cara mengulang:
+`POST /api/sld/viewmodel` → lihat `summary`; bandingkan dengan
+`npx tsx scripts/pipeline-test/main.ts <file.xlsx>`.
+
 **Tes pakai fixture asli** (di repo React):
 `public/template_kerawanan_subsistem_suralaya_cilegon.xlsx` dan
 `public/template_sistem_500kv_jamali.xlsx`.
@@ -109,9 +121,12 @@ backend-sld/
     ├── SldServerApplication.java
     ├── dto/EngineDto.java    # kontrak JSON (meniru EngSldGraph)
     ├── dto/EnginePayloadDto.java  # payload parse (port types.ts) — tahap 3
+    ├── dto/ViewModelDto.java      # node/line view-model — tahap 4
     ├── reader/ExcelReader.java    # baca workbook/header (tahap 1)
     ├── mapping/ColumnMapping.java + MappingDetector.java  # deteksi kolom (tahap 2)
     ├── parser/Parser.java         # Excel → EnginePayload (tahap 3)
+    ├── tier/TierEngine.java       # hitung tier (tahap 4)
+    ├── adapter/Adapter.java       # payload → view-model node/line (tahap 4)
     ├── service/SldEngineService.java   # engine (tahap 1–5: parse masih mock)
     └── web/SldParseController.java     # REST API
 ```

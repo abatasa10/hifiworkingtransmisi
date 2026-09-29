@@ -179,7 +179,7 @@ public class Parser {
     return new String[]{"GI", "false", "null"};
   }
 
-  private static boolean isSourceObject(EnginePayloadDto.Object o) {
+  public static boolean isSourceObject(EnginePayloadDto.Object o) {
     if ("GENERATING_UNIT".equals(o.object_type)) return true;
     if ("GITET".equals(o.object_type)) return true;
     double hv = o.voltage_hv_kv != null ? o.voltage_hv_kv
