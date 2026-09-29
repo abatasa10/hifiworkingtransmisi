@@ -10,7 +10,8 @@ import {
   FileText,
   Bell,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Cpu
 } from 'lucide-react';
 import { ActiveView } from './Header';
 
@@ -65,6 +66,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'report-view' as ActiveView,
       title: 'Laporan & Rekapitulasi',
       icon: FileText
+    },
+    {
+      id: 'sld-server-mode' as ActiveView,
+      title: 'SLD Server Mode (Java Engine)',
+      icon: Cpu
     }
   ];
 

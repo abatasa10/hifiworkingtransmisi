@@ -11,6 +11,7 @@ import { IBTListView } from './components/views/IBTListView';
 import { ReportView } from './components/views/ReportView';
 import { SystemRiskModal } from './components/views/SystemRiskModal';
 import { UploadSLDView } from './components/views/UploadSLDView';
+import { ServerSLDView } from './components/views/ServerSLDView';
 
 export const App: React.FC = () => {
   // Navigation State (starts at 'national' or 'sld-500kv')
@@ -140,6 +141,10 @@ export const App: React.FC = () => {
             onNavigate={setCurrentView}
             onSelectSubsystem={handleSelectSubsystem}
           />
+        )}
+
+        {currentView === 'sld-server-mode' && (
+          <ServerSLDView onBack={() => setCurrentView('upload-sld')} />
         )}
       </main>
       </div>

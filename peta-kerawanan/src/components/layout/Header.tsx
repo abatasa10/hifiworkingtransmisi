@@ -17,7 +17,8 @@ export type ActiveView =
   | 'subsystem-sld'
   | 'ibt-view'
   | 'report-view'
-  | 'upload-sld';
+  | 'upload-sld'
+  | 'sld-server-mode';
 
 interface HeaderProps {
   currentView: ActiveView;
@@ -95,6 +96,11 @@ export const Header: React.FC<HeaderProps> = ({
         return {
           title: 'Laporan & Analisis Kerawanan',
           crumbs: ['Laporan', 'Rekapitulasi Kerawanan Sistem']
+        };
+      case 'sld-server-mode':
+        return {
+          title: 'SLD Server Mode (Java Engine)',
+          crumbs: ['Integrasi', 'Backend Java', 'SLD Server Mode']
         };
       default:
         return {

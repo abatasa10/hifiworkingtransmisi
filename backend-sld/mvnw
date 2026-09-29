@@ -1,0 +1,20 @@
+#!/bin/sh
+# Maven wrapper (minimal, self-contained).
+# Mengunduh Maven ke ~/.m2/wrapper/dists bila belum ada, lalu menjalankannya.
+set -e
+
+MVN_VERSION="3.9.6"
+DIST_DIR="${MVNW_BASE:-$HOME/.m2/wrapper/dists}"
+MVN_DIR="$DIST_DIR/apache-maven-$MVN_VERSION"
+
+if [ ! -x "$MVN_DIR/bin/mvn" ]; then
+  mkdir -p "$DIST_DIR"
+  TARBALL="$DIST_DIR/apache-maven-$MVN_VERSION-bin.tar.gz"
+  echo "==> Maven $MVN_VERSION belum ada, mengunduh..."
+  curl -fsSL "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$MVN_VERSION/apache-maven-$MVN_VERSION-bin.tar.gz" -o "$TARBALL" \
+    || curl -fsSL "https://archive.apache.org/dist/maven/maven-3/$MVN_VERSION/binaries/apache-maven-$MVN_VERSION-bin.tar.gz" -o "$TARBALL"
+  tar -xzf "$TARBALL" -C "$DIST_DIR"
+  rm -f "$TARBALL"
+fi
+
+exec "$MVN_DIR/bin/mvn" "$@"
