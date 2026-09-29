@@ -86,7 +86,7 @@ bagian "Hasil verifikasi tahap 5".
 
 | Fixture | Objek | Koneksi | Risk | Isu | Status |
 |--------|-------|---------|------|-----|--------|
-| Suralaya (subsistem 500/150 kV) | 24 | 20 | 3 | 0 | ✅ identik |
+| Suralaya (subsistem 500/150 kV) | 24 | 26 | 3 | 0 | ✅ identik |
 | Jamali (sistem 500 kV) | 64 | 58 | 0 | 0 | ✅ identik |
 
 Cara mengulang:
@@ -101,7 +101,7 @@ npx tsx scripts/pipeline-test/parse-only.ts public/template_sistem_500kv_jamali.
 
 | Fixture | GI | Line | IBR link | Tier range | Risiko | Status |
 |--------|-----|------|----------|------------|--------|--------|
-| Suralaya | 21 | 17 | 3 | 1–5 | Normal, N-1 | ✅ identik |
+| Suralaya | 21 | 23 | 3 | 1–5 | Normal, N-1 | ✅ identik |
 | Jamali | 64 | 58 | 0 | 1–6 | Normal | ✅ identik |
 
 Sample ID node, sample ID IBR link, dan set risiko juga identik. Cara mengulang:
@@ -117,7 +117,7 @@ vs FE `toEngSldGraph` (parity-graph.ts membandingkan seluruh `EngSldGraph`):
 
 | Fixture | Node | Circuit | IBT | Bay | Pin | TierCount | Status |
 |--------|------|---------|-----|-----|-----|-----------|--------|
-| Suralaya | 21 | 15 | 3 | 0 | 3 | 4 | ✅ identik |
+| Suralaya | 21 | 19 | 3 | 0 | 3 | 4 | ✅ identik |
 | Jamali | 64 | 40 | 0 | 0 | 0 | 5 | ✅ identik |
 
 Cara mengulang: `npx tsx scripts/pipeline-test/parity-graph.ts <file.xlsx>`
@@ -130,6 +130,15 @@ yang dipakai halaman "SLD Server Mode") lalu geometri canvas `eng*Geoms` +
 Hasilnya identik untuk kedua fixture (bounds Suralaya 1340×1010, Jamali
 1785×1230) — artinya `SldSvgCanvas` menerima input piksel-identik dari graf
 Java maupun pipeline FE native.
+
+> **Catatan data (29-09-2026):** sheet `Jalur_Transmisi` template Suralaya
+> dilengkapi agar seluruh node terhubung — ditambah PHT 500 kV 2 sirkit
+> (Suralaya Baru–Suralaya dan Suralaya–Cilegon Baru) serta `Feeder Beban`
+> KSTEL & POSCO dari GI Cilegon Lama (CLGON) 150 kV. Tanpa baris ini
+> KSTEL/POSCO tampil terisolasi (BOUNDARY) dan jalur 500 kV hanya punya stub
+> IBT — engine FE & BE menggambar persis apa yang ada di data, bukan rekaan.
+> Parity di-re-run ulang setelah perubahan: **EXACT** (Suralaya 21/19/3/0/3/4,
+> Jamali 64/40/0/0/0/5, bounds tidak berubah).
 
 ## Struktur
 
