@@ -133,8 +133,8 @@ Java maupun pipeline FE native.
 
 > **Catatan data (29-09-2026):** sheet `Jalur_Transmisi` template Suralaya
 > dilengkapi agar seluruh node terhubung — ditambah PHT 500 kV 2 sirkit
-> (Suralaya Baru–Suralaya dan Suralaya–Cilegon Baru) serta `Feeder Beban`
-> KSTEL & POSCO dari GI Cilegon Lama (CLGON) 150 kV. Tanpa baris ini
+> (Suralaya Baru–Suralaya dan Suralaya Baru–Cilegon Baru, hub di Suralaya Baru)
+> serta `Feeder Beban` KSTEL & POSCO dari GI Cilegon Lama (CLGON) 150 kV. Tanpa baris ini
 > KSTEL/POSCO tampil terisolasi (BOUNDARY) dan jalur 500 kV hanya punya stub
 > IBT — engine FE & BE menggambar persis apa yang ada di data, bukan rekaan.
 > Parity di-re-run ulang setelah perubahan: **EXACT** (Suralaya 21/19/3/0/3/4,
