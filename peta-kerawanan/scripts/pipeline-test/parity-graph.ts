@@ -98,7 +98,7 @@ const geomNorm = (g: EngSldGraph) => {
     guides: engTierGuides(g),
     nodeGeoms: nodeGeoms.map((n) => [n.node.code, n.y, n.x1, n.x2, n.color, n.labelX, n.labelY, n.labelAnchor]),
     circuitGeoms: circuitGeoms.map((c) => [c.circuit.id, c.color, c.dash ?? '', c.wires.map((w) => [w.d, w.mid, w.pmts])]),
-    ibtGeoms: ibtGeoms.map((i) => [i.ibt.id, i.y1, i.y2]),
+    ibtGeoms: ibtGeoms.map((i) => [i.ibt.id, i.y1, i.y2, i.topX, i.bottomX, i.bendY]),
     bayGeoms: bayGeoms.map((b) => [b.bay.id, b.y, b.color, b.xs]),
     pinGeoms: pinGeoms.map((p) => [p.pin.seq, p.pin.code, p.x, p.y])
   }, null, 1);

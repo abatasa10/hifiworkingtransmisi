@@ -260,29 +260,38 @@ export const SldSvgCanvas: React.FC<SldSvgCanvasProps> = ({
         </g>
 
         <g id="ibt-links">
-          {ibtGeoms.map((g) => (
-            <g key={g.ibt.id} className="sld-hit" onClick={clickWrap(() => onSelectIbt(g.ibt.id))}>
-              {isSelIbt(g.ibt.id) && (
-                <rect x={g.ibt.x - 18} y={g.y1 + 6} width={36} height={g.y2 - g.y1 - 12} rx={4} fill="#0046ad" fillOpacity={0.08} stroke="#0046ad" strokeWidth={1.5} strokeDasharray="4 3" />
-              )}
-              <rect x={g.ibt.x - 14} y={g.y1 + 4} width={28} height={g.y2 - g.y1 - 8} fill="transparent" />
-              <path d={`M${g.ibt.x},${g.y1} V${g.y2}`} fill="none" stroke="#8a6a3a" strokeWidth={1.6}>
-                <title>
-                  {g.ibt.name} - {g.ibt.status}
-                </title>
-              </path>
-              <rect x={g.ibt.x - 5} y={g.y1 + 7} width={10} height={10} fill="#0047AB" />
-              <g fill="#ffffff" strokeWidth={1.7}>
-                <circle cx={g.ibt.x} cy={g.y1 + (g.y2 - g.y1) * 0.47} r={7.5} stroke="#0047AB" />
-                <circle cx={g.ibt.x - 4.5} cy={g.y1 + (g.y2 - g.y1) * 0.47 + 8} r={7.5} stroke="#C00000" />
-                <circle cx={g.ibt.x + 4.5} cy={g.y1 + (g.y2 - g.y1) * 0.47 + 8} r={7.5} stroke="#E0A400" />
+          {ibtGeoms.map((g) => {
+            const bent = Math.abs(g.bottomX - g.topX) >= 0.5;
+            const pathD = bent
+              ? `M${g.topX},${g.y1} V${g.bendY} H${g.bottomX} V${g.y2}`
+              : `M${g.topX},${g.y1} V${g.y2}`;
+            const wheelY = bent ? (g.bendY + g.y2) / 2 : g.y1 + (g.y2 - g.y1) * 0.47;
+            const xMin = Math.min(g.topX, g.bottomX);
+            const xMax = Math.max(g.topX, g.bottomX);
+            return (
+              <g key={g.ibt.id} className="sld-hit" onClick={clickWrap(() => onSelectIbt(g.ibt.id))}>
+                {isSelIbt(g.ibt.id) && (
+                  <rect x={xMin - 18} y={g.y1 + 6} width={xMax - xMin + 36} height={g.y2 - g.y1 - 12} rx={4} fill="#0046ad" fillOpacity={0.08} stroke="#0046ad" strokeWidth={1.5} strokeDasharray="4 3" />
+                )}
+                <rect x={xMin - 14} y={g.y1 + 4} width={xMax - xMin + 28} height={g.y2 - g.y1 - 8} fill="transparent" />
+                <path d={pathD} fill="none" stroke="#8a6a3a" strokeWidth={1.6}>
+                  <title>
+                    {g.ibt.name} - {g.ibt.status}
+                  </title>
+                </path>
+                <rect x={g.topX - 5} y={g.y1 + 7} width={10} height={10} fill="#0047AB" />
+                <g fill="#ffffff" strokeWidth={1.7}>
+                  <circle cx={g.bottomX} cy={wheelY} r={7.5} stroke="#0047AB" />
+                  <circle cx={g.bottomX - 4.5} cy={wheelY + 8} r={7.5} stroke="#C00000" />
+                  <circle cx={g.bottomX + 4.5} cy={wheelY + 8} r={7.5} stroke="#E0A400" />
+                </g>
+                <rect x={g.bottomX - 5} y={g.y2 - 17} width={10} height={10} fill="#C00000" />
+                <text x={g.bottomX} y={wheelY + 24} fontSize={8.5} fill="#8a6a3a" fontWeight={700} textAnchor="middle">
+                  {g.ibt.name.split(' ').slice(0, 2).join(' ')}
+                </text>
               </g>
-              <rect x={g.ibt.x - 5} y={g.y2 - 17} width={10} height={10} fill="#C00000" />
-              <text x={g.ibt.x} y={g.y1 + (g.y2 - g.y1) * 0.47 + 24} fontSize={8.5} fill="#8a6a3a" fontWeight={700} textAnchor="middle">
-                {g.ibt.name.split(' ').slice(0, 2).join(' ')}
-              </text>
-            </g>
-          ))}
+            );
+          })}
         </g>
 
         <g id="busbars">

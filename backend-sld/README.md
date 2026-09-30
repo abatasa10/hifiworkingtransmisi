@@ -140,6 +140,14 @@ Java maupun pipeline FE native.
 > Parity di-re-run ulang setelah perubahan: **EXACT** (Suralaya 21/19/3/0/3/4,
 > Jamali 64/40/0/0/0/5, bounds tidak berubah).
 
+> **Perbaikan render IBT (29-09-2026):** kabel IBT di `engIbtGeoms` +
+> `SldSvgCanvas` kini digambar **ortogonal** dan roda (3 lingkaran) di-snap ke
+> busbar penerima (150 kV) — dulu ditarik vertikal lurus di pusat GI 500 kV,
+> sehingga roda "menggantung" di udara saat busbar 150 kV (e.g. srlya/clbru)
+> terletak jauh di samping. `graph.ibts[].x` tidak berubah (Java tetap
+> memancarkan pusat GI), snapping murni sisi render FE — parity FE=BE tetap
+> EXACT (termasuk `topX/bottomX/bendY` di serialisasi verification).
+
 ## Struktur
 
 ```

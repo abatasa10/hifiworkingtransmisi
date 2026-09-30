@@ -473,6 +473,12 @@ export interface EngIbtGeom {
   ibt: EngSldIbt;
   y1: number;
   y2: number;
+  /** Cable exit x at the HV busbar. */
+  topX: number;
+  /** LV-contact x: the wheel is snapped onto the receiving busbar so it never floats in open air. */
+  bottomX: number;
+  /** y of the horizontal run when topX and bottomX differ. */
+  bendY: number;
 }
 
 export interface EngBayGeom {
@@ -555,7 +561,17 @@ export function engIbtGeoms(graph: EngSldGraph): EngIbtGeom[] {
     const a = byCode.get(ibt.from);
     const b = byCode.get(ibt.to);
     if (!a || !b) continue;
-    out.push({ ibt, y1: engBusY(a.tier), y2: engBusY(b.tier) });
+    const y1 = engBusY(a.tier);
+    const y2 = engBusY(b.tier);
+    // The graph stores the IBT at its HV busbar centre; clamp the cable drop
+    // so the wheel always lands on the receiving busbar instead of hanging
+    // in empty space when the two busbars are horizontally far apart.
+    const topX = ibt.x;
+    const lvX1 = b.x - b.halfWidth;
+    const lvX2 = b.x + b.halfWidth;
+    const bottomX = Math.min(lvX2, Math.max(lvX1, topX));
+    const bendY = y1 + (y2 - y1) * 0.45;
+    out.push({ ibt, y1, y2, topX, bottomX, bendY });
   }
   return out;
 }
@@ -594,11 +610,11 @@ export function engPinGeoms(
         // IBT-edge risks are pinned CIRCUIT by the registry; resolve them
         // onto the IBT wheel like the engine's TRANSFORMER pins.
         const ig = ibtGeoms.find((i) => i.ibt.code === pin.code);
-        if (ig) out.push({ pin, x: ig.ibt.x - 26, y: (ig.y1 + ig.y2) / 2 + 5 });
+        if (ig) out.push({ pin, x: ig.bottomX - 26, y: (ig.y1 + ig.y2) / 2 + 5 });
       }
     } else if (pin.kind === 'TRANSFORMER') {
       const g = ibtGeoms.find((i) => i.ibt.code === pin.code);
-      if (g) out.push({ pin, x: g.ibt.x - 26, y: (g.y1 + g.y2) / 2 + 5 });
+      if (g) out.push({ pin, x: g.bottomX - 26, y: (g.y1 + g.y2) / 2 + 5 });
     }
   }
   void bayGeoms;
