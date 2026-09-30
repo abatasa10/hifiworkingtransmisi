@@ -1,5 +1,8 @@
 # SLD Server Mode — Backend Java (Spring Boot)
 
+> **Dokumen API lengkap:** lihat [`API-SPEC.md`](API-SPEC.md) (stack, endpoint,
+> pipeline, kontrak JSON, dan catatan untuk tim backend).
+
 Backend untuk halaman **"SLD Server Mode"** di aplikasi React. Engine SLD
 (parsing Excel, tiering, layout, geometri) pindah ke server Java; front-end
 tetap merender hasil JSON dengan canvas yang sama.
