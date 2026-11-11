@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta Risiko Aset | DASHBOARD MANTAPS PLN</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS (Local with CDN Fallback) -->
+  <link rel="stylesheet" href="libs/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="top-navbar">
+    <div class="nav-left">
+      <a href="#" class="brand-logo" onclick="showNationalView(); return false;">
+        <span class="sub">DASHBOARD</span>
+        <span class="main">MAN<span>TAPS</span></span>
+      </a>
+      <nav class="nav-links">
+        <a href="#" class="nav-link active">Peta Risiko</a>
+        <a href="#" class="nav-link">
+          Profil Aset
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </a>
+        <a href="#" class="nav-link">Operation System</a>
+      </nav>
+    </div>
+    <div class="nav-right">
+      <div class="profile-avatar" title="Akun Pengguna">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN PAGE CONTAINER -->
+  <main class="page-container">
+    
+    <!-- SUBHEADER -->
+    <div class="page-header">
+      <h1 class="page-title">Peta Risiko</h1>
+      <span class="page-last-update">Last Update: 31/8/2026, 00.00.00</span>
+    </div>
+
+    <!-- VIEW 1: NATIONAL MAP (PERSIS GAMBAR) -->
+    <section id="national-view" class="national-card fade-in">
+      <div class="map-top-controls">
+        <button class="control-pill" onclick="resetToNationalBounds()">Nasional</button>
+        <select class="control-select" id="national-asset-type" onchange="handleAssetTypeChange(this.value)">
+          <option value="gi">Gardu Induk</option>
+          <option value="saltrans">Saluran Transmisi</option>
+        </select>
+      </div>
+      <div id="national-map" class="national-map-container"></div>
+    </section>
+
+    <!-- VIEW 2: DETAIL VIEW (GAMBAR 2 - SPLIT SCREEN) -->
+    <section id="detail-view" class="detail-view-container fade-in" style="display: none;">
+      
+      <!-- LEFT PANEL: 5x5 SCATTER MATRIX & CONTROLS -->
+      <div class="detail-left-panel">
+        
+        <!-- Header -->
+        <div class="detail-panel-header">
+          <div class="header-title-group">
+            <h2 id="detail-unit-title">PETA RISIKO - UITJBB</h2>
+            <p id="detail-unit-sub">Gardu Induk / UITJBB</p>
+            <div id="detail-breadcrumb" class="drilldown-breadcrumb" style="display: none;">
+              <!-- Dynamic breadcrumb links inserted here -->
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="btn-export" id="btn-export-action" onclick="exportDataCSV()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export
+            </button>
+            <div class="view-toggle-group" id="view-toggle-container">
+              <button id="btn-view-matrix" class="view-toggle-btn active" title="Tampilan Scatter Plot Matrix" onclick="switchDetailViewMode('matrix')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </button>
+              <button id="btn-view-table" class="view-toggle-btn" title="Tampilan Tabel Data" onclick="switchDetailViewMode('table')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="3" y1="15" x2="21" y2="15"></line>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+              </button>
+            </div>
+            <button class="btn-close-detail" title="Tutup" onclick="handleDetailClose()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Row (Visible in GI Level) -->
+        <div id="detail-filters-row" class="detail-filters-row">
+          <div class="filter-input-wrap">
+            <label>Unit</label>
+            <div class="filter-chip-unit">
+              <span id="filter-unit-label">UITJBB</span>
+              <span class="filter-chip-close" onclick="showNationalView()" title="Ganti Unit">✕</span>
+            </div>
+          </div>
+          <div class="filter-input-wrap">
+            <label>UPT</label>
+            <select id="filter-upt" class="filter-dropdown" onchange="applyFilters()">
+              <option value="all">Pilih UPT</option>
+            </select>
+          </div>
+          <div class="filter-input-wrap">
+            <label>ULTG</label>
+            <select id="filter-ultg" class="filter-dropdown" onchange="applyFilters()">
+              <option value="all">Pilih ULTG</option>
+            </select>
+          </div>
+          <div class="filter-input-wrap">
+            <label>Tegangan</label>
+            <select id="filter-voltage" class="filter-dropdown" onchange="applyFilters()">
+              <option value="all">Pilih Tegangan</option>
+              <option value="500 kV">500 kV</option>
+              <option value="150 kV">150 kV</option>
+              <option value="70 kV">70 kV</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- MATRIX WORKSPACE -->
+        <div id="matrix-display" class="matrix-workspace">
+          
+          <div class="matrix-main-layout">
+            <!-- Y-Axis (Level AHI & Usia Aset) -->
+            <div class="matrix-y-axis">
+              <span class="y-axis-title">Level AHI & Usia Aset</span>
+              <div class="y-tick" title="Level 5: Kritis / Usia > 40 Thn">5</div>
+              <div class="y-tick" title="Level 4: Buruk / Usia 30-40 Thn">4</div>
+              <div class="y-tick" title="Level 3: Waspada / Usia 20-30 Thn">3</div>
+              <div class="y-tick" title="Level 2: Baik / Usia 10-20 Thn">2</div>
+              <div class="y-tick" title="Level 1: Prima / Usia < 10 Thn">1</div>
+            </div>
+
+            <!-- 5x5 Grid Cells & Scatter Dots -->
+            <div id="matrix-grid-root" class="matrix-grid-container">
+              <!-- Cells will be generated dynamically by app.js -->
+              <div id="scatter-overlay" class="matrix-scatter-overlay">
+                <!-- Scatter points inserted here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- X-Axis (Tier Gardu Induk) -->
+          <div class="matrix-x-axis">
+            <div id="x-ticks-container" class="x-ticks-row">
+              <!-- X ticks generated dynamically based on active dimension -->
+            </div>
+          </div>
+
+          <!-- Dimension Tabs (Bottom) -->
+          <div class="matrix-tabs-row">
+            <button class="matrix-tab-btn" data-dim="beban" onclick="switchDimension('beban')">Beban</button>
+            <button class="matrix-tab-btn" data-dim="kerawanan" onclick="switchDimension('kerawanan')">Kerawanan</button>
+            <button class="matrix-tab-btn active" data-dim="tier" onclick="switchDimension('tier')">Tier Gardu</button>
+            <button class="matrix-tab-btn" data-dim="pelanggan" onclick="switchDimension('pelanggan')">Jenis Pelanggan</button>
+          </div>
+        </div>
+
+        <!-- ALTERNATIVE TABLE VIEW -->
+        <div id="table-display" class="table-view-container" style="display: none;">
+          <div class="table-toolbar">
+            <input type="text" id="table-search" class="table-search-input" placeholder="Cari nama..." oninput="handleTableSearch(this.value)">
+            <span id="table-total-records" style="font-size: 11px; color: var(--text-muted);">Menampilkan 0 data</span>
+          </div>
+          <div class="substation-table-wrap">
+            <table class="substation-table">
+              <thead>
+                <tr id="table-dynamic-headers">
+                  <th>Nama</th>
+                  <th>UPT</th>
+                  <th>ULTG</th>
+                  <th>Tegangan</th>
+                  <th>Tier</th>
+                  <th>AHI (%)</th>
+                  <th>Usia (Th)</th>
+                  <th>Beban</th>
+                  <th>Status Risiko</th>
+                </tr>
+              </thead>
+              <tbody id="substation-table-body">
+                <!-- Table rows inserted by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ASSET DETAIL VIEW (SESUAI GAMBAR 3) -->
+        <div id="asset-detail-display" class="asset-detail-container" style="display: none;">
+          
+          <!-- Top 3-Column Asset Info Card -->
+          <div class="asset-summary-card">
+            <!-- Col 1: Risk & Scores -->
+            <div class="asset-score-col">
+              <div class="risk-score-badge-box" id="ad-risk-box">
+                <span class="lbl">RISK SCORE</span>
+                <span class="val" id="ad-risk-score">19 - Moderate to High</span>
+              </div>
+              <div class="asset-metrics-sub">
+                <div class="metric-sub-item">
+                  <span class="sub-lbl">AHI SCORE</span>
+                  <span class="sub-val" id="ad-ahi-score">5 - Critical</span>
+                </div>
+                <div class="metric-sub-item" style="text-align: right;">
+                  <span class="sub-lbl" id="ad-tier-lbl">TIER</span>
+                  <span class="sub-val" id="ad-tier-val">Tier 4</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Lokasi Aset -->
+            <div class="asset-info-section">
+              <h4>Lokasi Aset</h4>
+              <div class="info-kv-list">
+                <div class="info-kv-row"><span class="kv-key">Unit Induk</span><span class="kv-val" id="ad-unit">UITJBM</span></div>
+                <div class="info-kv-row"><span class="kv-key">UPT</span><span class="kv-val" id="ad-upt">UPT PROBOLINGGO</span></div>
+                <div class="info-kv-row"><span class="kv-key">ULTG</span><span class="kv-val" id="ad-ultg">ULTG PROBOLINGGO</span></div>
+                <div class="info-kv-row"><span class="kv-key">GI</span><span class="kv-val" id="ad-gi">GITET 500KV GRATI</span></div>
+                <div class="info-kv-row"><span class="kv-key">Bay</span><span class="kv-val" id="ad-bay">PHT 500KV PAITON #1</span></div>
+                <div class="info-kv-row"><span class="kv-key">Penempatan</span><span class="kv-val" id="ad-penempatan">PHT 500KV PAITON #1</span></div>
+              </div>
+            </div>
+
+            <!-- Col 3: Identitas Aset -->
+            <div class="asset-info-section">
+              <h4>Identitas Aset</h4>
+              <div class="info-kv-list">
+                <div class="info-kv-row"><span class="kv-key">Techidentno</span><span class="kv-val" id="ad-techid">16361436136100000014</span></div>
+                <div class="info-kv-row"><span class="kv-key">Jenis Aset</span><span class="kv-val" id="ad-jenis">Lightning Arrester</span></div>
+                <div class="info-kv-row"><span class="kv-key">Merk</span><span class="kv-val" id="ad-merk">SIEMENS</span></div>
+                <div class="info-kv-row"><span class="kv-key">Tipe</span><span class="kv-val" id="ad-tipe">3EL3 420-4PL54-4TA1-Z</span></div>
+                <div class="info-kv-row"><span class="kv-key">Phasa</span><span class="kv-val" id="ad-phasa">R</span></div>
+                <div class="info-kv-row"><span class="kv-key">Serial ID</span><span class="kv-val" id="ad-serial">22083049</span></div>
+                <div class="info-kv-row"><span class="kv-key">Status Aset</span><span class="kv-val" id="ad-status">Operasi</span></div>
+                <div class="info-kv-row"><span class="kv-key">Usia Aset</span><span class="kv-val" id="ad-usia">4</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert Warning Banner -->
+          <div class="asset-alert-banner">
+            <div class="alert-circle-icon">!</div>
+            <div class="alert-text-body">
+              <h5 id="ad-alert-title">Status Peralatan Moderate to High!</h5>
+              <p>Silahkan hubungi PIC lebih lanjut.</p>
+            </div>
+          </div>
+
+          <!-- Parameter Anomali & Inspection Table -->
+          <div class="inspection-table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 45px;">No.</th>
+                  <th>Sub Sistem</th>
+                  <th>Parameter Anomali</th>
+                  <th>Skor Kondisi</th>
+                  <th>Nomor Inspeksi</th>
+                  <th>Tanggal Inspeksi</th>
+                </tr>
+              </thead>
+              <tbody id="ad-inspections-tbody">
+                <!-- Rows inserted dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL: ZOOMED UNIT MAP & SUMMARY CARD (GAMBAR 2) -->
+      <div class="detail-right-panel">
+        
+        <!-- Top Overlay Controls inside Map -->
+        <div class="map-top-controls">
+          <button class="control-pill" onclick="showNationalView()" title="Kembali ke Peta Nasional">Nasional</button>
+          <select class="control-select">
+            <option value="gi">Gardu Induk</option>
+          </select>
+        </div>
+
+        <!-- Zoomed Unit Map Container -->
+        <div id="unit-map" class="unit-map-container"></div>
+
+        <!-- Bottom Summary Card (Gambar 2) -->
+        <div class="unit-summary-overlay">
+          <div class="summary-header-row">
+            <div class="summary-unit-info">
+              <h3 id="summary-unit-name">UITJBB</h3>
+              <p>Semua Gardu Induk</p>
+            </div>
+            <div class="summary-total-gi">
+              <div class="num" id="summary-total-num">176</div>
+              <div class="lbl">Total GI</div>
+            </div>
+          </div>
+          
+          <!-- 5 Risk Stat Badges -->
+          <div class="summary-badges-grid">
+            <div class="summary-stat-badge badge-risk-high" onclick="filterByRiskCategory('High')">
+              <span class="num" id="stat-count-high">4</span>
+              <span class="lbl">High</span>
+            </div>
+            <div class="summary-stat-badge badge-risk-mod-high" onclick="filterByRiskCategory('Mod-High')">
+              <span class="num" id="stat-count-mod-high">4</span>
+              <span class="lbl">Mod - High</span>
+            </div>
+            <div class="summary-stat-badge badge-risk-moderate" onclick="filterByRiskCategory('Moderate')">
+              <span class="num" id="stat-count-mod">0</span>
+              <span class="lbl">Moderate</span>
+            </div>
+            <div class="summary-stat-badge badge-risk-low-mod" onclick="filterByRiskCategory('Low-Mod')">
+              <span class="num" id="stat-count-low-mod">43</span>
+              <span class="lbl">Low - Mod</span>
+            </div>
+            <div class="summary-stat-badge badge-risk-low" onclick="filterByRiskCategory('Low')">
+              <span class="num" id="stat-count-low">125</span>
+              <span class="lbl">Low</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FLOATING DETAIL TOOLTIP -->
+  <div id="gi-floating-tooltip" class="custom-gi-tooltip" style="display: none;">
+    <div class="tooltip-gi-name" id="tt-name">GI 150kV CILEGON</div>
+    <div class="tooltip-badge-row">
+      <span id="tt-voltage" style="font-weight: 700; color: #2563eb;">150 kV</span>
+      <span id="tt-risk-badge" class="pill-status pill-high">High</span>
+    </div>
+    <div class="tooltip-info-grid">
+      <div class="tooltip-item">
+        <label id="tt-lbl-1">UPT / ULTG</label>
+        <span id="tt-upt">UPT Cilegon</span>
+      </div>
+      <div class="tooltip-item">
+        <label id="tt-lbl-2">Tier Gardu</label>
+        <span id="tt-tier">Tier 1 (VVIP)</span>
+      </div>
+      <div class="tooltip-item">
+        <label id="tt-lbl-3">AHI & Usia</label>
+        <span id="tt-ahi-age">38.2% (42 th)</span>
+      </div>
+      <div class="tooltip-item">
+        <label id="tt-lbl-4">Beban Operasi</label>
+        <span id="tt-beban">88.5%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING BAY DETAIL POPUP (GAMBAR 1) -->
+  <div id="bay-floating-popup" class="bay-popup-card" style="display: none;">
+    <div class="bay-popup-header-tag" id="bp-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      <span id="bp-tag-text">19 - Moderate to High</span>
+    </div>
+    <div class="bay-popup-title" id="bp-title">PHT 500KV PAITON #1</div>
+    <div class="bay-popup-sub">Bay</div>
+    <div class="bay-popup-kv">
+      <div class="bay-kv-item"><span class="k">Unit Induk :</span><span class="v" id="bp-unit">UITJBM</span></div>
+      <div class="bay-kv-item"><span class="k">UPT :</span><span class="v" id="bp-upt">UPT PROBOLINGGO</span></div>
+      <div class="bay-kv-item"><span class="k">ULTG :</span><span class="v" id="bp-ultg">ULTG PROBOLINGGO</span></div>
+      <div class="bay-kv-item"><span class="k">Gardu Induk :</span><span class="v" id="bp-gi">GITET 500KV GRATI</span></div>
+      <div class="bay-kv-item"><span class="k">Tegangan :</span><span class="v" id="bp-volt">500</span></div>
+      <div class="bay-kv-item"><span class="k">Tier :</span><span class="v" id="bp-beban">Tier 4</span></div>
+    </div>
+    <button class="btn-open-bay-drilldown" id="bp-drill-btn" onclick="drillDownToAssetLevel()">
+      <span>Lihat 15 Aset di Bay ini</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+    </button>
+  </div>
+
+  <!-- Leaflet JS (Local with CDN Fallback) -->
+  <script src="libs/leaflet.js"></script>
+  <script>if (typeof L === 'undefined') { document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\\/script>'); }</script>
+  
+  <!-- Data Model & Main App Logic -->
+  <script src="data.js?v=4"></script>
+  <script src="drilldown-data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+</body>
+</html>
