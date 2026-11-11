@@ -815,13 +815,7 @@ const KATEGORI_PELANGGAN_DESC = {
   5: "Pelanggan Umum, Residensial, Komersial biasa (selain dari Kategori 1 sampai 4)"
 };
 
-const TIER_DESC = {
-  1: "Konsentrasi Beban Obvitnas & VVIP Nasional",
-  2: "Industri Strategis / Interkoneksi Utama Sistem",
-  3: "Urban Menengah & Konsentrasi Beban Kota",
-  4: "Sub-urban & Kawasan Penyangga",
-  5: "Radial / Beban Rendah"
-};
+const TIER_TECHNICAL_INFO = "Nilai indeks Tier berbanding terbalik terhadap dampak risiko: semakin kecil Tier (Tier 1), semakin tinggi signifikansi konsekuensi dan dampak kontingensi terhadap keandalan sistem penyaluran.";
 
 function getRiskTheme(category, cellNum) {
   const cat = (category || '').toLowerCase();
@@ -904,13 +898,15 @@ function showSubstationTooltip(sub, event) {
   // Baris ke-5 disesuaikan sama tier dan Kategori jenis pelanggan
   let dimKey = 'Tier :';
   let dimVal = `Tier ${sub.tier || 1}`;
-  let descText = TIER_DESC[sub.tier || 1] || '';
+  let descTitle = 'Kritikalitas:';
+  let descText = TIER_TECHNICAL_INFO;
   let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
     const katNum = sub.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
     dimVal = sub.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descTitle = 'Kriteria:';
     descText = sub.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
@@ -936,7 +932,7 @@ function showSubstationTooltip(sub, event) {
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span><strong>Kriteria:</strong> ${descText}</span>
+          <span><strong>${descTitle}</strong> ${descText}</span>
         </div>
       `;
     }
@@ -993,13 +989,15 @@ function showBayTooltip(bay, event) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${bay.tier || 4}`;
-  let descText = TIER_DESC[bay.tier || 4] || '';
+  let descTitle = 'Kritikalitas:';
+  let descText = TIER_TECHNICAL_INFO;
   let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
     const katNum = bay.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
     dimVal = bay.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descTitle = 'Kriteria:';
     descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
@@ -1021,7 +1019,7 @@ function showBayTooltip(bay, event) {
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span><strong>Kriteria:</strong> ${descText}</span>
+          <span><strong>${descTitle}</strong> ${descText}</span>
         </div>
       `;
     }
@@ -1079,13 +1077,15 @@ function showAssetTooltip(asset, event) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${asset.tier || 4}`;
-  let descText = TIER_DESC[asset.tier || 4] || '';
+  let descTitle = 'Kritikalitas:';
+  let descText = TIER_TECHNICAL_INFO;
   let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
     const katNum = asset.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
     dimVal = asset.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descTitle = 'Kriteria:';
     descText = asset.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   }
@@ -1101,7 +1101,7 @@ function showAssetTooltip(asset, event) {
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span><strong>Kriteria:</strong> ${descText}</span>
+          <span><strong>${descTitle}</strong> ${descText}</span>
         </div>
       `;
     }
@@ -1411,13 +1411,15 @@ function showBayFloatingPopup(bay, evt) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${bay.tier || 4}`;
-  let descText = TIER_DESC[bay.tier || 4] || '';
+  let descTitle = 'Kritikalitas:';
+  let descText = TIER_TECHNICAL_INFO;
   let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
     const katNum = bay.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
     dimVal = bay.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descTitle = 'Kriteria:';
     descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
@@ -1439,7 +1441,7 @@ function showBayFloatingPopup(bay, evt) {
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span><strong>Kriteria:</strong> ${descText}</span>
+          <span><strong>${descTitle}</strong> ${descText}</span>
         </div>
       `;
     }
