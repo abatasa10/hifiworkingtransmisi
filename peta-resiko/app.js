@@ -604,6 +604,11 @@ function renderScatterDots(items) {
         highlightUnitMapMarker(sub.id);
       });
 
+      dot.addEventListener('mousemove', (e) => {
+        const tt = document.getElementById('gi-floating-tooltip');
+        positionTooltip(tt, e);
+      });
+
       dot.addEventListener('mouseleave', () => {
         hideSubstationTooltip();
         if (state.selectedSubstationId !== sub.id) {
@@ -655,8 +660,18 @@ function renderScatterDots(items) {
       }
 
       dot.addEventListener('mouseenter', (e) => {
-        showBayFloatingPopup(bay, e);
+        showBayTooltip(bay, e);
         highlightUnitMapMarker(bay.id);
+      });
+
+      dot.addEventListener('mousemove', (e) => {
+        const tt = document.getElementById('gi-floating-tooltip');
+        positionTooltip(tt, e);
+      });
+
+      dot.addEventListener('mouseleave', () => {
+        hideSubstationTooltip();
+        unhighlightUnitMapMarker(bay.id);
       });
 
       // Klik dot Bay di scatterplot -> langsung masuk ke Asset level
@@ -724,6 +739,11 @@ function renderScatterDots(items) {
         highlightUnitMapMarker(asset.id);
       });
 
+      dot.addEventListener('mousemove', (e) => {
+        const tt = document.getElementById('gi-floating-tooltip');
+        positionTooltip(tt, e);
+      });
+
       dot.addEventListener('mouseleave', () => {
         hideSubstationTooltip();
         unhighlightUnitMapMarker(asset.id);
@@ -787,82 +807,239 @@ function selectSubstation(subId) {
   }
 }
 
+function getRiskTheme(category, cellNum) {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('high') && !cat.includes('mod')) {
+    return { bg: '#e50914', text: '#e50914' }; // Red matching screenshot
+  } else if (cat.includes('mod-high') || cat.includes('moderate to high')) {
+    return { bg: '#f97316', text: '#ea580c' }; // Vibrant Orange
+  } else if (cat.includes('moderate')) {
+    return { bg: '#f59e0b', text: '#d97706' }; // Amber
+  } else if (cat.includes('low-mod') || cat.includes('low to moderate')) {
+    return { bg: '#84cc16', text: '#65a30d' }; // Lime Green
+  } else {
+    return { bg: '#10b981', text: '#059669' }; // Green
+  }
+}
+
+function positionTooltip(tt, event) {
+  if (!tt || !event) return;
+  const tooltipWidth = 285;
+  const tooltipHeight = 295;
+  let x = event.clientX + 16;
+  let y = event.clientY - 35;
+
+  if (x + tooltipWidth > window.innerWidth - 12) {
+    x = event.clientX - tooltipWidth - 16;
+  }
+  if (y + tooltipHeight > window.innerHeight - 12) {
+    y = window.innerHeight - tooltipHeight - 12;
+  }
+  if (y < 12) y = 12;
+
+  tt.style.position = 'fixed';
+  tt.style.left = `${x}px`;
+  tt.style.top = `${y}px`;
+}
+
 function showSubstationTooltip(sub, event) {
   const tt = document.getElementById('gi-floating-tooltip');
   if (!tt) return;
 
-  document.getElementById('tt-name').textContent = sub.name;
-  document.getElementById('tt-voltage').textContent = sub.tegangan;
+  // Resolve column in active matrix dimension
+  let col = 1;
+  if (state.activeDimension === 'tier') {
+    col = (sub.matrixCol !== undefined) ? sub.matrixCol : (6 - (sub.tier || 1));
+  } else if (state.activeDimension === 'beban') {
+    col = sub.levelBeban || 1;
+  } else if (state.activeDimension === 'kerawanan') {
+    col = sub.levelKerawanan || 1;
+  } else if (state.activeDimension === 'pelanggan') {
+    col = (sub.matrixColPelanggan !== undefined) ? sub.matrixColPelanggan : (sub.levelPelanggan || (6 - (sub.kategoriPelanggan || 1)));
+  }
+  const row = sub.levelAhiAge || 1;
 
-  const riskBadge = document.getElementById('tt-risk-badge');
-  if (riskBadge) {
-    riskBadge.textContent = sub.riskCategory;
-    riskBadge.className = `pill-status pill-${sub.riskCategory.toLowerCase()}`;
+  const cell = (MATRIX_CONFIG.cells && MATRIX_CONFIG.cells[row] && MATRIX_CONFIG.cells[row][col]) || {
+    num: sub.cellNum || 22,
+    title: sub.cellTitle || sub.riskCategory || 'High',
+    cat: sub.riskCategory || 'High'
+  };
+
+  const theme = getRiskTheme(cell.title || cell.cat, cell.num);
+
+  const headerBg = document.getElementById('tt-header-bg');
+  if (headerBg) headerBg.style.background = theme.bg;
+
+  const iconSvg = document.getElementById('tt-icon-svg');
+  if (iconSvg) iconSvg.style.stroke = theme.text;
+
+  const pillText = document.getElementById('tt-pill-text');
+  if (pillText) {
+    pillText.textContent = `${cell.num} - ${cell.title}`;
+    pillText.style.color = theme.text;
   }
 
-  setElemText('tt-lbl-1', 'UPT / ULTG');
+  const nameEl = document.getElementById('tt-name');
+  if (nameEl) nameEl.textContent = sub.name;
+
+  const subEl = document.getElementById('tt-sub');
+  if (subEl) subEl.textContent = 'Gardu Induk';
+
+  // Baris ke-5 disesuaikan sama tier dan Kategori jenis pelanggan
+  let dimKey = 'Tier :';
+  let dimVal = `Tier ${sub.tier || 1}`;
+
   if (state.activeDimension === 'pelanggan') {
-    setElemText('tt-lbl-2', 'Kategori Pelanggan (Sumbu X)');
-  } else {
-    setElemText('tt-lbl-2', 'Tier Gardu (Sumbu X)');
+    dimKey = 'Kategori Pelanggan :';
+    dimVal = sub.kategoriPelangganLabel || `Kategori ${sub.kategoriPelanggan || 1}`;
+  } else if (state.activeDimension === 'beban') {
+    dimKey = 'Beban Rata-rata :';
+    dimVal = (sub.beban !== undefined ? Number(sub.beban).toFixed(2) : '269.63');
+  } else if (state.activeDimension === 'kerawanan') {
+    dimKey = 'Kerawanan :';
+    dimVal = sub.kerawanan || 'Sedang';
   }
-  setElemText('tt-lbl-3', 'Sumbu Y (AHI & Usia)');
-  setElemText('tt-lbl-4', 'Skor Resiko');
 
-  document.getElementById('tt-upt').textContent = `${sub.upt || '-'} / ${sub.ultg || '-'}`;
-  if (state.activeDimension === 'pelanggan') {
-    document.getElementById('tt-tier').textContent = sub.kategoriPelangganLabel || `Kategori ${sub.kategoriPelanggan || 1}`;
-  } else {
-    document.getElementById('tt-tier').textContent = `Tier ${sub.tier || 1}`;
+  const teganganVal = sub.tegangan ? String(sub.tegangan).replace(/\D/g, '') : '500';
+
+  const kvContainer = document.getElementById('tt-kv-container');
+  if (kvContainer) {
+    kvContainer.innerHTML = `
+      <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${sub.unit || state.selectedUnit}</span></div>
+      <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${sub.upt || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${sub.ultg || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+    `;
   }
-  document.getElementById('tt-ahi-age').textContent = `${sub.sumbuY !== undefined ? Number(sub.sumbuY).toFixed(2) : sub.levelAhiAge} (Level ${sub.levelAhiAge || 1})`;
-  document.getElementById('tt-beban').textContent = `${sub.riskCategory || '-'} (${sub.cellNum || sub.cellCode || '-'})`;
 
   tt.style.display = 'block';
+  positionTooltip(tt, event);
+}
 
-  const x = event.clientX + 14;
-  const y = event.clientY - 20;
-  tt.style.left = `${Math.min(window.innerWidth - 270, x)}px`;
-  tt.style.top = `${Math.min(window.innerHeight - 150, y)}px`;
+function showBayTooltip(bay, event) {
+  const tt = document.getElementById('gi-floating-tooltip');
+  if (!tt) return;
+
+  let col = (bay.matrixCol !== undefined) ? bay.matrixCol : (6 - (bay.tier || 1));
+  if (state.activeDimension === 'pelanggan') {
+    col = (bay.matrixColPelanggan !== undefined) ? bay.matrixColPelanggan : (6 - (bay.kategoriPelanggan || 1));
+  }
+  const row = bay.levelAhiAge || 3;
+
+  const cell = (MATRIX_CONFIG.cells && MATRIX_CONFIG.cells[row] && MATRIX_CONFIG.cells[row][col]) || {
+    num: bay.cellNum || 19,
+    title: bay.cellTitle || bay.riskCategory || 'Moderate to High',
+    cat: bay.riskCategory || 'Mod-High'
+  };
+
+  const theme = getRiskTheme(cell.title || cell.cat, cell.num);
+
+  const headerBg = document.getElementById('tt-header-bg');
+  if (headerBg) headerBg.style.background = theme.bg;
+
+  const iconSvg = document.getElementById('tt-icon-svg');
+  if (iconSvg) iconSvg.style.stroke = theme.text;
+
+  const pillText = document.getElementById('tt-pill-text');
+  if (pillText) {
+    pillText.textContent = `${cell.num} - ${cell.title}`;
+    pillText.style.color = theme.text;
+  }
+
+  const nameEl = document.getElementById('tt-name');
+  if (nameEl) nameEl.textContent = bay.name;
+
+  const subEl = document.getElementById('tt-sub');
+  if (subEl) subEl.textContent = bay.bayType || 'Bay';
+
+  let dimKey = 'Tier :';
+  let dimVal = `Tier ${bay.tier || 4}`;
+
+  if (state.activeDimension === 'pelanggan') {
+    dimKey = 'Kategori Pelanggan :';
+    dimVal = bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`;
+  } else if (state.activeDimension === 'beban') {
+    dimKey = 'Beban :';
+    dimVal = (bay.beban !== undefined ? `${Number(bay.beban).toFixed(2)} MW` : '-');
+  }
+
+  const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
+
+  const kvContainer = document.getElementById('tt-kv-container');
+  if (kvContainer) {
+    kvContainer.innerHTML = `
+      <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
+      <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${bay.ultg || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${bay.giName || (state.selectedGI ? state.selectedGI.name : '-')}</span></div>
+      <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+    `;
+  }
+
+  tt.style.display = 'block';
+  positionTooltip(tt, event);
 }
 
 function showAssetTooltip(asset, event) {
   const tt = document.getElementById('gi-floating-tooltip');
   if (!tt) return;
 
-  document.getElementById('tt-name').textContent = asset.name || `${asset.jenisAset} - ${asset.merk}`;
-  document.getElementById('tt-voltage').textContent = asset.jenisAset || 'Peralatan';
-
-  const riskBadge = document.getElementById('tt-risk-badge');
-  if (riskBadge) {
-    riskBadge.textContent = asset.cellTitle || asset.riskCategory || 'Mod-High';
-    riskBadge.className = `pill-status pill-${(asset.riskCategory || 'mod-high').toLowerCase().replace(' ', '-')}`;
-  }
-
-  setElemText('tt-lbl-1', 'Merk / Phasa');
+  let col = (asset.matrixCol !== undefined) ? asset.matrixCol : (6 - (asset.tier || 1));
   if (state.activeDimension === 'pelanggan') {
-    setElemText('tt-lbl-2', 'Kategori Pelanggan');
-  } else {
-    setElemText('tt-lbl-2', 'Tier Aset');
+    col = (asset.matrixColPelanggan !== undefined) ? asset.matrixColPelanggan : (6 - (asset.kategoriPelanggan || 1));
   }
-  setElemText('tt-lbl-3', 'AHI Score');
-  setElemText('tt-lbl-4', 'Serial ID');
+  const row = asset.levelAhiAge || 3;
 
-  document.getElementById('tt-upt').textContent = `${asset.merk || '-'} (${asset.phasa || '3 Phase'})`;
-  if (state.activeDimension === 'pelanggan') {
-    document.getElementById('tt-tier').textContent = asset.kategoriPelangganLabel || `Kategori ${asset.kategoriPelanggan || 1}`;
-  } else {
-    document.getElementById('tt-tier').textContent = `Tier ${asset.tier || 4} (Skala 1-5)`;
+  const cell = (MATRIX_CONFIG.cells && MATRIX_CONFIG.cells[row] && MATRIX_CONFIG.cells[row][col]) || {
+    num: asset.cellNum || 19,
+    title: asset.cellTitle || asset.riskCategory || 'Moderate to High',
+    cat: asset.riskCategory || 'Mod-High'
+  };
+
+  const theme = getRiskTheme(cell.title || cell.cat, cell.num);
+
+  const headerBg = document.getElementById('tt-header-bg');
+  if (headerBg) headerBg.style.background = theme.bg;
+
+  const iconSvg = document.getElementById('tt-icon-svg');
+  if (iconSvg) iconSvg.style.stroke = theme.text;
+
+  const pillText = document.getElementById('tt-pill-text');
+  if (pillText) {
+    pillText.textContent = `${cell.num} - ${cell.title}`;
+    pillText.style.color = theme.text;
   }
-  document.getElementById('tt-ahi-age').textContent = `${asset.ahiScore || '5 - Critical'} (Usia ${asset.usiaAset || 4} Th)`;
-  document.getElementById('tt-beban').textContent = `${asset.serialId || '-'}`;
+
+  const nameEl = document.getElementById('tt-name');
+  if (nameEl) nameEl.textContent = asset.name;
+
+  const subEl = document.getElementById('tt-sub');
+  if (subEl) subEl.textContent = asset.jenisAset || 'Peralatan';
+
+  let dimKey = 'Tier :';
+  let dimVal = `Tier ${asset.tier || 4}`;
+
+  if (state.activeDimension === 'pelanggan') {
+    dimKey = 'Kategori Pelanggan :';
+    dimVal = asset.kategoriPelangganLabel || `Kategori ${asset.kategoriPelanggan || 1}`;
+  }
+
+  const kvContainer = document.getElementById('tt-kv-container');
+  if (kvContainer) {
+    kvContainer.innerHTML = `
+      <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${state.selectedUnit}</span></div>
+      <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${state.selectedGI ? state.selectedGI.name : '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">Bay :</span><span class="v">${state.selectedBay ? state.selectedBay.name : '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">Merk / Phasa :</span><span class="v">${asset.merk || '-'} (${asset.phasa || '3 Phase'})</span></div>
+      <div class="hover-kv-row"><span class="k">AHI Score :</span><span class="v">${asset.ahiScore || '5 - Critical'}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+    `;
+  }
 
   tt.style.display = 'block';
-
-  const x = event.clientX + 14;
-  const y = event.clientY - 20;
-  tt.style.left = `${Math.min(window.innerWidth - 270, x)}px`;
-  tt.style.top = `${Math.min(window.innerHeight - 150, y)}px`;
+  positionTooltip(tt, event);
 }
 
 function hideSubstationTooltip() {
@@ -1123,21 +1300,59 @@ function showBayFloatingPopup(bay, evt) {
 
   state.activeBayPopupId = bay.id;
 
-  setElemText('bp-tag-text', `${bay.cellNum || 19} - ${bay.cellTitle || 'Moderate to High'}`);
-  setElemText('bp-title', bay.name);
-  setElemText('bp-unit', bay.unit || state.selectedUnit);
-  setElemText('bp-upt', bay.upt || 'UPT PROBOLINGGO');
-  setElemText('bp-ultg', bay.ultg || 'ULTG PROBOLINGGO');
-  setElemText('bp-gi', bay.giName || (state.selectedGI ? state.selectedGI.name : 'GITET 500KV GRATI'));
-  setElemText('bp-volt', bay.tegangan || '500');
-
-  const bpXLbl = document.getElementById('bp-x-lbl') || document.querySelector('.bay-popup-kv .bay-kv-item:last-child .k');
+  let col = (bay.matrixCol !== undefined) ? bay.matrixCol : (6 - (bay.tier || 1));
   if (state.activeDimension === 'pelanggan') {
-    if (bpXLbl) bpXLbl.textContent = 'Kategori Pelanggan :';
-    setElemText('bp-beban', bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`);
-  } else {
-    if (bpXLbl) bpXLbl.textContent = 'Tier :';
-    setElemText('bp-beban', bay.tier ? `Tier ${bay.tier}` : 'Tier 4');
+    col = (bay.matrixColPelanggan !== undefined) ? bay.matrixColPelanggan : (6 - (bay.kategoriPelanggan || 1));
+  }
+  const row = bay.levelAhiAge || 3;
+
+  const cell = (MATRIX_CONFIG.cells && MATRIX_CONFIG.cells[row] && MATRIX_CONFIG.cells[row][col]) || {
+    num: bay.cellNum || 19,
+    title: bay.cellTitle || bay.riskCategory || 'Moderate to High',
+    cat: bay.riskCategory || 'Mod-High'
+  };
+
+  const theme = getRiskTheme(cell.title || cell.cat, cell.num);
+
+  const headerBg = document.getElementById('bp-header-bg');
+  if (headerBg) headerBg.style.background = theme.bg;
+
+  const iconSvg = document.getElementById('bp-icon-svg');
+  if (iconSvg) iconSvg.style.stroke = theme.text;
+
+  const pillText = document.getElementById('bp-tag-text');
+  if (pillText) {
+    pillText.textContent = `${cell.num} - ${cell.title}`;
+    pillText.style.color = theme.text;
+  }
+
+  setElemText('bp-title', bay.name);
+  const subEl = document.getElementById('bp-sub');
+  if (subEl) subEl.textContent = bay.bayType || 'Bay';
+
+  let dimKey = 'Tier :';
+  let dimVal = `Tier ${bay.tier || 4}`;
+
+  if (state.activeDimension === 'pelanggan') {
+    dimKey = 'Kategori Pelanggan :';
+    dimVal = bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`;
+  } else if (state.activeDimension === 'beban') {
+    dimKey = 'Beban :';
+    dimVal = bay.beban !== undefined ? `${bay.beban} MW` : '-';
+  }
+
+  const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
+
+  const kvContainer = document.getElementById('bp-kv-container');
+  if (kvContainer) {
+    kvContainer.innerHTML = `
+      <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
+      <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${bay.ultg || '-'}</span></div>
+      <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${bay.giName || (state.selectedGI ? state.selectedGI.name : '-')}</span></div>
+      <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+    `;
   }
 
   const drillBtn = document.getElementById('bp-drill-btn');
@@ -1151,11 +1366,7 @@ function showBayFloatingPopup(bay, evt) {
 
   // Position nicely over matrix or near mouse
   if (evt && evt.clientX && evt.clientY) {
-    const x = evt.clientX + 16;
-    const y = evt.clientY - 40;
-    popup.style.position = 'fixed';
-    popup.style.left = `${Math.min(window.innerWidth - 300, Math.max(10, x))}px`;
-    popup.style.top = `${Math.min(window.innerHeight - 340, Math.max(10, y))}px`;
+    positionTooltip(popup, evt);
   } else {
     popup.style.position = 'absolute';
     const matrixWorkspace = document.getElementById('matrix-display');
