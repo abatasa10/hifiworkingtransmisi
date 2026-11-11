@@ -1277,7 +1277,7 @@ body {
    ========================================================================== */
 .custom-hover-card {
   position: fixed;
-  width: 275px;
+  width: 295px;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26), 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -1390,10 +1390,47 @@ body {
   color: #1e293b;
   font-weight: 600;
   text-align: right;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.hover-desc-callout {
+  margin-top: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #2563eb;
+  padding: 6px 8px;
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  color: #334155;
+  line-height: 1.35;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.hover-desc-callout.callout-pelanggan {
+  border-left-color: #0284c7;
+  background: #f0f9ff;
+  border-color: #e0f2fe;
+}
+
+.hover-desc-callout.callout-pelanggan svg {
+  color: #0284c7;
+}
+
+.hover-desc-callout.callout-tier {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+  border-color: #fef3c7;
+}
+
+.hover-desc-callout.callout-tier svg {
+  color: #d97706;
+}
+
+.hover-desc-callout span {
+  flex: 1;
 }
 
 .btn-open-bay-drilldown {

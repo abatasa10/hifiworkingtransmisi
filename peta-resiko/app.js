@@ -807,6 +807,22 @@ function selectSubstation(subId) {
   }
 }
 
+const KATEGORI_PELANGGAN_DESC = {
+  1: "Berdasarkan ketetapan Kementerian dan Lembaga Negara (ESDM, Kemenperin, dll)",
+  2: "Istana Negara, Kantor Pemerintah Pusat, Kedubes, KPU, Transportasi Listrik (MRT, LRT, KCIC, KRL), KTT, RS & Stadion Internasional/Nasional",
+  3: "Kantor Pemprov, Konjen, Bandara/Pelabuhan/Terminal Provinsi, RS Provinsi, Pusat BUMN, Media Nasional, PTN/PTS, Pelanggan TM Prioritas",
+  4: "Kantor Pemkot/Pemkab, Pelayanan Publik Kota/Kab, TNI & POLRI Kota/Kab, TR Prioritas, Stakeholder akses BOD/BOC/Menteri",
+  5: "Pelanggan Umum, Residensial, Komersial biasa (selain dari Kategori 1 sampai 4)"
+};
+
+const TIER_DESC = {
+  1: "Konsentrasi Beban Obvitnas & VVIP Nasional",
+  2: "Industri Strategis / Interkoneksi Utama Sistem",
+  3: "Urban Menengah & Konsentrasi Beban Kota",
+  4: "Sub-urban & Kawasan Penyangga",
+  5: "Radial / Beban Rendah"
+};
+
 function getRiskTheme(category, cellNum) {
   const cat = (category || '').toLowerCase();
   if (cat.includes('high') && !cat.includes('mod')) {
@@ -824,8 +840,8 @@ function getRiskTheme(category, cellNum) {
 
 function positionTooltip(tt, event) {
   if (!tt || !event) return;
-  const tooltipWidth = 285;
-  const tooltipHeight = 295;
+  const tooltipWidth = 300;
+  const tooltipHeight = 320;
   let x = event.clientX + 16;
   let y = event.clientY - 35;
 
@@ -888,28 +904,50 @@ function showSubstationTooltip(sub, event) {
   // Baris ke-5 disesuaikan sama tier dan Kategori jenis pelanggan
   let dimKey = 'Tier :';
   let dimVal = `Tier ${sub.tier || 1}`;
+  let descText = TIER_DESC[sub.tier || 1] || '';
+  let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
+    const katNum = sub.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
-    dimVal = sub.kategoriPelangganLabel || `Kategori ${sub.kategoriPelanggan || 1}`;
+    dimVal = sub.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descText = sub.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
+    calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
     dimKey = 'Beban Rata-rata :';
     dimVal = (sub.beban !== undefined ? Number(sub.beban).toFixed(2) : '269.63');
+    descText = '';
   } else if (state.activeDimension === 'kerawanan') {
     dimKey = 'Kerawanan :';
     dimVal = sub.kerawanan || 'Sedang';
+    descText = '';
   }
 
   const teganganVal = sub.tegangan ? String(sub.tegangan).replace(/\D/g, '') : '500';
 
   const kvContainer = document.getElementById('tt-kv-container');
   if (kvContainer) {
+    let extraDescHtml = '';
+    if (descText) {
+      extraDescHtml = `
+        <div class="hover-desc-callout ${calloutClass}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0; margin-top:1.5px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span><strong>Kriteria:</strong> ${descText}</span>
+        </div>
+      `;
+    }
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${sub.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${sub.upt || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${sub.ultg || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
-      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
+      ${extraDescHtml}
     `;
   }
 
@@ -955,26 +993,47 @@ function showBayTooltip(bay, event) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${bay.tier || 4}`;
+  let descText = TIER_DESC[bay.tier || 4] || '';
+  let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
+    const katNum = bay.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
-    dimVal = bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`;
+    dimVal = bay.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
+    calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
     dimKey = 'Beban :';
     dimVal = (bay.beban !== undefined ? `${Number(bay.beban).toFixed(2)} MW` : '-');
+    descText = '';
   }
 
   const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
 
   const kvContainer = document.getElementById('tt-kv-container');
   if (kvContainer) {
+    let extraDescHtml = '';
+    if (descText) {
+      extraDescHtml = `
+        <div class="hover-desc-callout ${calloutClass}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0; margin-top:1.5px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span><strong>Kriteria:</strong> ${descText}</span>
+        </div>
+      `;
+    }
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${bay.ultg || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${bay.giName || (state.selectedGI ? state.selectedGI.name : '-')}</span></div>
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
-      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
+      ${extraDescHtml}
     `;
   }
 
@@ -1020,21 +1079,41 @@ function showAssetTooltip(asset, event) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${asset.tier || 4}`;
+  let descText = TIER_DESC[asset.tier || 4] || '';
+  let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
+    const katNum = asset.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
-    dimVal = asset.kategoriPelangganLabel || `Kategori ${asset.kategoriPelanggan || 1}`;
+    dimVal = asset.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descText = asset.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
+    calloutClass = 'callout-pelanggan';
   }
 
   const kvContainer = document.getElementById('tt-kv-container');
   if (kvContainer) {
+    let extraDescHtml = '';
+    if (descText) {
+      extraDescHtml = `
+        <div class="hover-desc-callout ${calloutClass}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0; margin-top:1.5px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span><strong>Kriteria:</strong> ${descText}</span>
+        </div>
+      `;
+    }
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${state.selectedGI ? state.selectedGI.name : '-'}</span></div>
       <div class="hover-kv-row"><span class="k">Bay :</span><span class="v">${state.selectedBay ? state.selectedBay.name : '-'}</span></div>
       <div class="hover-kv-row"><span class="k">Merk / Phasa :</span><span class="v">${asset.merk || '-'} (${asset.phasa || '3 Phase'})</span></div>
       <div class="hover-kv-row"><span class="k">AHI Score :</span><span class="v">${asset.ahiScore || '5 - Critical'}</span></div>
-      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
+      ${extraDescHtml}
     `;
   }
 
@@ -1332,26 +1411,47 @@ function showBayFloatingPopup(bay, evt) {
 
   let dimKey = 'Tier :';
   let dimVal = `Tier ${bay.tier || 4}`;
+  let descText = TIER_DESC[bay.tier || 4] || '';
+  let calloutClass = 'callout-tier';
 
   if (state.activeDimension === 'pelanggan') {
+    const katNum = bay.kategoriPelanggan || 1;
     dimKey = 'Kategori Pelanggan :';
-    dimVal = bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`;
+    dimVal = bay.kategoriPelangganLabel || `Kategori ${katNum}`;
+    descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
+    calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
     dimKey = 'Beban :';
     dimVal = bay.beban !== undefined ? `${bay.beban} MW` : '-';
+    descText = '';
   }
 
   const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
 
   const kvContainer = document.getElementById('bp-kv-container');
   if (kvContainer) {
+    let extraDescHtml = '';
+    if (descText) {
+      extraDescHtml = `
+        <div class="hover-desc-callout ${calloutClass}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0; margin-top:1.5px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span><strong>Kriteria:</strong> ${descText}</span>
+        </div>
+      `;
+    }
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">ULTG :</span><span class="v">${bay.ultg || '-'}</span></div>
       <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${bay.giName || (state.selectedGI ? state.selectedGI.name : '-')}</span></div>
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
-      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${dimVal}">${dimVal}</span></div>
+      <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
+      ${extraDescHtml}
     `;
   }
 
