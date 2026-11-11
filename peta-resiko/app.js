@@ -415,13 +415,15 @@ function renderMatrixGrid() {
             if (state.activeDimension === 'tier') itemCol = (item.matrixCol !== undefined) ? item.matrixCol : (6 - (item.tier || 1));
             else if (state.activeDimension === 'beban') itemCol = item.levelBeban || 1;
             else if (state.activeDimension === 'kerawanan') itemCol = item.levelKerawanan || 1;
-            else if (state.activeDimension === 'pelanggan') itemCol = item.levelPelanggan || 1;
+            else if (state.activeDimension === 'pelanggan') itemCol = (item.matrixColPelanggan !== undefined) ? item.matrixColPelanggan : (item.levelPelanggan || (6 - (item.kategoriPelanggan || 1)));
             return itemCol === c && (item.levelAhiAge || 1) === r;
           } else if (state.hierarchyLevel === 'bay') {
-            const itemCol = (item.matrixCol !== undefined) ? item.matrixCol : (6 - (item.tier || 1));
+            let itemCol = (item.matrixCol !== undefined) ? item.matrixCol : (6 - (item.tier || 1));
+            if (state.activeDimension === 'pelanggan') itemCol = (item.matrixColPelanggan !== undefined) ? item.matrixColPelanggan : (6 - (item.kategoriPelanggan || 1));
             return itemCol === c && (item.levelAhiAge || 1) === r;
           } else if (state.hierarchyLevel === 'asset') {
-            const itemCol = (item.matrixCol !== undefined) ? item.matrixCol : (6 - (item.tier || 1));
+            let itemCol = (item.matrixCol !== undefined) ? item.matrixCol : (6 - (item.tier || 1));
+            if (state.activeDimension === 'pelanggan') itemCol = (item.matrixColPelanggan !== undefined) ? item.matrixColPelanggan : (6 - (item.kategoriPelanggan || 1));
             return itemCol === c && (item.levelAhiAge || 1) === r;
           }
           return false;
@@ -459,10 +461,17 @@ function renderXTicks() {
   cols.forEach(col => {
     const tick = document.createElement('div');
     tick.className = 'x-tick';
-    tick.innerHTML = `
-      <span class="num">${col.num}</span>
-      <span class="sub">${col.label}</span>
-    `;
+    if (state.activeDimension === 'pelanggan') {
+      tick.innerHTML = `
+        <span class="num">${col.label}</span>
+        <span class="sub">${col.sub} (X=${col.num})</span>
+      `;
+    } else {
+      tick.innerHTML = `
+        <span class="num">${col.num}</span>
+        <span class="sub">${col.label}</span>
+      `;
+    }
     container.appendChild(tick);
   });
 }
@@ -562,7 +571,7 @@ function renderScatterDots(items) {
       } else if (state.activeDimension === 'kerawanan') {
         col = sub.levelKerawanan || 1;
       } else if (state.activeDimension === 'pelanggan') {
-        col = sub.levelPelanggan || 1;
+        col = (sub.matrixColPelanggan !== undefined) ? sub.matrixColPelanggan : (sub.levelPelanggan || (6 - (sub.kategoriPelanggan || 1)));
       }
 
       const row = sub.levelAhiAge || 1;
@@ -614,7 +623,10 @@ function renderScatterDots(items) {
   } else if (state.hierarchyLevel === 'bay') {
     // Level 2: Bay Level (Gambar 1)
     items.forEach((bay, index) => {
-      const col = (bay.matrixCol !== undefined) ? bay.matrixCol : (6 - (bay.tier || 1));
+      let col = (bay.matrixCol !== undefined) ? bay.matrixCol : (6 - (bay.tier || 1));
+      if (state.activeDimension === 'pelanggan') {
+        col = (bay.matrixColPelanggan !== undefined) ? bay.matrixColPelanggan : (6 - (bay.kategoriPelanggan || 1));
+      }
       const row = bay.levelAhiAge || 3;
 
       const colBasePercent = (col - 1) * 20;
@@ -667,7 +679,10 @@ function renderScatterDots(items) {
   } else if (state.hierarchyLevel === 'asset') {
     // Level 3: Asset Level (Gambar 2)
     items.forEach((asset, index) => {
-      const col = (asset.matrixCol !== undefined) ? asset.matrixCol : (6 - (asset.tier || 1));
+      let col = (asset.matrixCol !== undefined) ? asset.matrixCol : (6 - (asset.tier || 1));
+      if (state.activeDimension === 'pelanggan') {
+        col = (asset.matrixColPelanggan !== undefined) ? asset.matrixColPelanggan : (6 - (asset.kategoriPelanggan || 1));
+      }
       const row = asset.levelAhiAge || 3;
 
       const colBasePercent = (col - 1) * 20;
@@ -786,12 +801,20 @@ function showSubstationTooltip(sub, event) {
   }
 
   setElemText('tt-lbl-1', 'UPT / ULTG');
-  setElemText('tt-lbl-2', 'Tier Gardu (Sumbu X)');
+  if (state.activeDimension === 'pelanggan') {
+    setElemText('tt-lbl-2', 'Kategori Pelanggan (Sumbu X)');
+  } else {
+    setElemText('tt-lbl-2', 'Tier Gardu (Sumbu X)');
+  }
   setElemText('tt-lbl-3', 'Sumbu Y (AHI & Usia)');
   setElemText('tt-lbl-4', 'Skor Resiko');
 
   document.getElementById('tt-upt').textContent = `${sub.upt || '-'} / ${sub.ultg || '-'}`;
-  document.getElementById('tt-tier').textContent = `Tier ${sub.tier || 1}`;
+  if (state.activeDimension === 'pelanggan') {
+    document.getElementById('tt-tier').textContent = sub.kategoriPelangganLabel || `Kategori ${sub.kategoriPelanggan || 1}`;
+  } else {
+    document.getElementById('tt-tier').textContent = `Tier ${sub.tier || 1}`;
+  }
   document.getElementById('tt-ahi-age').textContent = `${sub.sumbuY !== undefined ? Number(sub.sumbuY).toFixed(2) : sub.levelAhiAge} (Level ${sub.levelAhiAge || 1})`;
   document.getElementById('tt-beban').textContent = `${sub.riskCategory || '-'} (${sub.cellNum || sub.cellCode || '-'})`;
 
@@ -817,12 +840,20 @@ function showAssetTooltip(asset, event) {
   }
 
   setElemText('tt-lbl-1', 'Merk / Phasa');
-  setElemText('tt-lbl-2', 'Tier Aset');
+  if (state.activeDimension === 'pelanggan') {
+    setElemText('tt-lbl-2', 'Kategori Pelanggan');
+  } else {
+    setElemText('tt-lbl-2', 'Tier Aset');
+  }
   setElemText('tt-lbl-3', 'AHI Score');
   setElemText('tt-lbl-4', 'Serial ID');
 
   document.getElementById('tt-upt').textContent = `${asset.merk || '-'} (${asset.phasa || '3 Phase'})`;
-  document.getElementById('tt-tier').textContent = `Tier ${asset.tier || 4} (Skala 1-5)`;
+  if (state.activeDimension === 'pelanggan') {
+    document.getElementById('tt-tier').textContent = asset.kategoriPelangganLabel || `Kategori ${asset.kategoriPelanggan || 1}`;
+  } else {
+    document.getElementById('tt-tier').textContent = `Tier ${asset.tier || 4} (Skala 1-5)`;
+  }
   document.getElementById('tt-ahi-age').textContent = `${asset.ahiScore || '5 - Critical'} (Usia ${asset.usiaAset || 4} Th)`;
   document.getElementById('tt-beban').textContent = `${asset.serialId || '-'}`;
 
@@ -998,17 +1029,23 @@ function showAssetDetailView(asset) {
 
   setElemText('ad-risk-score', asset.riskScore || '19 - Moderate to High');
   setElemText('ad-ahi-score', asset.ahiScore || '5 - Critical');
-  const tierVal = asset.tier ? `Tier ${asset.tier}` : 'Tier 4';
 
-  // Force TIER label & value across both ID and CSS selectors
+  let xLbl = 'TIER';
+  let xVal = asset.tier ? `Tier ${asset.tier}` : 'Tier 4';
+  if (state.activeDimension === 'pelanggan') {
+    xLbl = 'KATEGORI PELANGGAN';
+    xVal = asset.kategoriPelangganLabel || `Kategori ${asset.kategoriPelanggan || 1}`;
+  }
+
+  // Force label & value across both ID and CSS selectors
   const tierLbl = document.getElementById('ad-tier-lbl') || 
                   document.querySelector('.asset-metrics-sub .metric-sub-item:last-child .sub-lbl');
-  if (tierLbl) tierLbl.textContent = 'TIER';
+  if (tierLbl) tierLbl.textContent = xLbl;
 
   const tierValEl = document.getElementById('ad-tier-val') || 
                     document.getElementById('ad-beban-val') ||
                     document.querySelector('.asset-metrics-sub .metric-sub-item:last-child .sub-val');
-  if (tierValEl) tierValEl.textContent = tierVal;
+  if (tierValEl) tierValEl.textContent = xVal;
 
   setElemText('ad-unit', state.selectedUnit);
   setElemText('ad-upt', state.selectedGI ? state.selectedGI.upt : 'UPT PROBOLINGGO');
@@ -1093,7 +1130,15 @@ function showBayFloatingPopup(bay, evt) {
   setElemText('bp-ultg', bay.ultg || 'ULTG PROBOLINGGO');
   setElemText('bp-gi', bay.giName || (state.selectedGI ? state.selectedGI.name : 'GITET 500KV GRATI'));
   setElemText('bp-volt', bay.tegangan || '500');
-  setElemText('bp-beban', bay.tier ? `Tier ${bay.tier}` : 'Tier 4');
+
+  const bpXLbl = document.getElementById('bp-x-lbl') || document.querySelector('.bay-popup-kv .bay-kv-item:last-child .k');
+  if (state.activeDimension === 'pelanggan') {
+    if (bpXLbl) bpXLbl.textContent = 'Kategori Pelanggan :';
+    setElemText('bp-beban', bay.kategoriPelangganLabel || `Kategori ${bay.kategoriPelanggan || 1}`);
+  } else {
+    if (bpXLbl) bpXLbl.textContent = 'Tier :';
+    setElemText('bp-beban', bay.tier ? `Tier ${bay.tier}` : 'Tier 4');
+  }
 
   const drillBtn = document.getElementById('bp-drill-btn');
   if (drillBtn) {
@@ -1240,13 +1285,15 @@ function renderTableRows(items) {
   if (countEl) countEl.textContent = `Menampilkan ${filtered.length} data`;
 
   if (theadRow) {
+    const isPelanggan = state.activeDimension === 'pelanggan';
+    const xHeader = isPelanggan ? 'Kategori Pelanggan' : 'Tier';
     if (state.hierarchyLevel === 'gi') {
       theadRow.innerHTML = `
         <th>Nama Gardu Induk</th>
         <th>UPT</th>
         <th>ULTG</th>
         <th>Tegangan</th>
-        <th>Tier</th>
+        <th>${xHeader}</th>
         <th>AHI (%)</th>
         <th>Usia</th>
         <th>Beban (%)</th>
@@ -1260,7 +1307,7 @@ function renderTableRows(items) {
         <th>UPT</th>
         <th>ULTG</th>
         <th>Tegangan</th>
-        <th>Tier</th>
+        <th>${xHeader}</th>
         <th>Jumlah Aset</th>
         <th>Status Risiko</th>
         <th style="width: 50px;">Aksi</th>
@@ -1285,17 +1332,20 @@ function renderTableRows(items) {
     return;
   }
 
+  const isPelanggan = state.activeDimension === 'pelanggan';
+
   tbody.innerHTML = filtered.map(item => {
     const badgeCls = `pill-${(item.riskCategory || 'low').toLowerCase().replace(' ', '-')}`;
 
     if (state.hierarchyLevel === 'gi') {
+      const xDisplay = isPelanggan ? (item.kategoriPelangganLabel || `Kategori ${item.kategoriPelanggan || 1}`) : `Tier ${item.tier || '-'}`;
       return `
         <tr onclick="selectSubstation('${item.id}')" style="cursor: pointer;" title="Klik untuk lihat di peta">
           <td style="font-weight: 600; color: #1e3a8a;">${item.name}</td>
           <td>${item.upt || '-'}</td>
           <td>${item.ultg || '-'}</td>
           <td><span class="badge-volt">${item.tegangan || '-'}</span></td>
-          <td>Tier ${item.tier || '-'}</td>
+          <td>${xDisplay}</td>
           <td>${item.ahi ? item.ahi.toFixed(1) + '%' : '-'}</td>
           <td>${item.usia || item.age || '-'} th</td>
           <td>${item.beban ? item.beban.toFixed(1) + '%' : '-'}</td>
@@ -1304,6 +1354,7 @@ function renderTableRows(items) {
         </tr>
       `;
     } else if (state.hierarchyLevel === 'bay') {
+      const xDisplay = isPelanggan ? (item.kategoriPelangganLabel || `Kategori ${item.kategoriPelanggan || 1}`) : `Tier ${item.tier || 4}`;
       return `
         <tr onclick="drillDownToAssetLevel('${item.id}')" style="cursor: pointer;" title="Klik untuk lihat 15 aset di Bay ini">
           <td style="font-weight: 600; color: #1e3a8a;">${item.name}</td>
@@ -1311,7 +1362,7 @@ function renderTableRows(items) {
           <td>${item.upt || '-'}</td>
           <td>${item.ultg || '-'}</td>
           <td><span class="badge-volt">${item.tegangan || '500'} kV</span></td>
-          <td style="font-weight: 600;">Tier ${item.tier || 4}</td>
+          <td style="font-weight: 600;">${xDisplay}</td>
           <td>${item.totalAssets || 15}</td>
           <td><span class="pill-status ${badgeCls}">${item.cellTitle || item.riskCategory}</span></td>
           <td><button class="btn-table-action" onclick="event.stopPropagation(); drillDownToAssetLevel('${item.id}')">&rarr;</button></td>

@@ -118,8 +118,13 @@ function getBaysForSubstation(sub) {
       ultg: sub.ultg,
       tegangan: is500 ? 500 : (sub.tegangan ? String(sub.tegangan).replace(/\D/g, '') : '150'),
       beban: round((sub.beban || 75.0) * (0.85 + (idx % 3) * 0.1), 2),
-      tier: targetX,       // Sumbu X: Tier 1..5 (Pasti sama dengan GI)
-      matrixCol: targetCol,// Kolom Matrix: 1..5
+      tier: targetX,       // Sumbu X (Tier 1..5, Pasti sama dengan GI)
+      matrixCol: targetCol,// Kolom Matrix Tier: 1..5
+      kategoriPelanggan: sub.kategoriPelanggan || 1, // Kategori Pelanggan 1..5 (Pasti sama dengan GI)
+      kategoriPelangganName: sub.kategoriPelangganName || 'OBVITNAS',
+      kategoriPelangganLabel: sub.kategoriPelangganLabel || 'Kategori 1 (OBVITNAS)',
+      kategoriPelangganDesc: sub.kategoriPelangganDesc || '',
+      matrixColPelanggan: (sub.matrixColPelanggan !== undefined) ? sub.matrixColPelanggan : (6 - (sub.kategoriPelanggan || 1)),
       levelAhiAge: targetY,// Sumbu Y: 1..5 (Maksimal sama dengan GI)
       riskCategory: cellData.cat,
       cellNum: cellData.num,
@@ -131,12 +136,17 @@ function getBaysForSubstation(sub) {
   });
 }
 
-// 3. GENERATOR ASET DENGAN ATURAN MAX-OR & TIER INHERITANCE
+// 3. GENERATOR ASET DENGAN ATURAN MAX-OR & TIER / KATEGORI PELANGGAN INHERITANCE
 function getAssetsForBay(bay) {
   if (!bay) return [];
   const bayTier = (bay.tier !== undefined && bay.tier !== null) ? bay.tier : 1;
   const bayY = (bay.levelAhiAge !== undefined && bay.levelAhiAge !== null) ? bay.levelAhiAge : 3;
   const bayCol = (bay.matrixCol !== undefined && bay.matrixCol !== null) ? bay.matrixCol : (6 - bayTier);
+  const bayKat = (bay.kategoriPelanggan !== undefined && bay.kategoriPelanggan !== null) ? bay.kategoriPelanggan : 1;
+  const bayKatName = bay.kategoriPelangganName || 'OBVITNAS';
+  const bayKatLabel = bay.kategoriPelangganLabel || 'Kategori 1 (OBVITNAS)';
+  const bayKatDesc = bay.kategoriPelangganDesc || '';
+  const bayColPelanggan = (bay.matrixColPelanggan !== undefined && bay.matrixColPelanggan !== null) ? bay.matrixColPelanggan : (6 - bayKat);
 
   const equipTemplates = [
     { jenis: "Lightning Arrester", merk: "SIEMENS", ph: "R" },
@@ -185,6 +195,11 @@ function getAssetsForBay(bay) {
       cellTitle: cellData.title,
       tier: targetX,
       matrixCol: targetCol,
+      kategoriPelanggan: bayKat,
+      kategoriPelangganName: bayKatName,
+      kategoriPelangganLabel: bayKatLabel,
+      kategoriPelangganDesc: bayKatDesc,
+      matrixColPelanggan: bayColPelanggan,
       levelAhiAge: targetY,
       lat: round(bay.lat + dLat, 6),
       lon: round(bay.lon + dLon, 6),
