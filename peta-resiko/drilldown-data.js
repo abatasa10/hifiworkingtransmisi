@@ -61,9 +61,11 @@ function getBaysForSubstation(sub) {
   const is500 = (sub.tegangan && String(sub.tegangan).includes('500')) || (sub.name && sub.name.includes('500KV'));
   const isGrati = sub.id === 'GI-UITJBM-GRATI' || (sub.name && sub.name.includes('GRATI'));
 
-  // Sumbu X: Matrix Col (Col 5 = Tier 1, Col 1 = Tier 5)
+  // Sumbu X: Matrix Col (Inherited directly from GI matrixCol based on regional table)
   const targetX = giTier;
-  const targetCol = 6 - targetX;
+  const targetCol = (sub.matrixCol !== undefined && sub.matrixCol !== null)
+    ? sub.matrixCol
+    : (typeof getMatrixColForTier === 'function' ? getMatrixColForTier(sub.unit, sub.tegangan, giTier) : (6 - targetX));
 
   // Nama-nama Bay realistis
   let bayTemplates = [];

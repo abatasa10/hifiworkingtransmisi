@@ -205,17 +205,23 @@ function renderNationalBadges() {
   state.nationalBadges = [];
 
   Object.values(NATIONAL_BADGES_CONFIG).forEach(cfg => {
+    const meta = (typeof UNITS_METADATA !== 'undefined' && UNITS_METADATA[cfg.unitKey]) ? UNITS_METADATA[cfg.unitKey] : null;
+    const totalGI = meta ? meta.totalGI : cfg.totalGI;
+    const badgeRisk = meta ? meta.badgeRisk : cfg.badgeRisk;
+    const badgeCount = meta ? meta.badgeCount : cfg.badgeCount;
+    const badgeColor = meta ? meta.badgeColor : cfg.badgeColor;
+
     const iconHtml = `
       <div class="map-badge-anchor" onclick="openDetailView('${cfg.unitKey}')" title="${cfg.fullName} - Klik untuk buka Peta Risiko">
-        <div class="map-badge-pill badge-color-${cfg.badgeColor}">
+        <div class="map-badge-pill badge-color-${badgeColor}">
           <div class="badge-part-left">
             <span class="badge-title">${cfg.name}</span>
-            <span class="badge-sub">${cfg.totalGI} GI</span>
+            <span class="badge-sub">${totalGI} GI</span>
           </div>
           <div class="badge-divider"></div>
           <div class="badge-part-right">
-            <span class="badge-title">${cfg.badgeRisk}</span>
-            <span class="badge-sub">${cfg.badgeCount}</span>
+            <span class="badge-title">${badgeRisk}</span>
+            <span class="badge-sub">${badgeCount}</span>
           </div>
         </div>
         <div class="badge-anchor-dot"></div>
