@@ -1866,4 +1866,175 @@ function setupEventListeners() {
       state.unitMap.invalidateSize();
     }
   });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeDimensionGuideModal();
+    }
+  });
+}
+
+// ==========================================================================
+// 14. MODAL PANDUAN PENILAIAN MATRIKS (TIER & PELANGGAN)
+// ==========================================================================
+const REGION_VOLT_CONFIG = {
+  JAMALI: {
+    name: 'JAMALI (Jawa, Madura, Bali)',
+    unitNames: 'UITJBB, UITJBT, UITJBM',
+    volts: ['500', '275', '150', '70', '30'],
+    cells: {
+      'Tier-1': { '500': 5, '275': null, '150': 4, '70': 4, '30': 4 },
+      'Tier-2': { '500': 4, '275': null, '150': 3, '70': 3, '30': 3 },
+      'Tier-3': { '500': 3, '275': null, '150': 2, '70': 2, '30': 2 },
+      'Tier-4': { '500': 2, '275': null, '150': 1, '70': 1, '30': 1 },
+      'Tier-5': { '500': 2, '275': null, '150': 1, '70': 1, '30': 1 },
+      'Tier-6': { '500': 2, '275': null, '150': 1, '70': 1, '30': 1 },
+      'Tier-7': { '500': 2, '275': null, '150': 1, '70': 1, '30': 1 }
+    }
+  },
+  SUMATERA: {
+    name: 'SUMATERA',
+    unitNames: 'P3BS, BABEL',
+    volts: ['500', '275', '150', '70', '30'],
+    cells: {
+      'Tier-1': { '500': 5, '275': 5, '150': 4, '70': 3, '30': null },
+      'Tier-2': { '500': null, '275': 4, '150': 3, '70': 2, '30': null },
+      'Tier-3': { '500': null, '275': 3, '150': 2, '70': 1, '30': null },
+      'Tier-4': { '500': null, '275': 2, '150': 1, '70': 1, '30': null },
+      'Tier-5': { '500': null, '275': 2, '150': 1, '70': 1, '30': null },
+      'Tier-6': { '500': null, '275': 2, '150': 1, '70': 1, '30': null },
+      'Tier-7': { '500': null, '275': 2, '150': 1, '70': 1, '30': null }
+    }
+  },
+  KALIMANTAN: {
+    name: 'KALIMANTAN',
+    unitNames: 'P3BKAL',
+    volts: ['500', '275', '150', '70', '30'],
+    cells: {
+      'Tier-1': { '500': null, '275': 5, '150': 5, '70': 4, '30': null },
+      'Tier-2': { '500': null, '275': null, '150': 4, '70': 3, '30': null },
+      'Tier-3': { '500': null, '275': null, '150': 3, '70': 2, '30': null },
+      'Tier-4': { '500': null, '275': null, '150': 2, '70': 1, '30': null },
+      'Tier-5': { '500': null, '275': null, '150': 2, '70': 1, '30': null },
+      'Tier-6': { '500': null, '275': null, '150': 2, '70': 1, '30': null },
+      'Tier-7': { '500': null, '275': null, '150': 2, '70': 1, '30': null }
+    }
+  },
+  SULAWESI: {
+    name: 'SULAWESI & INDONESIA TIMUR',
+    unitNames: 'P3BSUL, NTB, NTT, MMU, PPB',
+    volts: ['500', '275', '150', '70', '30'],
+    cells: {
+      'Tier-1': { '500': null, '275': 5, '150': 5, '70': 4, '30': 4 },
+      'Tier-2': { '500': null, '275': 4, '150': 4, '70': 3, '30': 3 },
+      'Tier-3': { '500': null, '275': null, '150': 3, '70': 2, '30': 2 },
+      'Tier-4': { '500': null, '275': null, '150': 2, '70': 2, '30': 2 },
+      'Tier-5': { '500': null, '275': null, '150': 2, '70': 2, '30': 2 },
+      'Tier-6': { '500': null, '275': null, '150': 2, '70': 2, '30': 2 },
+      'Tier-7': { '500': null, '275': null, '150': 2, '70': 2, '30': 2 }
+    }
+  }
+};
+
+let guideActiveRegion = 'JAMALI';
+
+function openDimensionGuideModal(forceDim) {
+  const modal = document.getElementById('dimension-guide-modal');
+  if (!modal) return;
+
+  const dim = forceDim || (state.activeDimension === 'pelanggan' ? 'pelanggan' : 'tier');
+
+  const badgeEl = document.getElementById('guide-modal-badge');
+  const titleEl = document.getElementById('guide-modal-title');
+  const subtitleEl = document.getElementById('guide-modal-subtitle');
+  const tierContent = document.getElementById('guide-content-tier');
+  const pelangganContent = document.getElementById('guide-content-pelanggan');
+
+  // Auto-detect region from current active unit
+  const activeUnit = state.selectedUnit || 'UITJBB';
+  guideActiveRegion = (typeof getRegionForUnit === 'function') ? getRegionForUnit(activeUnit) : 'JAMALI';
+
+  if (dim === 'pelanggan') {
+    if (badgeEl) badgeEl.textContent = 'Kriteria Kategori';
+    if (titleEl) titleEl.textContent = 'Kriteria Kategori Pelanggan Prioritas';
+    if (subtitleEl) subtitleEl.textContent = 'Hasil Diskusi Rapat PLN - Bobot Dampak Sumbu X: Kategori 1 (X=5) s.d. Kategori 5 (X=1)';
+    if (tierContent) tierContent.style.display = 'none';
+    if (pelangganContent) pelangganContent.style.display = 'block';
+  } else {
+    if (badgeEl) badgeEl.textContent = 'Ketentuan Sumbu X';
+    if (titleEl) titleEl.textContent = 'Tabel Penilaian Tier Gardu Induk (PLN)';
+    if (subtitleEl) subtitleEl.textContent = 'Matriks Konversi Region & Tegangan Operasi ke Kolom Matriks Risiko (Sumbu X: 1 s.d. 5)';
+    if (tierContent) tierContent.style.display = 'block';
+    if (pelangganContent) pelangganContent.style.display = 'none';
+
+    switchGuideRegion(guideActiveRegion);
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeDimensionGuideModal(event) {
+  if (event && event.target && event.target.id !== 'dimension-guide-modal') {
+    return;
+  }
+  const modal = document.getElementById('dimension-guide-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function switchGuideRegion(reg) {
+  guideActiveRegion = reg;
+  const tabs = document.querySelectorAll('.guide-region-tab');
+  tabs.forEach(tab => {
+    if (tab.dataset.region === reg) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  const cfg = REGION_VOLT_CONFIG[reg] || REGION_VOLT_CONFIG.JAMALI;
+  const indText = document.getElementById('guide-unit-indicator-text');
+  if (indText) {
+    indText.textContent = `Wilayah Aktif: ${state.selectedUnit || 'UITJBB'} • Region: ${cfg.name} (Unit: ${cfg.unitNames})`;
+  }
+
+  renderGuideTierTable(reg);
+}
+
+function renderGuideTierTable(reg) {
+  const table = document.getElementById('guide-region-table');
+  if (!table) return;
+
+  const cfg = REGION_VOLT_CONFIG[reg] || REGION_VOLT_CONFIG.JAMALI;
+  const tiers = ['Tier-1', 'Tier-2', 'Tier-3', 'Tier-4', 'Tier-5', 'Tier-6', 'Tier-7'];
+
+  let headerHtml = `
+    <thead>
+      <tr>
+        <th class="th-tier">${reg}</th>
+        ${cfg.volts.map(v => `<th>${v} kV</th>`).join('')}
+      </tr>
+    </thead>
+  `;
+
+  let rowsHtml = tiers.map(t => {
+    const cells = cfg.cells[t] || {};
+    const colsHtml = cfg.volts.map(v => {
+      const val = cells[v];
+      if (val !== null && val !== undefined) {
+        return `<td><span class="cell-pill-matrix cell-pill-${val}" title="Sumbu X = Kolom ${val}">${val}</span></td>`;
+      } else {
+        return `<td><span class="cell-empty-dash">-</span></td>`;
+      }
+    }).join('');
+
+    return `
+      <tr>
+        <td class="td-tier">${t}</td>
+        ${colsHtml}
+      </tr>
+    `;
+  }).join('');
+
+  table.innerHTML = headerHtml + `<tbody>${rowsHtml}</tbody>`;
 }

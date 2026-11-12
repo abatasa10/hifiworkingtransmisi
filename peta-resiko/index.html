@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
   <!-- App Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -184,8 +184,16 @@
           <div class="matrix-tabs-row">
             <button class="matrix-tab-btn" data-dim="beban" onclick="switchDimension('beban')">Beban</button>
             <button class="matrix-tab-btn" data-dim="kerawanan" onclick="switchDimension('kerawanan')">Kerawanan</button>
-            <button class="matrix-tab-btn active" data-dim="tier" onclick="switchDimension('tier')">Tier Gardu</button>
-            <button class="matrix-tab-btn" data-dim="pelanggan" onclick="switchDimension('pelanggan')">Jenis Pelanggan</button>
+            <button class="matrix-tab-btn active" data-dim="tier" onclick="switchDimension('tier')">
+              Tier Gardu <span class="tab-info-trigger" onclick="event.stopPropagation(); openDimensionGuideModal('tier')" title="Lihat Ketentuan Penilaian Tier">ⓘ</span>
+            </button>
+            <button class="matrix-tab-btn" data-dim="pelanggan" onclick="switchDimension('pelanggan')">
+              Jenis Pelanggan <span class="tab-info-trigger" onclick="event.stopPropagation(); openDimensionGuideModal('pelanggan')" title="Lihat Kriteria Kategori Pelanggan">ⓘ</span>
+            </button>
+            <button id="btn-guide-popover" class="matrix-guide-btn" onclick="openDimensionGuideModal()" title="Panduan & Aturan Penilaian Matriks">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <span>Info Penilaian</span>
+            </button>
           </div>
         </div>
 
@@ -359,6 +367,119 @@
 
   </main>
 
+  <!-- MODAL PANDUAN PENILAIAN MATRIKS (TIER & PELANGGAN) -->
+  <div id="dimension-guide-modal" class="modal-backdrop-guide" style="display: none;" onclick="closeDimensionGuideModal(event)">
+    <div class="modal-guide-card" onclick="event.stopPropagation()">
+      <div class="modal-guide-header">
+        <div class="modal-guide-header-text">
+          <div class="modal-guide-badge" id="guide-modal-badge">Ketentuan Sumbu X</div>
+          <h3 class="modal-guide-title" id="guide-modal-title">Tabel Penilaian Tier Gardu Induk</h3>
+          <p class="modal-guide-subtitle" id="guide-modal-subtitle">Matriks Konversi Region & Tegangan Operasi ke Kolom Matriks Risiko (Sumbu X: 1 s.d. 5)</p>
+        </div>
+        <button class="modal-guide-close-btn" onclick="closeDimensionGuideModal()" title="Tutup">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- TIER GUIDE CONTENT -->
+      <div id="guide-content-tier" class="modal-guide-content">
+        <!-- Region Tabs -->
+        <div class="guide-region-tabs" id="guide-region-tabs">
+          <button class="guide-region-tab active" data-region="JAMALI" onclick="switchGuideRegion('JAMALI')">
+            <span class="region-name">JAMALI</span>
+            <span class="region-sub">JBB, JBT, JBM</span>
+          </button>
+          <button class="guide-region-tab" data-region="SUMATERA" onclick="switchGuideRegion('SUMATERA')">
+            <span class="region-name">SUMATERA</span>
+            <span class="region-sub">P3BS, Babel</span>
+          </button>
+          <button class="guide-region-tab" data-region="KALIMANTAN" onclick="switchGuideRegion('KALIMANTAN')">
+            <span class="region-name">KALIMANTAN</span>
+            <span class="region-sub">P3BKAL</span>
+          </button>
+          <button class="guide-region-tab" data-region="SULAWESI" onclick="switchGuideRegion('SULAWESI')">
+            <span class="region-name">SULAWESI & TIMUR</span>
+            <span class="region-sub">Sulawesi, NTB, NTT, MMU, PPB</span>
+          </button>
+        </div>
+
+        <div class="guide-unit-indicator" id="guide-unit-indicator">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span id="guide-unit-indicator-text">Wilayah aktif: UITJBB (Region JAMALI)</span>
+        </div>
+
+        <!-- Table Container -->
+        <div class="guide-table-scroll">
+          <table class="guide-matrix-table" id="guide-region-table">
+            <!-- Rendered by JS -->
+          </table>
+        </div>
+
+        <!-- Technical Footnote -->
+        <div class="guide-technical-box">
+          <div class="guide-tech-header">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <strong>Ketentuan Teknis Penilaian:</strong>
+          </div>
+          <ul class="guide-tech-list">
+            <li><strong>Kritikalitas Tier:</strong> Nilai Tier berbanding terbalik dengan dampak risiko: semakin kecil indeks Tier (Tier 1), semakin tinggi signifikansi konsekuensi operasional terhadap keandalan penyaluran tenaga listrik.</li>
+            <li><strong>Bobot Tegangan Operasi:</strong> Sistem EHV 500 kV & 275 kV berfungsi sebagai <em>interconnection backbone</em> sehingga Tier 1 bernilai dampak tertinggi (Kolom 5 / Katastropik). Pada sistem 150 kV Jamali, Tier 1 bernilai Kolom 4 (Mayor).</li>
+            <li><strong>Prinsip Pewarisan:</strong> Seluruh Bay dan Aset di dalam suatu Gardu Induk mewarisi nilai Tier dan Sumbu X yang tepat sama dari GI induknya.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PELANGGAN GUIDE CONTENT -->
+      <div id="guide-content-pelanggan" class="modal-guide-content" style="display: none;">
+        <div class="guide-pelanggan-grid">
+          <div class="pelanggan-card kat-1">
+            <div class="pelanggan-card-header">
+              <span class="p-pill">KATEGORI 1 (OBVITNAS)</span>
+              <span class="p-col">Sumbu X = 5</span>
+            </div>
+            <p class="p-desc">Berdasarkan ketetapan Kementerian dan Lembaga Negara (ESDM, Kemenperin, dll).</p>
+          </div>
+          <div class="pelanggan-card kat-2">
+            <div class="pelanggan-card-header">
+              <span class="p-pill">KATEGORI 2 (VVIP)</span>
+              <span class="p-col">Sumbu X = 4</span>
+            </div>
+            <p class="p-desc">Istana Negara, Pemerintah Pusat (Eksekutif, Legislatif, Yudikatif) & Rumah Dinas, Kedubes, KPU, Lembaga Negara, Transportasi Listrik (MRT, LRT, KCIC, KRL), Kantor TNI & POLRI Pusat, Pelanggan KTT, RS & Stadion Nasional.</p>
+          </div>
+          <div class="pelanggan-card kat-3">
+            <div class="pelanggan-card-header">
+              <span class="p-pill">KATEGORI 3 (VIP)</span>
+              <span class="p-col">Sumbu X = 3</span>
+            </div>
+            <p class="p-desc">Kantor Pemerintah Provinsi & Rumah Dinas, Konsulat Jenderal, Bandara, Terminal Bus & Pelabuhan Skala Provinsi, RS Tingkat Provinsi, Rumah Pejabat Eselon I-II / BOC / BOD BUMN, Media Nasional, Perguruan Tinggi Nasional.</p>
+          </div>
+          <div class="pelanggan-card kat-4">
+            <div class="pelanggan-card-header">
+              <span class="p-pill">KATEGORI 4 (PENTING)</span>
+              <span class="p-col">Sumbu X = 2</span>
+            </div>
+            <p class="p-desc">Kantor Pemkab / Pemkot & Rumah Dinas, Transportasi Publik Kota/Kab, Pelayanan Publik Kota/Kab, Kantor TNI & POLRI Kota/Kab, Pelanggan TR Layanan Prioritas, Stakeholder memiliki akses langsung ke Direksi/Kementerian.</p>
+          </div>
+          <div class="pelanggan-card kat-5">
+            <div class="pelanggan-card-header">
+              <span class="p-pill">KATEGORI 5 (REGULER)</span>
+              <span class="p-col">Sumbu X = 1</span>
+            </div>
+            <p class="p-desc">Pelanggan umum / reguler selain Kategori 1 s.d. 4 (konsumen rumah tangga biasa, bisnis standar, dan jaringan distribusi umum).</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- FLOATING DETAIL TOOLTIP (SESUAI GAMBAR HOVER BARU) -->
   <div id="gi-floating-tooltip" class="custom-hover-card" style="display: none;">
     <div class="hover-card-header" id="tt-header-bg">
@@ -408,8 +529,8 @@
   <script>if (typeof L === 'undefined') { document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>'); }</script>
   
   <!-- Data Model & Main App Logic -->
-  <script src="data.js?v=9"></script>
-  <script src="drilldown-data.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="data.js?v=10"></script>
+  <script src="drilldown-data.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
