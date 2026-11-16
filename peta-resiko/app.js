@@ -24,6 +24,11 @@ const state = {
     ultg: 'all',
     voltage: 'all'
   },
+  showTrajectory: true,         // Toggle pergerakan jejak riwayat (-1)
+  selectedTrajectoryItemId: null,
+  historyModalItem: null,
+  historyFilter: 'all',
+  historySearch: '',
   nationalMap: null,
   unitMap: null,
   nationalBadges: [],
@@ -566,6 +571,8 @@ function renderScatterDots(items) {
 
   if (!items || items.length === 0) return;
 
+  const trajectories = [];
+
   if (state.hierarchyLevel === 'gi') {
     // Level 1: Gardu Induk View (Persis Gambar 2 Awal)
     items.forEach((sub, index) => {
@@ -592,6 +599,21 @@ function renderScatterDots(items) {
 
       const leftPercent = colBasePercent + jitterX;
       const topPercent = rowBasePercent + jitterY;
+
+      // Trajectory calculation (-1 move)
+      const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(sub, state.activeDimension) : { hasMoved: false };
+      if (moveInfo.hasMoved) {
+        const prevColBasePercent = (moveInfo.prevCol - 1) * 20;
+        const prevRowBasePercent = (5 - moveInfo.prevRow) * 20;
+        trajectories.push({
+          item: sub,
+          moveInfo,
+          currX: leftPercent,
+          currY: topPercent,
+          prevX: prevColBasePercent + jitterX,
+          prevY: prevRowBasePercent + jitterY
+        });
+      }
 
       const dot = document.createElement('div');
       dot.className = 'scatter-dot';
@@ -622,9 +644,11 @@ function renderScatterDots(items) {
         }
       });
 
-      // Klik dot GI di scatterplot -> langsung masuk ke Bay level
+      // Klik dot GI di scatterplot -> pilih trajectory & drilldown
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
+        state.selectedTrajectoryItemId = sub.id;
+        renderTrajectoryOverlay(trajectories);
         drillDownToBayLevel(sub.id);
       });
 
@@ -653,6 +677,21 @@ function renderScatterDots(items) {
       const leftPercent = colBasePercent + jitterX;
       const topPercent = rowBasePercent + jitterY;
 
+      // Trajectory calculation (-1 move)
+      const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(bay, state.activeDimension) : { hasMoved: false };
+      if (moveInfo.hasMoved) {
+        const prevColBasePercent = (moveInfo.prevCol - 1) * 20;
+        const prevRowBasePercent = (5 - moveInfo.prevRow) * 20;
+        trajectories.push({
+          item: bay,
+          moveInfo,
+          currX: leftPercent,
+          currY: topPercent,
+          prevX: prevColBasePercent + jitterX,
+          prevY: prevRowBasePercent + jitterY
+        });
+      }
+
       const dot = document.createElement('div');
       dot.className = 'scatter-dot';
       dot.id = `dot-${bay.id}`;
@@ -680,9 +719,11 @@ function renderScatterDots(items) {
         unhighlightUnitMapMarker(bay.id);
       });
 
-      // Klik dot Bay di scatterplot -> langsung masuk ke Asset level
+      // Klik dot Bay di scatterplot -> pilih trajectory & drilldown
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
+        state.selectedTrajectoryItemId = bay.id;
+        renderTrajectoryOverlay(trajectories);
         drillDownToAssetLevel(bay.id);
       });
 
@@ -732,6 +773,21 @@ function renderScatterDots(items) {
       const leftPercent = colBasePercent + jitterX;
       const topPercent = rowBasePercent + jitterY;
 
+      // Trajectory calculation (-1 move)
+      const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(asset, state.activeDimension) : { hasMoved: false };
+      if (moveInfo.hasMoved) {
+        const prevColBasePercent = (moveInfo.prevCol - 1) * 20;
+        const prevRowBasePercent = (5 - moveInfo.prevRow) * 20;
+        trajectories.push({
+          item: asset,
+          moveInfo,
+          currX: leftPercent,
+          currY: topPercent,
+          prevX: prevColBasePercent + jitterX,
+          prevY: prevRowBasePercent + jitterY
+        });
+      }
+
       const dot = document.createElement('div');
       dot.className = 'scatter-dot';
       dot.id = `dot-${asset.id}`;
@@ -757,12 +813,17 @@ function renderScatterDots(items) {
 
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
+        state.selectedTrajectoryItemId = asset.id;
+        renderTrajectoryOverlay(trajectories);
         drillDownToAssetDetail(asset.id);
       });
 
       overlay.appendChild(dot);
     });
   }
+
+  // Render trajectory lines, rings & date pills
+  renderTrajectoryOverlay(trajectories);
 }
 
 // ==========================================================================
@@ -1617,7 +1678,7 @@ function renderTableRows(items) {
         <th>Usia</th>
         <th>Beban (%)</th>
         <th>Status Risiko</th>
-        <th style="width: 50px;">Aksi</th>
+        <th style="width: 140px; text-align: center;">Aksi</th>
       `;
     } else if (state.hierarchyLevel === 'bay') {
       theadRow.innerHTML = `
@@ -1629,7 +1690,7 @@ function renderTableRows(items) {
         <th>${xHeader}</th>
         <th>Jumlah Aset</th>
         <th>Status Risiko</th>
-        <th style="width: 50px;">Aksi</th>
+        <th style="width: 140px; text-align: center;">Aksi</th>
       `;
     } else {
       theadRow.innerHTML = `
@@ -1641,7 +1702,7 @@ function renderTableRows(items) {
         <th>Usia (Th)</th>
         <th>AHI Score</th>
         <th>Status Risiko</th>
-        <th style="width: 50px;">Aksi</th>
+        <th style="width: 140px; text-align: center;">Aksi</th>
       `;
     }
   }
@@ -1669,7 +1730,15 @@ function renderTableRows(items) {
           <td>${item.usia || item.age || '-'} th</td>
           <td>${item.beban ? item.beban.toFixed(1) + '%' : '-'}</td>
           <td><span class="pill-status ${badgeCls}">${item.riskCategory || '-'}</span></td>
-          <td><button class="btn-table-action" onclick="event.stopPropagation(); drillDownToBayLevel('${item.id}')" title="Buka Bay & Aset">&rarr;</button></td>
+          <td>
+            <div class="table-actions-cell">
+              <button class="btn-table-history" onclick="event.stopPropagation(); openItemHistoryModal('${item.id}', 'gi')" title="Lihat Riwayat Pergerakan Risiko (30 Catatan Terakhir)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>30 Log</span>
+              </button>
+              <button class="btn-table-action" onclick="event.stopPropagation(); drillDownToBayLevel('${item.id}')" title="Buka Bay & Aset">&rarr;</button>
+            </div>
+          </td>
         </tr>
       `;
     } else if (state.hierarchyLevel === 'bay') {
@@ -1684,7 +1753,15 @@ function renderTableRows(items) {
           <td style="font-weight: 600;">${xDisplay}</td>
           <td>${item.totalAssets || 15}</td>
           <td><span class="pill-status ${badgeCls}">${item.cellTitle || item.riskCategory}</span></td>
-          <td><button class="btn-table-action" onclick="event.stopPropagation(); drillDownToAssetLevel('${item.id}')">&rarr;</button></td>
+          <td>
+            <div class="table-actions-cell">
+              <button class="btn-table-history" onclick="event.stopPropagation(); openItemHistoryModal('${item.id}', 'bay')" title="Lihat Riwayat Pergerakan Risiko (30 Catatan Terakhir)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>30 Log</span>
+              </button>
+              <button class="btn-table-action" onclick="event.stopPropagation(); drillDownToAssetLevel('${item.id}')">&rarr;</button>
+            </div>
+          </td>
         </tr>
       `;
     } else {
@@ -1698,7 +1775,15 @@ function renderTableRows(items) {
           <td>${item.usiaAset || '-'}</td>
           <td style="color: #ef4444; font-weight: 600;">${item.ahiScore || '-'}</td>
           <td><span class="pill-status ${badgeCls}">${item.riskCategory || '-'}</span></td>
-          <td><button class="btn-table-action" onclick="event.stopPropagation(); drillDownToAssetDetail('${item.id}')">&rarr;</button></td>
+          <td>
+            <div class="table-actions-cell">
+              <button class="btn-table-history" onclick="event.stopPropagation(); openItemHistoryModal('${item.id}', 'asset')" title="Lihat Riwayat Pergerakan Risiko (30 Catatan Terakhir)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>30 Log</span>
+              </button>
+              <button class="btn-table-action" onclick="event.stopPropagation(); drillDownToAssetDetail('${item.id}')">&rarr;</button>
+            </div>
+          </td>
         </tr>
       `;
     }
@@ -1870,6 +1955,7 @@ function setupEventListeners() {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDimensionGuideModal();
+      closeItemHistoryModal();
     }
   });
 }
@@ -2037,4 +2123,256 @@ function renderGuideTierTable(reg) {
   }).join('');
 
   table.innerHTML = headerHtml + `<tbody>${rowsHtml}</tbody>`;
+}
+
+// ==========================================================================
+// 15. SCATTERPLOT TRAJECTORY OVERLAY & 30-MOVE AUDIT TRAIL LOGS
+// ==========================================================================
+function renderTrajectoryOverlay(trajectories) {
+  const overlay = document.getElementById('scatter-overlay');
+  if (!overlay) return;
+
+  // Clear existing trajectory elements
+  overlay.querySelectorAll('.scatter-trajectory-svg, .ghost-dot-prev, .dashed-ring-prev, .solid-ring-curr, .trajectory-date-pill').forEach(el => el.remove());
+
+  if (!trajectories || trajectories.length === 0) return;
+
+  // If selected item is active, only show its line; otherwise show all if global toggle is ON
+  const visibleTrajectories = trajectories.filter(t => {
+    if (state.selectedTrajectoryItemId) {
+      return t.item.id === state.selectedTrajectoryItemId;
+    }
+    return state.showTrajectory;
+  });
+
+  if (visibleTrajectories.length === 0) return;
+
+  // SVG layer for lines
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'scatter-trajectory-svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+
+  visibleTrajectories.forEach((t, idx) => {
+    const isSelected = state.selectedTrajectoryItemId === t.item.id;
+
+    // Line track
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', `${t.prevX}%`);
+    line.setAttribute('y1', `${t.prevY}%`);
+    line.setAttribute('x2', `${t.currX}%`);
+    line.setAttribute('y2', `${t.currY}%`);
+    line.setAttribute('class', `trajectory-line-dashed ${isSelected ? 'trajectory-line-active' : ''}`);
+    svg.appendChild(line);
+
+    // 1. Ghost Dot Previous (T-1)
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost-dot-prev';
+    ghost.style.left = `${t.prevX}%`;
+    ghost.style.top = `${t.prevY}%`;
+    ghost.title = `Perpindahan ${t.moveInfo.date}: Dari ${t.moveInfo.prevCell.title} ${t.moveInfo.prevCell.num} ➔ ${t.moveInfo.currCell.title} ${t.moveInfo.currCell.num}`;
+    ghost.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.selectedTrajectoryItemId = t.item.id;
+      renderTrajectoryOverlay(trajectories);
+    });
+    overlay.appendChild(ghost);
+
+    // 2. Dashed Ring Around Previous Dot (Persis Gambar)
+    const dashedRing = document.createElement('div');
+    dashedRing.className = 'dashed-ring-prev';
+    dashedRing.style.left = `${t.prevX}%`;
+    dashedRing.style.top = `${t.prevY}%`;
+    overlay.appendChild(dashedRing);
+
+    // 3. Solid Ring Around Current Dot (Persis Gambar)
+    const solidRing = document.createElement('div');
+    solidRing.className = 'solid-ring-curr';
+    solidRing.style.left = `${t.currX}%`;
+    solidRing.style.top = `${t.currY}%`;
+    overlay.appendChild(solidRing);
+
+    // 4. Floating Date Pill
+    if (isSelected || (state.showTrajectory && idx < 14)) {
+      const midX = (t.prevX + t.currX) / 2;
+      const midY = (t.prevY + t.currY) / 2;
+      const datePill = document.createElement('div');
+      datePill.className = 'trajectory-date-pill';
+      datePill.style.left = `${midX}%`;
+      datePill.style.top = `${midY}%`;
+      const arrowIcon = t.moveInfo.direction === 'improve' ? '▼' : '▲';
+      datePill.innerHTML = `
+        <span>${t.moveInfo.date}</span>
+        <span class="t-arrow" title="${t.moveInfo.directionLabel}">${arrowIcon}</span>
+      `;
+      overlay.appendChild(datePill);
+    }
+  });
+
+  overlay.insertBefore(svg, overlay.firstChild);
+}
+
+function toggleTrajectoryMode() {
+  state.showTrajectory = !state.showTrajectory;
+  const btn = document.getElementById('btn-toggle-trajectory');
+  if (btn) {
+    btn.classList.toggle('active', state.showTrajectory);
+  }
+  const items = getActiveLevelItems();
+  renderScatterDots(items);
+}
+
+// --------------------------------------------------------------------------
+// MODAL 30 RIWAYAT PERGERAKAN (TABLE VIEW)
+// --------------------------------------------------------------------------
+let currentHistoryEvents = [];
+
+function openItemHistoryModal(itemId, level) {
+  const modal = document.getElementById('item-history-modal');
+  if (!modal) return;
+
+  const currentLevel = level || state.hierarchyLevel;
+  let item = null;
+
+  if (currentLevel === 'gi') {
+    const list = SUBSTATIONS_BY_UNIT[state.selectedUnit] || [];
+    item = list.find(s => s.id === itemId) || { id: itemId, name: itemId, unit: state.selectedUnit };
+  } else if (currentLevel === 'bay') {
+    const bays = (typeof getBaysForSubstation === 'function' && state.selectedGI) ? getBaysForSubstation(state.selectedGI) : [];
+    item = bays.find(b => b.id === itemId) || { id: itemId, name: itemId, unit: state.selectedUnit };
+  } else {
+    const assets = (typeof getAssetsForBay === 'function' && state.selectedBay) ? getAssetsForBay(state.selectedBay) : [];
+    item = assets.find(a => a.id === itemId) || { id: itemId, name: itemId, unit: state.selectedUnit };
+  }
+
+  state.historyModalItem = item;
+  state.historyFilter = 'all';
+  state.historySearch = '';
+
+  const nameEl = document.getElementById('history-item-name');
+  const subEl = document.getElementById('history-item-sub');
+  if (nameEl) nameEl.textContent = item.name || itemId;
+  if (subEl) {
+    const unit = item.unit || state.selectedUnit || '-';
+    const tegangan = item.tegangan ? `${String(item.tegangan).replace(/\D/g, '')} kV` : '500 kV';
+    const upt = item.upt || '-';
+    const ultg = item.ultg || '-';
+    subEl.textContent = `Audit Trail Perubahan Sel Matriks & Indeks Kondisi • ${unit} • ${tegangan} • UPT: ${upt} • ULTG: ${ultg}`;
+  }
+
+  // Generate 30 events
+  currentHistoryEvents = (typeof getItemHistory30 === 'function') ? getItemHistory30(item) : [];
+
+  // Summary stats
+  const totalEl = document.getElementById('h-stat-total');
+  const trendEl = document.getElementById('h-stat-trend');
+  const currEl = document.getElementById('h-stat-current');
+  const updateEl = document.getElementById('h-stat-last-update');
+
+  const improveCount = currentHistoryEvents.filter(e => e.direction === 'improve').length;
+  const improvePercent = Math.round((improveCount / (currentHistoryEvents.length || 1)) * 100);
+
+  if (totalEl) totalEl.textContent = `${currentHistoryEvents.length} Catatan`;
+  if (trendEl) {
+    trendEl.textContent = improvePercent >= 50 ? `🟢 Membaik (${improvePercent}%)` : `🔴 Meningkat (${100 - improvePercent}%)`;
+    trendEl.className = improvePercent >= 50 ? 'h-val text-green' : 'h-val text-red';
+  }
+  if (currEl) currEl.textContent = `${item.cellNum || 22} - ${item.cellTitle || item.riskCategory || 'High'}`;
+  if (updateEl && currentHistoryEvents[0]) updateEl.textContent = currentHistoryEvents[0].date.split(',')[0];
+
+  // Reset filter buttons
+  document.querySelectorAll('.h-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === 'all');
+  });
+  const searchInput = document.getElementById('history-search-input');
+  if (searchInput) searchInput.value = '';
+
+  renderHistoryTimeline();
+  modal.style.display = 'flex';
+}
+
+function closeItemHistoryModal(event) {
+  if (event && event.target && event.target.id !== 'item-history-modal') {
+    return;
+  }
+  const modal = document.getElementById('item-history-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function filterHistoryTimeline(filterType) {
+  state.historyFilter = filterType;
+  document.querySelectorAll('.h-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filterType);
+  });
+  renderHistoryTimeline();
+}
+
+function handleHistorySearch(q) {
+  state.historySearch = (q || '').toLowerCase();
+  renderHistoryTimeline();
+}
+
+function renderHistoryTimeline() {
+  const container = document.getElementById('history-timeline-container');
+  if (!container) return;
+
+  let filtered = [...currentHistoryEvents];
+
+  if (state.historyFilter !== 'all') {
+    filtered = filtered.filter(e => e.direction === state.historyFilter);
+  }
+
+  if (state.historySearch) {
+    filtered = filtered.filter(e => 
+      e.workType.toLowerCase().includes(state.historySearch) ||
+      e.note.toLowerCase().includes(state.historySearch) ||
+      e.date.toLowerCase().includes(state.historySearch)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); font-size: 12px;">Tidak ada riwayat pergerakan yang cocok dengan filter.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(ev => {
+    const isImprove = ev.direction === 'improve';
+    const cardClass = isImprove ? 'card-improve' : 'card-degrade';
+    const pillClass = isImprove ? 'pill-improve' : 'pill-degrade';
+
+    return `
+      <div class="timeline-card ${cardClass}">
+        <div class="t-seq-badge">#${ev.num}</div>
+        <div class="t-card-content">
+          <div class="t-card-top">
+            <div class="t-date-group">
+              <span class="t-date">${ev.date}</span>
+              <span class="t-work-tag">${ev.workType}</span>
+            </div>
+            <span class="t-dir-pill ${pillClass}">
+              ${isImprove ? '🟢' : '🔴'} ${ev.directionLabel}
+            </span>
+          </div>
+
+          <div class="t-movement-row">
+            <span class="t-cell-pill" style="background: ${ev.fromCell.color || '#ed1c24'};">
+              ${ev.fromCell.num} - ${ev.fromCell.title}
+            </span>
+            <span class="t-move-arrow">&rarr;</span>
+            <span class="t-cell-pill" style="background: ${ev.toCell.color || '#f7941d'};">
+              ${ev.toCell.num} - ${ev.toCell.title}
+            </span>
+          </div>
+
+          <div class="t-params-row">
+            <span>AHI: <strong>${ev.ahi}</strong></span>
+            <span>Beban: <strong>${ev.beban}</strong></span>
+            <span>Matriks: <strong>[${ev.fromRow},${ev.fromCol}] &rarr; [${ev.toRow},${ev.toCol}]</strong></span>
+          </div>
+
+          <p class="t-card-note">${ev.note}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
