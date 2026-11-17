@@ -467,6 +467,34 @@ function renderXTicks() {
   if (!container) return;
 
   container.innerHTML = '';
+
+  if (state.activeDimension === 'beban') {
+    const activeUnit = state.selectedUnit || 'UITJBB';
+    const subSistem = (typeof getSubSistemForUnit === 'function') ? getSubSistemForUnit(activeUnit) : 'JAMALI';
+    const cfg = (typeof BEBAN_SUBSISTEM_CONFIG !== 'undefined' && BEBAN_SUBSISTEM_CONFIG[subSistem]) 
+      ? BEBAN_SUBSISTEM_CONFIG[subSistem] 
+      : (typeof BEBAN_SUBSISTEM_CONFIG !== 'undefined' ? BEBAN_SUBSISTEM_CONFIG.JAMALI : null);
+
+    for (let point = 1; point <= 5; point++) {
+      const trafoRange = cfg ? cfg.trafo[point] : `< ${point * 80}`;
+      const transRange = cfg ? cfg.transmisi[point] : `< ${point * 330}`;
+      const tick = document.createElement('div');
+      tick.className = 'x-tick';
+      tick.title = `Sumbu X = Kolom ${point} (${subSistem})\n• Bay Trafo: ${trafoRange} MW\n• Bay Saluran: ${transRange} MW`;
+
+      tick.innerHTML = `
+        <span class="num">${point}</span>
+        <span class="sub" style="font-size: 10px; line-height: 1.25;">
+          <strong style="color: #0f172a;">Point ${point}</strong>
+          <span style="display:block; color: #0284c7; font-weight: 600; font-size: 9px; margin-top: 1px;">Trafo: ${trafoRange}</span>
+          <span style="display:block; color: #4338ca; font-size: 9px;">Saluran: ${transRange}</span>
+        </span>
+      `;
+      container.appendChild(tick);
+    }
+    return;
+  }
+
   // MATRIX_CONFIG.cols is defined in data.js
   const cols = (MATRIX_CONFIG.cols && MATRIX_CONFIG.cols[state.activeDimension]) || 
                (MATRIX_CONFIG.cols && MATRIX_CONFIG.cols.tier) || [];
@@ -1034,9 +1062,17 @@ function showSubstationTooltip(sub, event) {
     descText = sub.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
-    dimKey = 'Beban Rata-rata :';
-    dimVal = (sub.beban !== undefined ? Number(sub.beban).toFixed(2) : '269.63');
-    descText = '';
+    const subSistem = (typeof getSubSistemForUnit === 'function') ? getSubSistemForUnit(sub.unit || state.selectedUnit) : 'JAMALI';
+    const pointVal = sub.levelBeban || 1;
+    const bebanMw = (sub.beban !== undefined ? Number(sub.beban).toFixed(2) : '269.63');
+    dimKey = 'Point Pembebanan :';
+    dimVal = `Point ${pointVal} (${bebanMw} MW)`;
+    descTitle = 'Kriteria Pembebanan:';
+    const cfg = (typeof BEBAN_SUBSISTEM_CONFIG !== 'undefined' && BEBAN_SUBSISTEM_CONFIG[subSistem]) ? BEBAN_SUBSISTEM_CONFIG[subSistem] : null;
+    const trafoRange = cfg ? cfg.trafo[pointVal] : '-';
+    const transRange = cfg ? cfg.transmisi[pointVal] : '-';
+    descText = `${subSistem} Point ${pointVal}: Trafo (${trafoRange} MW) | Transmisi (${transRange} MW)`;
+    calloutClass = 'callout-beban';
   } else if (state.activeDimension === 'kerawanan') {
     dimKey = 'Kerawanan :';
     dimVal = sub.kerawanan || 'Sedang';
@@ -1174,9 +1210,17 @@ function showBayTooltip(bay, event) {
     descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
-    dimKey = 'Beban :';
-    dimVal = (bay.beban !== undefined ? `${Number(bay.beban).toFixed(2)} MW` : '-');
-    descText = '';
+    const subSistem = (typeof getSubSistemForUnit === 'function') ? getSubSistemForUnit(bay.unit || state.selectedUnit) : 'JAMALI';
+    const pointVal = bay.levelBeban || (6 - (bay.tier || 1));
+    const bebanMw = (bay.beban !== undefined ? `${Number(bay.beban).toFixed(2)} MW` : '-');
+    dimKey = 'Point Pembebanan :';
+    dimVal = `Point ${pointVal} (${bebanMw})`;
+    descTitle = 'Kriteria Pembebanan:';
+    const cfg = (typeof BEBAN_SUBSISTEM_CONFIG !== 'undefined' && BEBAN_SUBSISTEM_CONFIG[subSistem]) ? BEBAN_SUBSISTEM_CONFIG[subSistem] : null;
+    const isTrans = (bay.bayType && bay.bayType.toLowerCase().includes('transmisi')) || (bay.name && bay.name.toLowerCase().includes('pht'));
+    const rangeText = isTrans ? (cfg ? `Saluran: ${cfg.transmisi[pointVal]}` : '') : (cfg ? `Trafo: ${cfg.trafo[pointVal]}` : '');
+    descText = `${subSistem} Point ${pointVal} (${rangeText})`;
+    calloutClass = 'callout-beban';
   }
 
   const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
@@ -1686,9 +1730,17 @@ function showBayFloatingPopup(bay, evt) {
     descText = bay.kategoriPelangganDesc || KATEGORI_PELANGGAN_DESC[katNum] || '';
     calloutClass = 'callout-pelanggan';
   } else if (state.activeDimension === 'beban') {
-    dimKey = 'Beban :';
-    dimVal = bay.beban !== undefined ? `${bay.beban} MW` : '-';
-    descText = '';
+    const subSistem = (typeof getSubSistemForUnit === 'function') ? getSubSistemForUnit(bay.unit || state.selectedUnit) : 'JAMALI';
+    const pointVal = bay.levelBeban || (6 - (bay.tier || 1));
+    const bebanMw = (bay.beban !== undefined ? `${bay.beban} MW` : '-');
+    dimKey = 'Point Pembebanan :';
+    dimVal = `Point ${pointVal} (${bebanMw})`;
+    descTitle = 'Kriteria Pembebanan:';
+    const cfg = (typeof BEBAN_SUBSISTEM_CONFIG !== 'undefined' && BEBAN_SUBSISTEM_CONFIG[subSistem]) ? BEBAN_SUBSISTEM_CONFIG[subSistem] : null;
+    const isTrans = (bay.bayType && bay.bayType.toLowerCase().includes('transmisi')) || (bay.name && bay.name.toLowerCase().includes('pht'));
+    const rangeText = isTrans ? (cfg ? `Saluran: ${cfg.transmisi[pointVal]}` : '') : (cfg ? `Trafo: ${cfg.trafo[pointVal]}` : '');
+    descText = `${subSistem} Point ${pointVal} (${rangeText})`;
+    calloutClass = 'callout-beban';
   }
 
   const teganganVal = bay.tegangan ? String(bay.tegangan).replace(/\D/g, '') : '500';
@@ -2280,39 +2332,316 @@ const REGION_VOLT_CONFIG = {
 
 let guideActiveRegion = 'JAMALI';
 
+// ==========================================================================
+// POINT PEMBEBANAN (REF HISTORY JAN 2026) CONFIG
+// ==========================================================================
+const BEBAN_SUBSISTEM_CONFIG = {
+  JAMALI: {
+    name: 'JAMALI (Jawa, Madura, Bali)',
+    unitNames: 'UITJBB, UITJBT, UITJBM',
+    trafo: {
+      1: '<80',
+      2: '80 s.d <160',
+      3: '160 s.d <240',
+      4: '240 s.d <320',
+      5: '>= 320'
+    },
+    transmisi: {
+      1: '<330',
+      2: '330 s.d <660',
+      3: '660 s.d <990',
+      4: '990 s.d <1320',
+      5: '>= 1320'
+    },
+    batasBawah: {
+      trafo: [80, 160, 240, 320, 320],
+      transmisi: [330, 660, 990, 1320, 1320]
+    }
+  },
+  SUMATERA: {
+    name: 'SUMATERA',
+    unitNames: 'P3BS, BABEL',
+    trafo: {
+      1: '<70',
+      2: '70 s.d <140',
+      3: '140 s.d <210',
+      4: '210 s.d <280',
+      5: '>= 280'
+    },
+    transmisi: {
+      1: '<55',
+      2: '55 s.d <110',
+      3: '110 s.d <165',
+      4: '165 s.d <220',
+      5: '>= 220'
+    },
+    batasBawah: {
+      trafo: [70, 140, 210, 280, 280],
+      transmisi: [55, 110, 165, 220, 220]
+    }
+  },
+  KALIMANTAN: {
+    name: 'KALIMANTAN',
+    unitNames: 'P3BKAL',
+    trafo: {
+      1: '<16',
+      2: '16 s.d <32',
+      3: '32 s.d <48',
+      4: '48 s.d <64',
+      5: '>= 64'
+    },
+    transmisi: {
+      1: '<30',
+      2: '30 s.d <60',
+      3: '60 s.d <90',
+      4: '90 s.d <120',
+      5: '>= 120'
+    },
+    batasBawah: {
+      trafo: [16, 32, 48, 64, 64],
+      transmisi: [30, 60, 90, 120, 120]
+    }
+  },
+  SULAWESI: {
+    name: 'SULAWESI',
+    unitNames: 'P3BSUL',
+    trafo: {
+      1: '<10',
+      2: '10 s.d <20',
+      3: '20 s.d <30',
+      4: '30 s.d <40',
+      5: '>= 40'
+    },
+    transmisi: {
+      1: '<45',
+      2: '45 s.d <90',
+      3: '90 s.d <135',
+      4: '135 s.d <180',
+      5: '>= 180'
+    },
+    batasBawah: {
+      trafo: [10, 20, 30, 40, 40],
+      transmisi: [45, 90, 135, 180, 180]
+    }
+  },
+  NTB: {
+    name: 'NTB (Nusa Tenggara Barat)',
+    unitNames: 'UIW NTB',
+    trafo: {
+      1: '<8',
+      2: '8 s.d <16',
+      3: '16 s.d <24',
+      4: '24 s.d <32',
+      5: '>= 32'
+    },
+    transmisi: {
+      1: '<18',
+      2: '18 s.d <36',
+      3: '36 s.d <54',
+      4: '54 s.d <72',
+      5: '>= 72'
+    },
+    batasBawah: {
+      trafo: [8, 16, 24, 32, 32],
+      transmisi: [18, 36, 54, 72, 72]
+    }
+  },
+  NTT: {
+    name: 'NTT (Nusa Tenggara Timur)',
+    unitNames: 'UIW NTT',
+    trafo: {
+      1: '<10',
+      2: '10 s.d <20',
+      3: '20 s.d <30',
+      4: '30 s.d <40',
+      5: '>= 40'
+    },
+    transmisi: {
+      1: '<18',
+      2: '18 s.d <36',
+      3: '36 s.d <54',
+      4: '54 s.d <72',
+      5: '>= 72'
+    },
+    batasBawah: {
+      trafo: [10, 20, 30, 40, 40],
+      transmisi: [18, 36, 54, 72, 72]
+    }
+  },
+  MMU: {
+    name: 'MMU (Maluku & Maluku Utara)',
+    unitNames: 'UIW MMU',
+    trafo: {
+      1: '<5',
+      2: '5 s.d <10',
+      3: '10 s.d <15',
+      4: '15 s.d <20',
+      5: '>= 20'
+    },
+    transmisi: {
+      1: '<10',
+      2: '10 s.d <20',
+      3: '20 s.d <30',
+      4: '30 s.d <40',
+      5: '>= 40'
+    },
+    batasBawah: {
+      trafo: [5, 10, 15, 20, 20],
+      transmisi: [10, 20, 30, 40, 40]
+    }
+  },
+  PPB: {
+    name: 'PPB (Papua & Papua Barat)',
+    unitNames: 'UIW PPB',
+    trafo: {
+      1: '<5',
+      2: '5 s.d <10',
+      3: '10 s.d <15',
+      4: '15 s.d <20',
+      5: '>= 20'
+    },
+    transmisi: {
+      1: '<10',
+      2: '10 s.d <20',
+      3: '20 s.d <30',
+      4: '30 s.d <40',
+      5: '>= 40'
+    },
+    batasBawah: {
+      trafo: [5, 10, 15, 20, 20],
+      transmisi: [10, 20, 30, 40, 40]
+    }
+  }
+};
+
+function getSubSistemForUnit(unit) {
+  if (!unit) return "JAMALI";
+  const u = String(unit).toUpperCase();
+  if (u.includes("JBB") || u.includes("JBT") || u.includes("JBM") || u.includes("JAWA") || u.includes("JAMALI")) return "JAMALI";
+  if (u.includes("P3BS") || u.includes("SUMATERA") || u.includes("BABEL")) return "SUMATERA";
+  if (u.includes("KAL") || u.includes("KALIMANTAN") || u.includes("P3BKAL")) return "KALIMANTAN";
+  if (u.includes("SUL") || u.includes("SULAWESI") || u.includes("P3BSUL")) return "SULAWESI";
+  if (u.includes("NTB")) return "NTB";
+  if (u.includes("NTT")) return "NTT";
+  if (u.includes("MMU") || u.includes("MALUKU")) return "MMU";
+  if (u.includes("PPB") || u.includes("PAPUA")) return "PPB";
+  return "JAMALI";
+}
+
 function openDimensionGuideModal(forceDim) {
   const modal = document.getElementById('dimension-guide-modal');
   if (!modal) return;
 
-  const dim = forceDim || (state.activeDimension === 'pelanggan' ? 'pelanggan' : 'tier');
-
-  const badgeEl = document.getElementById('guide-modal-badge');
-  const titleEl = document.getElementById('guide-modal-title');
-  const subtitleEl = document.getElementById('guide-modal-subtitle');
-  const tierContent = document.getElementById('guide-content-tier');
-  const pelangganContent = document.getElementById('guide-content-pelanggan');
+  const dim = forceDim || (state.activeDimension === 'pelanggan' ? 'pelanggan' : (state.activeDimension === 'beban' ? 'beban' : 'tier'));
 
   // Auto-detect region from current active unit
   const activeUnit = state.selectedUnit || 'UITJBB';
   guideActiveRegion = (typeof getRegionForUnit === 'function') ? getRegionForUnit(activeUnit) : 'JAMALI';
 
-  if (dim === 'pelanggan') {
+  switchGuideDimensionTab(dim);
+
+  modal.style.display = 'flex';
+}
+
+function switchGuideDimensionTab(dim) {
+  const badgeEl = document.getElementById('guide-modal-badge');
+  const titleEl = document.getElementById('guide-modal-title');
+  const subtitleEl = document.getElementById('guide-modal-subtitle');
+  const tierContent = document.getElementById('guide-content-tier');
+  const bebanContent = document.getElementById('guide-content-beban');
+  const pelangganContent = document.getElementById('guide-content-pelanggan');
+
+  const tabTier = document.getElementById('guide-tab-tier');
+  const tabBeban = document.getElementById('guide-tab-beban');
+  const tabPelanggan = document.getElementById('guide-tab-pelanggan');
+
+  if (tabTier) tabTier.classList.toggle('active', dim === 'tier');
+  if (tabBeban) tabBeban.classList.toggle('active', dim === 'beban');
+  if (tabPelanggan) tabPelanggan.classList.toggle('active', dim === 'pelanggan');
+
+  if (dim === 'beban') {
+    if (badgeEl) badgeEl.textContent = 'Ketentuan Sumbu X';
+    if (titleEl) titleEl.textContent = 'Point Pembebanan (Ref History Jan 2026)';
+    if (subtitleEl) subtitleEl.textContent = 'Standar Penentuan Kolom Sumbu X (Point 1 s.d. 5) Berdasarkan Batas Kapasitas Bay Trafo & Transmisi';
+    if (tierContent) tierContent.style.display = 'none';
+    if (bebanContent) bebanContent.style.display = 'block';
+    if (pelangganContent) pelangganContent.style.display = 'none';
+
+    renderGuideBebanTable();
+
+  } else if (dim === 'pelanggan') {
     if (badgeEl) badgeEl.textContent = 'Kriteria Kategori';
     if (titleEl) titleEl.textContent = 'Kriteria Kategori Pelanggan Prioritas';
     if (subtitleEl) subtitleEl.textContent = 'Hasil Diskusi Rapat PLN - Bobot Dampak Sumbu X: Kategori 1 (X=5) s.d. Kategori 5 (X=1)';
     if (tierContent) tierContent.style.display = 'none';
+    if (bebanContent) bebanContent.style.display = 'none';
     if (pelangganContent) pelangganContent.style.display = 'block';
+
   } else {
+    // Default tier
     if (badgeEl) badgeEl.textContent = 'Ketentuan Sumbu X';
     if (titleEl) titleEl.textContent = 'Tabel Penilaian Tier Gardu Induk (PLN)';
     if (subtitleEl) subtitleEl.textContent = 'Matriks Konversi Region & Tegangan Operasi ke Kolom Matriks Risiko (Sumbu X: 1 s.d. 5)';
     if (tierContent) tierContent.style.display = 'block';
+    if (bebanContent) bebanContent.style.display = 'none';
     if (pelangganContent) pelangganContent.style.display = 'none';
 
     switchGuideRegion(guideActiveRegion);
   }
+}
 
-  modal.style.display = 'flex';
+function renderGuideBebanTable() {
+  const tbody = document.getElementById('guide-beban-table-body');
+  const tfoot = document.getElementById('guide-beban-table-foot');
+  if (!tbody) return;
+
+  const activeUnit = state.selectedUnit || 'UITJBB';
+  const activeSubSistem = getSubSistemForUnit(activeUnit);
+
+  const indText = document.getElementById('guide-beban-indicator-text');
+  if (indText) {
+    indText.textContent = `Wilayah Aktif: ${activeUnit} • Sub Sistem Terpilih: ${activeSubSistem}`;
+  }
+
+  const subSistems = ['JAMALI', 'SUMATERA', 'KALIMANTAN', 'SULAWESI', 'NTB', 'NTT', 'MMU', 'PPB'];
+
+  tbody.innerHTML = subSistems.map(subKey => {
+    const cfg = BEBAN_SUBSISTEM_CONFIG[subKey];
+    const isActive = (subKey === activeSubSistem);
+    const rowClass = isActive ? 'active-subsistem-row' : '';
+    const badge = isActive ? '<span class="badge-active-sub">Aktif</span>' : '';
+
+    return `
+      <tr class="${rowClass}">
+        <td class="td-tier td-subsistem-name" style="text-align:left; font-weight:700;">
+          ${subKey} ${badge}
+        </td>
+        <td style="color:#0369a1;">${cfg.trafo[1]}</td>
+        <td style="color:#0369a1;">${cfg.trafo[2]}</td>
+        <td style="color:#0369a1;">${cfg.trafo[3]}</td>
+        <td style="color:#0369a1;">${cfg.trafo[4]}</td>
+        <td style="color:#0369a1; font-weight:700;">${cfg.trafo[5]}</td>
+        <td style="color:#4338ca;">${cfg.transmisi[1]}</td>
+        <td style="color:#4338ca;">${cfg.transmisi[2]}</td>
+        <td style="color:#4338ca;">${cfg.transmisi[3]}</td>
+        <td style="color:#4338ca;">${cfg.transmisi[4]}</td>
+        <td style="color:#4338ca; font-weight:700;">${cfg.transmisi[5]}</td>
+      </tr>
+    `;
+  }).join('');
+
+  if (tfoot) {
+    const activeCfg = BEBAN_SUBSISTEM_CONFIG[activeSubSistem] || BEBAN_SUBSISTEM_CONFIG.JAMALI;
+    tfoot.innerHTML = `
+      <tr style="border-top: 2px solid #cbd5e1; background: #f8fafc;">
+        <td style="text-align:left; font-weight:700; color:#1e293b; padding-left:12px;">
+          Batas Bawah (${activeSubSistem})
+        </td>
+        ${activeCfg.batasBawah.trafo.map(v => `<td style="color:#0284c7; font-weight:700;">${v}</td>`).join('')}
+        ${activeCfg.batasBawah.transmisi.map(v => `<td style="color:#4f46e5; font-weight:700;">${v}</td>`).join('')}
+      </tr>
+    `;
+  }
 }
 
 function closeDimensionGuideModal(event) {
@@ -2535,6 +2864,8 @@ function closeScatterPopupAndHistory(event) {
 // Expose globally for inline onclick handlers
 window.toggleScatterHistory = toggleScatterHistory;
 window.closeScatterPopupAndHistory = closeScatterPopupAndHistory;
+window.switchGuideDimensionTab = switchGuideDimensionTab;
+window.openDimensionGuideModal = openDimensionGuideModal;
 
 // --------------------------------------------------------------------------
 // MODAL 30 RIWAYAT PERGERAKAN (TABLE VIEW)

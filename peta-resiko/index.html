@@ -182,7 +182,9 @@
 
           <!-- Dimension Tabs (Bottom) -->
           <div class="matrix-tabs-row">
-            <button class="matrix-tab-btn" data-dim="beban" onclick="switchDimension('beban')">Beban</button>
+            <button class="matrix-tab-btn" data-dim="beban" onclick="switchDimension('beban')">
+              Beban <span class="tab-info-trigger" onclick="event.stopPropagation(); openDimensionGuideModal('beban')" title="Lihat Ketentuan Point Pembebanan">ⓘ</span>
+            </button>
             <button class="matrix-tab-btn" data-dim="kerawanan" onclick="switchDimension('kerawanan')">Kerawanan</button>
             <button class="matrix-tab-btn active" data-dim="tier" onclick="switchDimension('tier')">
               Tier Gardu <span class="tab-info-trigger" onclick="event.stopPropagation(); openDimensionGuideModal('tier')" title="Lihat Ketentuan Penilaian Tier">ⓘ</span>
@@ -367,7 +369,7 @@
 
   </main>
 
-  <!-- MODAL PANDUAN PENILAIAN MATRIKS (TIER & PELANGGAN) -->
+  <!-- MODAL PANDUAN PENILAIAN MATRIKS (TIER, BEBAN, & PELANGGAN) -->
   <div id="dimension-guide-modal" class="modal-backdrop-guide" style="display: none;" onclick="closeDimensionGuideModal(event)">
     <div class="modal-guide-card" onclick="event.stopPropagation()">
       <div class="modal-guide-header">
@@ -381,6 +383,22 @@
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
+        </button>
+      </div>
+
+      <!-- Dimension Selector Tabs in Modal -->
+      <div class="guide-dim-tabs">
+        <button id="guide-tab-tier" class="guide-dim-tab-btn active" onclick="switchGuideDimensionTab('tier')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>Tier Gardu & Tegangan</span>
+        </button>
+        <button id="guide-tab-beban" class="guide-dim-tab-btn" onclick="switchGuideDimensionTab('beban')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Point Pembebanan (Beban)</span>
+        </button>
+        <button id="guide-tab-pelanggan" class="guide-dim-tab-btn" onclick="switchGuideDimensionTab('pelanggan')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Jenis Pelanggan</span>
         </button>
       </div>
 
@@ -432,6 +450,62 @@
             <li><strong>Kritikalitas Tier:</strong> Nilai Tier berbanding terbalik dengan dampak risiko: semakin kecil indeks Tier (Tier 1), semakin tinggi signifikansi konsekuensi operasional terhadap keandalan penyaluran tenaga listrik.</li>
             <li><strong>Bobot Tegangan Operasi:</strong> Sistem EHV 500 kV & 275 kV berfungsi sebagai <em>interconnection backbone</em> sehingga Tier 1 bernilai dampak tertinggi (Kolom 5 / Katastropik). Pada sistem 150 kV Jamali, Tier 1 bernilai Kolom 4 (Mayor).</li>
             <li><strong>Prinsip Pewarisan:</strong> Seluruh Bay dan Aset di dalam suatu Gardu Induk mewarisi nilai Tier dan Sumbu X yang tepat sama dari GI induknya.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- BEBAN GUIDE CONTENT (POINT PEMBEBANAN JAN 2026) -->
+      <div id="guide-content-beban" class="modal-guide-content" style="display: none;">
+        <div class="guide-unit-indicator" id="guide-beban-indicator">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span id="guide-beban-indicator-text">Wilayah aktif: UITJBB (Sub Sistem JAMALI)</span>
+        </div>
+
+        <!-- Table Container Beban -->
+        <div class="guide-table-scroll">
+          <table class="guide-matrix-table guide-beban-table">
+            <thead>
+              <tr>
+                <th rowspan="2" class="th-subsistem">Sub Sistem</th>
+                <th colspan="5" class="th-section th-trafo">Bay Trafo Tenaga</th>
+                <th colspan="5" class="th-section th-saluran">Bay Saluran Transmisi</th>
+              </tr>
+              <tr class="tr-point-cols">
+                <th class="th-pt">1</th>
+                <th class="th-pt">2</th>
+                <th class="th-pt">3</th>
+                <th class="th-pt">4</th>
+                <th class="th-pt">5</th>
+                <th class="th-pt">1</th>
+                <th class="th-pt">2</th>
+                <th class="th-pt">3</th>
+                <th class="th-pt">4</th>
+                <th class="th-pt">5</th>
+              </tr>
+            </thead>
+            <tbody id="guide-beban-table-body">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+            <tfoot id="guide-beban-table-foot">
+              <!-- Batas bawah rendered by app.js -->
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Technical Footnote Beban -->
+        <div class="guide-technical-box">
+          <div class="guide-tech-header">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <strong>Ketentuan Sumbu X Point Pembebanan (Ref History Jan 2026):</strong>
+          </div>
+          <ul class="guide-tech-list">
+            <li><strong>Pemetaan Kolom Matriks:</strong> Nilai <strong>Point 1 s.d. Point 5</strong> menentukan posisi horizontal (Sumbu X) pada Matriks Risiko (Kolom 1 = Point 1, Kolom 5 = Point 5).</li>
+            <li><strong>Karakteristik Kapasitas Peralatan:</strong> Ambang batas kapasitas pembebanan (MW) dibedakan secara terpisah antara <em>Bay Trafo Tenaga</em> dan <em>Bay Saluran Transmisi</em> sesuai batas kontingensi sistem.</li>
+            <li><strong>Batas Bawah:</strong> Ambang batas bawah per sub sistem menjadi patokan minimal untuk naik ke level point pembebanan berikutnya.</li>
           </ul>
         </div>
       </div>
