@@ -24,7 +24,7 @@ const state = {
     ultg: 'all',
     voltage: 'all'
   },
-  showTrajectory: true,         // Toggle pergerakan jejak riwayat (-1)
+  showTrajectory: false,        // Riwayat (-1) hanya muncul jika scatter plot diklik
   selectedTrajectoryItemId: null,
   historyModalItem: null,
   historyFilter: 'all',
@@ -638,17 +638,31 @@ function renderScatterDots(items) {
       });
 
       dot.addEventListener('mouseleave', () => {
-        hideSubstationTooltip();
-        if (state.selectedSubstationId !== sub.id) {
-          unhighlightUnitMapMarker(sub.id);
+        if (state.selectedTrajectoryItemId !== sub.id) {
+          hideSubstationTooltip();
+          if (state.selectedSubstationId !== sub.id) {
+            unhighlightUnitMapMarker(sub.id);
+          }
         }
       });
 
-      // Klik dot GI di scatterplot -> pilih trajectory & drilldown
+      // Klik dot GI di scatterplot -> pilih & tampilkan riwayat (-1) khusus titik ini
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.selectedTrajectoryItemId = sub.id;
-        renderTrajectoryOverlay(trajectories);
+        if (state.selectedTrajectoryItemId === sub.id) {
+          drillDownToBayLevel(sub.id);
+        } else {
+          state.selectedTrajectoryItemId = sub.id;
+          state.selectedSubstationId = sub.id;
+          highlightScatterDot(sub.id);
+          highlightUnitMapMarker(sub.id);
+          showSubstationTooltip(sub, e);
+          renderTrajectoryOverlay(trajectories);
+        }
+      });
+
+      dot.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
         drillDownToBayLevel(sub.id);
       });
 
@@ -715,15 +729,28 @@ function renderScatterDots(items) {
       });
 
       dot.addEventListener('mouseleave', () => {
-        hideSubstationTooltip();
-        unhighlightUnitMapMarker(bay.id);
+        if (state.selectedTrajectoryItemId !== bay.id) {
+          hideSubstationTooltip();
+          unhighlightUnitMapMarker(bay.id);
+        }
       });
 
-      // Klik dot Bay di scatterplot -> pilih trajectory & drilldown
+      // Klik dot Bay di scatterplot -> pilih & tampilkan riwayat (-1) khusus titik ini
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.selectedTrajectoryItemId = bay.id;
-        renderTrajectoryOverlay(trajectories);
+        if (state.selectedTrajectoryItemId === bay.id) {
+          drillDownToAssetLevel(bay.id);
+        } else {
+          state.selectedTrajectoryItemId = bay.id;
+          highlightScatterDot(bay.id);
+          highlightUnitMapMarker(bay.id);
+          showBayTooltip(bay, e);
+          renderTrajectoryOverlay(trajectories);
+        }
+      });
+
+      dot.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
         drillDownToAssetLevel(bay.id);
       });
 
@@ -807,20 +834,42 @@ function renderScatterDots(items) {
       });
 
       dot.addEventListener('mouseleave', () => {
-        hideSubstationTooltip();
-        unhighlightUnitMapMarker(asset.id);
+        if (state.selectedTrajectoryItemId !== asset.id) {
+          hideSubstationTooltip();
+          unhighlightUnitMapMarker(asset.id);
+        }
       });
 
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.selectedTrajectoryItemId = asset.id;
-        renderTrajectoryOverlay(trajectories);
+        if (state.selectedTrajectoryItemId === asset.id) {
+          drillDownToAssetDetail(asset.id);
+        } else {
+          state.selectedTrajectoryItemId = asset.id;
+          highlightScatterDot(asset.id);
+          highlightUnitMapMarker(asset.id);
+          showAssetTooltip(asset, e);
+          renderTrajectoryOverlay(trajectories);
+        }
+      });
+
+      dot.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
         drillDownToAssetDetail(asset.id);
       });
 
       overlay.appendChild(dot);
     });
   }
+
+  // Klik area kosong overlay -> bersihkan garis riwayat & tooltip
+  overlay.onclick = (e) => {
+    if (e.target === overlay || e.target.classList.contains('matrix-scatter-overlay') || e.target.tagName.toLowerCase() === 'svg') {
+      state.selectedTrajectoryItemId = null;
+      hideSubstationTooltip();
+      renderTrajectoryOverlay(trajectories);
+    }
+  };
 
   // Render trajectory lines, rings & date pills
   renderTrajectoryOverlay(trajectories);
@@ -1004,6 +1053,32 @@ function showSubstationTooltip(sub, event) {
       `;
     }
 
+    // Previous Move history note (-1)
+    const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(sub, state.activeDimension) : { hasMoved: false };
+    let moveDescHtml = '';
+    if (moveInfo && moveInfo.hasMoved) {
+      const arrowSym = moveInfo.direction === 'improve' ? '▼ Membaik' : '▲ Meningkat';
+      const arrowColor = moveInfo.direction === 'improve' ? '#16a34a' : '#dc2626';
+      moveDescHtml = `
+        <div class="hover-move-callout" style="margin-top: 8px; padding: 6px 8px; background: #f8fafc; border-radius: 6px; border-left: 3px solid ${arrowColor}; font-size: 10.5px; line-height: 1.4;">
+          <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+            <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
+            <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+          </div>
+          <div style="color: #475569; margin-top: 2px;">
+            Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    const drillBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 8px; width: 100%;" onclick="event.stopPropagation(); drillDownToBayLevel('${sub.id}')">
+        <span>Buka Bay & Aset di GI ini</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    `;
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${sub.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${sub.upt || '-'}</span></div>
@@ -1011,6 +1086,8 @@ function showSubstationTooltip(sub, event) {
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
       <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
       ${extraDescHtml}
+      ${moveDescHtml}
+      ${drillBtnHtml}
     `;
   }
 
@@ -2137,14 +2214,12 @@ function renderTrajectoryOverlay(trajectories) {
 
   if (!trajectories || trajectories.length === 0) return;
 
-  // If selected item is active, only show its line; otherwise show all if global toggle is ON
-  const visibleTrajectories = trajectories.filter(t => {
-    if (state.selectedTrajectoryItemId) {
-      return t.item.id === state.selectedTrajectoryItemId;
-    }
-    return state.showTrajectory;
-  });
+  // HANYA tampilkan trajectory jika satu titik diklik / dipilih
+  if (!state.selectedTrajectoryItemId) {
+    return;
+  }
 
+  const visibleTrajectories = trajectories.filter(t => t.item.id === state.selectedTrajectoryItemId);
   if (visibleTrajectories.length === 0) return;
 
   // SVG layer for lines
@@ -2153,60 +2228,51 @@ function renderTrajectoryOverlay(trajectories) {
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '100%');
 
-  visibleTrajectories.forEach((t, idx) => {
-    const isSelected = state.selectedTrajectoryItemId === t.item.id;
-
-    // Line track
+  visibleTrajectories.forEach((t) => {
+    // 1. Line track
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', `${t.prevX}%`);
     line.setAttribute('y1', `${t.prevY}%`);
     line.setAttribute('x2', `${t.currX}%`);
     line.setAttribute('y2', `${t.currY}%`);
-    line.setAttribute('class', `trajectory-line-dashed ${isSelected ? 'trajectory-line-active' : ''}`);
+    line.setAttribute('class', 'trajectory-line-dashed trajectory-line-active');
     svg.appendChild(line);
 
-    // 1. Ghost Dot Previous (T-1)
+    // 2. Ghost Dot Previous (T-1)
     const ghost = document.createElement('div');
     ghost.className = 'ghost-dot-prev';
     ghost.style.left = `${t.prevX}%`;
     ghost.style.top = `${t.prevY}%`;
     ghost.title = `Perpindahan ${t.moveInfo.date}: Dari ${t.moveInfo.prevCell.title} ${t.moveInfo.prevCell.num} ➔ ${t.moveInfo.currCell.title} ${t.moveInfo.currCell.num}`;
-    ghost.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.selectedTrajectoryItemId = t.item.id;
-      renderTrajectoryOverlay(trajectories);
-    });
     overlay.appendChild(ghost);
 
-    // 2. Dashed Ring Around Previous Dot (Persis Gambar)
+    // 3. Dashed Ring Around Previous Dot (Persis Gambar)
     const dashedRing = document.createElement('div');
     dashedRing.className = 'dashed-ring-prev';
     dashedRing.style.left = `${t.prevX}%`;
     dashedRing.style.top = `${t.prevY}%`;
     overlay.appendChild(dashedRing);
 
-    // 3. Solid Ring Around Current Dot (Persis Gambar)
+    // 4. Solid Ring Around Current Dot (Persis Gambar)
     const solidRing = document.createElement('div');
     solidRing.className = 'solid-ring-curr';
     solidRing.style.left = `${t.currX}%`;
     solidRing.style.top = `${t.currY}%`;
     overlay.appendChild(solidRing);
 
-    // 4. Floating Date Pill
-    if (isSelected || (state.showTrajectory && idx < 14)) {
-      const midX = (t.prevX + t.currX) / 2;
-      const midY = (t.prevY + t.currY) / 2;
-      const datePill = document.createElement('div');
-      datePill.className = 'trajectory-date-pill';
-      datePill.style.left = `${midX}%`;
-      datePill.style.top = `${midY}%`;
-      const arrowIcon = t.moveInfo.direction === 'improve' ? '▼' : '▲';
-      datePill.innerHTML = `
-        <span>${t.moveInfo.date}</span>
-        <span class="t-arrow" title="${t.moveInfo.directionLabel}">${arrowIcon}</span>
-      `;
-      overlay.appendChild(datePill);
-    }
+    // 5. Floating Date Pill
+    const midX = (t.prevX + t.currX) / 2;
+    const midY = (t.prevY + t.currY) / 2;
+    const datePill = document.createElement('div');
+    datePill.className = 'trajectory-date-pill';
+    datePill.style.left = `${midX}%`;
+    datePill.style.top = `${midY}%`;
+    const arrowIcon = t.moveInfo.direction === 'improve' ? '▼' : '▲';
+    datePill.innerHTML = `
+      <span>${t.moveInfo.date}</span>
+      <span class="t-arrow" title="${t.moveInfo.directionLabel}">${arrowIcon}</span>
+    `;
+    overlay.appendChild(datePill);
   });
 
   overlay.insertBefore(svg, overlay.firstChild);
