@@ -954,22 +954,26 @@ function getRiskTheme(category, cellNum) {
 
 function positionTooltip(tt, event) {
   if (!tt || !event) return;
-  const tooltipWidth = 300;
-  const tooltipHeight = 320;
+  const tooltipWidth = tt.offsetWidth || 300;
+  const tooltipHeight = tt.offsetHeight || 460;
   let x = event.clientX + 16;
-  let y = event.clientY - 35;
+  let y = event.clientY - 25;
 
-  if (x + tooltipWidth > window.innerWidth - 12) {
+  // Horizontal clamp
+  if (x + tooltipWidth > window.innerWidth - 16) {
     x = event.clientX - tooltipWidth - 16;
   }
-  if (y + tooltipHeight > window.innerHeight - 12) {
-    y = window.innerHeight - tooltipHeight - 12;
+  if (x < 16) x = 16;
+
+  // Vertical clamp: pastikan popup tidak pernah terpotong di bagian bawah
+  if (y + tooltipHeight > window.innerHeight - 16) {
+    y = window.innerHeight - tooltipHeight - 16;
   }
-  if (y < 12) y = 12;
+  if (y < 16) y = 16;
 
   tt.style.position = 'fixed';
-  tt.style.left = `${x}px`;
-  tt.style.top = `${y}px`;
+  tt.style.left = `${Math.round(x)}px`;
+  tt.style.top = `${Math.round(y)}px`;
 }
 
 function showSubstationTooltip(sub, event) {
@@ -1117,6 +1121,7 @@ function showSubstationTooltip(sub, event) {
 
   tt.style.display = 'block';
   positionTooltip(tt, event);
+  requestAnimationFrame(() => positionTooltip(tt, event));
 }
 
 function showBayTooltip(bay, event) {
@@ -1247,6 +1252,7 @@ function showBayTooltip(bay, event) {
 
   tt.style.display = 'block';
   positionTooltip(tt, event);
+  requestAnimationFrame(() => positionTooltip(tt, event));
 }
 
 function showAssetTooltip(asset, event) {
@@ -1371,6 +1377,7 @@ function showAssetTooltip(asset, event) {
 
   tt.style.display = 'block';
   positionTooltip(tt, event);
+  requestAnimationFrame(() => positionTooltip(tt, event));
 }
 
 function hideSubstationTooltip() {
