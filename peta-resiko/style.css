@@ -1668,13 +1668,13 @@ body {
    ========================================================================== */
 .custom-hover-card {
   position: fixed;
-  width: 295px;
+  width: 300px;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26), 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   z-index: 9999;
-  pointer-events: none;
+  pointer-events: auto !important;
   font-family: var(--font-family);
   border: 1px solid rgba(0, 0, 0, 0.08);
   animation: fadeInHoverCard 0.12s ease-out;
@@ -1682,6 +1682,79 @@ body {
 
 .bay-popup-card.custom-hover-card {
   pointer-events: auto !important;
+}
+
+.hover-card-close-btn {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.hover-card-close-btn:hover {
+  background: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.popup-history-toggle-box {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.btn-toggle-scatter-history {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle-scatter-history:hover {
+  background: #dbeafe;
+}
+
+.btn-toggle-scatter-history.active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.popup-history-info {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.popup-history-info strong {
+  color: #1e293b;
 }
 
 @keyframes fadeInHoverCard {
@@ -1717,9 +1790,9 @@ body {
 .hover-card-pill {
   background: #ffffff;
   border-radius: 9999px;
-  padding: 5px 18px;
+  padding: 4px 12px;
   font-weight: 800;
-  font-size: 13.5px;
+  font-size: 13px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
   letter-spacing: -0.2px;
   color: #ed1c24;

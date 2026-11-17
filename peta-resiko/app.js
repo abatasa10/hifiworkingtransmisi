@@ -24,8 +24,10 @@ const state = {
     ultg: 'all',
     voltage: 'all'
   },
-  showTrajectory: false,        // Riwayat (-1) hanya muncul jika scatter plot diklik
+  showTrajectory: false,        // Riwayat (-1) hanya muncul jika tombol riwayat di popup diklik
   selectedTrajectoryItemId: null,
+  pinnedPopupId: null,          // ID item yang popupnya sedang dipin (terbuka permanen sampai ditutup)
+  currentTrajectories: [],      // Cache data perpindahan aktif
   historyModalItem: null,
   historyFilter: 'all',
   historySearch: '',
@@ -628,17 +630,21 @@ function renderScatterDots(items) {
       }
 
       dot.addEventListener('mouseenter', (e) => {
-        showSubstationTooltip(sub, e);
-        highlightUnitMapMarker(sub.id);
+        if (!state.pinnedPopupId) {
+          showSubstationTooltip(sub, e);
+          highlightUnitMapMarker(sub.id);
+        }
       });
 
       dot.addEventListener('mousemove', (e) => {
-        const tt = document.getElementById('gi-floating-tooltip');
-        positionTooltip(tt, e);
+        if (!state.pinnedPopupId) {
+          const tt = document.getElementById('gi-floating-tooltip');
+          positionTooltip(tt, e);
+        }
       });
 
       dot.addEventListener('mouseleave', () => {
-        if (state.selectedTrajectoryItemId !== sub.id) {
+        if (!state.pinnedPopupId) {
           hideSubstationTooltip();
           if (state.selectedSubstationId !== sub.id) {
             unhighlightUnitMapMarker(sub.id);
@@ -646,19 +652,15 @@ function renderScatterDots(items) {
         }
       });
 
-      // Klik dot GI di scatterplot -> pilih & tampilkan riwayat (-1) khusus titik ini
+      // Klik dot GI di scatterplot -> Pin popup & tampilkan info + tombol riwayat
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (state.selectedTrajectoryItemId === sub.id) {
-          drillDownToBayLevel(sub.id);
-        } else {
-          state.selectedTrajectoryItemId = sub.id;
-          state.selectedSubstationId = sub.id;
-          highlightScatterDot(sub.id);
-          highlightUnitMapMarker(sub.id);
-          showSubstationTooltip(sub, e);
-          renderTrajectoryOverlay(trajectories);
-        }
+        state.pinnedPopupId = sub.id;
+        state.selectedSubstationId = sub.id;
+        unhighlightScatterDots();
+        highlightScatterDot(sub.id);
+        highlightUnitMapMarker(sub.id);
+        showSubstationTooltip(sub, e);
       });
 
       dot.addEventListener('dblclick', (e) => {
@@ -719,34 +721,35 @@ function renderScatterDots(items) {
       }
 
       dot.addEventListener('mouseenter', (e) => {
-        showBayTooltip(bay, e);
-        highlightUnitMapMarker(bay.id);
+        if (!state.pinnedPopupId) {
+          showBayTooltip(bay, e);
+          highlightUnitMapMarker(bay.id);
+        }
       });
 
       dot.addEventListener('mousemove', (e) => {
-        const tt = document.getElementById('gi-floating-tooltip');
-        positionTooltip(tt, e);
+        if (!state.pinnedPopupId) {
+          const tt = document.getElementById('gi-floating-tooltip');
+          positionTooltip(tt, e);
+        }
       });
 
       dot.addEventListener('mouseleave', () => {
-        if (state.selectedTrajectoryItemId !== bay.id) {
+        if (!state.pinnedPopupId) {
           hideSubstationTooltip();
           unhighlightUnitMapMarker(bay.id);
         }
       });
 
-      // Klik dot Bay di scatterplot -> pilih & tampilkan riwayat (-1) khusus titik ini
+      // Klik dot Bay di scatterplot -> Pin popup & tampilkan info + tombol riwayat
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (state.selectedTrajectoryItemId === bay.id) {
-          drillDownToAssetLevel(bay.id);
-        } else {
-          state.selectedTrajectoryItemId = bay.id;
-          highlightScatterDot(bay.id);
-          highlightUnitMapMarker(bay.id);
-          showBayTooltip(bay, e);
-          renderTrajectoryOverlay(trajectories);
-        }
+        state.pinnedPopupId = bay.id;
+        state.selectedBayId = bay.id;
+        unhighlightScatterDots();
+        highlightScatterDot(bay.id);
+        highlightUnitMapMarker(bay.id);
+        showBayTooltip(bay, e);
       });
 
       dot.addEventListener('dblclick', (e) => {
@@ -824,17 +827,21 @@ function renderScatterDots(items) {
       dot.title = asset.name;
 
       dot.addEventListener('mouseenter', (e) => {
-        showAssetTooltip(asset, e);
-        highlightUnitMapMarker(asset.id);
+        if (!state.pinnedPopupId) {
+          showAssetTooltip(asset, e);
+          highlightUnitMapMarker(asset.id);
+        }
       });
 
       dot.addEventListener('mousemove', (e) => {
-        const tt = document.getElementById('gi-floating-tooltip');
-        positionTooltip(tt, e);
+        if (!state.pinnedPopupId) {
+          const tt = document.getElementById('gi-floating-tooltip');
+          positionTooltip(tt, e);
+        }
       });
 
       dot.addEventListener('mouseleave', () => {
-        if (state.selectedTrajectoryItemId !== asset.id) {
+        if (!state.pinnedPopupId) {
           hideSubstationTooltip();
           unhighlightUnitMapMarker(asset.id);
         }
@@ -842,15 +849,11 @@ function renderScatterDots(items) {
 
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (state.selectedTrajectoryItemId === asset.id) {
-          drillDownToAssetDetail(asset.id);
-        } else {
-          state.selectedTrajectoryItemId = asset.id;
-          highlightScatterDot(asset.id);
-          highlightUnitMapMarker(asset.id);
-          showAssetTooltip(asset, e);
-          renderTrajectoryOverlay(trajectories);
-        }
+        state.pinnedPopupId = asset.id;
+        unhighlightScatterDots();
+        highlightScatterDot(asset.id);
+        highlightUnitMapMarker(asset.id);
+        showAssetTooltip(asset, e);
       });
 
       dot.addEventListener('dblclick', (e) => {
@@ -862,12 +865,13 @@ function renderScatterDots(items) {
     });
   }
 
-  // Klik area kosong overlay -> bersihkan garis riwayat & tooltip
+  // Store trajectories cache
+  state.currentTrajectories = trajectories;
+
+  // Klik area kosong overlay -> bersihkan garis riwayat & popup
   overlay.onclick = (e) => {
     if (e.target === overlay || e.target.classList.contains('matrix-scatter-overlay') || e.target.tagName.toLowerCase() === 'svg') {
-      state.selectedTrajectoryItemId = null;
-      hideSubstationTooltip();
-      renderTrajectoryOverlay(trajectories);
+      closeScatterPopupAndHistory(e);
     }
   };
 
@@ -1053,27 +1057,46 @@ function showSubstationTooltip(sub, event) {
       `;
     }
 
-    // Previous Move history note (-1)
+    // Previous Move history box (-1) with Toggle Button
     const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(sub, state.activeDimension) : { hasMoved: false };
-    let moveDescHtml = '';
+    let historyBoxHtml = '';
     if (moveInfo && moveInfo.hasMoved) {
       const arrowSym = moveInfo.direction === 'improve' ? '▼ Membaik' : '▲ Meningkat';
       const arrowColor = moveInfo.direction === 'improve' ? '#16a34a' : '#dc2626';
-      moveDescHtml = `
-        <div class="hover-move-callout" style="margin-top: 8px; padding: 6px 8px; background: #f8fafc; border-radius: 6px; border-left: 3px solid ${arrowColor}; font-size: 10.5px; line-height: 1.4;">
-          <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
-            <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
-            <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+      const isTrajectoryActive = (state.selectedTrajectoryItemId === sub.id);
+      historyBoxHtml = `
+        <div class="popup-history-toggle-box">
+          <div class="popup-history-info">
+            <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+              <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
+              <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+            </div>
+            <div style="color: #475569; margin-top: 2px;">
+              Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
+            </div>
           </div>
-          <div style="color: #475569; margin-top: 2px;">
-            Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
-          </div>
+          <button id="btn-popup-toggle-history" class="btn-toggle-scatter-history ${isTrajectoryActive ? 'active' : ''}" style="margin-top: 6px;" onclick="toggleScatterHistory('${sub.id}', event)">
+            ${isTrajectoryActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)'}
+          </button>
+        </div>
+      `;
+    } else {
+      historyBoxHtml = `
+        <div class="popup-history-info" style="margin-top: 8px; color: #64748b; font-size: 11px; padding: 6px 8px; background: #f8fafc; border-radius: 6px;">
+          ℹ️ Belum ada riwayat pergeseran sel (-1)
         </div>
       `;
     }
 
+    const auditBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; color: #334155;" onclick="event.stopPropagation(); openItemHistoryModal('${sub.id}', 'gi')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Lihat Audit Trail (30 Riwayat)</span>
+      </button>
+    `;
+
     const drillBtnHtml = `
-      <button class="btn-open-bay-drilldown" style="margin-top: 8px; width: 100%;" onclick="event.stopPropagation(); drillDownToBayLevel('${sub.id}')">
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%;" onclick="event.stopPropagation(); drillDownToBayLevel('${sub.id}')">
         <span>Buka Bay & Aset di GI ini</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
       </button>
@@ -1086,7 +1109,8 @@ function showSubstationTooltip(sub, event) {
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
       <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
       ${extraDescHtml}
-      ${moveDescHtml}
+      ${historyBoxHtml}
+      ${auditBtnHtml}
       ${drillBtnHtml}
     `;
   }
@@ -1168,6 +1192,45 @@ function showBayTooltip(bay, event) {
       `;
     }
 
+    // Previous Move history box (-1) with Toggle Button
+    const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(bay, state.activeDimension) : { hasMoved: false };
+    let historyBoxHtml = '';
+    if (moveInfo && moveInfo.hasMoved) {
+      const arrowSym = moveInfo.direction === 'improve' ? '▼ Membaik' : '▲ Meningkat';
+      const arrowColor = moveInfo.direction === 'improve' ? '#16a34a' : '#dc2626';
+      const isTrajectoryActive = (state.selectedTrajectoryItemId === bay.id);
+      historyBoxHtml = `
+        <div class="popup-history-toggle-box">
+          <div class="popup-history-info">
+            <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+              <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
+              <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+            </div>
+            <div style="color: #475569; margin-top: 2px;">
+              Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
+            </div>
+          </div>
+          <button id="btn-popup-toggle-history" class="btn-toggle-scatter-history ${isTrajectoryActive ? 'active' : ''}" style="margin-top: 6px;" onclick="toggleScatterHistory('${bay.id}', event)">
+            ${isTrajectoryActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)'}
+          </button>
+        </div>
+      `;
+    }
+
+    const auditBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; color: #334155;" onclick="event.stopPropagation(); openItemHistoryModal('${bay.id}', 'bay')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Lihat Audit Trail (30 Riwayat)</span>
+      </button>
+    `;
+
+    const drillBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%;" onclick="event.stopPropagation(); drillDownToAssetLevel('${bay.id}')">
+        <span>Buka Aset di Bay ini</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    `;
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
@@ -1176,6 +1239,9 @@ function showBayTooltip(bay, event) {
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
       <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
       ${extraDescHtml}
+      ${historyBoxHtml}
+      ${auditBtnHtml}
+      ${drillBtnHtml}
     `;
   }
 
@@ -1250,6 +1316,45 @@ function showAssetTooltip(asset, event) {
       `;
     }
 
+    // Previous Move history box (-1) with Toggle Button
+    const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(asset, state.activeDimension) : { hasMoved: false };
+    let historyBoxHtml = '';
+    if (moveInfo && moveInfo.hasMoved) {
+      const arrowSym = moveInfo.direction === 'improve' ? '▼ Membaik' : '▲ Meningkat';
+      const arrowColor = moveInfo.direction === 'improve' ? '#16a34a' : '#dc2626';
+      const isTrajectoryActive = (state.selectedTrajectoryItemId === asset.id);
+      historyBoxHtml = `
+        <div class="popup-history-toggle-box">
+          <div class="popup-history-info">
+            <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+              <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
+              <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+            </div>
+            <div style="color: #475569; margin-top: 2px;">
+              Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
+            </div>
+          </div>
+          <button id="btn-popup-toggle-history" class="btn-toggle-scatter-history ${isTrajectoryActive ? 'active' : ''}" style="margin-top: 6px;" onclick="toggleScatterHistory('${asset.id}', event)">
+            ${isTrajectoryActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)'}
+          </button>
+        </div>
+      `;
+    }
+
+    const auditBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; color: #334155;" onclick="event.stopPropagation(); openItemHistoryModal('${asset.id}', 'asset')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Lihat Audit Trail (30 Riwayat)</span>
+      </button>
+    `;
+
+    const drillBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%;" onclick="event.stopPropagation(); drillDownToAssetDetail('${asset.id}')">
+        <span>Lihat Detail Peralatan</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    `;
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">Gardu Induk :</span><span class="v">${state.selectedGI ? state.selectedGI.name : '-'}</span></div>
@@ -1258,6 +1363,9 @@ function showAssetTooltip(asset, event) {
       <div class="hover-kv-row"><span class="k">AHI Score :</span><span class="v">${asset.ahiScore || '5 - Critical'}</span></div>
       <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
       ${extraDescHtml}
+      ${historyBoxHtml}
+      ${auditBtnHtml}
+      ${drillBtnHtml}
     `;
   }
 
@@ -1296,6 +1404,8 @@ function drillDownToBayLevel(giId) {
   state.hierarchyLevel = 'bay';
   state.activeRiskFilter = null;
   state.activeBayPopupId = null;
+  state.pinnedPopupId = null;
+  state.selectedTrajectoryItemId = null;
 
   hideSubstationTooltip();
   hideBayPopup();
@@ -1314,6 +1424,8 @@ function drillDownToAssetLevel(bayId) {
   state.hierarchyLevel = 'asset';
   state.activeRiskFilter = null;
   state.activeBayPopupId = null;
+  state.pinnedPopupId = null;
+  state.selectedTrajectoryItemId = null;
 
   hideBayPopup();
   hideAssetDetailView();
@@ -1590,6 +1702,45 @@ function showBayFloatingPopup(bay, evt) {
       `;
     }
 
+    // Previous Move history box (-1) with Toggle Button
+    const moveInfo = (typeof getPreviousMove === 'function') ? getPreviousMove(bay, state.activeDimension) : { hasMoved: false };
+    let historyBoxHtml = '';
+    if (moveInfo && moveInfo.hasMoved) {
+      const arrowSym = moveInfo.direction === 'improve' ? '▼ Membaik' : '▲ Meningkat';
+      const arrowColor = moveInfo.direction === 'improve' ? '#16a34a' : '#dc2626';
+      const isTrajectoryActive = (state.selectedTrajectoryItemId === bay.id);
+      historyBoxHtml = `
+        <div class="popup-history-toggle-box">
+          <div class="popup-history-info">
+            <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+              <span>🕒 Riwayat (-1): ${moveInfo.date}</span>
+              <span style="color: ${arrowColor}; font-weight: 700;">${arrowSym}</span>
+            </div>
+            <div style="color: #475569; margin-top: 2px;">
+              Dari <strong>${moveInfo.prevCell.num} - ${moveInfo.prevCell.title}</strong> &rarr; <strong>${moveInfo.currCell.num} - ${moveInfo.currCell.title}</strong>
+            </div>
+          </div>
+          <button id="btn-popup-toggle-history" class="btn-toggle-scatter-history ${isTrajectoryActive ? 'active' : ''}" style="margin-top: 6px;" onclick="toggleScatterHistory('${bay.id}', event)">
+            ${isTrajectoryActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)'}
+          </button>
+        </div>
+      `;
+    }
+
+    const auditBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; color: #334155;" onclick="event.stopPropagation(); openItemHistoryModal('${bay.id}', 'bay')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Lihat Audit Trail (30 Riwayat)</span>
+      </button>
+    `;
+
+    const drillBtnHtml = `
+      <button class="btn-open-bay-drilldown" style="margin-top: 6px; width: 100%;" onclick="event.stopPropagation(); drillDownToAssetLevel('${bay.id}')">
+        <span>Buka Aset di Bay ini</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    `;
+
     kvContainer.innerHTML = `
       <div class="hover-kv-row"><span class="k">Unit Induk :</span><span class="v">${bay.unit || state.selectedUnit}</span></div>
       <div class="hover-kv-row"><span class="k">UPT :</span><span class="v">${bay.upt || '-'}</span></div>
@@ -1598,6 +1749,9 @@ function showBayFloatingPopup(bay, evt) {
       <div class="hover-kv-row"><span class="k">Tegangan :</span><span class="v">${teganganVal}</span></div>
       <div class="hover-kv-row"><span class="k">${dimKey}</span><span class="v" title="${descText || dimVal}">${dimVal}</span></div>
       ${extraDescHtml}
+      ${historyBoxHtml}
+      ${auditBtnHtml}
+      ${drillBtnHtml}
     `;
   }
 
@@ -1905,6 +2059,7 @@ function filterByRiskCategory(category) {
 }
 
 function switchDimension(dimKey) {
+  closeScatterPopupAndHistory();
   state.activeDimension = dimKey;
   document.querySelectorAll('.matrix-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.dim === dimKey);
@@ -2033,6 +2188,23 @@ function setupEventListeners() {
     if (e.key === 'Escape') {
       closeDimensionGuideModal();
       closeItemHistoryModal();
+      closeScatterPopupAndHistory();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#gi-floating-tooltip') || 
+        e.target.closest('#bay-floating-popup') || 
+        e.target.closest('.scatter-dot') ||
+        e.target.closest('#item-history-modal') ||
+        e.target.closest('#matrix-info-modal') ||
+        e.target.closest('.custom-modal-backdrop') ||
+        e.target.closest('.modal-content') ||
+        e.target.closest('.modal-container')) {
+      return;
+    }
+    if (state.pinnedPopupId || state.selectedTrajectoryItemId) {
+      closeScatterPopupAndHistory();
     }
   });
 }
@@ -2287,6 +2459,75 @@ function toggleTrajectoryMode() {
   const items = getActiveLevelItems();
   renderScatterDots(items);
 }
+
+function toggleScatterHistory(itemId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  if (state.selectedTrajectoryItemId === itemId) {
+    state.selectedTrajectoryItemId = null;
+  } else {
+    state.selectedTrajectoryItemId = itemId;
+  }
+
+  // Update button state and text in popup
+  const btn = document.getElementById('btn-popup-toggle-history');
+  if (btn) {
+    const isActive = (state.selectedTrajectoryItemId === itemId);
+    btn.classList.toggle('active', isActive);
+    btn.innerHTML = isActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)';
+  }
+
+  const bpBtn = document.getElementById('bp-btn-popup-toggle-history');
+  if (bpBtn) {
+    const isActive = (state.selectedTrajectoryItemId === itemId);
+    bpBtn.classList.toggle('active', isActive);
+    bpBtn.innerHTML = isActive ? '✓ Sembunyikan Jejak (-1)' : '⚡ Tampilkan Jejak Riwayat (-1)';
+  }
+
+  // Re-render trajectory overlay immediately
+  if (state.currentTrajectories && state.currentTrajectories.length > 0) {
+    renderTrajectoryOverlay(state.currentTrajectories);
+  } else {
+    const items = getActiveLevelItems();
+    renderScatterDots(items);
+  }
+}
+
+function closeScatterPopupAndHistory(event) {
+  if (event) {
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+
+  state.pinnedPopupId = null;
+  state.selectedTrajectoryItemId = null;
+  state.selectedSubstationId = null;
+  state.activeBayPopupId = null;
+
+  hideSubstationTooltip();
+  hideBayPopup();
+
+  // Clear dot active highlights
+  unhighlightScatterDots();
+  if (state.unitMarkers) {
+    state.unitMarkers.forEach(marker => {
+      marker.setRadius(6);
+      marker.setStyle({ weight: 1.5 });
+    });
+  }
+
+  // Remove trajectory overlay elements from scatterplot
+  const overlay = document.getElementById('scatter-overlay');
+  if (overlay) {
+    overlay.querySelectorAll('.scatter-trajectory-svg, .ghost-dot-prev, .dashed-ring-prev, .solid-ring-curr, .trajectory-date-pill').forEach(el => el.remove());
+  }
+}
+
+// Expose globally for inline onclick handlers
+window.toggleScatterHistory = toggleScatterHistory;
+window.closeScatterPopupAndHistory = closeScatterPopupAndHistory;
 
 // --------------------------------------------------------------------------
 // MODAL 30 RIWAYAT PERGERAKAN (TABLE VIEW)
