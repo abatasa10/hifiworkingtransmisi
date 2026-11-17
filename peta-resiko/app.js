@@ -980,28 +980,201 @@ function getRiskTheme(category, cellNum) {
   }
 }
 
-function positionTooltip(tt, event) {
-  if (!tt || !event) return;
+function initPopupDraggable(tt) {
+  if (!tt) tt = document.getElementById('gi-floating-tooltip');
+  if (!tt) return;
+
+  const header = tt.querySelector('.hover-card-header');
+  if (!header || header.dataset.dragInit === 'true') return;
+  header.dataset.dragInit = 'true';
+
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  header.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.hover-card-close-btn') || e.target.closest('button')) return;
+
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = tt.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    header.style.cursor = 'grabbing';
+    tt.style.transition = 'none';
+    e.preventDefault();
+  });
+
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    let newLeft = initialLeft + dx;
+    let newTop = initialTop + dy;
+
+    newLeft = Math.max(8, Math.min(window.innerWidth - tt.offsetWidth - 8, newLeft));
+    newTop = Math.max(8, Math.min(window.innerHeight - tt.offsetHeight - 8, newTop));
+
+    tt.style.left = `${Math.round(newLeft)}px`;
+    tt.style.top = `${Math.round(newTop)}px`;
+  };
+
+  const onMouseUp = () => {
+    if (isDragging) {
+      isDragging = false;
+      header.style.cursor = 'grab';
+      tt.style.transition = 'left 0.25s cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease';
+    }
+  };
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+}
+
+function calculateSafePopupPosition(dotRect, traj, ttWidth, ttHeight) {
+  const margin = 16;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let refX = dotRect ? (dotRect.left + dotRect.width / 2) : (vw / 2);
+  let refY = dotRect ? (dotRect.top + dotRect.height / 2) : (vh / 2);
+
+  // If no trajectory active, default: right side of dot, clamp to screen
+  if (!traj) {
+    let x = refX + 20;
+    if (x + ttWidth > vw - margin) {
+      x = refX - ttWidth - 20;
+    }
+    let y = refY - 25;
+    if (y + ttHeight > vh - margin) y = vh - ttHeight - margin;
+    if (y < margin) y = margin;
+    if (x < margin) x = margin;
+    return { x: Math.round(x), y: Math.round(y) };
+  }
+
+  // Trajectory is active! Intelligently position so the arrow and previous point are never blocked
+  const overlay = document.getElementById('scatter-overlay');
+  const overlayRect = overlay ? overlay.getBoundingClientRect() : null;
+
+  let p1x = refX;
+  let p1y = refY;
+  let p0x = refX;
+  let p0y = refY;
+
+  if (overlayRect) {
+    p1x = overlayRect.left + (traj.currX / 100) * overlayRect.width;
+    p1y = overlayRect.top + (traj.currY / 100) * overlayRect.height;
+    p0x = overlayRect.left + (traj.prevX / 100) * overlayRect.width;
+    p0y = overlayRect.top + (traj.prevY / 100) * overlayRect.height;
+  }
+
+  const trajMinX = Math.min(p0x, p1x);
+  const trajMaxX = Math.max(p0x, p1x);
+  const trajMinY = Math.min(p0y, p1y);
+  const trajMaxY = Math.max(p0y, p1y);
+
+  let bestX = refX + 24;
+  let bestY = refY - 25;
+
+  // Case A: Trajectory extends to the RIGHT of current dot (p0x > p1x)
+  if (p0x > p1x + 10) {
+    // Priority 1: Left of current dot
+    if (trajMinX - ttWidth - 24 >= margin) {
+      bestX = trajMinX - ttWidth - 24;
+    }
+    // Priority 2: Right of the entire trajectory
+    else if (trajMaxX + 24 + ttWidth <= vw - margin) {
+      bestX = trajMaxX + 24;
+    }
+    // Priority 3: Below the trajectory
+    else if (trajMaxY + 24 + ttHeight <= vh - margin) {
+      bestY = trajMaxY + 24;
+      bestX = Math.max(margin, Math.min(vw - ttWidth - margin, trajMinX));
+    }
+    // Priority 4: Above the trajectory
+    else if (trajMinY - ttHeight - 24 >= margin) {
+      bestY = trajMinY - ttHeight - 24;
+      bestX = Math.max(margin, Math.min(vw - ttWidth - margin, trajMinX));
+    }
+    else {
+      bestX = margin;
+    }
+  }
+  // Case B: Trajectory extends to the LEFT of current dot (p0x < p1x)
+  else if (p0x < p1x - 10) {
+    // Priority 1: Right of current dot
+    if (trajMaxX + 24 + ttWidth <= vw - margin) {
+      bestX = trajMaxX + 24;
+    }
+    // Priority 2: Left of entire trajectory
+    else if (trajMinX - ttWidth - 24 >= margin) {
+      bestX = trajMinX - ttWidth - 24;
+    }
+    // Priority 3: Below trajectory
+    else if (trajMaxY + 24 + ttHeight <= vh - margin) {
+      bestY = trajMaxY + 24;
+      bestX = Math.max(margin, Math.min(vw - ttWidth - margin, trajMinX));
+    }
+    else {
+      bestX = vw - ttWidth - margin;
+    }
+  }
+  // Case C: Purely vertical trajectory (p0x ≈ p1x)
+  else {
+    if (p1x > vw / 2) {
+      bestX = trajMinX - ttWidth - 24;
+      if (bestX < margin) bestX = trajMaxX + 24;
+    } else {
+      bestX = trajMaxX + 24;
+      if (bestX + ttWidth > vw - margin) bestX = trajMinX - ttWidth - 24;
+    }
+  }
+
+  // Vertical clamp
+  if (bestY + ttHeight > vh - margin) {
+    bestY = vh - ttHeight - margin;
+  }
+  if (bestY < margin) bestY = margin;
+  if (bestX < margin) bestX = margin;
+  if (bestX + ttWidth > vw - margin) bestX = vw - ttWidth - margin;
+
+  return { x: Math.round(bestX), y: Math.round(bestY) };
+}
+
+function positionTooltip(tt, event, activeItem) {
+  if (!tt) return;
   const tooltipWidth = tt.offsetWidth || 300;
   const tooltipHeight = tt.offsetHeight || 460;
-  let x = event.clientX + 16;
-  let y = event.clientY - 25;
 
-  // Horizontal clamp
-  if (x + tooltipWidth > window.innerWidth - 16) {
-    x = event.clientX - tooltipWidth - 16;
+  // Dot / event bounding
+  let dotRect = null;
+  if (event && event.target && typeof event.target.getBoundingClientRect === 'function') {
+    dotRect = event.target.getBoundingClientRect();
+  } else if (activeItem && activeItem.id) {
+    const dotEl = document.getElementById(`dot-${activeItem.id}`);
+    if (dotEl) dotRect = dotEl.getBoundingClientRect();
+  } else if (event && event.clientX) {
+    dotRect = {
+      left: event.clientX,
+      top: event.clientY,
+      width: 0,
+      height: 0
+    };
   }
-  if (x < 16) x = 16;
 
-  // Vertical clamp: pastikan popup tidak pernah terpotong di bagian bawah
-  if (y + tooltipHeight > window.innerHeight - 16) {
-    y = window.innerHeight - tooltipHeight - 16;
-  }
-  if (y < 16) y = 16;
+  const itemId = activeItem ? activeItem.id : state.pinnedPopupId;
+  const isTrajActive = (state.selectedTrajectoryItemId === itemId);
+  const traj = (isTrajActive && state.currentTrajectories) ? state.currentTrajectories.find(t => t.item && t.item.id === itemId) : null;
+
+  const pos = calculateSafePopupPosition(dotRect, traj, tooltipWidth, tooltipHeight);
 
   tt.style.position = 'fixed';
-  tt.style.left = `${Math.round(x)}px`;
-  tt.style.top = `${Math.round(y)}px`;
+  tt.style.left = `${pos.x}px`;
+  tt.style.top = `${pos.y}px`;
+
+  initPopupDraggable(tt);
 }
 
 function showSubstationTooltip(sub, event) {
@@ -1156,8 +1329,8 @@ function showSubstationTooltip(sub, event) {
   }
 
   tt.style.display = 'block';
-  positionTooltip(tt, event);
-  requestAnimationFrame(() => positionTooltip(tt, event));
+  positionTooltip(tt, event, sub);
+  requestAnimationFrame(() => positionTooltip(tt, event, sub));
 }
 
 function showBayTooltip(bay, event) {
@@ -1295,8 +1468,8 @@ function showBayTooltip(bay, event) {
   }
 
   tt.style.display = 'block';
-  positionTooltip(tt, event);
-  requestAnimationFrame(() => positionTooltip(tt, event));
+  positionTooltip(tt, event, bay);
+  requestAnimationFrame(() => positionTooltip(tt, event, bay));
 }
 
 function showAssetTooltip(asset, event) {
@@ -1420,8 +1593,8 @@ function showAssetTooltip(asset, event) {
   }
 
   tt.style.display = 'block';
-  positionTooltip(tt, event);
-  requestAnimationFrame(() => positionTooltip(tt, event));
+  positionTooltip(tt, event, asset);
+  requestAnimationFrame(() => positionTooltip(tt, event, asset));
 }
 
 function hideSubstationTooltip() {
@@ -1822,10 +1995,11 @@ function showBayFloatingPopup(bay, evt) {
   }
 
   popup.style.display = 'block';
+  initPopupDraggable(popup);
 
   // Position nicely over matrix or near mouse
   if (evt && evt.clientX && evt.clientY) {
-    positionTooltip(popup, evt);
+    positionTooltip(popup, evt, bay);
   } else {
     popup.style.position = 'absolute';
     const matrixWorkspace = document.getElementById('matrix-display');
@@ -2240,6 +2414,9 @@ function setupEventListeners() {
       state.nationalMap.invalidateSize();
     } else if (state.currentView === 'detail' && state.unitMap) {
       state.unitMap.invalidateSize();
+    }
+    if (state.selectedTrajectoryItemId && state.currentTrajectories) {
+      renderTrajectoryOverlay(state.currentTrajectories);
     }
   });
 
@@ -2730,55 +2907,94 @@ function renderTrajectoryOverlay(trajectories) {
   const visibleTrajectories = trajectories.filter(t => t.item.id === state.selectedTrajectoryItemId);
   if (visibleTrajectories.length === 0) return;
 
-  // SVG layer for lines
+  const overlayWidth = overlay.clientWidth || 600;
+  const overlayHeight = overlay.clientHeight || 500;
+
+  // SVG layer for directional arrow lines
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('class', 'scatter-trajectory-svg');
+  svg.setAttribute('viewBox', `0 0 ${overlayWidth} ${overlayHeight}`);
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '100%');
 
+  svg.innerHTML = `
+    <defs>
+      <!-- Arrowheads pointing towards current dot -->
+      <marker id="arrowhead-improve" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+        <polygon points="0 0, 8 3.5, 0 7" fill="#16a34a" />
+      </marker>
+      <marker id="arrowhead-degrade" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+        <polygon points="0 0, 8 3.5, 0 7" fill="#dc2626" />
+      </marker>
+      <marker id="arrowhead-default" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+        <polygon points="0 0, 8 3.5, 0 7" fill="#0284c7" />
+      </marker>
+    </defs>
+  `;
+
   visibleTrajectories.forEach((t) => {
-    // 1. Line track
+    const isImprove = (t.moveInfo.direction === 'improve');
+    const arrowColor = isImprove ? '#16a34a' : '#dc2626';
+    const markerId = isImprove ? 'arrowhead-improve' : 'arrowhead-degrade';
+
+    // Pixel coordinates in overlay space
+    const pX1 = (t.prevX / 100) * overlayWidth;
+    const pY1 = (t.prevY / 100) * overlayHeight;
+    const pX2 = (t.currX / 100) * overlayWidth;
+    const pY2 = (t.currY / 100) * overlayHeight;
+
+    const dx = pX2 - pX1;
+    const dy = pY2 - pY1;
+    const dist = Math.hypot(dx, dy);
+
+    // Calculate line start & end so arrowhead points cleanly at the edge of the destination dot
+    let startX = pX1;
+    let startY = pY1;
+    let endX = pX2;
+    let endY = pY2;
+
+    if (dist > 18) {
+      // Offset start by 8px (so line starts outside previous ghost dot)
+      startX = pX1 + (dx / dist) * 8;
+      startY = pY1 + (dy / dist) * 8;
+      // Offset end by 12px (so arrowhead tip sits right outside destination dot)
+      endX = pX2 - (dx / dist) * 12;
+      endY = pY2 - (dy / dist) * 12;
+    }
+
+    // 1. Clean Directional Arrow Line (Panah Riwayat)
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', `${t.prevX}%`);
-    line.setAttribute('y1', `${t.prevY}%`);
-    line.setAttribute('x2', `${t.currX}%`);
-    line.setAttribute('y2', `${t.currY}%`);
-    line.setAttribute('class', 'trajectory-line-dashed trajectory-line-active');
+    line.setAttribute('x1', startX);
+    line.setAttribute('y1', startY);
+    line.setAttribute('x2', endX);
+    line.setAttribute('y2', endY);
+    line.setAttribute('stroke', arrowColor);
+    line.setAttribute('stroke-width', '2.5');
+    line.setAttribute('stroke-dasharray', '5 3');
+    line.setAttribute('marker-end', `url(#${markerId})`);
+    line.setAttribute('class', 'trajectory-arrow-line');
+    line.style.filter = `drop-shadow(0 2px 4px ${isImprove ? 'rgba(22, 163, 74, 0.4)' : 'rgba(220, 38, 38, 0.4)'})`;
     svg.appendChild(line);
 
-    // 2. Ghost Dot Previous (T-1)
+    // 2. Ghost Dot Previous (T-1 origin)
     const ghost = document.createElement('div');
     ghost.className = 'ghost-dot-prev';
     ghost.style.left = `${t.prevX}%`;
     ghost.style.top = `${t.prevY}%`;
-    ghost.title = `Perpindahan ${t.moveInfo.date}: Dari ${t.moveInfo.prevCell.title} ${t.moveInfo.prevCell.num} ➔ ${t.moveInfo.currCell.title} ${t.moveInfo.currCell.num}`;
+    ghost.title = `Posisi Riwayat (${t.moveInfo.date}): Dari ${t.moveInfo.prevCell.title} ${t.moveInfo.prevCell.num}`;
+    ghost.innerHTML = `<span class="ghost-dot-label">T-1</span>`;
     overlay.appendChild(ghost);
 
-    // 3. Dashed Ring Around Previous Dot (Persis Gambar)
-    const dashedRing = document.createElement('div');
-    dashedRing.className = 'dashed-ring-prev';
-    dashedRing.style.left = `${t.prevX}%`;
-    dashedRing.style.top = `${t.prevY}%`;
-    overlay.appendChild(dashedRing);
-
-    // 4. Solid Ring Around Current Dot (Persis Gambar)
-    const solidRing = document.createElement('div');
-    solidRing.className = 'solid-ring-curr';
-    solidRing.style.left = `${t.currX}%`;
-    solidRing.style.top = `${t.currY}%`;
-    overlay.appendChild(solidRing);
-
-    // 5. Floating Date Pill
+    // 3. Compact Date Badge along the arrow
     const midX = (t.prevX + t.currX) / 2;
     const midY = (t.prevY + t.currY) / 2;
     const datePill = document.createElement('div');
-    datePill.className = 'trajectory-date-pill';
+    datePill.className = `trajectory-date-pill ${isImprove ? 'pill-improve' : 'pill-degrade'}`;
     datePill.style.left = `${midX}%`;
     datePill.style.top = `${midY}%`;
-    const arrowIcon = t.moveInfo.direction === 'improve' ? '▼' : '▲';
     datePill.innerHTML = `
       <span>${t.moveInfo.date}</span>
-      <span class="t-arrow" title="${t.moveInfo.directionLabel}">${arrowIcon}</span>
+      <span class="t-arrow-tag">${isImprove ? '▼ Membaik' : '▲ Meningkat'}</span>
     `;
     overlay.appendChild(datePill);
   });
@@ -2829,6 +3045,13 @@ function toggleScatterHistory(itemId, event) {
   } else {
     const items = getActiveLevelItems();
     renderScatterDots(items);
+  }
+
+  // REPOSITION POPUP: Reposition popup so it never blocks the trajectory arrow or past point!
+  const tt = document.getElementById('gi-floating-tooltip');
+  if (tt && tt.style.display !== 'none') {
+    const activeItem = state.currentTrajectories?.find(t => t.item && t.item.id === itemId)?.item;
+    positionTooltip(tt, null, activeItem);
   }
 }
 

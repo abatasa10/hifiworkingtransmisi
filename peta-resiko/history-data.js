@@ -76,8 +76,22 @@ function getPreviousMove(item, activeDimension = 'tier') {
   }
 
   const cells = (typeof MATRIX_CONFIG !== 'undefined' && MATRIX_CONFIG.cells) ? MATRIX_CONFIG.cells : null;
-  const prevCell = (cells && cells[prevRow] && cells[prevRow][prevCol]) || { num: 15, title: 'Moderate', cat: 'Moderate', color: '#fff200' };
-  const currCell = (cells && cells[currRow] && cells[currCol]) || { num: 15, title: 'Moderate', cat: 'Moderate', color: '#fff200' };
+  const rawPrev = (cells && cells[prevRow] && cells[prevRow][prevCol]) || {};
+  const rawCurr = (cells && cells[currRow] && cells[currRow][currCol]) || {};
+
+  const prevCell = {
+    num: (rawPrev.num !== undefined) ? rawPrev.num : 15,
+    title: rawPrev.title || 'Moderate',
+    cat: rawPrev.cat || 'Moderate',
+    color: rawPrev.color || '#fff200'
+  };
+
+  const currCell = {
+    num: (rawCurr.num !== undefined) ? rawCurr.num : (item.cellNum || 15),
+    title: rawCurr.title || item.cellTitle || item.riskCategory || 'Moderate',
+    cat: rawCurr.cat || item.riskCategory || 'Moderate',
+    color: rawCurr.color || '#fff200'
+  };
 
   const dates = [
     '18 Okt 2024',
